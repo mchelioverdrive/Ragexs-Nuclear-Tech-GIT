@@ -77,7 +77,7 @@ public final class NuclearChemicalProcesses {
         return new ProcessRecipe("nuclear:waste_neutralization_" + sodium,
                 sodium ? new String[] {"ACIDWASTE", "SODIUM_HYDROXIDE"} : new String[] {"ACIDWASTE"},
                 sodium ? new int[] {10, 1} : new int[] {10}, sodium ? new int[] {0, 0} : new int[] {0}, sodium ? null : "QUICKLIME_ITEM", sodium ? 0 : 1,
-                new String[] {"WATER", sodium ? "SALT_ITEM" : "CALCIUM_CHLORIDE", sodium ? "SODIUM_HYDROXIDE" : "QUICKLIME_ITEM"},
+                new String[] {"SALT_WATER", sodium ? "SALT_ITEM" : "CALCIUM_CHLORIDE", sodium ? "SODIUM_HYDROXIDE" : "QUICKLIME_ITEM"},
                 new long[] {feed + base - product, product, mass(sodium ? "SODIUM_HYDROXIDE" : "QUICKLIME_ITEM", 1) - base},
                 2400, 50000, 0, 20, false);
     }

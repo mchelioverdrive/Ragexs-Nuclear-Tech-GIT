@@ -7,7 +7,7 @@ Current native `new FluidType` declarations in [Fluids](../../src/main/java/com/
 | Field | Persistent name | Declared temperature C | Declaration flags |
 | --- | --- | ---: | --- |
 | `NONE` | `NONE` | 20 (default) |  |
-| `WATER` | `WATER` | 20 (default) | LIQUID |
+| `SALT_WATER` | `SALT_WATER` | 20 (default) | LIQUID |
 | `STEAM` | `STEAM` | 100 | GASEOUS |
 | `HOTSTEAM` | `HOTSTEAM` | 300 | GASEOUS |
 | `SUPERHOTSTEAM` | `SUPERHOTSTEAM` | 450 | GASEOUS |

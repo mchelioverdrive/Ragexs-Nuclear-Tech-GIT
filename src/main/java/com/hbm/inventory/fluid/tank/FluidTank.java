@@ -370,7 +370,7 @@ public class FluidTank {
 	private FluidType typeForMigration() {
 		// Constructors are run before NBT is loaded, so recover the configured
 		// destination from the legacy pair rather than clearing the stored amount.
-		if(legacyType == Fluids.WATER) {
+		if(legacyType == Fluids.SALT_WATER) {
 			return migrationTarget;
 		}
 		if(legacyType == Fluids.COOLANT) {

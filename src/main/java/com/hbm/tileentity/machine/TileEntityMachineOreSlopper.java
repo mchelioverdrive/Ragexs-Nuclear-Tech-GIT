@@ -90,7 +90,7 @@ public class TileEntityMachineOreSlopper extends TileEntityMachineBase implement
 	public TileEntityMachineOreSlopper() {
 		super(11);
 		tanks = new FluidTank[2];
-		tanks[0] = new FluidTank(Fluids.WATER, 100).withDefaultCapacity();
+		tanks[0] = new FluidTank(Fluids.SALT_WATER, 100).withDefaultCapacity();
 		tanks[1] = new FluidTank(Fluids.SLOP, 100).withDefaultCapacity();
 		this.trackMachineFluidTank(tanks[0]);
 		this.trackMachineFluidTank(tanks[1]);
@@ -433,7 +433,7 @@ public class TileEntityMachineOreSlopper extends TileEntityMachineBase implement
 	}
 	
 	public FluidType getFluidOutput(FluidType input) {
-		if(input == Fluids.WATER) return Fluids.SLOP;
+		if(input == Fluids.SALT_WATER) return Fluids.SLOP;
 		return null;
 	}
 

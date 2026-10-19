@@ -50,7 +50,7 @@ public final class UtilityMixtures {
         map.put("SMILK",blend("SMILK",new String[]{"MILK"},new int[]{1},new String[]{item("strawberry")},new int[]{4}));
         map.put("ELBOWGREASE",blend("ELBOWGREASE",new String[]{"LUBRICANT","FRESH_WATER"},new int[]{1,1},new String[0],new int[0]));
         map.put("MINSOL",blend("MINSOL",new String[]{"FRESH_WATER"},new int[]{5},new String[]{item("block.ore_mineral")},new int[]{1}));
-        map.put("REDMUD",blend("REDMUD",new String[]{"WATER"},new int[]{4},new String[]{item("block.duna_sands")},new int[]{1}));
+        map.put("REDMUD",blend("REDMUD",new String[]{"SALT_WATER"},new int[]{4},new String[]{item("block.duna_sands")},new int[]{1}));
         map.put("SCUTTERBLOOD",blend("SCUTTERBLOOD",new String[]{"HCL"},new int[]{1},new String[]{item("scuttertail")},new int[]{1}));return map;
     }
     public static ProcessRecipe neonTubes() {

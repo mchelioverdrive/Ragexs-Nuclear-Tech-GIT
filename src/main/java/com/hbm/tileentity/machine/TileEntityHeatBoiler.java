@@ -32,7 +32,7 @@ public class TileEntityHeatBoiler extends TileEntityHeatBoilerBase {
 
 	public TileEntityHeatBoiler() {
 		tanks = new FluidTank[2];
-		tanks[0] = new FluidTank(Fluids.FRESH_WATER, 16_000).migrateFrom(Fluids.WATER);
+		tanks[0] = new FluidTank(Fluids.FRESH_WATER, 16_000).migrateFrom(Fluids.SALT_WATER);
 		tanks[1] = new FluidTank(Fluids.STEAM, 16_000 * 100);
 	}
 

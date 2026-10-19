@@ -944,6 +944,7 @@ public class ChemplantRecipes extends SerializableRecipe {
         recipes.add(new ChemRecipe(1197, "PERTECHNETATE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1197)));
         recipes.add(new ChemRecipe(1198, "DICYANOACETYLENE", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1198)));
         recipes.add(new ChemRecipe(1199, "EGG_SEPARATION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1199)));
+        recipes.add(new ChemRecipe(1201, "CHROMITE_REDUCTION", 1).petroleum(com.hbm.realsim.ChemistryProcesses.defaults().get(1201)));
 }
 
 	private static void registerPwrReprocessing(int id, String name, EnumPWRFuel fuel, int uranium, int plutonium, boolean zirconiumCladding) {

@@ -64,7 +64,7 @@ public class TileEntityMachineStrandCaster extends TileEntityFoundryCastingBase 
 
 	public TileEntityMachineStrandCaster() {
 		super(7);
-		water = new FluidTank(Fluids.FRESH_WATER, com.hbm.realsim.IndustrialDemand.COOLING_CHARGE_L).migrateFrom(Fluids.WATER).withDefaultCapacity();
+		water = new FluidTank(Fluids.FRESH_WATER, com.hbm.realsim.IndustrialDemand.COOLING_CHARGE_L).migrateFrom(Fluids.SALT_WATER).withDefaultCapacity();
 		steam = new FluidTank(Fluids.SPENTSTEAM, 1).withDefaultCapacity();
 		FluidTank.ChangeListener listener = new FluidTank.ChangeListener() {
 			@Override public void onTankChanged(FluidTank tank) {

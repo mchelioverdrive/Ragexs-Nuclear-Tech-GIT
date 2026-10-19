@@ -47,7 +47,9 @@ final class MaterialRoles {
         add(FICTIONAL, MAT_REDSTONE, MAT_MINGRADE, MAT_ALLOY, MAT_STAR, MAT_MAGTUNG, MAT_CMB, MAT_DNT,
                 MAT_SCHRABIDIUM, MAT_SOLINIUM, MAT_SCHRABIDATE,
                 MAT_SCHRARANIUM, MAT_GHIORSIUM);
-        // Specialty contact alloy; no routine structural demand is manufactured for it.
-        add(CONDUCTOR, MAT_OSMIRIDIUM, MAT_RHODIUM);
+        // Refined osmium is alloy feed; the separate Os-Ir alloy supplies machined contacts.
+        add(ALLOYING, MAT_OSMIRIDIUM);
+        add(ALLOYING, MAT_FERROCHROME);
+        add(CONDUCTOR, MAT_OSMIUM_IRIDIUM, MAT_RHODIUM);
     }
 }

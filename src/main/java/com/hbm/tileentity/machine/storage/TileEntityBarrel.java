@@ -311,7 +311,7 @@ public class TileEntityBarrel extends TileEntityMachineBase implements SimpleCom
 		}
 		
 		//For when Tom's firestorm hits a barrel full of water
-		if(tank.getTankType() == Fluids.WATER && TomSaveData.forWorld(worldObj).fire > 1e-5) {
+		if(tank.getTankType() == Fluids.SALT_WATER && TomSaveData.forWorld(worldObj).fire > 1e-5) {
 			int light = this.worldObj.getSavedLightValue(EnumSkyBlock.Sky, this.xCoord, this.yCoord, this.zCoord);
 			
 			if(light > 7) {

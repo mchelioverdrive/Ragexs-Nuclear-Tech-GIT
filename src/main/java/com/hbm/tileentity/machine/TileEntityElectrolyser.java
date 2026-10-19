@@ -111,7 +111,7 @@ public class TileEntityElectrolyser extends TileEntityMachineBase implements IEn
 		//15-20: Outputs
 		super(21);
 		tanks = new FluidTank[6];
-		tanks[0] = new FluidTank(Fluids.FRESH_WATER, 16000).migrateFrom(Fluids.WATER);
+		tanks[0] = new FluidTank(Fluids.FRESH_WATER, 16000).migrateFrom(Fluids.SALT_WATER);
 		tanks[1] = new FluidTank(Fluids.HYDROGEN_GAS, 16000);
 		tanks[2] = new FluidTank(Fluids.OXYGEN_GAS, 16000);
 		tanks[3] = new FluidTank(Fluids.NITRIC_ACID, 20).withDefaultCapacity();

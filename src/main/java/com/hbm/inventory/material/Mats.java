@@ -189,6 +189,9 @@ public class Mats {
 	public static final NTMMaterial MAT_GAAS		= makeSmeltable(_EX + 0,	GAAS,		0x6F4A57, 0x6F4A57, 0x6F4A57).setAutogen(NUGGET, BILLET).m();
 	public static final NTMMaterial MAT_STAINLESS	= makeSmeltable(_EX + 1,	STAINLESS,	0x4A4A4A, 0x4A4A4A, 0x4A4A4A).setAutogen(PLATE).m();
 	public static final NTMMaterial MAT_SOLDER = makeSmeltable(_EX + 2, df("Solder"), 0xB8B8B8).setAutogen(WIRE).m();
+	// Keep the historical Osmiridium identity (now refined osmium) separate from this alloy.
+	public static final NTMMaterial MAT_OSMIUM_IRIDIUM = makeSmeltable(_EX + 3, df("OsmiumIridium"), 0xD9E0EA, 0x667688, 0xBCC8D6).setAutogen(INGOT).m();
+	public static final NTMMaterial MAT_FERROCHROME = makeSmeltable(_EX + 4, df("Ferrochrome"), 0xC2C9CD, 0x4D555B, 0xADB7BE).setAutogen(INGOT).m();
 
 	//Extension
 	public static final NTMMaterial MAT_RAREEARTH	= makeNonSmeltable(_ES + 00, 		RAREEARTH,		0xC1BDBD, 0x384646, 0x7B7F7F).setAutogen(FRAGMENT).n();

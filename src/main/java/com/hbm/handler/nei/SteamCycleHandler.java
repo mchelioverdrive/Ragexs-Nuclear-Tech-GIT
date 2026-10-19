@@ -19,7 +19,7 @@ public class SteamCycleHandler extends ProcessInfoHandler {
     private static volatile List<Process> cache;
     private static long revision = -1;
     public static void invalidate() { cache = null; }
-    @Override public String getRecipeName() { return "Steam, condensation and heat recovery"; }
+    @Override public String getRecipeName() { return "Steam Cycle"; }
     @Override public String getOverlayIdentifier() { return "ntmSteamCycle"; }
     @Override protected List<Process> processes() { return snapshot(); }
     @Override protected Block[] machineBlocks() { return new Block[] {ModBlocks.machine_condenser, ModBlocks.machine_condenser_powered, ModBlocks.machine_tower_small, ModBlocks.machine_tower_large, ModBlocks.machine_radiator, ModBlocks.machine_steam_engine, ModBlocks.machine_turbine, ModBlocks.machine_large_turbine, ModBlocks.machine_chungus, ModBlocks.heater_heatex, ModBlocks.machine_turbinegas}; }

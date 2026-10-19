@@ -34,7 +34,7 @@ public class SolidificationRecipes extends SerializableRecipe {
     public static com.hbm.realsim.ProcessRecipe getPhysical(FluidType type) {
         if(!recipes.containsKey(type)) return null;
         if(overrides.containsKey(type)) return overrides.get(type);
-        return type == BITUMEN ? bitumenBill : type == WATER ? waterBill : type == CARBONDIOXIDE ? co2Bill : type == SODIUM ? sodiumBill : type == POTASSIUM ? potassiumBill : null;
+        return type == BITUMEN ? bitumenBill : type == SALT_WATER ? waterBill : type == CARBONDIOXIDE ? co2Bill : type == SODIUM ? sodiumBill : type == POTASSIUM ? potassiumBill : null;
     }
 
 	public static final int SF_OIL =		200;
@@ -74,7 +74,7 @@ public class SolidificationRecipes extends SerializableRecipe {
         bitumenBill = com.hbm.realsim.ChemicalFuelProcesses.bitumenFreezing();
         registerRecipe(BITUMEN, 2, DictFrame.fromOne(ModItems.oil_tar, EnumTarType.CRUDE));
 
-		registerRecipe(WATER,		1,			Blocks.ice);
+		registerRecipe(SALT_WATER,		1,			Blocks.ice);
 		registerRecipe(LAVA,		1000,			Blocks.obsidian);
 		registerRecipe(MERCURY,		125,			ModItems.ingot_mercury);
 		// Digestion is not reversible by cooling: fuel gas cannot solidify into wet biomass.
@@ -173,7 +173,7 @@ public class SolidificationRecipes extends SerializableRecipe {
 		FluidStack in = this.readFluidStack(obj.get("input").getAsJsonArray());
 
 		ItemStack out = this.readItemStack(obj.get("output").getAsJsonArray());
-        com.hbm.realsim.ProcessRecipe canonical = in.type == BITUMEN ? com.hbm.realsim.ChemicalFuelProcesses.bitumenFreezing() : in.type == WATER ? waterBill : in.type == CARBONDIOXIDE ? co2Bill : in.type == SODIUM ? sodiumBill : in.type == POTASSIUM ? potassiumBill : null;
+        com.hbm.realsim.ProcessRecipe canonical = in.type == BITUMEN ? com.hbm.realsim.ChemicalFuelProcesses.bitumenFreezing() : in.type == SALT_WATER ? waterBill : in.type == CARBONDIOXIDE ? co2Bill : in.type == SODIUM ? sodiumBill : in.type == POTASSIUM ? potassiumBill : null;
         com.hbm.realsim.ProcessRecipe bill = obj.has("physical") ? com.hbm.realsim.PetroleumProcesses.read(obj) : canonical;
         if(bill != null) {
             if(bill.inputs.length != 1 || !bill.inputs[0].equals(in.type.getName()) || bill.solidInputs.length != 0 || bill.heatQuanta != 0

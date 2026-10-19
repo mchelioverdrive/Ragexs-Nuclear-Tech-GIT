@@ -39,7 +39,7 @@ public final class SteamLedger {
     }
     private SteamLedger() { }
     public static State state(String name) {
-        if("WATER".equals(name)) return State.COLD;
+        if("SALT_WATER".equals(com.hbm.inventory.fluid.Fluids.canonicalName(name))) return State.COLD;
         for(State s : State.values()) if(s.identity.equals(name)) return s;
         return null;
     }

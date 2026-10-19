@@ -85,7 +85,7 @@ public class TileEntityMachineCyclotron extends TileEntityMachineBase implements
 		super(12);
 
 		this.tanks = new FluidTank[3];
-		this.tanks[0] = new FluidTank(Fluids.FRESH_WATER, 20).migrateFrom(Fluids.WATER).withDefaultCapacity();
+		this.tanks[0] = new FluidTank(Fluids.FRESH_WATER, 20).migrateFrom(Fluids.SALT_WATER).withDefaultCapacity();
 		this.tanks[1] = new FluidTank(Fluids.SPENTSTEAM, 1).withDefaultCapacity();
 		this.tanks[2] = new FluidTank(Fluids.AMAT, 8000);
 		for(FluidTank tank : tanks) this.trackMachineFluidTank(tank);

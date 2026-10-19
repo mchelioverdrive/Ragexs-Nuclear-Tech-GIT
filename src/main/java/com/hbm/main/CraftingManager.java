@@ -402,6 +402,7 @@ public class CraftingManager {
 		addRecipeAuto(new ItemStack(ModBlocks.red_cable_paintable, 64), new Object[] { "WRW", "RIR", "WRW", 'W', STEEL.plate(), 'I', ModItems.ingot_erbium, 'R', MINGRADE.wireFine() });
 		addRecipeAuto(new ItemStack(ModBlocks.cable_switch, 1), new Object[] { "S", "W", 'S', Blocks.lever, 'W', ModBlocks.red_wire_coated });
 		addRecipeAuto(new ItemStack(ModBlocks.cable_switch, 1), new Object[] { "S", "W", 'S', ModItems.ingot_mercury, 'W', ModBlocks.red_wire_coated });
+		registerContactSwitches();
 		addRecipeAuto(new ItemStack(ModBlocks.cable_detector, 1), new Object[] { "S", "W", 'S', REDSTONE.dust(), 'W', ModBlocks.red_wire_coated });
 		addRecipeAuto(new ItemStack(ModBlocks.cable_diode, 1), new Object[] { " Q ", "CAC", " Q ", 'Q', SI.nugget(), 'C', ModBlocks.red_cable, 'A', AL.ingot() });
 		addRecipeAuto(new ItemStack(ModBlocks.machine_detector, 1), new Object[] { "IRI", "CTC", "IRI", 'I', ModItems.plate_polymer, 'R', REDSTONE.dust(), 'C', MINGRADE.wireFine(), 'T', ModItems.coil_tungsten });
@@ -1398,7 +1399,7 @@ public class CraftingManager {
 
 		//addShapelessAuto(new ItemStack(ModItems.upgrade_5g), new Object[] { ModItems.upgrade_template, ModItems.gem_alexandrite });
 
-		addShapelessAuto(new ItemStack(ModItems.bdcl), new Object[] { KEY_ANY_TAR, Fluids.WATER.getCraftingContainerDict(1_000), KEY_WHITE });
+		addShapelessAuto(new ItemStack(ModItems.bdcl), new Object[] { KEY_ANY_TAR, Fluids.SALT_WATER.getCraftingContainerDict(1_000), KEY_WHITE });
 
 		addShapelessAuto(new ItemStack(ModItems.galaxygas), new Object[] { Fluids.OXYGEN.getCraftingContainerDict(1000), Fluids.NITROGEN.getCraftingContainerDict(1_000), KEY_WHITE });
 
@@ -1597,6 +1598,14 @@ public class CraftingManager {
 
 	//option 1: find every entry that needs to be ore dicted and change the recipe method by hand and commit to doing it right in the future
 	//option 2: just make the computer do all the stupid work for us
+	/** Machined contact blanks; each switch still consumes its own insulated conductor. */
+	public static void registerContactSwitches() {
+		addRecipeAuto(new ItemStack(ModBlocks.cable_switch, 8), new Object[] { "WWW", "WCW", "WWW",
+				'W', ModBlocks.red_wire_coated, 'C', Mats.MAT_OSMIUM_IRIDIUM.make(ModItems.ingot_raw) });
+		addRecipeAuto(new ItemStack(ModBlocks.cable_switch, 8), new Object[] { "WWW", "WCW", "WWW",
+				'W', ModBlocks.red_wire_coated, 'C', Rh.ingot() });
+	}
+
 	public static void addRecipeAuto(ItemStack result, Object... ins) {
 		if(!RegistrationDiagnostics.validateRecipe(result, ins, "shaped crafting recipe for " + RegistrationDiagnostics.describe(result))) return;
 

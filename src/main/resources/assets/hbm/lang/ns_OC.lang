@@ -1706,7 +1706,7 @@ itemGroup.tabNuke=NTM Bombs and Gear
 itemGroup.tabMachine=NTM Templates
 
 hbmfluid.none=None
-hbmfluid.water=Water
+hbmfluid.salt_water=Salt Water
 hbmfluid.lava=Lava
 hbmfluid.uf6=Uranium Hexafluoride
 hbmfluid.puf6=Plutonium Hexafluoride

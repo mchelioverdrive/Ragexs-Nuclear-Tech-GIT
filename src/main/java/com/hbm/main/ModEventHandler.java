@@ -280,7 +280,7 @@ public class ModEventHandler {
 		if(!event.player.worldObj.isRemote) {
 
 			if(GeneralConfig.enableMOTD) {
-				event.player.addChatMessage(new ChatComponentText("Loaded world with RTM: Space " + RefStrings.VERSION + " for Minecraft 1.7.10!"));
+				event.player.addChatMessage(new ChatComponentText("Loaded world with " + RefStrings.NAME + " " + RefStrings.VERSION + " for Minecraft 1.7.10!"));
 
 				//if(HTTPHandler.newVersion) {
 				//	event.player.addChatMessage(

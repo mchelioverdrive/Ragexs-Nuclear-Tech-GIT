@@ -22,6 +22,197 @@ import net.minecraft.nbt.NBTTagCompound;
 
 /** Native tile constructors/admission/save readers, without launching or substituting a world. */
 public class NativeGeneratorContractTest {
+    @Test public void saltWaterIdentityRetainsLegacyLookupTankIdsAndDisplay() throws Exception {
+        assertEquals("SALT_WATER", Fluids.SALT_WATER.getName());
+        assertSame(Fluids.SALT_WATER, Fluids.fromName("SALT_WATER"));
+        assertSame(Fluids.SALT_WATER, Fluids.fromName("WATER"));
+        assertSame(Fluids.SALT_WATER, Fluids.fromNameCompat("WATER"));
+        assertSame(Fluids.SALT_WATER, Fluids.fromID(Fluids.SALT_WATER.getID()));
+        assertSame(PhysicalRegistry.get("SALT_WATER"), PhysicalRegistry.get("WATER"));
+        FluidTank tank = new FluidTank(Fluids.SALT_WATER, 400);
+        NBTTagCompound old = new NBTTagCompound(); old.setString("w_type", "WATER"); old.setInteger("w", 725);
+        tank.readFromNBT(old, "w");
+        assertSame(Fluids.SALT_WATER, tank.getTankType()); assertEquals(725, tank.getFill());
+        NBTTagCompound saved = new NBTTagCompound(); tank.writeToNBT(saved, "w");
+        assertEquals(Fluids.SALT_WATER.getID(), saved.getInteger("w_type"));
+        java.util.Properties english = new java.util.Properties();
+        try(java.io.Reader reader = new java.io.InputStreamReader(getClass().getResourceAsStream("/assets/hbm/lang/en_US.lang"), java.nio.charset.StandardCharsets.UTF_8)) {
+            english.load(reader);
+        }
+        assertEquals("Salt Water", english.getProperty("hbmfluid.salt_water"));
+        assertEquals("Fresh Water", english.getProperty("hbmfluid.fresh_water"));
+        assertNull(english.getProperty("hbmfluid.water"));
+    }
+
+    @Test public void saltWaterRenamePreservesOwnedProcessesAndFractionalMass() {
+        long unit = PhysicalRegistry.get("SALT_WATER").massUnits;
+        ProcessRecipe recipe = new ProcessRecipe("test:salt_rename", new String[] {"WATER"}, new int[] {1}, new int[] {0}, null, 0,
+                new String[] {"WATER"}, new long[] {unit}, 20, 1000, 0, 20, false);
+        assertEquals("SALT_WATER", recipe.inputs[0]); assertEquals("SALT_WATER", recipe.outputs[0]);
+        ProcessBatch batch = new ProcessBatch(); batch.reserve(recipe); batch.advance(10);
+        batch.products.convert("SALT_WATER", unit / 2);
+        NBTTagCompound tag = new NBTTagCompound(); batch.write(tag);
+        NBTTagCompound process = tag.getCompoundTag("realSimProcess");
+        process.getCompoundTag("owned").setString("i0", "WATER"); process.getCompoundTag("owned").setString("o0", "WATER");
+        NBTTagCompound mass = process.getCompoundTag("realSimMass").getCompoundTag("mass");
+        mass.removeTag("SALT_WATER"); mass.setLong("WATER", unit / 2);
+        ProcessBatch loaded = new ProcessBatch(); loaded.read(tag);
+        assertEquals(1, loaded.ticks()); assertEquals(batch.nextWork(), loaded.nextWork());
+        assertEquals("SALT_WATER", loaded.recipe().inputs[0]); assertEquals("SALT_WATER", loaded.recipe().outputs[0]);
+        assertEquals(unit / 2, loaded.products.remaining("SALT_WATER"));
+        assertEquals(1, loaded.products.convert("SALT_WATER", unit / 2));
+        NBTTagCompound migrated = new NBTTagCompound(); loaded.write(migrated);
+        assertFalse(migrated.getCompoundTag("realSimProcess").getCompoundTag("realSimMass").getCompoundTag("mass").hasKey("WATER"));
+    }
+
+    @Test public void groundwaterUsesOnlyTheOceanTagForOrdinaryWater() {
+        net.minecraft.world.biome.BiomeGenBase[] inland = {
+            net.minecraft.world.biome.BiomeGenBase.plains, net.minecraft.world.biome.BiomeGenBase.forest,
+            net.minecraft.world.biome.BiomeGenBase.river, net.minecraft.world.biome.BiomeGenBase.swampland,
+            net.minecraft.world.biome.BiomeGenBase.extremeHills, net.minecraft.world.biome.BiomeGenBase.frozenRiver,
+            net.minecraft.world.biome.BiomeGenBase.beach};
+        for(net.minecraft.world.biome.BiomeGenBase biome : inland) {
+            assertSame(biome.biomeName, Fluids.FRESH_WATER, Groundwater.fluidForBiome(Fluids.SALT_WATER, biome));
+            assertSame(Fluids.FRESH_WATER, Groundwater.fluidForBiome(Fluids.FRESH_WATER, biome));
+        }
+        for(net.minecraft.world.biome.BiomeGenBase biome : new net.minecraft.world.biome.BiomeGenBase[] {
+                net.minecraft.world.biome.BiomeGenBase.ocean, net.minecraft.world.biome.BiomeGenBase.deepOcean,
+                net.minecraft.world.biome.BiomeGenBase.frozenOcean}) {
+            assertSame(Fluids.SALT_WATER, Groundwater.fluidForBiome(Fluids.SALT_WATER, biome));
+            assertSame(Fluids.SALT_WATER, Groundwater.fluidForBiome(Fluids.FRESH_WATER, biome));
+        }
+        assertNull(Groundwater.fluidForBiome(Fluids.SALT_WATER, null));
+        assertNull(Groundwater.fluidForBiome(null, net.minecraft.world.biome.BiomeGenBase.ocean));
+        assertNull(Groundwater.fluidForBiome(Fluids.NONE, net.minecraft.world.biome.BiomeGenBase.ocean));
+        assertSame(Fluids.OIL, Groundwater.fluidForBiome(Fluids.OIL, null));
+    }
+
+    @Test public void groundwaterRecognizesAModdedOceanWithoutAnOceanIdOrName() throws Exception {
+        net.minecraft.world.biome.BiomeGenBase[] biomes = net.minecraft.world.biome.BiomeGenBase.getBiomeGenArray();
+        int id = biomes.length - 1;
+        while(id >= 0 && biomes[id] != null) id--;
+        assertTrue(id >= 0);
+        Field registrations = net.minecraftforge.common.BiomeDictionary.class.getDeclaredField("biomeList"); registrations.setAccessible(true);
+        Object biomeInfo = registrations.get(null), oldInfo = java.lang.reflect.Array.get(biomeInfo, id);
+        net.minecraft.world.biome.BiomeGenBase biome = new net.minecraft.world.biome.BiomeGenBase(id) {};
+        try {
+            assertTrue(net.minecraftforge.common.BiomeDictionary.registerBiomeType(biome, net.minecraftforge.common.BiomeDictionary.Type.OCEAN));
+            assertSame(Fluids.SALT_WATER, Groundwater.fluidForBiome(Fluids.SALT_WATER, biome));
+        } finally {
+            biomes[id] = null; java.lang.reflect.Array.set(biomeInfo, id, oldInfo);
+            Field types = net.minecraftforge.common.BiomeDictionary.class.getDeclaredField("typeInfoList"); types.setAccessible(true);
+            for(Object list : (Object[]) types.get(null)) if(list != null) ((java.util.List<?>) list).remove(biome);
+        }
+    }
+
+    /** Exposes the native admission/production transaction without packets or a running scheduler. */
+    public static class ElectricGroundwater extends TileEntityMachinePumpElectric {
+        public FluidType extraction = Fluids.FRESH_WATER;
+        @Override protected FluidType getGroundwaterType() { return extraction; }
+        public boolean extract() {
+            if(!prepareWaterOutput() || !canOperate()) return false;
+            operate(); return true;
+        }
+        public long fraction() { return waterMicroliterRemainder; }
+    }
+    public static class SteamGroundwater extends TileEntityMachinePumpSteam {
+        public FluidType extraction = Fluids.FRESH_WATER;
+        @Override protected FluidType getGroundwaterType() { return extraction; }
+        public boolean extract() {
+            if(!prepareWaterOutput() || !canOperate()) return false;
+            operate(); return true;
+        }
+        public long fraction() { return waterMicroliterRemainder; }
+        public long shaft() { return shaftWorkJoules; }
+    }
+
+    @Test public void groundwaterPreservesStoredSaltwaterAndResumesFreshAfterDraining() {
+        ElectricGroundwater pump = new ElectricGroundwater(); pump.energyQuanta = 10000;
+        pump.water.setTankType(Fluids.SALT_WATER); pump.water.setFill(3);
+        for(int i = 0; i < 20; i++) assertFalse(pump.extract());
+        assertEquals(10000, pump.energyQuanta); assertEquals(3, pump.water.getFill());
+        assertSame(Fluids.SALT_WATER, pump.water.getTankType());
+        pump.water.setFill(0);
+        for(int i = 0; i < 10; i++) assertTrue(pump.extract());
+        assertSame(Fluids.FRESH_WATER, pump.water.getTankType());
+        assertEquals(1, pump.water.getFill()); assertEquals(0, pump.fraction());
+        assertEquals(0, pump.energyQuanta);
+        pump.extraction = Fluids.SALT_WATER; pump.energyQuanta = 10000;
+        assertFalse(pump.extract()); assertEquals(10000, pump.energyQuanta);
+        pump.water.setFill(0);
+        for(int i = 0; i < 10; i++) assertTrue(pump.extract());
+        assertSame(Fluids.SALT_WATER, pump.water.getTankType()); assertEquals(1, pump.water.getFill());
+    }
+
+    @Test public void groundwaterFullOrUnavailableOutputsDoNotSpendPowerOrSteam() {
+        ElectricGroundwater electric = new ElectricGroundwater(); electric.energyQuanta = 10000;
+        SteamGroundwater steam = new SteamGroundwater(); steam.steam.setFill(100);
+        for(TileEntityMachinePumpBase pump : new TileEntityMachinePumpBase[] {electric, steam}) {
+            pump.water.setTankType(Fluids.FRESH_WATER); pump.water.setFill(pump.water.getMaxFill() + 1);
+        }
+        assertFalse(electric.extract()); assertFalse(steam.extract());
+        assertEquals(10000, electric.energyQuanta); assertEquals(100, steam.steam.getFill());
+        assertEquals(0, steam.lps.getFill()); assertEquals(0, steam.shaft());
+        electric.water.setFill(0); steam.water.setFill(0);
+        steam.water.setTankType(Fluids.SALT_WATER); steam.water.setFill(1);
+        assertFalse(steam.extract()); assertEquals(100, steam.steam.getFill());
+        steam.water.setFill(0);
+        electric.extraction = null; steam.extraction = null;
+        assertFalse(electric.extract()); assertFalse(steam.extract());
+        assertEquals(10000, electric.energyQuanta); assertEquals(100, steam.steam.getFill());
+        electric.extraction = Fluids.FRESH_WATER; steam.extraction = Fluids.FRESH_WATER;
+        steam.lps.setFill(steam.lps.getMaxFill()); assertFalse(steam.extract());
+        steam.lps.setFill(0);
+        for(int i = 0; i < 40; i++) assertTrue(steam.extract());
+        assertEquals(1, steam.water.getFill()); assertEquals(0, steam.fraction());
+        assertEquals(0, steam.steam.getFill()); assertEquals(1, steam.lps.getFill());
+        assertEquals(Groundwater.STEAM_PARCEL_SHAFT_JOULES - 40 * Groundwater.STEAM_SHAFT_WATTS / 20, steam.shaft());
+    }
+
+    @SuppressWarnings("unchecked") private NBTTagCompound groundwaterSave(TileEntityMachinePumpBase pump) throws Exception {
+        Field field = net.minecraft.tileentity.TileEntity.class.getDeclaredField("classToNameMap"); field.setAccessible(true);
+        Map<Class<?>, String> mappings = (Map<Class<?>, String>) field.get(null);
+        String previous = mappings.put(pump.getClass(), "groundwater_regression");
+        try {
+            NBTTagCompound tag = new NBTTagCompound(); pump.writeToNBT(tag);
+            java.io.ByteArrayOutputStream bytes = new java.io.ByteArrayOutputStream();
+            net.minecraft.nbt.CompressedStreamTools.writeCompressed(tag, bytes);
+            return net.minecraft.nbt.CompressedStreamTools.readCompressed(new java.io.ByteArrayInputStream(bytes.toByteArray()));
+        } finally { if(previous == null) mappings.remove(pump.getClass()); else mappings.put(pump.getClass(), previous); }
+    }
+
+    @Test public void groundwaterSaveReloadRetainsBothFluidFractionsAndOldTankContents() throws Exception {
+        ElectricGroundwater pump = new ElectricGroundwater(); pump.extraction = Fluids.SALT_WATER; pump.energyQuanta = 10000;
+        assertTrue(pump.extract()); // 0.1 L paid saltwater, no whole litre yet
+        pump.extraction = Fluids.FRESH_WATER; assertTrue(pump.extract());
+        NBTTagCompound tag = groundwaterSave(pump);
+        assertEquals(100000, tag.getCompoundTag("pumpStoredWaterMicroliters").getLong("SALT_WATER"));
+        tag.getCompoundTag("pumpStoredWaterMicroliters").removeTag("SALT_WATER");
+        tag.getCompoundTag("pumpStoredWaterMicroliters").setLong("WATER", 100000); // pre-rename fractional stock
+        ElectricGroundwater loaded = new ElectricGroundwater(); loaded.readFromNBT(tag);
+        assertEquals(100000, loaded.fraction()); assertEquals(8000, loaded.energyQuanta);
+        loaded.extraction = Fluids.SALT_WATER; assertTrue(loaded.extract()); assertEquals(200000, loaded.fraction());
+        loaded.extraction = Fluids.FRESH_WATER; assertTrue(loaded.extract()); assertEquals(200000, loaded.fraction());
+        pump = new ElectricGroundwater(); pump.water.setTankType(Fluids.SALT_WATER); pump.water.setFill(7);
+        tag = groundwaterSave(pump); // also a legacy save with no parked remainder key
+        tag.removeTag("pumpStoredWaterMicroliters"); loaded.readFromNBT(tag);
+        loaded.extraction = Fluids.FRESH_WATER; loaded.energyQuanta = 10000;
+        assertFalse(loaded.extract()); assertEquals(7, loaded.water.getFill()); assertSame(Fluids.SALT_WATER, loaded.water.getTankType());
+        SteamGroundwater steam = new SteamGroundwater(); steam.steam.setFill(100); assertTrue(steam.extract());
+        SteamGroundwater reloadedSteam = new SteamGroundwater(); reloadedSteam.readFromNBT(groundwaterSave(steam));
+        assertEquals(steam.shaft(), reloadedSteam.shaft()); assertEquals(steam.fraction(), reloadedSteam.fraction());
+        assertEquals(0, reloadedSteam.steam.getFill()); assertEquals(1, reloadedSteam.lps.getFill());
+    }
+
+    @Test public void groundwaterUsesTheExistingProcessAndBoilerFreshwaterIdentity() {
+        assertSame(Fluids.FRESH_WATER, new TileEntityHeatBoiler().tanks[0].getTankType());
+        assertSame(Fluids.FRESH_WATER, new TileEntityElectrolyser().tanks[0].getTankType());
+        assertEquals("FRESH_WATER", SteamLedger.State.COLD.identity);
+        assertArrayEquals(new String[] {"SALT_WATER"}, ChemistryProcesses.waterTreatment().inputs);
+        assertEquals("FRESH_WATER", ChemistryProcesses.waterTreatment().outputs[0]);
+        assertEquals("FRESH_WATER", ChemistryProcesses.electrolysis(20000).inputs[0]);
+    }
+
     @Test public void poweredNativeReadersRetainPaidThermalCreditWithoutAHeaterGate() {
         com.hbm.tileentity.machine.oil.TileEntityMachineFractionTower fraction = new com.hbm.tileentity.machine.oil.TileEntityMachineFractionTower();
         TileEntityDeuteriumExtractor extractor = new TileEntityDeuteriumExtractor();
@@ -156,7 +347,7 @@ public class NativeGeneratorContractTest {
         Field orderField = Fluids.class.getDeclaredField("registerOrder"); orderField.setAccessible(true);
         order = (java.util.List<FluidType>) orderField.get(null); oldOrder = new java.util.ArrayList<>(order);
         oldPellets = new java.util.ArrayList<>(ItemRTGPellet.pelletList);
-        for(String name : new String[] {"NONE", "STEAM", "HOTSTEAM", "SUPERHOTSTEAM", "ULTRAHOTSTEAM", "SPENTSTEAM", "DIESEL", "KEROSENE", "BLOOD", "GAS", "LUBRICANT", "WATER", "FRESH_WATER",
+        for(String name : new String[] {"NONE", "STEAM", "HOTSTEAM", "SUPERHOTSTEAM", "ULTRAHOTSTEAM", "SPENTSTEAM", "DIESEL", "KEROSENE", "BLOOD", "GAS", "LUBRICANT", "SALT_WATER", "FRESH_WATER",
                 "HEAVYOIL", "HEAVYOIL_VACUUM", "SMEAR", "LIGHTOIL_VACUUM", "REFORMATE", "SOURGAS", "OIL", "OIL_DS", "LIGHTOIL", "LIGHTOIL_DS", "NAPHTHA", "NAPHTHA_DS", "PETROLEUM", "BITUMEN", "HEATINGOIL", "LPG", "AIR", "AIR_HEATED", "AIRBLAST", "BLAST_FURNACE_GAS", "OXYGEN", "OXYGEN_GAS", "NITROGEN", "NITROGEN_GAS", "HYDROGEN", "HYDROGEN_GAS", "SYNGAS", "REFORMGAS", "GAS_COKER", "BIOGAS", "UNSATURATEDS", "HYDROGEN_SULFIDE", "LIGHT_WATER", "HEAVYWATER", "DEPLETED_WATER", "ARGON", "NOBLE_GAS_MIX", "CARBONDIOXIDE", "MILK", "EMILK", "CMILK", "CREAM"}) {
             Field f = Fluids.class.getField(name); fields.put(f, f.get(null));
             FluidType type = new FluidType(name, 0, 0, 0, 0, EnumSymbol.NONE); f.set(null, type); names.put(name, type);
@@ -248,7 +439,7 @@ public class NativeGeneratorContractTest {
             assertEquals("textures/gui/fluids/air.png", gas.getTexture().getResourcePath());
             assertEquals(gas.getColor(), gas.getTint());
         }
-        assertEquals("textures/gui/fluids/water.png", Fluids.WATER.getTexture().getResourcePath());
+        assertEquals("textures/gui/fluids/water.png", Fluids.SALT_WATER.getTexture().getResourcePath());
         com.hbm.items.machine.ItemFluidIcon icon = (com.hbm.items.machine.ItemFluidIcon) ModItems.fluid_icon;
         assertNotEquals(icon.getItemStackDisplayName(com.hbm.items.machine.ItemFluidIcon.make(Fluids.OXYGEN_GAS, 1000, 0)),
                 icon.getItemStackDisplayName(com.hbm.items.machine.ItemFluidIcon.make(Fluids.OXYGEN_GAS, 1000, 1)));

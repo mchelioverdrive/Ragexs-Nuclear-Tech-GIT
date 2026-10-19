@@ -22,19 +22,19 @@ public final class SteelmakingProcesses {
         // RTM iron powder is metallic. Oxidative conditioning supplies, rather than invents, oxide oxygen.
         long oxygen = oxideOxygen() * 8;
         int gas = Math.toIntExact(PetroleumProcesses.ceilDiv(oxygen, mass("OXYGEN_GAS", 1)));
-        return new ProcessRecipe("steel:oxidative_concentration", new String[] {"OXYGEN_GAS", "WATER"}, new int[] {gas, 2}, new int[] {0, 0},
+        return new ProcessRecipe("steel:oxidative_concentration", new String[] {"OXYGEN_GAS", "SALT_WATER"}, new int[] {gas, 2}, new int[] {0, 0},
                 "IRON_PREP_POWDER_ITEM", 8, new String[] {"IRON_FINES_ITEM", "FRESH_WATER", "OXYGEN_GAS"},
-                new long[] {mass("IRON_FINES_ITEM", 8), mass("WATER", 2), mass("OXYGEN_GAS", gas) - oxygen}, 1200, 400000, 0, 20, false);
+                new long[] {mass("IRON_FINES_ITEM", 8), mass("SALT_WATER", 2), mass("OXYGEN_GAS", gas) - oxygen}, 200, 400000, 0, 20, false);
     }
     public static ProcessRecipe pelletize() {
-        return new ProcessRecipe("steel:green_pellets", new String[] {"WATER"}, new int[] {2}, new int[] {0},
+        return new ProcessRecipe("steel:green_pellets", new String[] {"SALT_WATER"}, new int[] {2}, new int[] {0},
                 new String[] {"IRON_FINES_ITEM", "PELLET_LIMESTONE_ITEM", "PELLET_CLAY_ITEM"}, new int[] {8, 1, 1},
-                new String[] {"IRON_GREEN_PELLET_ITEM"}, new long[] {mass("IRON_GREEN_PELLET_ITEM", 8)}, 1200, 400000, 0, 20, true);
+                new String[] {"IRON_GREEN_PELLET_ITEM"}, new long[] {mass("IRON_GREEN_PELLET_ITEM", 8)}, 200, 400000, 0, 20, true);
     }
     public static ProcessRecipe harden() {
         return new ProcessRecipe("steel:pellet_induration", new String[0], new int[0], new int[0], "IRON_GREEN_PELLET_ITEM", 8,
                 new String[] {"IRON_HARD_PELLET_ITEM", "VENT_WATER", "CARBONDIOXIDE"},
-                new long[] {mass("IRON_HARD_PELLET_ITEM", 8), mass("WATER", 2), fluxCO2()}, 12000, 800000, 24000000, 1200, false);
+                new long[] {mass("IRON_HARD_PELLET_ITEM", 8), mass("SALT_WATER", 2), fluxCO2()}, 400, 800000, 24000000, 1200, false);
     }
     public static ProcessRecipe reduce() {
         // Fe2O3 + 3 H2 -> 2 Fe + 3 H2O. Return the unused whole-litre gas rounding margin.
@@ -44,6 +44,6 @@ public final class SteelmakingProcesses {
         return new ProcessRecipe("steel:hydrogen_direct_reduction", new String[] {"HYDROGEN_GAS"}, new int[] {gas}, new int[] {0},
                 "IRON_HARD_PELLET_ITEM", 8, new String[] {"IRON_DRI_ITEM", "FRESH_WATER", "HYDROGEN_GAS"},
                 new long[] {mass("IRON_DRI_ITEM", 8), oxygen + hydrogen, mass("HYDROGEN_GAS", gas) - hydrogen},
-                12000, 800000, 32000000, 900, false);
+                600, 800000, 32000000, 900, false);
     }
 }

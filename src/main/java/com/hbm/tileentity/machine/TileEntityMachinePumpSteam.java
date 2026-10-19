@@ -13,7 +13,7 @@ public class TileEntityMachinePumpSteam extends TileEntityMachinePumpBase implem
 	
 	public TileEntityMachinePumpSteam() {
 		super();
-		water = new FluidTank(Fluids.WATER, com.hbm.realsim.Groundwater.STEAM_BUFFER).withDefaultCapacity();
+		water = new FluidTank(Fluids.FRESH_WATER, com.hbm.realsim.Groundwater.STEAM_BUFFER).withDefaultCapacity();
 		steam = new FluidTank(Fluids.STEAM, 1_000);
 		lps = new FluidTank(Fluids.SPENTSTEAM, 10);
 	}

@@ -290,6 +290,150 @@ public class MaterialContractsTest {
         assertFalse(MaterialShapes.DUST.hasNativeGenerator());
         assertEquals(0, MaterialShapes.ORE.q(1));
     }
+    @Test public void chromiteReductionPaysItsBillAndRetainsEveryProductAcrossReload() throws Exception {
+        ProcessRecipe bill = ChemistryProcesses.defaults().get(1201);
+        assertNotNull(bill);
+        assertEquals("specialist:chromite_aluminothermic_reduction", bill.id);
+        assertEquals(400, bill.duration); assertEquals(8_400_000L, bill.workQuanta); assertEquals(0, bill.heatQuanta);
+        assertArrayEquals(new int[] {2, 1}, bill.solidCounts);
+        assertArrayEquals(new String[] {"ITEM:chromite", "ALUMINIUM_ITEM"}, bill.solidInputs);
+        assertArrayEquals(new String[] {"ITEM:ingot_raw@24004", "ALUMINA_ITEM", "ALUMINIUM_ITEM"}, bill.outputs);
+        long total = 0; for(long mass : bill.productMass) total += mass;
+        assertEquals(3 * PhysicalState.MASS_UNITS_PER_KG, total);
+        assertTrue(bill.productMass[0] > PhysicalState.MASS_UNITS_PER_KG);
+        assertTrue(bill.productMass[2] > 0); // Unreacted aluminium is returned, never destroyed or converted into Cr.
+        ProcessBatch batch = new ProcessBatch(); batch.reserve(bill);
+        for(int tick = 0; tick < 200; tick++) {
+            assertFalse(batch.canAdvance(tick, 0, 0));
+            assertTrue(batch.canAdvance(tick, 21000, 0)); batch.advance(tick);
+        }
+        NBTTagCompound tag = new NBTTagCompound(); batch.write(tag);
+        ProcessBatch loaded = new ProcessBatch(); loaded.read(tag);
+        assertFalse(loaded.complete());
+        for(int tick = 200; tick < 400; tick++) { assertTrue(loaded.canAdvance(tick, 21000, 0)); loaded.advance(tick); }
+        assertTrue(loaded.complete());
+        assertArrayEquals(bill.productMass, loaded.recipe().productMass);
+        int[] products = loaded.finish(); assertEquals(1, products[0]);
+        batch = new ProcessBatch(); batch.read(tag);
+        assertEquals(200, batch.ticks());
+    }
+
+    @Test public void materialRegistryChecksUseTheExistingDedicatedServerLoader() throws Throwable {
+        java.util.Set<java.net.URL> urls = new java.util.LinkedHashSet<java.net.URL>();
+        for(ClassLoader current = getClass().getClassLoader(); current != null; current = current.getParent())
+            if(current instanceof java.net.URLClassLoader) java.util.Collections.addAll(urls, ((java.net.URLClassLoader) current).getURLs());
+        try(com.hbm.world.gen.structure.RecordingStructureWorldTest.ServerLoader loader =
+                new com.hbm.world.gen.structure.RecordingStructureWorldTest.ServerLoader(urls.toArray(new java.net.URL[0]))) {
+            Field side = loader.loadClass("cpw.mods.fml.relauncher.FMLRelaunchLog").getDeclaredField("side"); side.setAccessible(true);
+            side.set(null, loader.loadClass("cpw.mods.fml.relauncher.Side").getField("SERVER").get(null));
+            loader.loadClass("cpw.mods.fml.common.Loader").getMethod("injectData", Object[].class).invoke(null,
+                    (Object) new Object[] {"7", "99", "40", "1614", "1.7.10", "9.05", new java.io.File("."), java.util.Collections.emptyList()});
+            loader.loadClass("net.minecraft.init.Bootstrap").getMethod("func_151354_b").invoke(null);
+            Class<?> fml = loader.loadClass("cpw.mods.fml.common.Loader");
+            Field mods = fml.getDeclaredField("namedMods"); mods.setAccessible(true);
+            mods.set(fml.getMethod("instance").invoke(null), java.util.Collections.emptyMap());
+            Class<?> type = loader.loadClass(getClass().getName()); Object checks = type.newInstance();
+            for(String method : new String[] {"contactAlloyHasSeparateIdentityAndConservesFoundryQuantity",
+                    "ferrochromeStainlessUsesBothNativeInputCountsWithoutPureChromium", "contactSwitchCraftingRequiresEightConductorsAndTheCorrectContactState",
+                    "chromiteTemplateBindsNativeFeedsAndMetadataOutputs"}) {
+                try { type.getMethod(method).invoke(checks); }
+                catch(java.lang.reflect.InvocationTargetException failure) { throw failure.getCause(); }
+            }
+        }
+    }
+
+    public void chromiteTemplateBindsNativeFeedsAndMetadataOutputs() {
+        Item chromite = ModItems.chromite, aluminium = ModItems.powder_aluminium, alumina = ModItems.powder_alumina, raw = ModItems.ingot_raw;
+        com.hbm.inventory.recipes.ChemplantRecipes.ChemRecipe old = com.hbm.inventory.recipes.ChemplantRecipes.indexMapping.remove(1201);
+        try {
+            ModItems.chromite = net.minecraft.init.Items.quartz; ModItems.powder_aluminium = net.minecraft.init.Items.iron_ingot;
+            ModItems.powder_alumina = net.minecraft.init.Items.clay_ball; ModItems.ingot_raw = net.minecraft.init.Items.gold_ingot;
+            com.hbm.inventory.recipes.ChemplantRecipes.ChemRecipe recipe = new com.hbm.inventory.recipes.ChemplantRecipes.ChemRecipe(1201, "CHROMITE_REDUCTION", 1)
+                    .petroleum(ChemistryProcesses.defaults().get(1201));
+            assertTrue(recipe.inputs[0].matchesRecipe(new ItemStack(ModItems.chromite, 2), false));
+            assertFalse(recipe.inputs[0].matchesRecipe(new ItemStack(ModItems.chromite, 1), false));
+            assertTrue(recipe.inputs[1].matchesRecipe(new ItemStack(ModItems.powder_aluminium), false));
+            assertEquals(24004, recipe.outputs[0].getItemDamage()); assertSame(ModItems.ingot_raw, recipe.outputs[0].getItem());
+            assertSame(ModItems.powder_alumina, recipe.outputs[1].getItem());
+            assertNull(recipe.outputs[3]); assertEquals(21000, recipe.physicalPowerQuanta);
+        } finally {
+            com.hbm.inventory.recipes.ChemplantRecipes.indexMapping.remove(1201);
+            if(old != null) com.hbm.inventory.recipes.ChemplantRecipes.indexMapping.put(1201, old);
+            ModItems.chromite = chromite; ModItems.powder_aluminium = aluminium; ModItems.powder_alumina = alumina; ModItems.ingot_raw = raw;
+        }
+    }
+
+    public void ferrochromeStainlessUsesBothNativeInputCountsWithoutPureChromium() {
+        Item raw = ModItems.ingot_raw, steel = ModItems.ingot_steel, stainless = ModItems.ingot_stainless;
+        com.hbm.inventory.recipes.BlastFurnaceRecipes handler = new com.hbm.inventory.recipes.BlastFurnaceRecipes();
+        java.util.List registry = (java.util.List) handler.getRecipeObject(); int start = registry.size();
+        try {
+            ModItems.ingot_raw = ModItems.ingot_steel = net.minecraft.init.Items.iron_ingot;
+            ModItems.ingot_stainless = net.minecraft.init.Items.gold_ingot;
+            net.minecraftforge.oredict.OreDictionary.registerOre("ingotSteel", new ItemStack(ModItems.ingot_steel));
+            com.hbm.inventory.recipes.BlastFurnaceRecipes.registerFerrochromeStainless();
+            ItemStack iron = new ItemStack(ModItems.ingot_steel, 6), alloy = new ItemStack(ModItems.ingot_raw, 2, 24004);
+            assertEquals(8, com.hbm.inventory.recipes.BlastFurnaceRecipes.getOutput(iron, alloy).stackSize);
+            assertArrayEquals(new int[] {6, 2}, com.hbm.inventory.recipes.BlastFurnaceRecipes.getInputAmounts(iron, alloy));
+            assertArrayEquals(new int[] {2, 6}, com.hbm.inventory.recipes.BlastFurnaceRecipes.getInputAmounts(alloy, iron));
+            alloy.stackSize = 1; assertNull(com.hbm.inventory.recipes.BlastFurnaceRecipes.getOutput(iron, alloy));
+            alloy.stackSize = 2; alloy.setItemDamage(24003); assertNull(com.hbm.inventory.recipes.BlastFurnaceRecipes.getOutput(iron, alloy));
+            assertFalse(com.hbm.inventory.recipes.BlastFurnaceRecipes.getRecipesForNEI().isEmpty());
+        } finally {
+            while(registry.size() > start) registry.remove(registry.size() - 1);
+            ModItems.ingot_raw = raw; ModItems.ingot_steel = steel; ModItems.ingot_stainless = stainless;
+        }
+    }
+
+    public void contactAlloyHasSeparateIdentityAndConservesFoundryQuantity() {
+        com.hbm.inventory.recipes.CrucibleRecipes.CrucibleRecipe old = com.hbm.inventory.recipes.CrucibleRecipes.indexMapping.remove(25);
+        Item raw = ModItems.ingot_raw; ModItems.ingot_raw = net.minecraft.init.Items.iron_ingot;
+        try {
+            com.hbm.inventory.recipes.CrucibleRecipes.registerContactAlloy();
+            com.hbm.inventory.recipes.CrucibleRecipes.CrucibleRecipe recipe = com.hbm.inventory.recipes.CrucibleRecipes.indexMapping.get(25);
+            assertNotNull(recipe); assertEquals(144, recipe.getInputAmount());
+            assertEquals(144, recipe.output[0].amount);
+            assertSame(com.hbm.inventory.material.Mats.MAT_OSMIRIDIUM, recipe.input[0].material);
+            assertSame(com.hbm.inventory.material.Mats.MAT_IRIDIUM, recipe.input[1].material);
+            assertSame(com.hbm.inventory.material.Mats.MAT_OSMIUM_IRIDIUM, recipe.output[0].material);
+            assertEquals(24003, recipe.icon.getItemDamage());
+            assertNotEquals(recipe.input[0].material.id, recipe.output[0].material.id);
+            assertTrue(recipe.output[0].material.autogen.contains(MaterialShapes.INGOT));
+        } finally {
+            com.hbm.inventory.recipes.CrucibleRecipes.recipes.remove(com.hbm.inventory.recipes.CrucibleRecipes.indexMapping.remove(25));
+            if(old != null) com.hbm.inventory.recipes.CrucibleRecipes.indexMapping.put(25, old);
+            ModItems.ingot_raw = raw;
+        }
+    }
+
+    public void contactSwitchCraftingRequiresEightConductorsAndTheCorrectContactState() {
+        net.minecraft.block.Block wire = com.hbm.blocks.ModBlocks.red_wire_coated, output = com.hbm.blocks.ModBlocks.cable_switch;
+        Item raw = ModItems.ingot_raw;
+        java.util.List registry = net.minecraft.item.crafting.CraftingManager.getInstance().getRecipeList();
+        int start = registry.size();
+        try {
+            com.hbm.blocks.ModBlocks.red_wire_coated = net.minecraft.init.Blocks.wool;
+            com.hbm.blocks.ModBlocks.cable_switch = net.minecraft.init.Blocks.redstone_block;
+            ModItems.ingot_raw = net.minecraft.init.Items.iron_ingot;
+            net.minecraftforge.oredict.OreDictionary.registerOre("ingotRhodium", new ItemStack(net.minecraft.init.Items.gold_ingot));
+            com.hbm.main.CraftingManager.registerContactSwitches();
+            assertEquals(start + 2, registry.size());
+            net.minecraft.inventory.InventoryCrafting grid = new net.minecraft.inventory.InventoryCrafting(new net.minecraft.inventory.Container() {
+                @Override public boolean canInteractWith(net.minecraft.entity.player.EntityPlayer player) { return true; }
+            }, 3, 3);
+            for(int i = 0; i < 9; i++) grid.setInventorySlotContents(i, new ItemStack(net.minecraft.init.Blocks.wool));
+            net.minecraft.item.crafting.IRecipe alloy = (net.minecraft.item.crafting.IRecipe) registry.get(start);
+            net.minecraft.item.crafting.IRecipe rh = (net.minecraft.item.crafting.IRecipe) registry.get(start + 1);
+            grid.setInventorySlotContents(4, new ItemStack(ModItems.ingot_raw, 1, 24003));
+            assertTrue(alloy.matches(grid, null)); assertEquals(8, alloy.getCraftingResult(grid).stackSize);
+            grid.setInventorySlotContents(4, new ItemStack(ModItems.ingot_raw, 1, 7699)); assertFalse(alloy.matches(grid, null));
+            grid.setInventorySlotContents(4, new ItemStack(net.minecraft.init.Items.gold_ingot)); assertTrue(rh.matches(grid, null));
+            grid.setInventorySlotContents(0, null); assertFalse(rh.matches(grid, null));
+        } finally {
+            while(registry.size() > start) registry.remove(registry.size() - 1);
+            ModItems.ingot_raw = raw; com.hbm.blocks.ModBlocks.red_wire_coated = wire; com.hbm.blocks.ModBlocks.cable_switch = output;
+        }
+    }
     @Test public void persistentIdsHaveUniqueSourceDefinitionsAndStableBinaryDecode() throws Exception {
         // This is a source-registry check: Forge's live registry requires its launch class loader.
         String source = new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get("src/main/java/com/hbm/inventory/material/Mats.java")), java.nio.charset.StandardCharsets.UTF_8);
@@ -307,6 +451,8 @@ public class MaterialContractsTest {
         assertTrue(identities.size() >= 125);
         assertEquals("MAT_MAGNESIUM", identities.get(1500)); assertEquals("MAT_PHOSPHORUS", identities.get(1531));
         assertEquals("MAT_SOLDER", identities.get(24002));
+        assertEquals("MAT_OSMIUM_IRIDIUM", identities.get(24003));
+        assertEquals("MAT_FERROCHROME", identities.get(24004));
         assertEquals("MAT_BRONZE", identities.get(51));
         NBTTagCompound saved = new NBTTagCompound(); saved.setIntArray("recipeStack", new int[] {1500, 137, 1531, 29, 24002, 81});
         ByteArrayOutputStream bytes = new ByteArrayOutputStream(); CompressedStreamTools.writeCompressed(saved, bytes);

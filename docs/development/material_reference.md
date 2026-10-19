@@ -17,6 +17,16 @@ Foundry proportions: quantum 1; nugget/tiny 8; billet 48; ingot/dust/gem/crystal
 
 Material roles do not impose manufacturing tiers.
 
+## Contact alloys and the chromium bootstrap
+
+Foundry material **24003, OsmiumIridium**, is separate from legacy **7699, Osmiridium** (displayed/refined as Osmium). Foundry template **25** combines 72 q Osmium and 72 q Iridium into 144 q contact alloy. Its sole generated form is `ingot_raw:24003`, registered as `ingotOsmiumIridium`; it is cast with the ordinary ingot mold. Optional alloy/rhodium contact recipes each require eight coated conductors for eight ordinary Cable Switches. They confer no new switch properties or populated-board yield bonus.
+
+Material **24004, Ferrochrome**, uses `ingot_raw:24004` / `ingotFerrochrome`, with no elemental Chromium alias. Chemical Reactor template **1201** reduces two 1-kg clean FeCr2O4 packets with one 1-kg aluminium-powder packet, using `3 FeCr2O4 + 8 Al -> 3 FeCr2 + 4 Al2O3`. `MineralChemicalProcesses.chromiteReduction` owns the complete physical bill: ferrochrome, alumina and unused aluminium are separate saved outputs; work is 4.2 MJ over 400 ticks plus cooling, with no external heat feed. `ITEM:ingot_raw@24004` uses the established exact-metadata specialist adapter. `Mats` quanta remain separate from these local kilogram assays.
+
+The native Metallurgical Furnace accepts six steel and two Ferrochrome for eight stainless ingots. The alloy feed provides about 16.25% chromium in this ferritic-grade approximation. This route breaks the chromite-Centrifuge-stainless dependency using the pre-Centrifuge Chemical Reactor; it does not weaken the Centrifuge Element's stainless requirement. Existing pure-chromium, foundry and configured furnace recipes remain valid. Enabled `hbmChemplant.json`, `hbmBlastFurnace.json` and `hbmCrucible.json` override their respective stock defaults and must be merged deliberately to include these additions.
+
+The complete source inventory, historical use comparison and deliberately unexpanded materials are in the [material utilization audit](../gameplay/material_utilization_audit.md).
+
 ## Material families
 
 | Family | Identity / role | Uses | Limited uses | Forms and acceptance |

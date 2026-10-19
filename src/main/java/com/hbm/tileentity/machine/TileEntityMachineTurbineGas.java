@@ -95,7 +95,7 @@ public class TileEntityMachineTurbineGas extends TileEntityMachineBase implement
 		this.tanks = new FluidTank[4];
 		tanks[0] = new FluidTank(Fluids.GAS, 6000).withDefaultCapacity();
 		tanks[1] = new FluidTank(Fluids.LUBRICANT, 2).withDefaultCapacity();
-		tanks[2] = new FluidTank(Fluids.FRESH_WATER, 20).withDefaultCapacity().migrateFrom(Fluids.WATER);
+		tanks[2] = new FluidTank(Fluids.FRESH_WATER, 20).withDefaultCapacity().migrateFrom(Fluids.SALT_WATER);
 		tanks[3] = new FluidTank(Fluids.HOTSTEAM, 200).withDefaultCapacity();
 		for(FluidTank tank : tanks) this.trackMachineFluidTank(tank);
 	}

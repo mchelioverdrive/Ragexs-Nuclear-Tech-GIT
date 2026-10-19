@@ -71,8 +71,8 @@ public final class PetroleumProcesses {
         } else if(machine.equals("coker")) {
             for(String feed : new String[] {"HEAVYOIL", "HEAVYOIL_VACUUM", "SMEAR", "BITUMEN"})
                 put(result, conversion(machine, feed, new String[] {"OIL_COKER", "GAS_COKER", "PETCOKE_ITEM"}, new double[] {.75, .05, .20}, 6, 20000, 3300000, 500));
-            put(result, conversion(machine, "RECLAIMED", new String[] {"NAPHTHA_COKER", "GAS_COKER", "WATER", "PETCOKE_ITEM"}, new double[] {.7, .03, .05, .22}, 6, 20000, 3300000, 500));
-            put(result, conversion(machine, "COALCREOSOTE", new String[] {"NAPHTHA_COKER", "GAS_COKER", "WATER", "PETCOKE_ITEM"}, new double[] {.4, .05, .35, .20}, 6, 20000, 3300000, 500));
+            put(result, conversion(machine, "RECLAIMED", new String[] {"NAPHTHA_COKER", "GAS_COKER", "SALT_WATER", "PETCOKE_ITEM"}, new double[] {.7, .03, .05, .22}, 6, 20000, 3300000, 500));
+            put(result, conversion(machine, "COALCREOSOTE", new String[] {"NAPHTHA_COKER", "GAS_COKER", "SALT_WATER", "PETCOKE_ITEM"}, new double[] {.4, .05, .35, .20}, 6, 20000, 3300000, 500));
         }
         return result;
     }

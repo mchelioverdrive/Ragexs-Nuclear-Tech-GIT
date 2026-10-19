@@ -81,10 +81,10 @@ public class LiquefactionRecipes extends SerializableRecipe {
 		//recipes.put(new ComparableStack(Blocks.cobblestone),		new FluidStack(250, Fluids.LAVA));
 		//recipes.put(new ComparableStack(Blocks.stone),				new FluidStack(250, Fluids.LAVA));
 		recipes.put(new ComparableStack(Blocks.obsidian),			new FluidStack(500, Fluids.LAVA));
-		recipes.put(new ComparableStack(Items.snowball),			new FluidStack(1, Fluids.WATER));
-		recipes.put(new ComparableStack(Blocks.snow),				new FluidStack(1, Fluids.WATER));
-		recipes.put(new ComparableStack(Blocks.ice),				new FluidStack(1, Fluids.WATER));
-		recipes.put(new ComparableStack(Blocks.packed_ice),			new FluidStack(2, Fluids.WATER));
+		recipes.put(new ComparableStack(Items.snowball),			new FluidStack(1, Fluids.SALT_WATER));
+		recipes.put(new ComparableStack(Blocks.snow),				new FluidStack(1, Fluids.SALT_WATER));
+		recipes.put(new ComparableStack(Blocks.ice),				new FluidStack(1, Fluids.SALT_WATER));
+		recipes.put(new ComparableStack(Blocks.packed_ice),			new FluidStack(2, Fluids.SALT_WATER));
 		recipes.put(new ComparableStack(ModBlocks.dry_ice),			new FluidStack(1000, Fluids.CARBONDIOXIDE));
 		//recipes.put(new ComparableStack(Items.ender_pearl),			new FluidStack(100, Fluids.ENDERJUICE));
 		//ionized particles -> helium 4

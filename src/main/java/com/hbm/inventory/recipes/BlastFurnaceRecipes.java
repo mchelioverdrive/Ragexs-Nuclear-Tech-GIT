@@ -60,6 +60,7 @@ public class BlastFurnaceRecipes extends SerializableRecipe {
 
 		// Chromium supplies stainless corrosion resistance; nickel/rare earths alone cannot.
 		addRecipe(new OreDictStack(STEEL.ingot(), 7), Cr.ingot(), new ItemStack(ModItems.ingot_stainless, 8));
+		registerFerrochromeStainless();
 
 		addRecipe(ModItems.er_yag_feedstock, COAL, new ItemStack(ModItems.er_yag_sintered));
 		addRecipe(ModItems.yby_feedstock, COAL, new ItemStack(ModItems.yby_sintered));
@@ -259,6 +260,13 @@ public class BlastFurnaceRecipes extends SerializableRecipe {
 			}
 		}
 		return null;
+	}
+
+	/** FeCr2 feed supplies roughly 16% chromium in the eight-part ferritic stainless charge. */
+	public static void registerFerrochromeStainless() {
+		addRecipe(new OreDictStack(STEEL.ingot(), 6),
+				new ComparableStack(com.hbm.inventory.material.Mats.MAT_FERROCHROME.make(ModItems.ingot_raw, 2)),
+				new ItemStack(ModItems.ingot_stainless, 8));
 	}
 
 	private static boolean doStacksMatch(AStack[] recipe, ItemStack in) {

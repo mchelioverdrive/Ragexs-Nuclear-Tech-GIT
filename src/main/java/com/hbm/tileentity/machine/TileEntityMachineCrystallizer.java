@@ -58,7 +58,7 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 	public float prevAngle;
 	
 	public FluidTank tank;
-	public final FluidTank washReturn = new FluidTank(Fluids.WATER, 32).withDefaultCapacity();
+	public final FluidTank washReturn = new FluidTank(Fluids.SALT_WATER, 32).withDefaultCapacity();
 	private static final int TASK_ACCOUNTING = 1;
 	private static final int TASK_BATTERY = 2;
 	private static final int TASK_SLOT_MAIN = 0;

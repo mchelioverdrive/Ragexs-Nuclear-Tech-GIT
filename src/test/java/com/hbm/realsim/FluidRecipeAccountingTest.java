@@ -7,13 +7,43 @@ import net.minecraft.nbt.NBTTagCompound;
 
 /** Exercises the same bills and ownership accounts used by native recipe adapters. */
 public class FluidRecipeAccountingTest {
+    @Test public void gameplayTimingPreservesPaidBillsAndFitsRealReactorBuffers() {
+        ProcessRecipe[] stages = {SteelmakingProcesses.concentrate(), SteelmakingProcesses.pelletize(), SteelmakingProcesses.harden(), SteelmakingProcesses.reduce()};
+        int[] duration = {200, 200, 400, 600}, oldDuration = {1200, 1200, 12000, 12000};
+        long[] workJ = {400000, 400000, 24800000, 32800000};
+        for(int i = 0; i < stages.length; i++) {
+            ProcessRecipe fast = stages[i].electricallyDriven(), old = fast.withDuration(oldDuration[i]);
+            assertEquals(duration[i], fast.duration); assertEquals(workJ[i] * 2, fast.workQuanta);
+            ChemicalFuelProcesses.validateReactorRating(fast);
+            assertArrayEquals(old.productMass, fast.productMass); assertArrayEquals(old.quantities, fast.quantities);
+            assertEquals(old.workQuanta, fast.workQuanta); assertEquals(old.rejectedJ, fast.rejectedJ);
+            long auxiliary = IndustrialDemand.coolingAuxiliaryWatts(fast.rejectedWatts);
+            long tickCost = (fast.electricalRatingWatts + auxiliary) / 10;
+            assertTrue(tickCost <= com.hbm.tileentity.machine.TileEntityMachineChemplant.maxPower);
+            assertTrue(8 * tickCost <= new com.hbm.tileentity.machine.TileEntityMachineChemfac().getEnergyCapacityQuanta());
+            assertTrue(8 * fast.rejectedWatts <= com.hbm.tileentity.machine.TileEntityMachineChemfac.COOLING_WATTS);
+            ProcessBatch paid = new ProcessBatch(); paid.reserve(old); paid.advance(1);
+            NBTTagCompound save = new NBTTagCompound(); paid.write(save); paid = new ProcessBatch(); paid.read(save);
+            assertEquals(old.duration, paid.recipe().duration); // Reload keeps the reserved timing and utility bill.
+            long needed = paid.nextWork(); assertFalse(paid.canAdvance(2, needed - 1, 0));
+            assertTrue(paid.canAdvance(2, needed, 0)); paid.advance(2);
+            assertFalse(paid.canAdvance(2, Long.MAX_VALUE, 0));
+            for(int tick = 3; tick <= old.duration; tick++) paid.advance(tick);
+            assertEquals(8, paid.finish()[0]); assertFalse(paid.active());
+        }
+        ProcessRecipe tooFast = stages[2].withDuration(20);
+        try { ChemicalFuelProcesses.validateReactorRating(tooFast); fail("Reactor rating bypass"); }
+        catch(IllegalArgumentException expected) { }
+        assertEquals(500, ChemistryProcesses.chloralkali(false).duration); // Native brine cell unchanged.
+        assertEquals(1000, ChemistryProcesses.waterTreatment().duration);
+    }
     @Test public void ironPreparationClosesMassUsesRealReducingGasAndKeepsWholeParcels() {
         ProcessRecipe[] stages = {SteelmakingProcesses.concentrate(), SteelmakingProcesses.pelletize(), SteelmakingProcesses.harden(), SteelmakingProcesses.reduce()};
         for(ProcessRecipe stage : stages) {
             assertClosed(stage);
             ProcessRecipe electric = stage.electricallyDriven(); ChemicalFuelProcesses.validateReactorRating(electric);
             assertEquals(stage.workQuanta + stage.heatQuanta, electric.workQuanta);
-            assertTrue(electric.rejectedWatts <= 1000000);
+            assertTrue(electric.rejectedWatts <= IndustrialDemand.CHEMICAL_COOLING_W);
             assertEquals(8 * PhysicalRegistry.get(stage.outputs[0]).massUnits, stage.productMass[0]);
             ProcessBatch batch = new ProcessBatch(); batch.reserve(electric); batch.advance(1);
             NBTTagCompound saved = new NBTTagCompound(); batch.write(saved); batch = new ProcessBatch(); batch.read(saved);
@@ -67,7 +97,7 @@ public class FluidRecipeAccountingTest {
     @Test public void defaultReactorLotsFitFourNativeSlotsFlowPowerAndCooling() {
         for(ProcessRecipe bill : ChemistryProcesses.defaults().values()) {
             ChemicalFuelProcesses.validateReactorRating(bill.electricallyDriven());
-            assertTrue(bill.id + " cooler", bill.rejectedWatts <= 1000000);
+            assertTrue(bill.id + " cooler", bill.rejectedWatts <= IndustrialDemand.CHEMICAL_COOLING_W);
             long feeds = 0, products = 0;
             for(int count : bill.solidCounts) feeds += PetroleumProcesses.ceilDiv(count, 64);
             for(int i = 0; i < bill.outputs.length; i++) if(!bill.outputs[i].startsWith("VENT_") && PhysicalRegistry.get(bill.outputs[i]).phase == PhysicalState.Phase.SOLID)
@@ -86,7 +116,7 @@ public class FluidRecipeAccountingTest {
         for(int kind = 0; kind < 2; kind++) {
             ProcessRecipe bill = ConstructionProcesses.concrete(kind); assertClosed(bill);
             assertEquals(256, bill.productMass[0] / PhysicalRegistry.get(bill.outputs[0]).massUnits);
-            assertEquals(192, bill.productMass[0] / (double) PhysicalRegistry.get(bill.outputs[0]).massUnits * 1200 / bill.duration, 0);
+            assertEquals(384, bill.productMass[0] / (double) PhysicalRegistry.get(bill.outputs[0]).massUnits * 1200 / bill.duration, 0);
             assertEquals(64, bill.solidCounts[0]); assertEquals(16, bill.quantities[0]); assertEquals(640000, bill.workQuanta);
             ProcessRecipe legacy = new ProcessRecipe(bill.id, bill.inputs, bill.quantities, bill.pressures, bill.solidInputs, bill.solidCounts,
                     new String[] {kind == 0 ? "CONCRETE_ITEM" : "FIBER_CONCRETE_ITEM"}, bill.productMass, bill.duration, bill.workQuanta / 2, 0, 20, true);
@@ -98,7 +128,7 @@ public class FluidRecipeAccountingTest {
         }
         ProcessRecipe road = ConstructionProcesses.asphalt(); assertClosed(road);
         assertEquals(256, road.productMass[0] / PhysicalRegistry.get(road.outputs[0]).massUnits);
-        assertEquals(64, road.productMass[0] / (double) PhysicalRegistry.get(road.outputs[0]).massUnits * 1200 / road.duration, 0);
+        assertEquals(256, road.productMass[0] / (double) PhysicalRegistry.get(road.outputs[0]).massUnits * 1200 / road.duration, 0);
         assertEquals(42000000, road.workQuanta + road.heatQuanta);
         assertEquals(16, ConstructionProcesses.concrete(2).productMass[0] / PhysicalRegistry.get("DUCRETE_ITEM").massUnits);
     }
@@ -207,7 +237,7 @@ public class FluidRecipeAccountingTest {
         assertEquals(16, service.size()); assertEquals(29, machine.getAccessibleSlotsFromSide(0).length);
     }
     @Test public void sharedPipeIdentifiersToggleFourIndependentChannelsAndPersistLegacySaves() {
-        com.hbm.inventory.fluid.FluidType a = fluid("WATER"), b = fluid("FRESH_WATER"), c = fluid("HYDROGEN_GAS"), d = fluid("OXYGEN_GAS"), e = fluid("NITROGEN_GAS");
+        com.hbm.inventory.fluid.FluidType a = fluid("SALT_WATER"), b = fluid("FRESH_WATER"), c = fluid("HYDROGEN_GAS"), d = fluid("OXYGEN_GAS"), e = fluid("NITROGEN_GAS");
         com.hbm.tileentity.network.TileEntityPipeBaseNT pipe = new com.hbm.tileentity.network.TileEntityPipeBaseNT();
         assertTrue(pipe.toggleType(a)); assertTrue(pipe.toggleType(b)); assertTrue(pipe.toggleType(c)); assertTrue(pipe.toggleType(d));
         assertEquals(4, pipe.getTypes().length); assertFalse(pipe.toggleType(e)); assertTrue(pipe.carries(a));
@@ -223,7 +253,7 @@ public class FluidRecipeAccountingTest {
         assertTrue(loaded.toggleType(b)); assertSame(com.hbm.inventory.fluid.Fluids.NONE, loaded.getType());
     }
     @Test public void sharedPipeDispatchUsesTheRequestedSpeciesGraphRatherThanItsPrimaryGraph() throws Exception {
-        com.hbm.inventory.fluid.FluidType a = fluid("WATER"), b = fluid("HYDROGEN_GAS"), c = fluid("OXYGEN_GAS");
+        com.hbm.inventory.fluid.FluidType a = fluid("SALT_WATER"), b = fluid("HYDROGEN_GAS"), c = fluid("OXYGEN_GAS");
         com.hbm.tileentity.network.TileEntityPipeBaseNT pipe = new com.hbm.tileentity.network.TileEntityPipeBaseNT(); pipe.setTypes(a, b);
         java.lang.reflect.Field field = pipe.getClass().getDeclaredField("channelNodes"); field.setAccessible(true);
         api.hbm.fluidmk2.FluidNode[] nodes = (api.hbm.fluidmk2.FluidNode[]) field.get(pipe);
@@ -292,7 +322,7 @@ public class FluidRecipeAccountingTest {
             int fluidProducts = 0;
             for(String name : bill.outputs) if(!name.startsWith("VENT_") && PhysicalRegistry.get(name).phase != PhysicalState.Phase.SOLID) fluidProducts++;
             assertTrue(bill.id, bill.inputs.length <= 4 && fluidProducts <= 4);
-            if(bill.rejectedWatts > 1000000) excessiveRejection.add(bill.id + " " + bill.rejectedWatts + " W");
+            if(bill.rejectedWatts > IndustrialDemand.CHEMICAL_COOLING_W) excessiveRejection.add(bill.id + " " + bill.rejectedWatts + " W");
         }
         assertTrue("Bills exceeding integral dry-cooler duty: " + excessiveRejection, excessiveRejection.isEmpty());
     }
@@ -397,7 +427,7 @@ public class FluidRecipeAccountingTest {
         return new com.hbm.inventory.fluid.FluidType(name, 0, 0, 0, 0, com.hbm.render.util.EnumSymbol.NONE);
     }
     @Test public void blockedCoproductCannotConsumeFeedAndPaidBatchesIgnoreReplacement() {
-        com.hbm.inventory.fluid.tank.FluidTank input = new com.hbm.inventory.fluid.tank.FluidTank(fluid("WATER"), 50);
+        com.hbm.inventory.fluid.tank.FluidTank input = new com.hbm.inventory.fluid.tank.FluidTank(fluid("SALT_WATER"), 50);
         com.hbm.inventory.fluid.tank.FluidTank clean = new com.hbm.inventory.fluid.tank.FluidTank(fluid("FRESH_WATER"), 45);
         com.hbm.inventory.fluid.tank.FluidTank reject = new com.hbm.inventory.fluid.tank.FluidTank(fluid("MINERAL_BRINE"), 5);
         input.setFill(50); clean.setFill(45);
@@ -495,8 +525,8 @@ public class FluidRecipeAccountingTest {
         tank.setFill(50000); assertFalse(com.hbm.tileentity.machine.TileEntityAtmoExtractor.admitAtmosphericParcel(tank, budget, 41, air, 5)); assertEquals(50000, tank.getFill());
     }
     @Test public void rejectedReactorOverrideCannotLeakIntoEitherActiveRegistry() throws Exception {
-        ProcessRecipe excessive = new ProcessRecipe("test:five_feeds", new String[] {"WATER", "WATER", "WATER", "WATER", "WATER"},
-                new int[] {1, 1, 1, 1, 1}, new int[5], null, 0, new String[] {"FRESH_WATER"}, new long[] {ChemistryProcesses.mass("WATER", 5)}, 100, 0, 0, 20, true);
+        ProcessRecipe excessive = new ProcessRecipe("test:five_feeds", new String[] {"SALT_WATER", "SALT_WATER", "SALT_WATER", "SALT_WATER", "SALT_WATER"},
+                new int[] {1, 1, 1, 1, 1}, new int[5], null, 0, new String[] {"FRESH_WATER"}, new long[] {ChemistryProcesses.mass("SALT_WATER", 5)}, 100, 0, 0, 20, true);
         java.io.StringWriter text = new java.io.StringWriter(); com.google.gson.stream.JsonWriter writer = new com.google.gson.stream.JsonWriter(text);
         writer.beginObject(); writer.name("id").value(900001); writer.name("name").value("test"); writer.name("duration").value(100);
         PetroleumProcesses.write(excessive, writer);
@@ -538,7 +568,7 @@ public class FluidRecipeAccountingTest {
         for(String identity : new String[] {"ICE_BLOCK", "PACKED_ICE_BLOCK", "SNOW_BLOCK", "SNOWBALL_ITEM", "DRY_ICE_BLOCK", "SODIUM_ITEM", "POTASSIUM_ITEM"}) assertClosed(ChemistryProcesses.melting(identity));
         assertClosed(ChemistryProcesses.metalCooling(false)); assertClosed(ChemistryProcesses.metalCooling(true));
         assertClosed(ChemistryProcesses.freezing(false)); assertClosed(ChemistryProcesses.freezing(true));
-        assertEquals(1, ChemistryProcesses.melting("ICE_BLOCK").productMass[0] / PhysicalRegistry.get("WATER").massUnits);
+        assertEquals(1, ChemistryProcesses.melting("ICE_BLOCK").productMass[0] / PhysicalRegistry.get("SALT_WATER").massUnits);
         assertTrue(ChemistryProcesses.melting("ICE_BLOCK").workQuanta >= 2 * 417300);
         assertEquals("DEPLETED_WATER", ChemistryProcesses.heavyWater().outputs[1]);
     }
@@ -553,11 +583,11 @@ public class FluidRecipeAccountingTest {
         assertEquals(0, cooling.available(42, 100000)); assertEquals(100000, cooling.available(43, 100000));
     }
     @Test public void normalizedChemistryFeedGraphHasNoBootstrapCycle() {
-        java.util.Set<String> available = new java.util.HashSet<>(java.util.Arrays.asList("WATER", "AIR", "SALT_ITEM", "SULFUR_ITEM", "BORON_ITEM", "FLUORITE_ITEM", "AMMONIUM_CHLORIDE_ITEM", "GAS", "CHAR_ITEM", "SODIUM_SULFATE_ITEM", "POTASH_ITEM", "QUICKLIME_ITEM", "STRONTIUM_OXIDE_ITEM", "BARIUM_SULFIDE_ITEM", "BARIUM_OXIDE_ITEM", "ALUMINIUM_ITEM", "GADOLINIUM_ITEM", "RUTHENIUM_RESIDUE_ITEM", "UNSATURATEDS", "URANIUM_ORE_ITEM", "PLUTONIUM_ITEM", "CHLOROCALCITE_ITEM", "FLUX_ITEM", "BAUXITE_ORE_ITEM", "COLTAN_ORE_ITEM", "AROMATICS", "COAL_ITEM", "SOLVENT", "GALLIUM_NUGGET_ITEM", "ARSENIC_NUGGET_ITEM", "CARNALLITE_ITEM", "TITANIUM_TRACE_ITEM", "OSIR_CONCENTRATE_ITEM", "RH_IR_CONCENTRATE_ITEM", "LEPIDOLITE_ITEM", "POLLUCITE_ITEM", "RAW_NATURAL_GAS", "KRYPTON", "XENON", "ACIDWASTE", "SODIUM_NITRATE_ITEM"));
+        java.util.Set<String> available = new java.util.HashSet<>(java.util.Arrays.asList("SALT_WATER", "AIR", "SALT_ITEM", "SULFUR_ITEM", "BORON_ITEM", "FLUORITE_ITEM", "AMMONIUM_CHLORIDE_ITEM", "GAS", "CHAR_ITEM", "SODIUM_SULFATE_ITEM", "POTASH_ITEM", "QUICKLIME_ITEM", "STRONTIUM_OXIDE_ITEM", "BARIUM_SULFIDE_ITEM", "BARIUM_OXIDE_ITEM", "ALUMINIUM_ITEM", "GADOLINIUM_ITEM", "RUTHENIUM_RESIDUE_ITEM", "UNSATURATEDS", "URANIUM_ORE_ITEM", "PLUTONIUM_ITEM", "CHLOROCALCITE_ITEM", "FLUX_ITEM", "BAUXITE_ORE_ITEM", "COLTAN_ORE_ITEM", "AROMATICS", "COAL_ITEM", "SOLVENT", "GALLIUM_NUGGET_ITEM", "ARSENIC_NUGGET_ITEM", "CARNALLITE_ITEM", "TITANIUM_TRACE_ITEM", "OSIR_CONCENTRATE_ITEM", "RH_IR_CONCENTRATE_ITEM", "LEPIDOLITE_ITEM", "POLLUCITE_ITEM", "RAW_NATURAL_GAS", "KRYPTON", "XENON", "ACIDWASTE", "SODIUM_NITRATE_ITEM"));
         // Explicit boundaries: these solids originate in mining, vanilla crafting, existing metallurgical/optical
         // preparation, irradiation/fuel use or biological collection. They are not silently invented fluid sources.
         available.addAll(java.util.Arrays.asList("AGGREGATE_COARSE_ITEM","AGGREGATE_FINE_ITEM","CEMENT_ITEM","ASBESTOS_ITEM","DU_BILLET_ITEM",
-                "ITEM:regolith_feed","ITEM:powder_desh_mix","ITEM:ingot_chromium","ITEM:ingot_vanadium","ITEM:powder_vanadium","ITEM:powder_nitan_mix",
+                "ITEM:regolith_feed","ITEM:chromite","ITEM:powder_desh_mix","ITEM:ingot_chromium","ITEM:ingot_vanadium","ITEM:powder_vanadium","ITEM:powder_nitan_mix",
                 "MILK","ITEM:vanilla.egg","ITEM:strawberry","ITEM:particle_empty","ITEM:block.sand_lead","ITEM:ammo_arty@0","GLASS_PANE_ITEM","CARBON_WIRE_ITEM",
                 "ITEM:fragment_samarium","ITEM:europium_dust_tiny","ITEM:terbiumsol","ITEM:dysprosiumsol","ITEM:lutetiumsol","ITEM:thuliumsol",
                 "ITEM:powder_ytterbium_oxide","ITEM:powder_yttrium","ITEM:powder_ytterbium_tiny","ITEM:powder_erbium_tiny","ITEM:ingot_titanium",
@@ -612,8 +642,8 @@ public class FluidRecipeAccountingTest {
         ProcessRecipe concrete=ConstructionProcesses.concrete(0),road=ConstructionProcesses.asphalt();
         assertClosed(concrete);assertClosed(road);assertClosed(ConstructionProcesses.concrete(1));assertClosed(ConstructionProcesses.concrete(2));
         assertEquals(248,concrete.inputMass()/(double)PhysicalState.MASS_UNITS_PER_KG,1E-10);
-        assertEquals(.5,ChemistryProcesses.mass("WATER",concrete.quantities[0])/(double)ChemistryProcesses.mass("CEMENT_ITEM",concrete.solidCounts[0]),1E-12);
-        assertEquals(3,road.quantities[0]*1200/(double)road.duration,0);
+        assertEquals(.5,ChemistryProcesses.mass("SALT_WATER",concrete.quantities[0])/(double)ChemistryProcesses.mass("CEMENT_ITEM",concrete.solidCounts[0]),1E-12);
+        assertEquals(12,road.quantities[0]*1200/(double)road.duration,0);
         assertEquals(PhysicalState.MASS_UNITS_PER_KG*2/3,PhysicalRegistry.get("DU_BILLET_ITEM").massUnits);
     }
     @Test public void specialtySeparationsReturnSignificantCarrierAndResidue() {
@@ -688,7 +718,7 @@ public class FluidRecipeAccountingTest {
     }
     @Test public void newlyStampedContainersDoNotReinterpretLegacyFilledItems() {
         net.minecraft.item.Item full=new net.minecraft.item.Item(),empty=new net.minecraft.item.Item();
-        com.hbm.inventory.FluidContainer container=new com.hbm.inventory.FluidContainer(new net.minecraft.item.ItemStack(full),new net.minecraft.item.ItemStack(empty),fluid("WATER"),1000);
+        com.hbm.inventory.FluidContainer container=new com.hbm.inventory.FluidContainer(new net.minecraft.item.ItemStack(full),new net.minecraft.item.ItemStack(empty),fluid("SALT_WATER"),1000);
         net.minecraft.item.ItemStack legacy=new net.minecraft.item.ItemStack(full),fresh=com.hbm.handler.BucketHandler.stamp(new net.minecraft.item.ItemStack(full),10);
         assertEquals(1000,container.amount(legacy));assertEquals(10,container.amount(fresh));
         assertEquals(1,container.amount(com.hbm.handler.BucketHandler.stamp(new net.minecraft.item.ItemStack(full),1)));

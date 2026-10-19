@@ -8,7 +8,7 @@ Current identity, phase and quantity contracts. [PhysicalRegistry](../../src/mai
 
 | Family | Inventory and mass interpretation | Temperature / pressure / phase | Storage and rated service |
 | --- | --- | --- | --- |
-| Raw water | `WATER`, 1 kg/count at reference liquid volume; adopted raw assay 3.125 g NaCl, 0.2 g KBr and 0.005 g NaI per kg | Temperature does not expand counts; trace assay is geological feed, not material created by treatment | Groundwater source ceilings remain authoritative; reaction batches use actual kilograms |
+| Salt water | `SALT_WATER`, 1 kg/count at reference liquid volume; adopted raw assay 3.125 g NaCl, 0.2 g KBr and 0.005 g NaI per kg | Temperature does not expand counts; trace assay is geological feed, not material created by treatment | Groundwater source ceilings remain authoritative; reaction batches use actual kilograms |
 | Treated/fresh/light water | 1 kg/reference liquid L; demineralization retains water mass | Quality IDs distinguish plant service; `DEPLETED_WATER` is the depleted isotope reject and cannot repeatedly yield natural-abundance D | Reactor water service ceiling 60 L/min; treatment/deionization defaults 60 L/min feed |
 | Heavy water | 1.1056 kg/reference liquid L | D2O gas products are converted by mass, not equal liquid/gas counts | Natural D/H proxy 156 ppm, 80% recovery; paid separation and electrolysis |
 | Borated water | 1.006 kg/reference liquid L; 1 wt% boric acid, approximately 1748 ppm elemental B | Boron is supplied as boric acid, not elemental B dissolved without reaction | 99 kg light water + 1 kg boric acid per batch; hot-state HU remains a separate calibration boundary |

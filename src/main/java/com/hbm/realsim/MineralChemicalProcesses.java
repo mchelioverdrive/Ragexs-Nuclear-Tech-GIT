@@ -11,6 +11,20 @@ public final class MineralChemicalProcesses {
         return BigDecimal.valueOf(value).multiply(new BigDecimal(a)).divide(new BigDecimal(b), 0, RoundingMode.DOWN).longValueExact();
     }
     private static int feed(String name, long mass) { return Math.toIntExact(PetroleumProcesses.ceilDiv(mass, mass(name, 1))); }
+    /** 3 FeCr2O4 + 8 Al -> 3 FeCr2 + 4 Al2O3; neither ore nor alloy is elemental chromium. */
+    public static ProcessRecipe chromiteReduction() {
+        String chromite = SpecialistProcesses.key("chromite"), alloy = SpecialistProcesses.key("ingot_raw@24004");
+        long ore = mass(chromite, 2);
+        long aluminium = ratio(ore, "215.852308", "671.5044");
+        long ferrochrome = ratio(ore, "479.5116", "671.5044");
+        java.util.Map<String, Long> out = new java.util.LinkedHashMap<>();
+        out.put(alloy, ferrochrome);
+        out.put("ALUMINA_ITEM", ore + aluminium - ferrochrome);
+        out.put("ALUMINIUM_ITEM", mass("ALUMINIUM_ITEM", 1) - aluminium);
+        return SpecialistProcesses.bill("chromite_aluminothermic_reduction", new String[0], new int[0],
+                new String[] {chromite, "ALUMINIUM_ITEM"}, new int[] {2, 1}, out, 400, 200000, 4000000, 1600)
+                .electricallyDriven().withDuration(400);
+    }
     public static ProcessRecipe osmiumOxidation() {
         long ore = mass("OSIR_CONCENTRATE_ITEM", 1), osmium = ratio(ore, ".30", "1"), oxygen = ratio(osmium, "63.9976", "190.23");
         int q = feed("OXYGEN_GAS", oxygen); long solution = (osmium + oxygen) * 10;

@@ -29,7 +29,7 @@ public class ExtractionHandler extends ProcessInfoHandler {
     private static String[] cachedDrops;
     private static boolean cachedReplacement;
     public static void invalidate() { cache = null; }
-    @Override public String getRecipeName() { return "Resource production and extraction"; }
+    @Override public String getRecipeName() { return "Resource Extraction"; }
     @Override public String getOverlayIdentifier() { return "ntmExtraction"; }
     @Override protected List<Process> processes() { return snapshot(); }
     @Override protected Block[] machineBlocks() { return new Block[] {ModBlocks.machine_well, ModBlocks.machine_pumpjack, ModBlocks.machine_fracking_tower, ModBlocks.machine_excavator, ModBlocks.machine_mining_laser, ModBlocks.pump_electric, ModBlocks.pump_steam}; }
@@ -72,6 +72,10 @@ public class ExtractionHandler extends ProcessInfoHandler {
             if(!body.canLand) continue;
             CBT_Water water = body.getTrait(CBT_Water.class); if(water == null || water.fluid == Fluids.NONE) continue;
             pump(rows, body.name, water.fluid, false); pump(rows, body.name, water.fluid, true);
+            if(water.fluid == Fluids.SALT_WATER || water.fluid == Fluids.FRESH_WATER) {
+                FluidType alternative = water.fluid == Fluids.SALT_WATER ? Fluids.FRESH_WATER : Fluids.SALT_WATER;
+                pump(rows, body.name, alternative, false); pump(rows, body.name, alternative, true);
+            }
         }
         cache = java.util.Collections.unmodifiableList(rows); revision = current; cachedDrops = drops; cachedReplacement = replacement; return cache;
     }
@@ -124,12 +128,13 @@ public class ExtractionHandler extends ProcessInfoHandler {
         long watts = steam ? Groundwater.STEAM_SHAFT_WATTS : Groundwater.ELECTRIC_WATTS;
         int nameplate = steam ? TileEntityMachinePumpBase.steamLitersPerMinute : TileEntityMachinePumpBase.electricLitersPerMinute;
         long microliters = Groundwater.microlitersPerTick(watts, nameplate / 60D);
-        if(fluid != Fluids.WATER && fluid != Fluids.FRESH_WATER) microliters /= Math.max(1, TileEntityMachinePumpBase.nonWaterDebuff);
+        if(fluid != Fluids.SALT_WATER && fluid != Fluids.FRESH_WATER) microliters /= Math.max(1, TileEntityMachinePumpBase.nonWaterDebuff);
         List<ItemStack> outputs = new ArrayList<>(); outputs.add(ItemFluidIcon.make(fluid, 1));
         if(steam) outputs.add(ItemFluidIcon.make(Fluids.SPENTSTEAM, 1));
         rows.add(new Process(steam ? ModBlocks.pump_steam : ModBlocks.pump_electric,
                 steam ? inputs(ItemFluidIcon.make(Fluids.STEAM, 100)) : inputs(), outputs.toArray(new ItemStack[0]),
                 body + " groundwater; Y <= " + TileEntityMachinePumpBase.groundHeight + "; valid ground footing",
+                fluid == Fluids.SALT_WATER ? "Ocean biome (Forge OCEAN tag) at pump center" : fluid == Fluids.FRESH_WATER ? "Non-ocean biome at pump center" : "Planetary fluid; biome salinity does not apply",
                 String.format(Locale.US, "Groundwater <= %.3f L/min; output icon is identity only", microliters * 1200D / 1000000),
                 steam ? "100 steam counts -> 1 spent count; 100 kJ shaft credit" : "Electrical demand: " + com.hbm.realsim.MachineInfo.watts(watts),
                 steam ? "2 kW shaft draw while operating; 30 L/min nameplate" : "No aquifer depletion; full tank pauses pumping",

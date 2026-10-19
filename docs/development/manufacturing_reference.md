@@ -24,7 +24,9 @@ Current default consumer envelopes at 20 TPS. Recipe work/heat is separate from 
 | Groundwater/well/pumpjack | Retained **120 L/min at 10 kW**, steam **30 L/min**, default oil auxiliaries **1/3 kW** |
 | Large crusher / X3030 | Old processing tile is unregistered. Separately restored X3030 is a decorative prop with **no power or processing**; neither is a factory load |
 
-Native water electrolysis pays 55 kWh/kg H2 at 200 kWe; the Chemical Reactor uses 8 kWe for the same chemistry. Fluid and metal Electrolyser lanes debit their work independently and share actual available electricity. Cryogenic work is recipe-specific and bounded by the current separator rate; air and geological-gas separation are 50 kWe /6,000 standard L/min. See current owners in [process reference](process_reference.md).
+Water electrolysis pays 55 kWh/kg H2: the compact native fluid Electrolyser retains 20 kWe; the Chemical Reactor processes its 1-L lot in 20 seconds at about 1.108 MW plus cooling. Fluid and metal Electrolyser lanes debit their work independently and share actual available electricity. Cryogenic work is recipe-specific and bounded by the current separator rate; air and geological-gas separation are 50 kWe /6,000 standard L/min. See current owners in [process reference](process_reference.md).
+
+Released Chemical Reactor bills may draw up to **2 MW per lane**, plus cooling auxiliaries. The workshop buffer is **2 MJ**; the eight-lane industrial buffer is **16 MJ**. These are finite technical buffers, not recipe energy discounts. The ordinary/industrial chemical dry coolers reject **5/40 MW**, with one shared industrial budget. Reactor gas feeds support **24,000 standard L/min per inlet**; basic aqueous service retains 60 L/min and other liquids 12 L/min. Mixer and native Electrolyser limits remain independent.
 
 ## Fabrication and cooling
 

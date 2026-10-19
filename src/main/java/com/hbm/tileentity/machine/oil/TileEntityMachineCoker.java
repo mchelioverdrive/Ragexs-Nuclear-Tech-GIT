@@ -61,7 +61,7 @@ public class TileEntityMachineCoker extends TileEntityMachineBase implements api
 		tanks[0] = new FluidTank(Fluids.HEAVYOIL, 16_000);
 		tanks[1] = new FluidTank(Fluids.OIL_COKER, 8_000);
 		tanks[2] = new FluidTank(Fluids.GAS_COKER, 8000);
-        tanks[3] = new FluidTank(Fluids.WATER, 8000);
+        tanks[3] = new FluidTank(Fluids.SALT_WATER, 8000);
 		for(FluidTank tank : tanks) this.trackMachineFluidTank(tank);
 	}
 

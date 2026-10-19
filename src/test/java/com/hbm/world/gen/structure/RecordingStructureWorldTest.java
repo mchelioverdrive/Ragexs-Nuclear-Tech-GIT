@@ -52,6 +52,7 @@ public class RecordingStructureWorldTest {
     @Test public void constructionAndStorageAreServerSafe() throws Throwable { runOnServer("construction"); }
     @Test public void recordingRetainsTilesMetadataAndQueuedJobs() throws Throwable { runOnServer("recording"); }
     @Test public void legacyComponentMatchesBuilderAndClipsSlices() throws Throwable { runOnServer("component"); }
+    @Test public void groundwaterBoundariesAndNativeTransactionsAreServerSafe() throws Throwable { runOnServer("groundwater"); }
 
     private static void runOnServer(String method) throws Throwable {
         Set<URL> urls = new LinkedHashSet<URL>();
@@ -123,6 +124,49 @@ public class RecordingStructureWorldTest {
     }
 
     public static class Checks {
+        public static void groundwater() throws Exception {
+            bootstrap();
+            com.hbm.realsim.NativeGeneratorContractTest checks = new com.hbm.realsim.NativeGeneratorContractTest();
+            checks.nativeIdentities();
+            try {
+                checks.groundwaterUsesOnlyTheOceanTagForOrdinaryWater();
+                checks.groundwaterRecognizesAModdedOceanWithoutAnOceanIdOrName();
+                checks.groundwaterPreservesStoredSaltwaterAndResumesFreshAfterDraining();
+                checks.groundwaterFullOrUnavailableOutputsDoNotSpendPowerOrSteam();
+                checks.groundwaterSaveReloadRetainsBothFluidFractionsAndOldTankContents();
+                checks.groundwaterUsesTheExistingProcessAndBoilerFreshwaterIdentity();
+                checks.saltWaterIdentityRetainsLegacyLookupTankIdsAndDisplay();
+                checks.saltWaterRenamePreservesOwnedProcessesAndFractionalMass();
+                GroundwaterWorld world = new GroundwaterWorld();
+                com.hbm.realsim.NativeGeneratorContractTest.ElectricGroundwater pump = new com.hbm.realsim.NativeGeneratorContractTest.ElectricGroundwater();
+                com.hbm.tileentity.machine.storage.TileEntityMachineFluidTank receiver = new com.hbm.tileentity.machine.storage.TileEntityMachineFluidTank();
+                world.receiver = receiver;
+                pump.water.setFill(2); receiver.tank.setTankType(com.hbm.inventory.fluid.Fluids.SALT_WATER);
+                pump.sendFluid(pump.water, world, 17, 64, -7, net.minecraftforge.common.util.ForgeDirection.EAST);
+                assertEquals(2, pump.water.getFill()); assertEquals(0, receiver.tank.getFill());
+                receiver.tank.setTankType(com.hbm.inventory.fluid.Fluids.FRESH_WATER);
+                receiver.tank.setFill(receiver.tank.getMaxFill());
+                pump.sendFluid(pump.water, world, 17, 64, -7, net.minecraftforge.common.util.ForgeDirection.EAST);
+                assertEquals(2, pump.water.getFill());
+                receiver.tank.setFill(0);
+                pump.sendFluid(pump.water, world, 17, 64, -7, net.minecraftforge.common.util.ForgeDirection.EAST);
+                assertEquals(1, pump.water.getFill()); assertEquals(1, receiver.tank.getFill());
+                pump.sendFluid(pump.water, world, 18, 64, -7, net.minecraftforge.common.util.ForgeDirection.EAST);
+                assertEquals(1, pump.water.getFill()); // shared per-tick export budget
+                for(int i = 0; i < 20; i++) {
+                    assertSame(com.hbm.inventory.fluid.Fluids.FRESH_WATER, com.hbm.realsim.Groundwater.fluidAt(world, 15, 64, -7, com.hbm.inventory.fluid.Fluids.SALT_WATER));
+                    assertEquals(15, world.sampleX); assertEquals(-7, world.sampleZ); assertEquals(63, world.extractionY);
+                    assertSame(com.hbm.inventory.fluid.Fluids.SALT_WATER, com.hbm.realsim.Groundwater.fluidAt(world, 16, 64, -7, com.hbm.inventory.fluid.Fluids.SALT_WATER));
+                    assertEquals(16, world.sampleX); assertEquals(-7, world.sampleZ);
+                }
+                world.loaded = false;
+                assertNull(com.hbm.realsim.Groundwater.fluidAt(world, 16, 64, -7, com.hbm.inventory.fluid.Fluids.SALT_WATER));
+                world.loaded = true; world.isRemote = true;
+                assertNull(com.hbm.realsim.Groundwater.fluidAt(world, 16, 64, -7, com.hbm.inventory.fluid.Fluids.SALT_WATER));
+                assertNull(com.hbm.realsim.Groundwater.fluidAt(null, 16, 64, -7, com.hbm.inventory.fluid.Fluids.SALT_WATER));
+            } finally { checks.restoreIdentities(); }
+        }
+
         private static void bootstrap() {
             Loader.injectData("7", "99", "40", "1614", "1.7.10", "9.05", new File("."), java.util.Collections.emptyList());
             Bootstrap.func_151354_b();
@@ -273,6 +317,18 @@ public class RecordingStructureWorldTest {
     }
 
     /** An unpersisted source whose chunk/block reads fail, exposing accidental live-world access. */
+    public static class GroundwaterWorld extends SourceWorld {
+        boolean loaded = true;
+        int sampleX, sampleZ, extractionY;
+        net.minecraft.tileentity.TileEntity receiver;
+        @Override public net.minecraft.tileentity.TileEntity getTileEntity(int x, int y, int z) { return receiver; }
+        @Override public boolean blockExists(int x, int y, int z) { extractionY = y; return loaded; }
+        @Override public net.minecraft.world.biome.BiomeGenBase getBiomeGenForCoords(int x, int z) {
+            sampleX = x; sampleZ = z;
+            return x < 16 ? net.minecraft.world.biome.BiomeGenBase.plains : net.minecraft.world.biome.BiomeGenBase.ocean;
+        }
+    }
+
     public static class SourceWorld extends World {
         SourceWorld() {
             super(new RecordingSaveHandler(), "source", new WorldSettings(123L, WorldSettings.GameType.SURVIVAL, true, false, WorldType.DEFAULT), new WorldProviderSurface(), new Profiler());

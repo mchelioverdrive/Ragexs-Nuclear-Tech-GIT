@@ -16,7 +16,7 @@ public class CBT_Water extends CelestialBodyTrait {
     public FluidType fluid;
 
     public CBT_Water() {
-        fluid = Fluids.WATER;
+        fluid = Fluids.SALT_WATER;
     }
 
     public CBT_Water(FluidType fluid) {
@@ -31,7 +31,7 @@ public class CBT_Water extends CelestialBodyTrait {
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
 		fluid = Fluids.fromID(nbt.getInteger("fluid"));
-        if(fluid == Fluids.NONE) fluid = Fluids.WATER;
+        if(fluid == Fluids.NONE) fluid = Fluids.SALT_WATER;
 	}
 
 	// These methods are for client syncing, the precision loss is intentional

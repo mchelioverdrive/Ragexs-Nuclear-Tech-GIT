@@ -24,7 +24,7 @@ public class FluidContainerRegistry {
 
 	public static int normalizedCapacity(net.minecraft.item.Item item, FluidType type, int legacy) {
         if(item == Items.water_bucket || item == Items.milk_bucket) return 10;
-        if(item == Items.potionitem && type == com.hbm.inventory.fluid.Fluids.WATER) return 1;
+        if(item == Items.potionitem && type == com.hbm.inventory.fluid.Fluids.SALT_WATER) return 1;
 		if(type.getPhysicalState().basis == com.hbm.realsim.PhysicalState.Basis.STANDARD_GAS_LITER && item == ModItems.canister_full) return 500;
 		if(type.getPhysicalState().basis != com.hbm.realsim.PhysicalState.Basis.LIQUID_LITER) return legacy;
 		if(item == ModItems.canister_full || item == ModItems.fluid_tank_full || item == ModItems.fluid_tank_lead_full
@@ -68,8 +68,8 @@ public class FluidContainerRegistry {
 	private static HashMap<FluidType, List<FluidContainer>> containerMap = new HashMap<FluidType, List<FluidContainer>>();
 
 	public static void register() {
-		FluidContainerRegistry.registerContainer(new FluidContainer(new ItemStack(Items.water_bucket), new ItemStack(Items.bucket), Fluids.WATER, 1000));
-		FluidContainerRegistry.registerContainer(new FluidContainer(new ItemStack(Items.potionitem), new ItemStack(Items.glass_bottle), Fluids.WATER, 250));
+		FluidContainerRegistry.registerContainer(new FluidContainer(new ItemStack(Items.water_bucket), new ItemStack(Items.bucket), Fluids.SALT_WATER, 1000));
+		FluidContainerRegistry.registerContainer(new FluidContainer(new ItemStack(Items.potionitem), new ItemStack(Items.glass_bottle), Fluids.SALT_WATER, 250));
 		FluidContainerRegistry.registerContainer(new FluidContainer(new ItemStack(Items.lava_bucket), new ItemStack(Items.bucket), Fluids.LAVA, 1000));
 		//FluidContainerRegistry.registerContainer(new FluidContainer(new ItemStack(ModItems.bucket_mud), new ItemStack(Items.bucket), Fluids.WATZ, 1000));
 		FluidContainerRegistry.registerContainer(new FluidContainer(new ItemStack(ModItems.bucket_schrabidic_acid), new ItemStack(Items.bucket), Fluids.SCHRABIDIC, 1000));

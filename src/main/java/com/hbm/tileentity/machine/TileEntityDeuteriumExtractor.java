@@ -28,7 +28,7 @@ public class TileEntityDeuteriumExtractor extends TileEntityMachineBase implemen
 	public TileEntityDeuteriumExtractor() {
 		super(0);
 		tanks = new FluidTank[5];
-		tanks[0] = new FluidTank(Fluids.LIGHT_WATER, 60).withDefaultCapacity().migrateFrom(Fluids.WATER);
+		tanks[0] = new FluidTank(Fluids.LIGHT_WATER, 60).withDefaultCapacity().migrateFrom(Fluids.SALT_WATER);
 		tanks[1] = new FluidTank(Fluids.HEAVYWATER, 10).withDefaultCapacity();
 		for(int i = 2; i < tanks.length; i++) tanks[i] = new FluidTank(Fluids.NONE, 100);
         for(FluidTank tank : tanks) this.trackMachineFluidTank(tank);

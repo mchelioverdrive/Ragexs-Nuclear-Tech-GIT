@@ -51,7 +51,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
     private final com.hbm.realsim.OutputBudget coolingBudget = new com.hbm.realsim.OutputBudget();
     @Override public long availableCoolingQuanta(long tick) { return coolingBudget.available(tick, getMachineCoolingWatts() / 10); }
     @Override public void rejectHeatQuanta(long tick, long quanta) { coolingBudget.use(tick, getMachineCoolingWatts() / 10, quanta); }
-    @Override public long getMachineCoolingWatts() { return 1000000; }
+    @Override public long getMachineCoolingWatts() { return com.hbm.realsim.IndustrialDemand.CHEMICAL_COOLING_W; }
     @Override public long getProcessAuxiliaryWatts(com.hbm.realsim.ProcessRecipe recipe) { return Math.max(500, com.hbm.realsim.PetroleumProcesses.ceilDiv(recipe.rejectedWatts, 500) * 10); }
 	private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT();
 	private static final int TASK_ACCOUNTING = 1;
@@ -85,7 +85,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 
 	public final com.hbm.realsim.ProcessBatch physicalBatch = new com.hbm.realsim.ProcessBatch();
     public long energyQuanta;
-	public static final long maxPower = 100000;
+	public static final long maxPower = com.hbm.realsim.IndustrialDemand.CHEMICAL_BUFFER_QUANTA;
 	public int progress;
 	public int maxProgress = 100;
 	public boolean isProgressing;

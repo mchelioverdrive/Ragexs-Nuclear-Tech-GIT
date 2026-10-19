@@ -39,7 +39,9 @@ public class Fluids {
 
 
 	public static FluidType NONE;
-	public static FluidType WATER;
+	public static FluidType SALT_WATER;
+	/** Legacy external API alias; the registered identity is SALT_WATER. */
+	@Deprecated public static FluidType WATER;
 	public static FluidType STEAM;
 	public static FluidType HOTSTEAM;
 	public static FluidType SUPERHOTSTEAM;
@@ -356,7 +358,8 @@ public class Fluids {
 		 */
 
 		NONE =					new FluidType("NONE",				0x888888, 0, 0, 0, EnumSymbol.NONE);
-		WATER =					new FluidType("WATER",				0x3333FF, 0, 0, 0, EnumSymbol.NONE).addTraits(LIQUID, UNSIPHONABLE);
+		SALT_WATER =					new FluidType("SALT_WATER",				0x3333FF, 0, 0, 0, EnumSymbol.NONE).addTraits(LIQUID, UNSIPHONABLE);
+		WATER = SALT_WATER; // No second registration: numeric IDs and saved quantities remain unchanged.
 		STEAM =					new FluidType("STEAM",				0xe5e5e5, 3, 0, 0, EnumSymbol.NONE).setTemp(100).addTraits(GASEOUS, UNSIPHONABLE);
 		HOTSTEAM =				new FluidType("HOTSTEAM",			0xE7D6D6, 4, 0, 0, EnumSymbol.NONE).setTemp(300).addTraits(GASEOUS, UNSIPHONABLE);
 		SUPERHOTSTEAM =			new FluidType("SUPERHOTSTEAM",		0xE7B7B7, 4, 0, 0, EnumSymbol.NONE).setTemp(450).addTraits(GASEOUS, UNSIPHONABLE);
@@ -644,7 +647,7 @@ public class Fluids {
 		//null
 		metaOrder.add(NONE);
 		//vanilla
-		metaOrder.add(WATER);
+		metaOrder.add(SALT_WATER);
 		metaOrder.add(HEAVYWATER);
 		metaOrder.add(HEAVYWATER_HOT);
 		metaOrder.add(LAVA);
@@ -926,6 +929,7 @@ public class Fluids {
 		// V
 
 		renameMapping.put("ACID", PEROXIDE);
+		renameMapping.put("WATER", SALT_WATER);
 
 		// LEGACY
 		ACID = PEROXIDE;
@@ -1459,6 +1463,7 @@ public class Fluids {
 			for(FluidType type : metaOrder) {
 
 				JsonElement element = json.get(type.getName());
+				if(element == null && type == SALT_WATER) element = json.get("WATER");
 				if(element != null) {
 					type.traits.clear();
 					JsonObject obj = element.getAsJsonObject();
@@ -1531,6 +1536,7 @@ public class Fluids {
 	}
 
 	protected static int registerSelf(FluidType fluid) {
+		if("WATER".equals(fluid.getName())) throw new IllegalArgumentException("WATER is reserved as a legacy name for SALT_WATER");
 		int id = 0;
 		while(idMapping.containsKey(id)) id++;
 		idMapping.put(id, fluid);
@@ -1540,6 +1546,7 @@ public class Fluids {
 	}
 
 	protected static void register(FluidType fluid, int id) {
+		if("WATER".equals(fluid.getName())) throw new IllegalArgumentException("WATER is reserved as a legacy name for SALT_WATER");
         FluidType existing = idMapping.get(id), named = nameMapping.get(fluid.getName());
         if(existing != null && !existing.customFluid || named != null && !named.customFluid) throw new IllegalArgumentException("Custom fluid cannot overwrite built-in fluid mapping: " + fluid.getName() + " / " + id);
 
@@ -1559,12 +1566,17 @@ public class Fluids {
 
 	/** Cold water-family fluids that can safely behave like extinguishing water. */
 	public static boolean isColdWater(FluidType type) {
-		return type == WATER || type == FRESH_WATER || type == LIGHT_WATER ||
+		return type == SALT_WATER || type == FRESH_WATER || type == LIGHT_WATER ||
 			type == BORATED_WATER || type == HEAVYWATER;
 	}
 
+	/** Canonicalize legacy names at configuration and persistence boundaries. */
+	public static String canonicalName(String name) {
+		return "WATER".equals(name) ? "SALT_WATER" : name;
+	}
+
 	public static FluidType fromName(String name) {
-		FluidType fluid = nameMapping.get(name);
+		FluidType fluid = nameMapping.get(canonicalName(name));
 
 		if(fluid == null)
 			fluid = Fluids.NONE;

@@ -72,7 +72,7 @@ public class FluidType {
 		this.flammability = f;
 		this.reactivity = r;
 		this.symbol = symbol;
-		this.setGuiTexture(name.toLowerCase(Locale.US), color);
+		this.setGuiTexture("SALT_WATER".equals(name) ? "water" : name.toLowerCase(Locale.US), color);
 		
 		this.id = Fluids.registerSelf(this);
 	}

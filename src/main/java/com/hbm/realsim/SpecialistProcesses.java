@@ -57,6 +57,8 @@ public final class SpecialistProcesses {
                 new BigDecimal(molarMass).multiply(new BigDecimal("1000000000")).longValueExact(), BigDecimal.ZERO, "0 C, 1 bar reference amount", null));
     }
     static void registerAssays() {
+        solid("chromite", "1");
+        solid("ingot_raw@24004", "1"); // Persistent Ferrochrome metadata; FeCr2 alloy, not pure chromium.
         for(String field : new String[] {"powder_terbium2", "powder_terbium_oxide", "powder_terbium_fluoride", "powder_ytterbium_oxide", "powder_ytterbium_fluoride",
                 "fragment_samarium", "powder_samarium", "europiumsol", "terbiumsol", "dysprosiumsol", "lutetiumsol", "thuliumsol",
                 "powder_dysprosium2", "powder_lutetium2", "powder_thulium2", "powder_yttrium", "erbium_powder", "powder_ytterbium", "powder_cerium",

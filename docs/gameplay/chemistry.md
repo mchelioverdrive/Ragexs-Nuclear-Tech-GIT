@@ -14,9 +14,17 @@ For a shared trunk, add each required identifier to its pipes. Sneak/CTRL-click 
 
 The Chemical Reactor's four utility positions leave three available for fluid piping when one is occupied by power. Use shared trunks to carry its full feed/coproduct set through those available connections; the internal gauges and container pairs are storage channels, not additional physical pipe sockets.
 
+## Production timing
+
+RealSim preserves industrial reactions, yields and energy costs while compressing waiting time for Minecraft gameplay. The Chemical Reactor supports physical recipes up to 2 MW process duty per lane, plus cooling power. Hardening and hydrogen reduction keep eight-pellet lots and take 20 and 30 seconds; water electrolysis takes 20 seconds per litre. Supply the higher instantaneous power to reach those times. Brownouts and blocked outputs pause paid progress. The eight-lane reactor runs the same bills in parallel.
+
+Sulfuric acid takes 20 seconds, salt-fed chlor-alkali 40 seconds, and common plastics 20–40 seconds per existing lot. Concrete/fibre concrete produce 256 blocks in 40 seconds; asphalt produces 256 in 60 seconds. Petroleum processing, specialized isotope work and separate native-machine rates retain their own balance. Existing active batches finish their saved quantities, timing and energy bills; enabled recipe JSON overrides must be updated from generated templates to adopt new default timings.
+
 ## Water quality
 
-**Water** is raw environmental water for washing, concrete and rough service. Chemical Reactor treatment turns 50 kg into 45 kg of **Fresh Water** and 5 kg of mineral brine over 50 seconds. Drain both products. The default feed rate is 60 L/min.
+Groundwater pumps supply **Fresh Water** inland, including plains, forests, mountains, rivers, swamps and lakes. Ocean, Deep Ocean, Frozen Ocean and modded biomes classified as oceans by Forge supply the existing **Salt Water** instead. The biome at the pump's center column determines the output; neighboring pipes and biomes do not. Existing stored water keeps its identity: drain it before a relocated pump can switch quality. A full or incompatible output tank pauses pumping without spending drive energy; blocked pipes can still fill the pump's local buffer.
+
+**Salt Water** is the existing saline environmental water for washing, concrete and rough service. Chemical Reactor treatment turns 50 kg into 45 kg of **Fresh Water** and 5 kg of mineral brine over 50 seconds. Drain both products. The default feed rate is 60 L/min.
 
 **Fresh Water** supplies boilers, chemistry and closed industrial cooling charges. Demineralization polishes 10 L into 10 L of **Light Water** in 50 seconds. Light Water supplies direct-boiling reactor systems and deuterium extraction. Steam condensate is fresh water; polish it again where a reactor needs light water.
 

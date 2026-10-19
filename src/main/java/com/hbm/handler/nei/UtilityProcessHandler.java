@@ -20,7 +20,7 @@ import net.minecraft.item.ItemStack;
 public class UtilityProcessHandler extends ProcessInfoHandler {
     private static List<Process> cache;
     private static long revision = -1;
-    @Override public String getRecipeName() { return "Resource utilities and environmental power"; }
+    @Override public String getRecipeName() { return "Utility Processes"; }
     @Override public String getOverlayIdentifier() { return "ntmUtilities"; }
     @Override protected Block[] machineBlocks() { return new Block[] {ModBlocks.machine_solar, ModBlocks.machine_spp_bottom, ModBlocks.machine_geo, ModBlocks.machine_radgen, ModBlocks.machine_minirtg, ModBlocks.machine_powerrtg, ModBlocks.machine_rtg_grey, ModBlocks.machine_drain, ModBlocks.machine_autosaw, ModBlocks.machine_ore_slopper, ModBlocks.machine_lpw2, ModBlocks.machine_htr3, ModBlocks.machine_htrf4, ModBlocks.machine_xenon_thruster, ModBlocks.machine_discharger, ModBlocks.dfc_core, ModBlocks.machine_drive_processor, ModBlocks.machine_keyforge, ModBlocks.machine_missile_assembly, ModBlocks.machine_rocket_assembly, ModBlocks.transporter_rocket, ModBlocks.soyuz_launcher, ModBlocks.machine_teleporter}; }
     @Override protected List<Process> processes() { return snapshot(); }
@@ -62,7 +62,7 @@ public class UtilityProcessHandler extends ProcessInfoHandler {
         rows.add(new Process(ModBlocks.machine_autosaw, inputs(), new ItemStack[0], "Harvests actual placed trees; no random resource pool",
                 "World blocks, tool state and inventory space govern drops", "No world is sampled by this NEI view; use Sawmill for log processing"));
         for(BedrockOreType type : BedrockOreType.values()) rows.add(new Process(ModBlocks.machine_ore_slopper,
-                inputs(new ItemStack(ModItems.bedrock_ore_base), ItemFluidIcon.make(Fluids.WATER, 5)),
+                inputs(new ItemStack(ModItems.bedrock_ore_base), ItemFluidIcon.make(Fluids.SALT_WATER, 5)),
                 new ItemStack[] {ItemBedrockOreNew.make(BedrockOreGrade.BASE, type), ItemFluidIcon.make(Fluids.SLOP, 5)},
                 "Legacy NBT ore slurry; solid output icon identifies one possible material",
                 "Amount = ore content in input NBT * (1 + efficiency level * 0.1)", "Fractions accumulate; no guaranteed one-item yield per input",

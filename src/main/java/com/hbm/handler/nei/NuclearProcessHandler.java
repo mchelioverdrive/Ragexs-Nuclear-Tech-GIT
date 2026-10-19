@@ -22,7 +22,7 @@ import net.minecraft.item.ItemStack;
 public class NuclearProcessHandler extends ProcessInfoHandler {
     private static List<Process> cache;
     private static long revision = -1;
-    @Override public String getRecipeName() { return "Reactor fuels and ICF"; }
+    @Override public String getRecipeName() { return "Nuclear Processes"; }
     @Override public String getOverlayIdentifier() { return "ntmNuclearProcesses"; }
     @Override protected List<Process> processes() { return snapshot(); }
     @Override protected net.minecraft.block.Block[] machineBlocks() {

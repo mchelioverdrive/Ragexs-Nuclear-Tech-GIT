@@ -275,7 +275,7 @@ public class TileEntityReactorZirnox extends TileEntityMachineBase implements IC
 		super(28);
 		steam = new FluidTank(Fluids.SUPERHOTSTEAM, 8000);
 		carbonDioxide = new FluidTank(Fluids.CARBONDIOXIDE, 16000);
-		water = new FluidTank(Fluids.LIGHT_WATER, 32000).migrateFrom(Fluids.WATER);
+		water = new FluidTank(Fluids.LIGHT_WATER, 32000).migrateFrom(Fluids.SALT_WATER);
 		trackMachineFluidTank(steam);
 		trackMachineFluidTank(carbonDioxide);
 		trackMachineFluidTank(water);

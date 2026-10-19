@@ -24,6 +24,12 @@ public final class ProcessRecipe {
     public final boolean separation, continuousOutputs;
     public final BigDecimal chemicalInputJ, chemicalOutputJ, sensibleInputJ, sensibleOutputJ, rejectedJ;
 
+    private static String[] canonicalNames(String[] names) {
+        String[] result = names.clone();
+        for(int i = 0; i < result.length; i++) result[i] = com.hbm.inventory.fluid.Fluids.canonicalName(result[i]);
+        return result;
+    }
+
     public ProcessRecipe(String id, String[] inputs, int[] quantities, int[] pressures,
             String solidInput, int solidCount, String[] outputs, long[] productMass,
             int duration, long workJ, long heatJ, int temperatureC, boolean separation) {
@@ -44,6 +50,7 @@ public final class ProcessRecipe {
     private ProcessRecipe(String id, String[] inputs, int[] quantities, int[] pressures,
             String[] solids, int[] counts, String[] outputs, long[] productMass,
             int duration, long workJ, long heatJ, int temperatureC, boolean separation, boolean continuousOutputs, int referenceTemperatureC) {
+        inputs = canonicalNames(inputs); outputs = canonicalNames(outputs);
         this.continuousOutputs = continuousOutputs;
         this.referenceTemperatureC = referenceTemperatureC;
         if(solids.length != counts.length || solids.length > 4) throw new IllegalArgumentException("Invalid solid feeds");
@@ -115,6 +122,11 @@ public final class ProcessRecipe {
     /** Whole reaction copies, including recovered carriers, losses and both utilities.
      * Equipment registration still validates power/flow; callers choose supported lots. */
     public ProcessRecipe rebatch(int copies) { return rebatch(copies, duration); }
+    /** Gameplay timing only: retain the complete bill; the equipment adapter validates its new duty/flow. */
+    public ProcessRecipe withDuration(int ticks) {
+        return new ProcessRecipe(id, inputs, quantities, pressures, solidInputs, solidCounts, outputs, productMass,
+                ticks, workQuanta / 2, heatQuanta / 2, temperatureC, separation, continuousOutputs, referenceTemperatureC);
+    }
     public ProcessRecipe rebatch(int copies, int ticks) {
         if(copies < 1 || ticks < duration) throw new IllegalArgumentException("Rebatching cannot shorten a process cycle");
         int[] fluids = quantities.clone(), solids = solidCounts.clone(); long[] products = productMass.clone();

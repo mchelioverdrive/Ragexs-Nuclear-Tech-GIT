@@ -14,7 +14,7 @@ import net.minecraft.item.crafting.FurnaceRecipes;
 public class NativeSmeltingHandler extends ProcessInfoHandler {
     private static List<Process> cache;
     private static int recipeCount = -1;
-    @Override public String getRecipeName() { return "Furnaces and microwave"; }
+    @Override public String getRecipeName() { return "Furnace Smelting"; }
     @Override public String getOverlayIdentifier() { return "ntmNativeSmelting"; }
     @Override protected List<Process> processes() { return snapshot(); }
     @Override protected Block[] machineBlocks() { return new Block[] {ModBlocks.machine_furnace_brick_off, ModBlocks.furnace_iron, ModBlocks.furnace_steel, ModBlocks.machine_electric_furnace_off, ModBlocks.machine_arc_furnace_off, ModBlocks.machine_nuke_furnace_off, ModBlocks.machine_rtg_furnace_off, ModBlocks.machine_microwave}; }

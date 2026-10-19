@@ -28,7 +28,7 @@ public class TileEntityHeatBoilerIndustrial extends TileEntityHeatBoilerBase imp
 
 	public TileEntityHeatBoilerIndustrial() {
 		tanks = new FluidTank[3];
-		tanks[0] = new FluidTank(Fluids.FRESH_WATER, 64_000).migrateFrom(Fluids.WATER);
+		tanks[0] = new FluidTank(Fluids.FRESH_WATER, 64_000).migrateFrom(Fluids.SALT_WATER);
 		tanks[1] = new FluidTank(Fluids.HOTSTEAM, 64_000 * 100);
         tanks[2] = new FluidTank(Fluids.HEAVYOIL, 24000);
 	}

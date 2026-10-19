@@ -17,7 +17,7 @@ public class TileEntityMachinePumpElectric extends TileEntityMachinePumpBase imp
 	
 	public TileEntityMachinePumpElectric() {
 		super();
-		water = new FluidTank(Fluids.WATER, com.hbm.realsim.Groundwater.ELECTRIC_BUFFER).withDefaultCapacity();
+		water = new FluidTank(Fluids.FRESH_WATER, com.hbm.realsim.Groundwater.ELECTRIC_BUFFER).withDefaultCapacity();
 	}
 	
 	public void updateEntity() {

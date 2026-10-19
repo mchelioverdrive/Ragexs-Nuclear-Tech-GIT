@@ -7,7 +7,7 @@ import net.minecraft.nbt.NBTTagCompound;
 /** Already consumed conversion mass, owned by target identity; never restored to an input tank. */
 public final class MassRemainder {
     private final Map<String, Long> mass = new HashMap<String, Long>();
-    public long remaining(String output) { Long value = mass.get(output); return value == null ? 0 : value; }
+    public long remaining(String output) { Long value = mass.get(com.hbm.inventory.fluid.Fluids.canonicalName(output)); return value == null ? 0 : value; }
     public long preview(String output, long inputMass) {
         long unit = PhysicalRegistry.get(output).massUnits;
         if(!PhysicalRegistry.get(output).isResolved() || inputMass < 0) throw new IllegalArgumentException("Unresolved conversion mass");
@@ -15,6 +15,7 @@ public final class MassRemainder {
     }
     /** Input must be removed before committing. */
     public int convert(String output, long inputMass) {
+        output = com.hbm.inventory.fluid.Fluids.canonicalName(output);
         long total = Math.addExact(remaining(output), inputMass);
         long unit = PhysicalRegistry.get(output).massUnits;
         int count = Math.toIntExact(preview(output, inputMass));
@@ -37,7 +38,8 @@ public final class MassRemainder {
             // An assay revision can make previously fractional owned mass exceed the new unit.
             // Keep the literal mass; the next capacity-checked conversion releases it normally.
             if(!PhysicalRegistry.get(name).isResolved() || amount < 0) throw new IllegalStateException("Invalid stored mass ownership: " + name);
-            mass.put(name, amount);
+            String canonical = com.hbm.inventory.fluid.Fluids.canonicalName(name);
+            mass.put(canonical, Math.addExact(remaining(canonical), amount));
         }
     }
 }

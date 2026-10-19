@@ -65,3 +65,38 @@
 - Synchronize the Small Arc Furnace with the existing typed tile-state packet, including its opening snapshot. Reject incorrectly sized seismic payloads before reading fields so a misrouted gauge payload cannot trigger the reported buffer exception; keep packet IDs and furnace processing unchanged.
 - Flatten breeder recipe export entries so multiple flux variants serialize without a list-to-recipe cast failure; preserve the existing JSON schema and runtime recipe map.
 - Document native process coverage, conditional production quantities, storage/transport boundaries and informational navigation semantics in the development references.
+
+2026-10-19 16:30 — Correct world-load message branding
+
+- Use the registered mod name in the login message instead of the stale RTM: Space label, preserving the existing MOTD setting.
+- Populate the in-game version from the same build settings as mcmod.info, replacing the stale 1.0.0 BETA constant. The current build remains 3.3_X1000; future version changes automatically reach both mod registration and the login message.
+
+## 2026-10-19 16:45 — Fit NEI process category titles
+
+- Shorten the seven new process category titles to fit between NEI's header navigation buttons while retaining the detailed information on each recipe page.
+
+2026-10-19 17:07 — Classify groundwater by the extraction biome
+
+- Electric and steam groundwater pumps now extract existing Fresh Water inland and existing raw/saline Water only in Forge OCEAN-tagged biomes, including vanilla Ocean, Deep Ocean, Frozen Ocean and tagged modded oceans. Sample the pump core's exact center column; unavailable biome/chunk data pauses extraction. Preserve planetary non-water fluids, terrain eligibility, throughput, drive demand and export limits.
+- Preserve filled tanks across salinity changes and reloads; incompatible contents must drain before new extraction can spend power or steam. Retain paid fractional stock by fluid identity when an empty tank switches quality, without persisting biome classifications or converting saved water.
+- Add regression coverage for biome classification, exact boundary sampling, native admission/production, incompatible/full outputs, retained fractional and shaft credit, binary save/reload and server-only class loading. Document salinity rules and show both conditional groundwater products in NEI.
+- Exclude the nested pylon test helper from standalone Gradle discovery; its cases continue to run through the existing dedicated-server class-loader test.
+
+2026-10-19 17:16 — Rename saline water identity and display names
+
+- Register the former raw WATER fluid as SALT_WATER, displayed as Salt Water, and update native recipes, machines, containers, physical accounting, groundwater classification and all existing fluid locale entries. FRESH_WATER remains Fresh Water. Preserve numeric registration order, artwork, quantities and recipe balances.
+- Read legacy WATER names through compatibility lookup, including fluid settings, saved process bills, fractional product mass and parked pump stock; write canonical SALT_WATER identities. Keep the deprecated Fluids.WATER external field as an alias of the same object, without a duplicate registration. Historical numeric tanks and containers retain their original contents.
+- Extend regression coverage for legacy string/numeric tank data, retained paid process progress, fractional mass and pump stock, and the English fluid display names. Update current fluid and tank documentation.
+2026-10-19 17:26 — Compress repeated industrial processing without discounting recipe energy
+
+- Rebalance iron conditioning/pelletizing/hardening/hydrogen reduction to 10/10/20/30 seconds per unchanged eight-parcel batch. Preserve prepared Blast Furnace and DRI Large Arc Furnace yields, byproducts and paid work.
+- Shorten selected common reagent, salt, fertilizer, polymer, leaching and oxide-reduction cycles. Reactor water electrolysis now takes 20 seconds per litre at its unchanged specific energy; bulk concrete/fibre concrete take 40 seconds per 256 blocks and asphalt takes 60 seconds. Keep molten polyethylene at 60 seconds to respect liquid throughput. Preserve petroleum, native cell/furnace, specialty and isotope processing.
+- Raise the Chemical Reactor envelope to 2 MW process duty per lane, 24,000 standard L/min gas feed per inlet, 2 MJ workshop / 16 MJ industrial electrical buffers, and finite 5 MW workshop / 40 MW shared industrial cooling. Actual utilities remain debited, and Mixer/native Electrolyser limits remain independent.
+- Add explicit immutable duration changes that preserve complete reaction bills and saved active-batch ownership. Keep recipe IDs, batch sizes, mass remainders, persistence and server authority; existing recipe overrides remain authoritative. Document the gameplay timing policy and calculated end-to-end steel throughput in the existing references.
+
+2026-10-19 17:51 — Audit material utilization and restore specialist contacts and stainless progression
+
+- Add a material-by-material source and historical-use audit under docs/gameplay, covering elemental/alloy identities, native material and component forms, chemical intermediates, fluid states, generated metadata families, specialist roles and disconnected or deliberately unused assets.
+- Add a separate Osmium-Iridium Contact Alloy using the existing Foundry template/casting infrastructure. Refined Osmium retains its legacy Osmiridium identity; the new alloy uses material ID 24003 and template 25. Optional alloy and rhodium contact recipes each combine one contact blank with eight coated conductors for eight Cable Switches, preserving ordinary switch recipes and behavior without restoring historical chip/board multiplication.
+- Break the chromite-Centrifuge-stainless bootstrap loop with paid Chemical Reactor template 1201: aluminothermic chromite reduction produces distinct Ferrochrome (material ID 24004), alumina and returned unused aluminium with exact saved mass accounting. The existing Metallurgical Furnace converts six steel plus two ferrochrome into eight stainless ingots; ordinary chromium routes and Centrifuge Element requirements remain intact.
+- Extend existing regression coverage for physical bills, retained fractional products and paid progress, native metadata/ingredient matching, both furnace input orders, stock chemistry reachability and server-only registration. Document the new manufacturing paths and existing recipe-override boundaries.

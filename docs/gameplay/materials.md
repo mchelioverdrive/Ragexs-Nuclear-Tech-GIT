@@ -14,10 +14,12 @@ Use the Chemical Reactor templates **Iron Fines Oxidative Conditioning**, **Iron
 
 | Stage | Whole-batch inputs | Outputs | Electrical work / time |
 | --- | --- | --- | --- |
-| Condition fines | 8 iron powder (`dustIron`), 2 L water, about 2440 standard L oxygen gas | 8 conditioned oxide fines, recovered water and unused oxygen | 0.4 MJ / 60 s |
-| Agglomerate | 8 fines, 1 limestone powder, 1 clay ball, 2 L water | 8 green pellets | 0.4 MJ / 60 s |
-| Harden | 8 green pellets | 8 hardened pellets, CO2, discharged water vapor | 24.8 MJ / 600 s; 1200 C process reference |
-| Optional reduction | 8 hardened pellets, about 4880 standard L hydrogen gas | 8 DRI, recovered water and unused hydrogen | 32.8 MJ / 600 s; 900 C process reference |
+| Condition fines | 8 iron powder (`dustIron`), 2 L water, about 2440 standard L oxygen gas | 8 conditioned oxide fines, recovered water and unused oxygen | 0.4 MJ / 10 s |
+| Agglomerate | 8 fines, 1 limestone powder, 1 clay ball, 2 L water | 8 green pellets | 0.4 MJ / 10 s |
+| Harden | 8 green pellets | 8 hardened pellets, CO2, discharged water vapor | 24.8 MJ / 20 s; 1200 C process reference |
+| Optional reduction | 8 hardened pellets, about 4880 standard L hydrogen gas | 8 DRI, recovered water and unused hydrogen | 32.8 MJ / 30 s; 900 C process reference |
+
+The four preparation stages total 70 seconds per eight-powder lot on one supplied reactor. Hardening draws 1.24 MW and reduction about 1.093 MW, plus cooling power; faster processing retains the complete energy bill. Reactor water electrolysis supplies hydrogen and oxygen continuously from 1 L fresh water in 20 seconds for the unchanged 55 kWh/kg hydrogen. The compact native Electrolyser retains its separate 20-kW water route.
 
 Gas quantities use whole standard litres; NEI shows the exact admitted quantities. Fractional returned gases, water and CO2 remain in the saved process account. Iron powder is metallic in RTM: conditioning deliberately supplies oxide oxygen before the pellet reduction route. It does not silently treat metal powder as hematite. Each clay ball represents a 100-g binder dose (1.25% of the eight-powder charge). Limestone calcines during hardening; green pellets cannot feed either steelmaking route.
 
@@ -38,11 +40,15 @@ The final 3x/4x recovery factors are intentional gameplay rewards for preparatio
 
 Chromium-bearing stainless steels serve corrosion-resistant equipment. High-speed and refractory alloys suit demanding tools and thermal service. Tin bronze is copper/tin; arsenic bronze is different. Alloy names describe composition and use rather than simply a better ordinary metal.
 
+Stainless steel is obtainable before the Centrifuge. Recover Chromite Chunks with the Excavator, break them on a tier-2 anvil, then use **Chromite Aluminothermic Reduction** in the Chemical Reactor: two chromite and one aluminium powder produce ferrochrome, alumina and returned unused aluminium. The 20-second batch pays 4.2 MJ of electricity plus cooling; fractional products accumulate across batches. Smelt **six steel and two ferrochrome into eight stainless ingots** in the Metallurgical Furnace, then form the stainless plates for the Centrifuge Element. Ferrochrome is an iron–chromium alloy, not a substitute for pure chromium in other recipes.
+
 ## Conductors, solder and magnets
 
 Copper is the ordinary conductor and generator winding material. Precious and exotic conductors have specialist roles rather than replacing every coil. Tin–lead solder joins electronic components: alloy tin and lead in the Foundry using the Tin-Lead Solder Production template, then cast eight wires per batch with a wire mold in a Shallow Foundry Basin. Solder wire is not made on an anvil. Supply it to the Soldering Station; an Integrated Circuit Board needs four Microchips, four Printed Circuit Boards and four solder wires. Raw germanium or an expensive magnet alloy cannot replace a finished circuit.
 
 Rare earths and magnetic alloys support suitable magnets, optics and nuclear/material applications. Samarium–cobalt is distinct from structural steel. Raw ingots still need the proper component-making route.
+
+For optional switching contacts, alloy one Osmium and one Iridium ingot-equivalent in the Foundry using **Osmium-Iridium Contact Alloy Production**, then cast two alloy ingots. One contact-alloy ingot or one Rhodium ingot, surrounded by eight Coated Red Copper Wires in the crafting grid, makes eight Cable Switches. The ordinary lever and mercury switch recipes remain available. The historical `Osmiridium` registry name still means refined Osmium; the contact alloy is a separate material.
 
 ## Refractory and specialist materials
 

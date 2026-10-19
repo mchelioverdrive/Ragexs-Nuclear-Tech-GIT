@@ -20,7 +20,7 @@ public class FuelUseHandler extends ProcessInfoHandler {
     private static volatile List<Process> cache;
     private static long revision = -1;
     public static void invalidate() { cache = null; }
-    @Override public String getRecipeName() { return "Fuels, engines and process heat"; }
+    @Override public String getRecipeName() { return "Fuels and Heat"; }
     @Override public String getOverlayIdentifier() { return "ntmFuelUses"; }
     @Override protected List<Process> processes() { return snapshot(); }
     @Override protected Block[] machineBlocks() { return new Block[] {ModBlocks.heater_firebox, ModBlocks.heater_oven, ModBlocks.heater_oilburner, ModBlocks.heater_electric, ModBlocks.machine_wood_burner, ModBlocks.machine_diesel, ModBlocks.machine_combustion_engine, ModBlocks.machine_turbinegas, ModBlocks.machine_turbofan, ModBlocks.machine_stirling, ModBlocks.machine_stirling_steel, ModBlocks.machine_industrial_boiler, ModBlocks.machine_flare, ModBlocks.furnace_iron, ModBlocks.machine_furnace_brick_off, ModBlocks.machine_press, ModBlocks.machine_nuke_furnace_off, ModBlocks.machine_rtg_furnace_off, ModBlocks.machine_difurnace_rtg_off}; }

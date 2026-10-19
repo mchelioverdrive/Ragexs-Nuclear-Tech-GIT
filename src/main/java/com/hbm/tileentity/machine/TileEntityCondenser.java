@@ -62,7 +62,7 @@ public class TileEntityCondenser extends TileEntityLoadedBase implements IFluidS
 	public TileEntityCondenser() {
 		tanks = new FluidTank[2];
 		tanks[0] = new FluidTank(Fluids.SPENTSTEAM, inputTankSize);
-		tanks[1] = new FluidTank(Fluids.FRESH_WATER, outputTankSize).migrateFrom(Fluids.WATER);
+		tanks[1] = new FluidTank(Fluids.FRESH_WATER, outputTankSize).migrateFrom(Fluids.SALT_WATER);
 	}
 
 	@Override

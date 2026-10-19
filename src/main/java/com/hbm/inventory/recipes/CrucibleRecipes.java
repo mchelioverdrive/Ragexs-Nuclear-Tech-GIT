@@ -175,7 +175,16 @@ public class CrucibleRecipes extends SerializableRecipe {
 		recipes.add(new CrucibleRecipe(24, "crucible.solder", 8, Mats.MAT_SOLDER.make(ModItems.wire_fine))
 			.inputs(new MaterialStack(Mats.MAT_TIN, n * 5), new MaterialStack(Mats.MAT_LEAD, n * 3))
 			.outputs(new MaterialStack(Mats.MAT_SOLDER, n * 8)));
+		registerContactAlloy();
 		registerMoldsForNEI();
+	}
+
+	/** Separate alloy identity: equal foundry quantities, with no elemental transmutation. */
+	public static void registerContactAlloy() {
+		int i = MaterialShapes.INGOT.q(1);
+		recipes.add(new CrucibleRecipe(25, "crucible.osmiumIridium", 8, Mats.MAT_OSMIUM_IRIDIUM.make(ModItems.ingot_raw))
+			.inputs(new MaterialStack(Mats.MAT_OSMIRIDIUM, i), new MaterialStack(Mats.MAT_IRIDIUM, i))
+			.outputs(new MaterialStack(Mats.MAT_OSMIUM_IRIDIUM, i * 2)));
 	}
 
 	public static class CrucibleRecipe {

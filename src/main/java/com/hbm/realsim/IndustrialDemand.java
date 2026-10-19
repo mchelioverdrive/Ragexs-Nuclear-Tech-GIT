@@ -7,6 +7,11 @@ public final class IndustrialDemand {
     public static final long MINING_LASER_W = 500000, EXCAVATOR_W = 250000;
     public static final long COOLING_AUXILIARY_W = 500;
     public static final int COOLING_CHARGE_L = 20;
+    /** Gameplay reactor envelope; physical recipe work remains payable in full. */
+    public static final long CHEMICAL_PROCESS_CEILING_W = 2_000_000L;
+    public static final long CHEMICAL_COOLING_W = 5_000_000L;
+    public static final long CHEMICAL_BUFFER_QUANTA = 4_000_000L;
+    public static final long CHEMICAL_GAS_L_PER_MINUTE = 24_000L;
     public static final long ARC_WORK_J_PER_KG = 1800000;
     public static final long ARC_CEILING_W = 500000;
     private IndustrialDemand() { }

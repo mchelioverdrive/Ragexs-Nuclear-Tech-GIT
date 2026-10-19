@@ -34,7 +34,7 @@ public final class ChemicalFuelProcesses {
         long total = mass("SYNGAS", 1124) + mass("HYDROGEN_GAS", 562);
         long gasoline = ratio(total, "14.02658", "32.04186");
         return new ProcessRecipe("chem:synthetic_gasoline", new String[] {"SYNGAS", "HYDROGEN_GAS"}, new int[] {1124, 562}, new int[] {1, 1}, null, 0,
-                new String[] {"GASOLINE", "WATER"}, new long[] {gasoline, total - gasoline}, 2400, 960000, 200000, 250, false);
+                new String[] {"GASOLINE", "SALT_WATER"}, new long[] {gasoline, total - gasoline}, 2400, 960000, 200000, 250, false);
     }
     public static ProcessRecipe coalLiquid(String product) {
         long coal = mass("COAL_ITEM", 8);
@@ -47,7 +47,7 @@ public final class ChemicalFuelProcesses {
         int hydrogen = Math.toIntExact(PetroleumProcesses.ceilDiv(hydrogenRequired, mass("HYDROGEN_GAS", 1)));
         long excess = mass("HYDROGEN_GAS", hydrogen) - hydrogenRequired;
         return new ProcessRecipe("chem:coal_" + product, new String[] {"HYDROGEN_GAS"}, new int[] {hydrogen}, new int[] {1}, "COAL_ITEM", 8,
-                new String[] {product, "WATER", "CHAR_ITEM", "ASH_ITEM", "VENT_HYDROGEN_GAS"}, new long[] {liquid, water, charMass, ash, excess},
+                new String[] {product, "SALT_WATER", "CHAR_ITEM", "ASH_ITEM", "VENT_HYDROGEN_GAS"}, new long[] {liquid, water, charMass, ash, excess},
                 80000, 32000000, 240000000, 450, false);
     }
     public static ProcessRecipe gasification() {
@@ -56,15 +56,15 @@ public final class ChemicalFuelProcesses {
         long syngas = ratio(converted, "30.02598", "12.0107");
         long charMass = carbon - converted, ash = ratio(coal, "0.1", "1");
         long consumedWater = ratio(ratio(converted, "15.9994", "12.0107") - ratio(coal, "0.05", "1"), "18.01528", "15.9994");
-        long water = mass("WATER", 2) - consumedWater;
-        long purge = coal + mass("WATER", 2) - syngas - charMass - ash - water;
+        long water = mass("SALT_WATER", 2) - consumedWater;
+        long purge = coal + mass("SALT_WATER", 2) - syngas - charMass - ash - water;
         return new ProcessRecipe("chem:coal_syngas", new String[] {"FRESH_WATER"}, new int[] {2}, new int[] {0}, "COAL_ITEM", 1,
-                new String[] {"SYNGAS", "WATER", "CHAR_ITEM", "ASH_ITEM", "VENT_HYDROGEN_GAS"}, new long[] {syngas, water, charMass, ash, purge}, 10000, 4000000, 12000000, 850, false).rebatch(3);
+                new String[] {"SYNGAS", "SALT_WATER", "CHAR_ITEM", "ASH_ITEM", "VENT_HYDROGEN_GAS"}, new long[] {syngas, water, charMass, ash, purge}, 10000, 4000000, 12000000, 850, false).rebatch(3);
     }
     public static ProcessRecipe methaneReforming() {
         // CH4 + 2H2O -> CO2 + 4H2; excess liquid feed is vented after heating.
         long h2 = mass("HYDROGEN_GAS", 4000), co2 = mass("CARBONDIOXIDE", 1000);
-        long excess = mass("GAS", 1000) + mass("WATER", 2) - h2 - co2;
+        long excess = mass("GAS", 1000) + mass("SALT_WATER", 2) - h2 - co2;
         return new ProcessRecipe("chem:methane_reforming", new String[] {"GAS", "FRESH_WATER"}, new int[] {1000, 2}, new int[] {0, 0}, null, 0,
                 new String[] {"HYDROGEN_GAS", "CARBONDIOXIDE", "FRESH_WATER"}, new long[] {h2, co2, excess}, 4000, 1600000, 14000000, 850, false);
     }
@@ -81,12 +81,12 @@ public final class ChemicalFuelProcesses {
         long total = mass("HYDROGEN_SULFIDE", 1000) + mass("OXYGEN_GAS", 500);
         long sulfur = 32_065_000_000L * 1000; // 32.065 g/mol at 22.711 standard L/mol.
         return new ProcessRecipe("chem:sulfur_recovery", new String[] {"HYDROGEN_SULFIDE", "OXYGEN_GAS"}, new int[] {1000, 500}, new int[] {0, 0}, null, 0,
-                new String[] {"WATER", "SULFUR_ITEM"}, new long[] {total - sulfur, sulfur}, 1000, 100000, 50000, 300, false);
+                new String[] {"SALT_WATER", "SULFUR_ITEM"}, new long[] {total - sulfur, sulfur}, 1000, 100000, 50000, 300, false);
     }
     public static ProcessRecipe digestion() {
         long total = mass("BIOMASS_ITEM", 16);
         return new ProcessRecipe("chem:biogas", new String[] {}, new int[] {}, new int[] {}, "BIOMASS_ITEM", 16,
-                new String[] {"BIOGAS", "WATER"}, PetroleumProcesses.split(total, new double[] {.75, .25}), 10000, 2000000, 500000, 40, false).rebatch(4); // One stack of established biological feed.
+                new String[] {"BIOGAS", "SALT_WATER"}, PetroleumProcesses.split(total, new double[] {.75, .25}), 10000, 2000000, 500000, 40, false).rebatch(4); // One stack of established biological feed.
     }
     public static ProcessRecipe fermentation() {
         long sugar = mass("SUGAR_ITEM", 16);
@@ -103,7 +103,7 @@ public final class ChemicalFuelProcesses {
     public static ProcessRecipe woodPyrolysis() {
         long wood = mass("WOOD_LOG", 1);
         return new ProcessRecipe("chem:wood_pyrolysis", new String[] {}, new int[] {}, new int[] {}, "WOOD_LOG", 1,
-                new String[] {"WOODOIL", "WATER", "CHARCOAL_ITEM"}, new long[] {mass("WOODOIL", 1), ratio(wood, ".45", "1"), mass("CHARCOAL_ITEM", 1)},
+                new String[] {"WOODOIL", "SALT_WATER", "CHARCOAL_ITEM"}, new long[] {mass("WOODOIL", 1), ratio(wood, ".45", "1"), mass("CHARCOAL_ITEM", 1)},
                 2500, 1000000, 6000000, 500, false);
     }
     public static ProcessRecipe cokeOven(String feed) {
@@ -170,22 +170,22 @@ public final class ChemicalFuelProcesses {
     public static void validateRating(ProcessRecipe bill) { validateRating(bill, false); }
     public static void validateReactorRating(ProcessRecipe bill) { validateRating(bill, true); }
     private static void validateRating(ProcessRecipe bill, boolean reactor) {
-        if(reactor ? Math.addExact(bill.workQuanta, bill.heatQuanta) > (long) bill.duration * 10800L
+        if(reactor ? Math.addExact(bill.workQuanta, bill.heatQuanta) > (long) bill.duration * (IndustrialDemand.CHEMICAL_PROCESS_CEILING_W / 10L)
                 : bill.workQuanta > (long) bill.duration * 800L || bill.heatQuanta > (long) bill.duration * 10000L)
-            throw new IllegalArgumentException(reactor ? "Chemical Reactor bill exceeds 108 kW combined electrical duty; lengthen duration" : "Mixer physical bill exceeds 8 kWe / 100 kWth; lengthen duration");
+            throw new IllegalArgumentException(reactor ? "Chemical Reactor bill exceeds 2 MW combined electrical duty; lengthen duration" : "Mixer physical bill exceeds 8 kWe / 100 kWth; lengthen duration");
         for(int i = 0; i < bill.inputs.length; i++) {
             PhysicalState state = ProcessRecipe.resolved(bill.inputs[i]);
             if(state.substance.equals("hydrogen") && state.phase == PhysicalState.Phase.LIQUID) throw new IllegalArgumentException("Ordinary synthesis requires HYDROGEN_GAS");
-            long rate = state.phase == PhysicalState.Phase.GAS ? 6000L : state.basis == PhysicalState.Basis.NOMINAL ? 1200L : waterService(bill.inputs[i]) || reactor && commodityService(bill.inputs[i]) ? 60L : 12L;
-            if((long) bill.quantities[i] * 1200L > (long) bill.duration * rate) throw new IllegalArgumentException("Reactor/mixer feed exceeds nameplate");
+            long rate = state.phase == PhysicalState.Phase.GAS ? (reactor ? IndustrialDemand.CHEMICAL_GAS_L_PER_MINUTE : 6000L) : state.basis == PhysicalState.Basis.NOMINAL ? 1200L : waterService(bill.inputs[i]) || reactor && commodityService(bill.inputs[i]) ? 60L : 12L;
+            if((long) bill.quantities[i] * 1200L > (long) bill.duration * rate) throw new IllegalArgumentException("Reactor/mixer feed exceeds nameplate: " + bill.id + " / " + bill.inputs[i]);
         }
         for(int i = 0; i < bill.outputs.length; i++) if(ProcessRecipe.resolved(bill.outputs[i]).basis == PhysicalState.Basis.LIQUID_LITER
                 && BigDecimal.valueOf(bill.productMass[i]).multiply(BigDecimal.valueOf(1200))
                     .compareTo(BigDecimal.valueOf(ProcessRecipe.resolved(bill.outputs[i]).massUnits).multiply(BigDecimal.valueOf((long) bill.duration * (waterService(bill.outputs[i]) || reactor && commodityService(bill.outputs[i]) ? 60 : 12)))) > 0)
-            throw new IllegalArgumentException("Reactor/mixer liquid output exceeds nameplate");
+            throw new IllegalArgumentException("Reactor/mixer liquid output exceeds nameplate: " + bill.id + " / " + bill.outputs[i]);
     }
     private static boolean waterService(String name) {
-        return name.equals("WATER") || name.equals("FRESH_WATER") || name.equals("LIGHT_WATER") || name.equals("BORATED_WATER");
+        return name.equals("SALT_WATER") || name.equals("FRESH_WATER") || name.equals("LIGHT_WATER") || name.equals("BORATED_WATER");
     }
     /** Existing general-purpose reactor plumbing handles basic aqueous reagents at water-service flow.
      * Oil/fuel and specialty synthesis keep their separate process ceilings. */

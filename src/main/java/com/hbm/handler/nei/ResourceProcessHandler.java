@@ -21,7 +21,7 @@ import net.minecraft.item.ItemStack;
 public class ResourceProcessHandler extends ProcessInfoHandler {
     private static List<Process> cache;
     private static long revision = -1;
-    @Override public String getRecipeName() { return "Environmental and reactor processes"; }
+    @Override public String getRecipeName() { return "Resource Processes"; }
     @Override public String getOverlayIdentifier() { return "ntmResourceProcesses"; }
     @Override protected List<Process> processes() { return snapshot(); }
     @Override protected Block[] machineBlocks() { return new Block[] {ModBlocks.algae_film, ModBlocks.air_vent, ModBlocks.air_scrubber, ModBlocks.gas_dock, ModBlocks.machine_molten_salt_reactor, ModBlocks.machine_solar_boiler, ModBlocks.machine_hephaestus, ModBlocks.pwr_controller, ModBlocks.watz, ModBlocks.rbmk_boiler, ModBlocks.rbmk_heater, ModBlocks.rbmk_cooler, ModBlocks.rbmk_burner, ModBlocks.reactor_zirnox, ModBlocks.plasma_heater, ModBlocks.machine_schrabidium_transmutator}; }

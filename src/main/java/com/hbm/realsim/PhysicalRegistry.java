@@ -108,7 +108,7 @@ public final class PhysicalRegistry {
         solid("OIL_SAND_BLOCK", "five_percent_bitumen_ore", "2000", "1987500");
         solid("SAND_BLOCK", "mineral_sand", "1900", "0");
         putGas("VENT_UNSATURATEDS", "vented_ethylene", "28.05316", new BigDecimal("47200000"));
-        liquid("water", "1", "0", "WATER", "FRESH_WATER");
+        liquid("water", "1", "0", "SALT_WATER", "FRESH_WATER");
         liquid("deuterium_depleted_water", "1", "0", "DEPLETED_WATER");
         liquid("vented_water", "1", "0", "VENT_WATER");
         putGas("VENT_HYDROGEN_GAS", "vented_hydrogen", "2.01588", hydrogenLhv);
@@ -429,7 +429,7 @@ public final class PhysicalRegistry {
         STATES.put(name, new PhysicalState(state.substance, state.phase, state.basis, state.massUnits, state.lhvJoulesPerKg, state.thermalReference, mix));
     }
     public static PhysicalState get(String identity) {
-        PhysicalState state = STATES.get(identity);
+        PhysicalState state = STATES.get(com.hbm.inventory.fluid.Fluids.canonicalName(identity));
         return state != null ? state : UNRESOLVED;
     }
     private static void liquid(String substance, String kg, String lhv, String... names) {

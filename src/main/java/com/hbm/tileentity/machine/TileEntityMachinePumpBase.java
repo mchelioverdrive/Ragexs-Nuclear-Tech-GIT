@@ -10,6 +10,8 @@ import com.hbm.dim.CelestialBody;
 import com.hbm.dim.orbit.WorldProviderOrbit;
 import com.hbm.dim.trait.CBT_Water;
 import com.hbm.inventory.fluid.tank.FluidTank;
+import com.hbm.inventory.fluid.FluidType;
+import com.hbm.realsim.Groundwater;
 import com.hbm.lib.Library;
 import com.hbm.machine.MachineDirtyCause;
 import com.hbm.machine.MachineExecutionStrategy;
@@ -88,6 +90,8 @@ public abstract class TileEntityMachinePumpBase extends TileEntityLoadedBase imp
 	public static int electricLitersPerMinute = 120;
 	public static int steamLitersPerMinute = 30;
 	protected long waterMicroliterRemainder;
+	/** Paid fractional stock parked by fluid name while a different groundwater fluid is selected. */
+	private NBTTagCompound storedWaterRemainders = new NBTTagCompound();
 	protected long shaftWorkJoules;
 	private long exportTick = Long.MIN_VALUE;
 	private long exportedWater;
@@ -158,7 +162,7 @@ public abstract class TileEntityMachinePumpBase extends TileEntityLoadedBase imp
 			for(DirPos pos : this.getCachedConnections()) if(water.getFill() > 0) this.sendFluid(water, worldObj, pos.getX(), pos.getY(), pos.getZ(), pos.getDir());
 			this.sendAdditionalFluids();
 			this.isOn = false;
-			if(this.canOperate() && yCoord <= groundHeight && onGround) {
+			if(yCoord <= groundHeight && onGround && this.prepareWaterOutput() && this.canOperate()) {
 				this.isOn = true;
 				this.operate();
 			}
@@ -206,13 +210,10 @@ public abstract class TileEntityMachinePumpBase extends TileEntityLoadedBase imp
 
 	protected boolean checkGround() {
 
+		if(worldObj == null || worldObj.provider == null) return false;
 		if(worldObj.provider.hasNoSky) return false;
 		if(worldObj.provider instanceof WorldProviderOrbit) return false;
-		CBT_Water table = CelestialBody.getTrait(worldObj, CBT_Water.class);
-		if(table == null) return false;
-
-		if(water.getTankType() != table.fluid && waterMicroliterRemainder > 0) return false;
-		if(!water.configureForRecipe(table.fluid, water.getPressure())) return false;
+		if(this.getGroundwaterType() == null) return false;
 
 		int validBlocks = 0;
 		int invalidBlocks = 0;
@@ -234,6 +235,26 @@ public abstract class TileEntityMachinePumpBase extends TileEntityLoadedBase imp
 		return validBlocks >= invalidBlocks; // valid block count has to be at least 50%
 	}
 
+	protected FluidType getGroundwaterType() {
+		if(worldObj == null || worldObj.provider == null) return null;
+		CBT_Water table = CelestialBody.getTrait(worldObj, CBT_Water.class);
+		return table == null ? null : Groundwater.fluidAt(worldObj, xCoord, yCoord, zCoord, table.fluid);
+	}
+
+	/** Filled tanks keep their old fluid and export normally; selection is retried before paid extraction. */
+	protected boolean prepareWaterOutput() {
+		FluidType target = this.getGroundwaterType();
+		if(target == null) return false;
+		FluidType previous = water.getTankType();
+		if(!water.configureForRecipe(target, water.getPressure())) return false;
+		if(previous != target) {
+			if(waterMicroliterRemainder > 0) storedWaterRemainders.setLong(previous.getName(), waterMicroliterRemainder);
+			waterMicroliterRemainder = Math.max(0, storedWaterRemainders.getLong(target.getName()));
+			storedWaterRemainders.removeTag(target.getName());
+		}
+		return true;
+	}
+
 	protected NBTTagCompound getSync() {
 		NBTTagCompound data = new NBTTagCompound();
 		data.setBoolean("isOn", isOn);
@@ -253,7 +274,7 @@ public abstract class TileEntityMachinePumpBase extends TileEntityLoadedBase imp
 	protected abstract void operate();
 
 	protected void produceWater(long microlitersPerTick) {
-		if(water.getTankType() != com.hbm.inventory.fluid.Fluids.WATER && water.getTankType() != com.hbm.inventory.fluid.Fluids.FRESH_WATER)
+		if(water.getTankType() != com.hbm.inventory.fluid.Fluids.SALT_WATER && water.getTankType() != com.hbm.inventory.fluid.Fluids.FRESH_WATER)
 			microlitersPerTick /= Math.max(1, nonWaterDebuff);
 		waterMicroliterRemainder += microlitersPerTick;
 		int produced = (int) Math.min(water.getMaxFill() - water.getFill(), waterMicroliterRemainder / 1_000_000L);
@@ -284,6 +305,7 @@ public abstract class TileEntityMachinePumpBase extends TileEntityLoadedBase imp
 		super.writeToNBT(nbt);
 		water.writeToNBT(nbt, "w");
 		nbt.setLong("pumpWaterMicroliters", waterMicroliterRemainder);
+		nbt.setTag("pumpStoredWaterMicroliters", storedWaterRemainders.copy());
 		nbt.setLong("pumpShaftJoules", shaftWorkJoules);
 	}
 
@@ -291,6 +313,12 @@ public abstract class TileEntityMachinePumpBase extends TileEntityLoadedBase imp
 		super.readFromNBT(nbt);
 		if(nbt.hasKey("w")) water.readFromNBT(nbt, "w");
 		waterMicroliterRemainder = Math.max(0, nbt.getLong("pumpWaterMicroliters"));
+		storedWaterRemainders = (NBTTagCompound) nbt.getCompoundTag("pumpStoredWaterMicroliters").copy();
+		if(storedWaterRemainders.hasKey("WATER")) {
+			long legacy = Math.max(0, storedWaterRemainders.getLong("WATER"));
+			storedWaterRemainders.setLong("SALT_WATER", Math.addExact(Math.max(0, storedWaterRemainders.getLong("SALT_WATER")), legacy));
+			storedWaterRemainders.removeTag("WATER");
+		}
 		shaftWorkJoules = Math.max(0, nbt.getLong("pumpShaftJoules"));
 	}
 

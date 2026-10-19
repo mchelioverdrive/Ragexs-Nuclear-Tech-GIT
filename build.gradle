@@ -89,6 +89,8 @@ sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = co
 minecraft {
 	version = "1.7.10-10.13.4.1614-1.7.10"
 	runDir = "eclipse"
+	replace '@MOD_VERSION@', version_name
+	replaceIn 'com/hbm/lib/RefStrings.java'
 }
 
 def productionDevMods = fileTree(dir: 'devmods', include: '*.jar')
@@ -194,6 +196,11 @@ dependencies {
 	compileOnly "inventorytweaks:InventoryTweaks:1.59-dev:deobf"
 
 	implementation "li.cil.oc:OpenComputers:MC1.7.10-1.5.+:api"
+}
+
+test {
+	// The outer test runs these cases through the dedicated-server class loader.
+	exclude '**/PylonWireTest$Checks.class'
 }
 
 processResources {
