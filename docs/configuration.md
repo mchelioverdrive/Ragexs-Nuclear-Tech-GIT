@@ -181,6 +181,8 @@ Important behavior:
 
 Armor-modification manufacture uses `hbmAssembler.json`, with ceramic preparation in `hbmPress.json` and `hbmBlastFurnace.json`. An active file replaces that machine's entire default registry; existing custom files are not merged or overwritten by the armor-recipe changes. Custom packs must carry the new outputs/inputs into their own active recipes explicitly. With no active override, startup and `/ntmreload` clear and rebuild these machine defaults and refresh the underscore templates. The removed crafting recipes are startup registrations, so applying this code change requires a restart; `/ntmreload` alone does not rebuild the crafting table. See [armor manufacturing](gameplay/manufacturing.md#armor-modification-manufacture).
 
+Blast-furnace recipe inputs support `item`, `dict` and `dictframe` arrays. Counted OreDictionary inputs use `["dict", "ingotSteel", 6]`; template export and reload retain the count in either input slot. Omitting the count still means one item.
+
 ## Bedrock excavator drops
 
 `MiningConfig` defines the default in-memory bedrock excavator drop list. Operators can edit this list during runtime with `/hbmbedrockdrop`, using entries in this format:

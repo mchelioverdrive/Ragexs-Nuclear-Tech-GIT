@@ -36,6 +36,16 @@ public class FluidRecipeAccountingTest {
         catch(IllegalArgumentException expected) { }
         assertEquals(500, ChemistryProcesses.chloralkali(false).duration); // Native brine cell unchanged.
         assertEquals(1000, ChemistryProcesses.waterTreatment().duration);
+        ProcessRecipe[] chlorocalcite = {ChemistryProcesses.chlorocalciteSolution(), ChemistryProcesses.chlorocalciteConditioning()};
+        int[] chlorocalciteTicks = {1000, 800};
+        for(int i = 0; i < chlorocalcite.length; i++) {
+            ProcessRecipe bill = chlorocalcite[i];
+            assertEquals(chlorocalciteTicks[i], bill.duration);
+            ChemicalFuelProcesses.validateReactorRating(bill.electricallyDriven());
+            assertEquals(240000, bill.workQuanta);
+            try { ChemicalFuelProcesses.validateReactorRating(bill.withDuration(400)); fail("Specialty liquid flow bypass"); }
+            catch(IllegalArgumentException expected) { assertTrue(expected.getMessage().contains("liquid output")); }
+        }
     }
     @Test public void ironPreparationClosesMassUsesRealReducingGasAndKeepsWholeParcels() {
         ProcessRecipe[] stages = {SteelmakingProcesses.concentrate(), SteelmakingProcesses.pelletize(), SteelmakingProcesses.harden(), SteelmakingProcesses.reduce()};

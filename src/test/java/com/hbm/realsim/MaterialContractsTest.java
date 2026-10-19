@@ -363,7 +363,7 @@ public class MaterialContractsTest {
         }
     }
 
-    public void ferrochromeStainlessUsesBothNativeInputCountsWithoutPureChromium() {
+    public void ferrochromeStainlessUsesBothNativeInputCountsWithoutPureChromium() throws Exception {
         Item raw = ModItems.ingot_raw, steel = ModItems.ingot_steel, stainless = ModItems.ingot_stainless;
         com.hbm.inventory.recipes.BlastFurnaceRecipes handler = new com.hbm.inventory.recipes.BlastFurnaceRecipes();
         java.util.List registry = (java.util.List) handler.getRecipeObject(); int start = registry.size();
@@ -372,10 +372,28 @@ public class MaterialContractsTest {
             ModItems.ingot_stainless = net.minecraft.init.Items.gold_ingot;
             net.minecraftforge.oredict.OreDictionary.registerOre("ingotSteel", new ItemStack(ModItems.ingot_steel));
             com.hbm.inventory.recipes.BlastFurnaceRecipes.registerFerrochromeStainless();
+            java.io.StringWriter json = new java.io.StringWriter();
+            com.google.gson.stream.JsonWriter writer = new com.google.gson.stream.JsonWriter(json);
+            writer.beginObject(); handler.writeRecipe(registry.get(registry.size() - 1), writer); writer.endObject(); writer.close();
+            com.google.gson.JsonObject exported = new com.google.gson.JsonParser().parse(json.toString()).getAsJsonObject();
+            assertEquals("dict", exported.getAsJsonArray("input1").get(0).getAsString());
+            assertEquals(6, exported.getAsJsonArray("input1").get(2).getAsInt());
+            assertEquals(2, exported.getAsJsonArray("input2").get(2).getAsInt());
+            assertEquals(24004, exported.getAsJsonArray("input2").get(3).getAsInt());
+            registry.remove(registry.size() - 1);
+            handler.readRecipe(exported); // Template reload must retain the counted OreDictionary feed.
             ItemStack iron = new ItemStack(ModItems.ingot_steel, 6), alloy = new ItemStack(ModItems.ingot_raw, 2, 24004);
             assertEquals(8, com.hbm.inventory.recipes.BlastFurnaceRecipes.getOutput(iron, alloy).stackSize);
             assertArrayEquals(new int[] {6, 2}, com.hbm.inventory.recipes.BlastFurnaceRecipes.getInputAmounts(iron, alloy));
             assertArrayEquals(new int[] {2, 6}, com.hbm.inventory.recipes.BlastFurnaceRecipes.getInputAmounts(alloy, iron));
+            com.google.gson.JsonElement first = exported.get("input1"), second = exported.get("input2");
+            exported.add("input1", second); exported.add("input2", first);
+            registry.remove(registry.size() - 1); handler.readRecipe(exported);
+            json = new java.io.StringWriter(); writer = new com.google.gson.stream.JsonWriter(json);
+            writer.beginObject(); handler.writeRecipe(registry.get(registry.size() - 1), writer); writer.endObject(); writer.close();
+            assertEquals(6, new com.google.gson.JsonParser().parse(json.toString()).getAsJsonObject().getAsJsonArray("input2").get(2).getAsInt());
+            assertArrayEquals(new int[] {6, 2}, com.hbm.inventory.recipes.BlastFurnaceRecipes.getInputAmounts(iron, alloy));
+            iron.stackSize = 5; assertNull(com.hbm.inventory.recipes.BlastFurnaceRecipes.getOutput(iron, alloy)); iron.stackSize = 6;
             alloy.stackSize = 1; assertNull(com.hbm.inventory.recipes.BlastFurnaceRecipes.getOutput(iron, alloy));
             alloy.stackSize = 2; alloy.setItemDamage(24003); assertNull(com.hbm.inventory.recipes.BlastFurnaceRecipes.getOutput(iron, alloy));
             assertFalse(com.hbm.inventory.recipes.BlastFurnaceRecipes.getRecipesForNEI().isEmpty());

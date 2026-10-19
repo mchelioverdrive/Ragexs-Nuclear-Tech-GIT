@@ -625,11 +625,11 @@ public final class ChemistryProcesses {
     }
     public static ProcessRecipe chlorocalciteSolution() {
         return bill("chlorocalcite_dissolution", new String[] {"FRESH_WATER"}, new int[] {4}, "CHLOROCALCITE_ITEM", 1,
-                new String[] {"CHLOROCALCITE_SOLUTION"}, new long[] {mass("FRESH_WATER", 4) + mass("CHLOROCALCITE_ITEM", 1)}, 1200, 60000, 0, 20, true).rebatch(2).withDuration(400);
+                new String[] {"CHLOROCALCITE_SOLUTION"}, new long[] {mass("FRESH_WATER", 4) + mass("CHLOROCALCITE_ITEM", 1)}, 1200, 60000, 0, 20, true).rebatch(2).withDuration(1000); // 8.70 L product at the 12 L/min specialty limit.
     }
     public static ProcessRecipe chlorocalciteConditioning() {
         return bill("chlorocalcite_conditioning", new String[] {"CHLOROCALCITE_SOLUTION", "FRESH_WATER"}, new int[] {2, 1}, "FLUX_ITEM", 1,
-                new String[] {"CHLOROCALCITE_MIX"}, new long[] {mass("CHLOROCALCITE_SOLUTION", 2) + mass("FRESH_WATER", 1) + mass("FLUX_ITEM", 1)}, 1200, 60000, 0, 20, true).rebatch(2).withDuration(400);
+                new String[] {"CHLOROCALCITE_MIX"}, new long[] {mass("CHLOROCALCITE_SOLUTION", 2) + mass("FRESH_WATER", 1) + mass("FLUX_ITEM", 1)}, 1200, 60000, 0, 20, true).rebatch(2).withDuration(800); // 6.01 L slurry at the same specialty limit.
     }
     public static ProcessRecipe chlorocalciteClarification() {
         long feed = mass("CHLOROCALCITE_MIX", 1), liquor = ratio(feed, "23", "43");

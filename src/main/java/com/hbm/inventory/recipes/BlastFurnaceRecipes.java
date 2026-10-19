@@ -395,12 +395,12 @@ public class BlastFurnaceRecipes extends SerializableRecipe {
 
 		JsonArray array1 = rec.get("input1").getAsJsonArray();
 		if(array1.get(0).getAsString().equals("item")) input1 = this.readAStack(array1);
-		if(array1.get(0).getAsString().equals("dict")) input1 = ((OreDictStack) this.readAStack(array1)).name;
+		if(array1.get(0).getAsString().equals("dict")) input1 = this.readAStack(array1);
 		if(array1.get(0).getAsString().equals("dictframe")) input1 = readDictFrame(array1);
 
 		JsonArray array2 = rec.get("input2").getAsJsonArray();
 		if(array2.get(0).getAsString().equals("item")) input2 = this.readAStack(array2);
-		if(array2.get(0).getAsString().equals("dict")) input2 = ((OreDictStack) this.readAStack(array2)).name;
+		if(array2.get(0).getAsString().equals("dict")) input2 = this.readAStack(array2);
 		if(array2.get(0).getAsString().equals("dictframe")) input2 = readDictFrame(array2);
 
 		if(input1 != null && input2 != null) {
@@ -419,12 +419,12 @@ public class BlastFurnaceRecipes extends SerializableRecipe {
 		this.writeItemStack(rec.getZ(), writer);
 
 		writer.name("input1");
-		if(rec.getX() instanceof ComparableStack) this.writeAStack((ComparableStack) rec.getX(), writer);
+		if(rec.getX() instanceof AStack) this.writeAStack((AStack) rec.getX(), writer);
 		if(rec.getX() instanceof String) this.writeAStack(new OreDictStack((String) rec.getX()), writer);
 		if(rec.getX() instanceof DictFrame) this.writeDictFrame((DictFrame) rec.getX(), writer);
 
 		writer.name("input2");
-		if(rec.getY() instanceof ComparableStack) this.writeAStack((ComparableStack) rec.getY(), writer);
+		if(rec.getY() instanceof AStack) this.writeAStack((AStack) rec.getY(), writer);
 		if(rec.getY() instanceof String) this.writeAStack(new OreDictStack((String) rec.getY()), writer);
 		if(rec.getY() instanceof DictFrame) this.writeDictFrame((DictFrame) rec.getY(), writer);
 
