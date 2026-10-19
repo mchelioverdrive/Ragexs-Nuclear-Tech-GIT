@@ -709,6 +709,7 @@ public class ModItems {
 	public static Item powder_copper;
 	public static Item powder_gold;
 	public static Item powder_iron;
+    public static Item iron_fines, iron_pellet_green, iron_pellet_hardened, iron_dri;
 	public static Item powder_chromium;
 	public static Item powder_titanium;
 	public static Item powder_zircon;
@@ -3679,6 +3680,10 @@ public class ModItems {
 		powder_lead = new Item().setUnlocalizedName("powder_lead").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_lead");
 		powder_gold = new Item().setUnlocalizedName("powder_gold").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_gold");
 		powder_iron = new Item().setUnlocalizedName("powder_iron").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_iron");
+        iron_fines = new Item().setUnlocalizedName("iron_fines").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_iron");
+        iron_pellet_green = new Item().setUnlocalizedName("iron_pellet_green").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":crystal_iron");
+        iron_pellet_hardened = new Item().setUnlocalizedName("iron_pellet_hardened").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":pellets_lead");
+        iron_dri = new Item().setUnlocalizedName("iron_dri").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_iron");
 		powder_chromium = new Item().setUnlocalizedName("powder_chromium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_titanium");
 		powder_titanium = new Item().setUnlocalizedName("powder_titanium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_titanium");
 		powder_zircon = new Item().setUnlocalizedName("powder_zircon").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":powder_copper");
@@ -7652,6 +7657,10 @@ public class ModItems {
 		GameRegistry.registerItem(powder_coal, powder_coal.getUnlocalizedName());
 		GameRegistry.registerItem(powder_coal_tiny, powder_coal_tiny.getUnlocalizedName());
 		GameRegistry.registerItem(powder_iron, powder_iron.getUnlocalizedName());
+        GameRegistry.registerItem(iron_fines, iron_fines.getUnlocalizedName());
+        GameRegistry.registerItem(iron_pellet_green, iron_pellet_green.getUnlocalizedName());
+        GameRegistry.registerItem(iron_pellet_hardened, iron_pellet_hardened.getUnlocalizedName());
+        GameRegistry.registerItem(iron_dri, iron_dri.getUnlocalizedName());
 		GameRegistry.registerItem(powder_gold, powder_gold.getUnlocalizedName());
 		GameRegistry.registerItem(powder_lapis, powder_lapis.getUnlocalizedName());
 		GameRegistry.registerItem(powder_quartz, powder_quartz.getUnlocalizedName());

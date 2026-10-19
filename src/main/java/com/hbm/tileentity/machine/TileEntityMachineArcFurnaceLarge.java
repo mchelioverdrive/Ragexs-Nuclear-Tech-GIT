@@ -70,6 +70,10 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 	private long observedRecipeRevision = Long.MIN_VALUE;
 	public long operatingPowerWatts = com.hbm.realsim.IndustrialDemand.ARC_CEILING_W;
 	private long meltPaidQuanta;
+    public final com.hbm.realsim.ArcSteelBatch steelBatch = new com.hbm.realsim.ArcSteelBatch();
+    private boolean clientSteelBatch;
+    private long clientSteelWork;
+    private long steelDrawTick = Long.MIN_VALUE, steelDrawQuanta;
 	private long lastAccountingTick = Long.MIN_VALUE;
 	private long progressEffectThroughTick = Long.MIN_VALUE;
 	private long lastProgressedTick = Long.MIN_VALUE;
@@ -390,6 +394,10 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 		long intervalStart = lastAccountingTick;
 		long elapsed = targetTick - lastAccountingTick;
 		lastAccountingTick = targetTick;
+		if(steelBatch.active() || !liquidMode && com.hbm.realsim.ArcSteelBatch.containsDRI(slots)) {
+            settleSteel(elapsed, targetTick);
+            return;
+        }
 		long consumption = EnergyUnits.wattsToQuantaPerTick(this.operatingPowerWatts);
 		boolean ready = this.hasProgressInputs();
 		if(!ready) {
@@ -447,6 +455,44 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 		return this.hasIngredients() && this.hasElectrodes() && delay <= 0 && liquids.isEmpty() && lid <= 0F;
 	}
 
+    private void settleSteel(long elapsed, long tick) {
+        isProgressing = false;
+        if(!hasProgressInputs()) return; // Keep paid ownership through missing electrodes or blocked output.
+        if(!steelBatch.active() && energyQuanta <= 0) return;
+        runtimeSettling = true;
+        try {
+            if(!steelBatch.active()) {
+                if(!steelBatch.reserve(slots)) return;
+                meltPaidQuanta = 0; // Legacy melting credit cannot pay a different, reserved steel charge.
+            }
+            long rate = EnergyUnits.wattsToQuantaPerTick(operatingPowerWatts);
+            long remaining = steelBatch.required() - steelBatch.paid();
+            long steps = Math.min(elapsed, Math.max(1L, (remaining + rate - 1L) / rate));
+            long debit = steelBatch.pay(Math.min(energyQuanta, Math.multiplyExact(rate, steps)));
+            runtimeEnergyMutation = true;
+            try { setStoredEnergyQuanta(energyQuanta - debit); } finally { runtimeEnergyMutation = false; }
+            steelDrawTick = tick; steelDrawQuanta = Math.min(rate, debit);
+            meltPaidQuanta = steelBatch.paid(); progress = meltPaidQuanta / (float) steelBatch.required();
+            isProgressing = debit > 0;
+            if(steelBatch.finish(slots)) {
+                for(int i = 0; i < 3; i++) if(ItemArcElectrode.damage(slots[i])) slots[i] = new ItemStack(ModItems.arc_electrode_burnt, 1, slots[i].getItemDamage());
+                meltPaidQuanta = 0; progress = 0; isProgressing = false;
+                delay = (int) (120 / (upgrade * 0.5 + 1));
+                PollutionHandler.incrementPollution(worldObj, xCoord, yCoord, zCoord, PollutionType.SOOT, 10F);
+            }
+            refreshRuntimeState(); markDirty(); markNetworkDirty();
+        } finally { runtimeSettling = false; }
+    }
+
+    public boolean acceptsSteelInput(ItemStack stack) {
+        return !liquidMode && com.hbm.realsim.ArcSteelBatch.input(stack);
+    }
+
+    public void dropOwnedSteelCharge() {
+        if(worldObj == null || worldObj.isRemote) return;
+        for(ItemStack stack : steelBatch.takeDrops()) worldObj.spawnEntityInWorld(new net.minecraft.entity.item.EntityItem(worldObj, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, stack));
+    }
+
 	public long getRatedDemandWatts() {
 		return com.hbm.realsim.IndustrialDemand.arcRatedWatts(upgrade);
 	}
@@ -468,6 +514,9 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 	}
 
 	public long getBatchWorkQuanta() {
+		if(steelBatch.active()) return steelBatch.required();
+        if(worldObj != null && worldObj.isRemote && clientSteelBatch) return clientSteelWork;
+        if(!liquidMode && com.hbm.realsim.ArcSteelBatch.containsDRI(slots)) return com.hbm.realsim.ArcSteelBatch.WORK_QUANTA;
 		return com.hbm.realsim.IndustrialDemand.arcWorkQuanta(getBatchMilligrams());
 	}
 
@@ -486,11 +535,15 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 		boolean ready = this.hasProgressInputs();
 		long consumption = EnergyUnits.wattsToQuantaPerTick(this.operatingPowerWatts);
 		if(!ready && energyQuanta > 0L) {
-			progress = 0F;
+			if(!steelBatch.active()) progress = 0F;
 			isProgressing = false;
 			progressEffectThroughTick = Math.min(progressEffectThroughTick, now - 1L);
 		}
-		if(ready && consumption > 0L && energyQuanta >= Math.min(consumption, Math.max(0L, getBatchWorkQuanta() - meltPaidQuanta))) {
+		boolean steel = steelBatch.active() || !liquidMode && com.hbm.realsim.ArcSteelBatch.containsDRI(slots);
+        if(steel && ready && (energyQuanta > 0 || steelBatch.complete())) {
+            // Each owning-thread tick pays actual supplied power, including sub-nameplate brownouts.
+            scheduleMachineTransition(now + 1L, TASK_ACCOUNTING, TASK_SLOT_MAIN);
+        } else if(ready && consumption > 0L && energyQuanta >= Math.min(consumption, Math.max(0L, getBatchWorkQuanta() - meltPaidQuanta))) {
 			long completionTicks = this.ticksUntilProgressCompletion();
 			long resourceTicks = energyQuanta / consumption;
 			if(energyQuanta >= Math.max(0L, getBatchWorkQuanta() - meltPaidQuanta)) resourceTicks = Math.max(resourceTicks, ticksUntilProgressCompletion());
@@ -640,6 +693,8 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 	}
 	
 	public boolean hasIngredients() {
+        if(steelBatch.active()) return steelBatch.outputReady(slots);
+        if(!liquidMode && com.hbm.realsim.ArcSteelBatch.containsDRI(slots)) return com.hbm.realsim.ArcSteelBatch.canReserve(slots);
 		for(int i = 0; i < cachedRecipes.length; i++) cachedRecipes[i] = ArcFurnaceRecipes.getOutput(slots[i + 5], this.liquidMode);
 		for(ArcFurnaceRecipe recipe : cachedRecipes) {
 			if(recipe == null) continue;
@@ -672,6 +727,7 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 		if(lid <= 0) return false;
 		if(slot < 3) return stack.getItem() == ModItems.arc_electrode;
 		if(slot > 4) {
+			if(acceptsSteelInput(stack)) return (slots[slot] == null ? 0 : slots[slot].stackSize) + stack.stackSize <= getMaxInputSize();
 			ArcFurnaceRecipe recipe = ArcFurnaceRecipes.getOutput(stack, this.liquidMode);
 			if(recipe == null) return false;
 			if(liquidMode) {
@@ -693,6 +749,7 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 	public boolean isItemValidForSlot(int slot, ItemStack stack) {
 		if(slot < 3) return stack.getItem() == ModItems.arc_electrode;
 		if(slot > 4) {
+			if(acceptsSteelInput(stack)) return true;
 			ArcFurnaceRecipe recipe = ArcFurnaceRecipes.getOutput(stack, this.liquidMode);
 			if(recipe == null) return false;
 			if(liquidMode) {
@@ -707,7 +764,7 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 	@Override
 	public boolean canExtractItem(int slot, ItemStack stack, int side) {
 		if(slot < 3) return lid >= 1 && stack.getItem() != ModItems.arc_electrode;
-		if(slot > 4) return lid > 0 && ArcFurnaceRecipes.getOutput(stack, this.liquidMode) == null;
+		if(slot > 4) return lid > 0 && !acceptsSteelInput(stack) && ArcFurnaceRecipes.getOutput(stack, this.liquidMode) == null;
 		return false;
 	}
 	
@@ -772,6 +829,7 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 		buf.writeInt(selectedLiquidMaterial);
 		buf.writeLong(operatingPowerWatts);
 		buf.writeLong(meltPaidQuanta);
+        buf.writeBoolean(steelBatch.active()); buf.writeLong(steelBatch.required());
 	}
 	
 	@Override
@@ -797,6 +855,7 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 		this.selectedLiquidMaterial = buf.readInt();
 		operatingPowerWatts = buf.readLong();
 		meltPaidQuanta = buf.readLong();
+        clientSteelBatch = buf.readBoolean(); clientSteelWork = buf.readLong();
 		this.clientProgressing = this.isProgressing;
 		
 		if(syncLid != 0 && syncLid != 1) this.approachNum = 2;
@@ -816,10 +875,12 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 		lastProgressedTick = Long.MIN_VALUE;
 		lastProgressEffectTick = Long.MIN_VALUE;
 		runtimeInitialized = false;
+		steelBatch.read(nbt);
 		
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.liquidMode = nbt.getBoolean("liquidMode");
 		this.meltPaidQuanta = Math.max(0L, nbt.getLong("realSimMeltPaidQuanta"));
+		if(steelBatch.active()) this.meltPaidQuanta = steelBatch.paid();
 		this.progress = nbt.hasKey("realSimMeltPaidQuanta") ? nbt.getFloat("progress") : 0F;
 		this.lid = nbt.getFloat("lid");
 		this.delay = nbt.getInteger("delay");
@@ -842,6 +903,7 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 		nbt.setBoolean("liquidMode", liquidMode);
 		nbt.setFloat("progress", progress);
 		nbt.setLong("realSimMeltPaidQuanta", meltPaidQuanta);
+        steelBatch.write(nbt);
 		nbt.setFloat("lid", lid);
 		nbt.setInteger("delay", delay);
 		nbt.setInteger("selectedLiquidMaterial", selectedLiquidMaterial);
@@ -922,6 +984,7 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 
 	@Override
 	public void receiveControl(NBTTagCompound data) {
+		if(worldObj == null || worldObj.isRemote || steelBatch.active()) return;
 		if(data.getBoolean("liquid")) {
 			if(worldObj != null && !worldObj.isRemote) this.settleProgressThrough(worldObj.getTotalWorldTime() - 1L);
 			this.liquidMode = !this.liquidMode;
@@ -969,8 +1032,13 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
 	}
 
     @Override public long getMachineDemandWatts() { return getRatedDemandWatts(); }
-    @Override public long getMachineCurrentDrawWatts() { return isProgressing ? operatingPowerWatts : 0; }
+    @Override public long getMachineCurrentDrawWatts() {
+        long now = worldObj == null ? Long.MIN_VALUE : worldObj.getTotalWorldTime();
+        if(steelBatch.active() || steelDrawTick == now && now != Long.MIN_VALUE) return steelDrawTick == now ? steelDrawQuanta * 10L : 0;
+        return isProgressing ? operatingPowerWatts : 0;
+    }
     @Override public void appendMachineInfo(java.util.List<String> lines, boolean live) {
+        lines.add("Solid steel charge: 8 DRI + 1 coal coke + 1 quicklime -> 32 steel + 2 slag; 57.6 MJ electrical");
         lines.add("Melting energy: " + api.hbm.energymk2.EnergyUnits.formatJoules(com.hbm.realsim.IndustrialDemand.ARC_WORK_J_PER_KG * 2L) + " per ingot-equivalent, modeled melting duty at 1600 C");
         if(live) { lines.add("Batch work: " + api.hbm.energymk2.EnergyUnits.formatJoules(getBatchWorkQuanta())); lines.add("Melting progress: " + api.hbm.energymk2.EnergyUnits.formatJoules(meltPaidQuanta)); }
         lines.add("Speed upgrades: 1x / 3x / 5x / 7x installed power; batch work stays constant");

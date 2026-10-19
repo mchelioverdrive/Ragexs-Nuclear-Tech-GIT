@@ -284,6 +284,21 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
 	public abstract int getPowerReq();
 	public abstract int getDelay();
 
+    /** Configuration snapshot for read-only production displays; never probes the world. */
+    public ExtractionProfile getExtractionProfile() { return null; }
+    public static final class ExtractionProfile {
+        public final int interval, oil, dunaOil, bedrockOil, gasMin, gasMax, bedGasMin, bedGasMax, gasDeposit, petroleumMin, petroleumMax, solution;
+        public final double depletion, dunaDepletion;
+        public ExtractionProfile(int interval, int oil, int dunaOil, int bedrockOil, int gasMin, int gasMax, int bedGasMin, int bedGasMax,
+                int gasDeposit, int petroleumMin, int petroleumMax, double depletion, double dunaDepletion, int solution) {
+            this.interval = interval; this.oil = Math.max(0, Math.min(1, oil)); this.dunaOil = Math.max(0, Math.min(1, dunaOil));
+            this.bedrockOil = Math.max(0, Math.min(1, bedrockOil)); this.gasMin = Math.max(0, gasMin); this.gasMax = Math.max(this.gasMin, gasMax);
+            this.bedGasMin = Math.max(0, bedGasMin); this.bedGasMax = Math.max(this.bedGasMin, bedGasMax);
+            this.gasDeposit = gasDeposit; this.petroleumMin = Math.max(0, petroleumMin); this.petroleumMax = Math.max(this.petroleumMin, petroleumMax);
+            this.depletion = depletion; this.dunaDepletion = dunaDepletion; this.solution = solution;
+        }
+    }
+
 	public void tryDrill(int y) {
 		Block b = worldObj.getBlock(xCoord, y, zCoord);
 

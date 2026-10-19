@@ -500,6 +500,12 @@ public class TileEntityNukeFurnace extends TileEntityLoadedBase implements ISide
 	public void updateEntity() { }
 	
 	private static HashMap<ComparableStack, Integer> fuels = new HashMap();
+	public static java.util.Map<ComparableStack, Integer> getFuelDefinitions() {
+		java.util.Map<ComparableStack, Integer> copy = new java.util.HashMap<>();
+		for(java.util.Map.Entry<ComparableStack, Integer> entry : fuels.entrySet())
+			copy.put(new ComparableStack(entry.getKey().toStack()), entry.getValue());
+		return java.util.Collections.unmodifiableMap(copy);
+	}
 	//for the int array: [0] => level (1-4) [1] => amount of operations
 	
 	/* 

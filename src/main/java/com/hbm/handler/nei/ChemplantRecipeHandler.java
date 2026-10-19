@@ -19,7 +19,6 @@ import com.hbm.items.ModItems;
 import com.hbm.items.machine.ItemFluidIcon;
 import com.hbm.lib.RefStrings;
 
-import codechicken.nei.NEIServerUtils;
 import codechicken.nei.PositionedStack;
 import codechicken.nei.recipe.TemplateRecipeHandler;
 import net.minecraft.client.gui.inventory.GuiContainer;
@@ -145,7 +144,7 @@ public class ChemplantRecipeHandler extends SafeTemplateRecipeHandler implements
 
 			for(ItemStack out : recipe.outputs) {
 
-				if(out != null && NEIServerUtils.areStacksSameTypeCrafting(result, out)) {
+				if(out != null && NEISafe.matchesRecipeStack(result, out)) {
 					this.arecipes.add(new RecipeSet(recipe));
 					continue outer;
 				}
@@ -176,6 +175,11 @@ public class ChemplantRecipeHandler extends SafeTemplateRecipeHandler implements
 
 	@Override
 	public void loadUsageRecipes(ItemStack ingredient) {
+		if(!NEISafe.isValid(ingredient)) return;
+		if(ingredient.getItem() == ModItems.chemistry_template) {
+			for(ChemRecipe recipe : ChemplantRecipes.recipes) if(recipe.getId() == ingredient.getItemDamage()) arecipes.add(new RecipeSet(recipe));
+			return;
+		}
 
 		outer:
 		for(ChemRecipe recipe : ChemplantRecipes.recipes) {
@@ -186,7 +190,7 @@ public class ChemplantRecipeHandler extends SafeTemplateRecipeHandler implements
 					List<ItemStack> stacks = in.extractForNEI();
 
 					for(ItemStack stack : stacks) {
-						if(NEIServerUtils.areStacksSameTypeCrafting(ingredient, stack)) {
+						if(NEISafe.matchesRecipeStack(ingredient, stack)) {
 							this.arecipes.add(new RecipeSet(recipe));
 							continue outer;
 						}

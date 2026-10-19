@@ -188,7 +188,7 @@ public class BreederRecipes extends SerializableRecipe {
 
 	@Override
 	public Object getRecipeObject() {
-		return recipes;
+		return getAllRecipes();
 	}
 
 	@Override
@@ -207,8 +207,8 @@ public class BreederRecipes extends SerializableRecipe {
 
 	@Override
 	public void writeRecipe(Object recipe, JsonWriter writer) throws IOException {
-		Entry<ComparableStack, BreederRecipe> rec = (Entry<ComparableStack, BreederRecipe>) recipe;
-		ComparableStack in = rec.getKey();
+		Entry<ItemStack, BreederRecipe> rec = (Entry<ItemStack, BreederRecipe>) recipe;
+		ComparableStack in = new ComparableStack(rec.getKey());
 
 		writer.name("input");
 		this.writeAStack(in, writer);

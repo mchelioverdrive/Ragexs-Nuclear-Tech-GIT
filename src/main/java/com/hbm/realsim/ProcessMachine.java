@@ -77,6 +77,13 @@ public final class ProcessMachine {
     }
 
     private static net.minecraft.item.Item mineralItem(String name) {
+        if(name.equals("IRON_FINES_ITEM")) return ModItems.iron_fines;
+        if(name.equals("IRON_GREEN_PELLET_ITEM")) return ModItems.iron_pellet_green;
+        if(name.equals("IRON_HARD_PELLET_ITEM")) return ModItems.iron_pellet_hardened;
+        if(name.equals("IRON_DRI_ITEM")) return ModItems.iron_dri;
+        if(name.equals("PELLET_LIMESTONE_ITEM")) return ModItems.powder_limestone;
+        if(name.equals("PELLET_CLAY_ITEM")) return Items.clay_ball;
+        if(name.equals("IRON_PREP_POWDER_ITEM")) return ModItems.powder_iron;
         if(name.equals("ICE_BLOCK")) return net.minecraft.item.Item.getItemFromBlock(net.minecraft.init.Blocks.ice);
         if(name.equals("PACKED_ICE_BLOCK")) return net.minecraft.item.Item.getItemFromBlock(net.minecraft.init.Blocks.packed_ice);
         if(name.equals("SNOW_BLOCK")) return net.minecraft.item.Item.getItemFromBlock(net.minecraft.init.Blocks.snow);
@@ -188,6 +195,7 @@ public final class ProcessMachine {
         return item == null ? null : new com.hbm.inventory.RecipesCommon.ComparableStack(item, count);
     }
     public static AStack feed(String name, int count) {
+        if(name.equals("IRON_PREP_POWDER_ITEM")) return new OreDictStack(IRON.dust(), count);
         if(name.startsWith("ITEM:")) return new ComparableStack(SpecialistProcesses.stack(name, count));
         if(name.equals("CHAR_ITEM")) return new ComparableStack(ModItems.powder_ash, count, EnumAshType.SOOT.ordinal());
         if(name.equals("GLASS_PANE_ITEM")) return new OreDictStack(KEY_ANYPANE, count);
@@ -218,6 +226,7 @@ public final class ProcessMachine {
     }
     public static boolean matches(ItemStack stack, String identity) {
         if(stack == null) return false;
+        if(identity.equals("IRON_PREP_POWDER_ITEM")) return hasOre(stack, IRON.dust());
         if(identity.equals("GLASS_PANE_ITEM")) return hasOre(stack, KEY_ANYPANE);
         if(identity.equals("CARBON_WIRE_ITEM")) return hasOre(stack, CARBON.wireFine());
         if(identity.equals("ASBESTOS_ITEM")) return hasOre(stack, ASBESTOS.ingot());

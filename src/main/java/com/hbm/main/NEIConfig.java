@@ -28,13 +28,17 @@ public class NEIConfig implements IConfigureNEI {
 
 	@Override
 	public void loadConfig() {
+		java.util.List<TemplateRecipeHandler> validation = Boolean.getBoolean("hbm.nei.validate") ? new java.util.ArrayList<>(NEIRegistry.listAllHandlers()) : null;
 		for (TemplateRecipeHandler handler: NEIRegistry.listAllHandlers()) {
 			registerHandler(handler);
 		}
 
 		for(CustomMachineConfigJSON.MachineConfiguration conf : CustomMachineConfigJSON.niceList) {
-			registerHandlerBypass(new CustomMachineHandler(conf));
+			CustomMachineHandler handler = new CustomMachineHandler(conf);
+			registerHandlerBypass(handler);
+			if(validation != null) validation.add(handler);
 		}
+		if(validation != null) NEISafe.validateNavigation(validation);
 
 		//Some things are even beyond my control...or are they?
 		API.hideItem(ItemBattery.getEmptyBattery(ModItems.memory));

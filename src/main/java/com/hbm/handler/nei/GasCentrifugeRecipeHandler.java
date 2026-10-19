@@ -1,189 +1,77 @@
 package com.hbm.handler.nei;
 
-import static codechicken.lib.gui.GuiDraw.drawTexturedModalRect;
-
 import java.awt.Rectangle;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-
 import com.hbm.blocks.ModBlocks;
-import com.hbm.handler.imc.ICompatNHNEI;
-import com.hbm.inventory.gui.GUIMachineGasCent;
+import com.hbm.inventory.fluid.FluidType;
+import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.recipes.GasCentrifugeRecipes;
-import com.hbm.inventory.recipes.MachineRecipes;
-import com.hbm.lib.RefStrings;
-
-import codechicken.nei.NEIServerUtils;
-import codechicken.nei.PositionedStack;
-import codechicken.nei.recipe.TemplateRecipeHandler;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.inventory.GuiContainer;
+import com.hbm.inventory.recipes.GasCentrifugeRecipes.PseudoFluidType;
+import com.hbm.inventory.gui.GUIMachineGasCent;
+import com.hbm.inventory.recipes.loader.PetroleumRecipeLoader;
+import com.hbm.items.ModItems;
+import com.hbm.items.machine.ItemFluidIcon;
+import com.hbm.realsim.*;
 import net.minecraft.item.ItemStack;
 
-public class GasCentrifugeRecipeHandler extends SafeTemplateRecipeHandler implements ICompatNHNEI {
-	@Override
-	public ItemStack[] getMachinesForRecipe() {
-		return new ItemStack[]{
-				new ItemStack(ModBlocks.machine_gascent)};
-	}
-	@Override
-	public String getRecipeID() {
-		return "gascentprocessing";
-	}
-	public static ArrayList<Fuel> fuels;
-
-	public class SmeltingSet extends TemplateRecipeHandler.CachedRecipe {
-		PositionedStack input;
-		List<PositionedStack> output = new ArrayList();
-		boolean isHighSpeed;
-		int centNumber;
-
-		public SmeltingSet(ItemStack input, ItemStack[] results, boolean isHighSpeed, int centNumber) {
-			input = NEISafe.copy(input);
-			if(input != null) input.stackSize = 1;
-			this.input = NEISafe.positionedStack(input, 52 - 5, 35 - 11);
-			this.isHighSpeed = isHighSpeed;
-			this.centNumber = centNumber;
-
-			for(byte i = 0; i < results.length; i++) {
-				this.output.add(NEISafe.positionedStack(results[i], i % 2 == 0 ? 134 - 5 : 152 - 5, i < 2 ? 26 - 11 : 44 - 11 ));
-			}
-		}
-
-		@Override
-		public List<PositionedStack> getIngredients() {
-			return NEISafe.getCycledIngredients(this, cycleticks / 48, Arrays.asList(new PositionedStack[] { input }));
-		}
-
-		@Override
-		public List<PositionedStack> getOtherStacks() {
-			List<PositionedStack> stacks = new ArrayList<PositionedStack>();
-			ensureResources();
-            if(!fuels.isEmpty()) stacks.add(fuels.get((cycleticks / 48) % fuels.size()).stack);
-			stacks.addAll(output);
-			return NEISafe.cleanPositionedList(stacks);
-		}
-
-		@Override
-		public PositionedStack getResult() {
-			return NEISafe.firstValid(output);
-		}
-	}
-
-	public static class Fuel {
-		public Fuel(ItemStack ingred) {
-
-			this.stack = NEISafe.positionedStack(ingred, 3, 42, false);
-		}
-
-		public PositionedStack stack;
-	}
-
-	@Override
-	public String getRecipeName() {
-		return "Gas Centrifuge";
-	}
-
-	@Override
-	public String getGuiTexture() {
-		return RefStrings.MODID + ":textures/gui/nei/gui_nei_centrifuge_gas.png";
-	}
-
-    private static void ensureResources() {
-        if(fuels != null && !fuels.isEmpty()) return;
-        fuels = new ArrayList<Fuel>();
-        for(ItemStack item : MachineRecipes.instance().getBatteries()) {
-            if(NEISafe.isValid(item)) fuels.add(new Fuel(item));
+/** Every internal cascade stage uses the paid native bill, not a fictional single-module total yield. */
+public class GasCentrifugeRecipeHandler extends ProcessInfoHandler {
+    private static List<Process> cache;
+    private static long revision = -1;
+    @Override public String getRecipeName() { return "Gas Centrifuge"; }
+    @Override public String getOverlayIdentifier() { return "gascentprocessing"; }
+    @Override public Class<? extends net.minecraft.client.gui.inventory.GuiContainer> getGuiClass() { return GUIMachineGasCent.class; }
+    @Override public void loadTransferRects() { transferRects.add(new RecipeTransferRect(new Rectangle(69, 16, 44, 37), "gascentprocessing")); }
+    @Override protected List<Process> processes() { return snapshot(); }
+    @Override protected net.minecraft.block.Block[] machineBlocks() { return new net.minecraft.block.Block[] {ModBlocks.machine_gascent}; }
+    private static synchronized List<Process> snapshot() {
+        long current = dataRevision(); if(cache != null && revision == current) return cache;
+        List<Process> rows = new ArrayList<>();
+        for(PseudoFluidType stage : PseudoFluidType.types.values()) {
+            if(stage == PseudoFluidType.NONE || stage.getFluidConsumed() <= 0) continue;
+            ProcessRecipe bill = NuclearChemicalProcesses.cascade(stage.name, false);
+            if(bill != null) {
+                for(boolean fast : new boolean[] {false, true}) {
+                    if(stage.getIfHighSpeed() && !fast) continue;
+                    bill = NuclearChemicalProcesses.cascade(stage.name, fast);
+                    List<ItemStack> in = new ArrayList<>();
+                    in.add(stream(stage, bill.quantities[0]));
+                    if(fast) in.add(new ItemStack(ModItems.upgrade_gc_speed));
+                    List<ItemStack> out = new ArrayList<>();
+                    for(int i = 0; i < bill.outputs.length; i++) {
+                        String identity = bill.outputs[i];
+                        if(identity.startsWith("CASCADE_")) {
+                            PseudoFluidType next = PseudoFluidType.types.get(identity.substring(8));
+                            int quantity = Math.toIntExact(bill.productMass[i] / PhysicalRegistry.get(identity).massUnits);
+                            out.add(stream(next, quantity));
+                        } else out.add(PetroleumRecipeLoader.productDisplay(bill, i));
+                    }
+                    rows.add(new Process(ModBlocks.machine_gascent, inputs(in.toArray(new ItemStack[0])), out.toArray(new ItemStack[0]),
+                            "Cascade stage: " + stage.name + (fast ? "; speed upgrade retained" : "; base speed"),
+                            "Duration: " + bill.duration / 20D + " s; " + MachineInfo.watts(bill.electricalRatingWatts),
+                            "Electrical work: " + api.hbm.energymk2.EnergyUnits.formatJoules(bill.workQuanta),
+                            "Connect enriched internal stream to next module; drain tails/F", "Exact fractional solid/fluid products accumulate; no extra U-235"));
+                }
+            } else {
+                List<ItemStack> outputs = new ArrayList<>();
+                if(stage.getOutputType() != null && stage.getOutputType() != PseudoFluidType.NONE && stage.getFluidProduced() > 0)
+                    outputs.add(stream(stage.getOutputType(), stage.getFluidProduced()));
+                if(stage.getOutput() != null) for(ItemStack stack : stage.getOutput()) if(NEISafe.isValid(stack)) outputs.add(stack);
+                if(outputs.isEmpty()) continue;
+                rows.add(new Process(ModBlocks.machine_gascent, inputs(stream(stage, stage.getFluidConsumed())), outputs.toArray(new ItemStack[0]),
+                        "Internal stage: " + stage.name + "; 150 ticks base", "2 kW base; speed upgrade: 80 ticks at 3 kW", "Direct module transfer; every output must have room"));
+            }
         }
+        cache = java.util.Collections.unmodifiableList(rows); revision = current; return cache;
     }
-
-	@Override
-	public void loadCraftingRecipes(String outputId, Object... results) {
-		if((outputId.equals("gascentprocessing")) && getClass() == GasCentrifugeRecipeHandler.class) {
-			Map<Object, Object[]> recipes = GasCentrifugeRecipes.getGasCentrifugeRecipes();
-			for(Map.Entry<Object, Object[]> recipe : recipes.entrySet()) {
-				this.arecipes.add(new SmeltingSet((ItemStack) recipe.getKey(), (ItemStack[]) recipe.getValue()[0], (boolean) recipe.getValue()[1], (int) recipe.getValue()[2]));
-			}
-		} else {
-			super.loadCraftingRecipes(outputId, results);
-		}
-	}
-
-	@Override
-	public void loadCraftingRecipes(ItemStack result) {
-		Map<Object, Object[]> recipes = GasCentrifugeRecipes.getGasCentrifugeRecipes();
-		for(Map.Entry<Object, Object[]> recipe : recipes.entrySet()) {
-			if(NEIServerUtils.areStacksSameType(((ItemStack[]) recipe.getValue()[0])[0], result) || NEIServerUtils.areStacksSameType(((ItemStack[]) recipe.getValue()[0])[1], result)
-					|| NEIServerUtils.areStacksSameType(((ItemStack[]) recipe.getValue()[0])[2], result) || NEIServerUtils.areStacksSameType(((ItemStack[]) recipe.getValue()[0])[3], result))
-				this.arecipes.add(new SmeltingSet((ItemStack) recipe.getKey(), (ItemStack[]) recipe.getValue()[0], (boolean) recipe.getValue()[1], (int) recipe.getValue()[2]));
-		}
-	}
-
-	@Override
-	public void loadUsageRecipes(String inputId, Object... ingredients) {
-		if((inputId.equals("gascentprocessing")) && getClass() == GasCentrifugeRecipeHandler.class) {
-			loadCraftingRecipes("gascentprocessing", new Object[0]);
-		} else {
-			super.loadUsageRecipes(inputId, ingredients);
-		}
-	}
-
-	@Override
-	public void loadUsageRecipes(ItemStack ingredient) {
-		Map<Object, Object[]> recipes = GasCentrifugeRecipes.getGasCentrifugeRecipes();
-		for(Map.Entry<Object, Object[]> recipe : recipes.entrySet()) {
-			if(compareFluidStacks(ingredient, (ItemStack) recipe.getKey()))
-				this.arecipes.add(new SmeltingSet((ItemStack) recipe.getKey(), (ItemStack[]) recipe.getValue()[0], (boolean) recipe.getValue()[1], (int) recipe.getValue()[2]));
-		}
-	}
-
-	private boolean compareFluidStacks(ItemStack sta1, ItemStack sta2) {
-		return NEISafe.isValid(sta1) && NEISafe.isValid(sta2) && sta1.getItem() == sta2.getItem() && sta1.getItemDamage() == sta2.getItemDamage();
-	}
-
-	@Override
-	public void drawExtras(int recipe) {
-		drawProgressBar(3, 51 - 45, 176, 0, 16, 34, 480, 7);
-
-		SmeltingSet set = (SmeltingSet) this.arecipes.get(recipe);
-
-		drawProgressBar(79 - 5, 28 - 11, 208, 0, 44, 37, set.isHighSpeed ? 150 - 70 : 150, 0);
-
-		FontRenderer fontRenderer = Minecraft.getMinecraft().fontRenderer;
-
-		String centrifuges = set.centNumber + " G. Cents";
-		fontRenderer.drawString(centrifuges, (50 - fontRenderer.getStringWidth(centrifuges) / 2), 21 - 11, 65280);
-	}
-
-	public LinkedList<RecipeTransferRect> transferRectsRec = new LinkedList<RecipeTransferRect>();
-	public LinkedList<RecipeTransferRect> transferRectsGui = new LinkedList<RecipeTransferRect>();
-	public LinkedList<Class<? extends GuiContainer>> guiRec = new LinkedList<Class<? extends GuiContainer>>();
-	public LinkedList<Class<? extends GuiContainer>> guiGui = new LinkedList<Class<? extends GuiContainer>>();
-
-	@Override
-	public void loadTransferRects() {
-		transferRectsGui = new LinkedList<RecipeTransferRect>();
-		guiGui = new LinkedList<Class<? extends GuiContainer>>();
-
-		transferRects.add(new RecipeTransferRect(new Rectangle(79 - 5, 26 - 11, 44, 40), "gascentprocessing"));
-		transferRectsGui.add(new RecipeTransferRect(new Rectangle(70 - 5, 36 - 11, 36, 12), "gascentprocessing"));
-
-		guiGui.add(GUIMachineGasCent.class);
-		RecipeTransferRectHandler.registerRectsToGuis(getRecipeTransferRectGuis(), transferRects);
-		RecipeTransferRectHandler.registerRectsToGuis(guiGui, transferRectsGui);
-	}
-
-	@Override
-	public void drawBackground(int recipe) {
-		super.drawBackground(recipe);
-
-		SmeltingSet set = (SmeltingSet) this.arecipes.get(recipe);
-
-		if(set.isHighSpeed)
-			drawTexturedModalRect(30 - 5, 35 - 11, 192, 0, 16, 16);
-	}
+    private static ItemStack stream(PseudoFluidType stage, int amount) {
+        for(Map.Entry<FluidType, PseudoFluidType> entry : GasCentrifugeRecipes.fluidConversions.entrySet())
+            if(entry.getValue() == stage) return ItemFluidIcon.make(entry.getKey(), amount);
+        ItemStack icon = ItemFluidIcon.make(Fluids.UF6, amount);
+        icon.getTagCompound().setString("neiPseudoFluid", stage.name);
+        icon.setStackDisplayName(stage.getName() + " (internal cascade stream)");
+        return icon;
+    }
 }

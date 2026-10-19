@@ -77,6 +77,13 @@ public class NEIRegistry {
 		handlers.add(new ArcFurnaceSolidHandler());
 		handlers.add(new ArcFurnaceFluidHandler());
 		handlers.add(new RotaryFurnaceHandler());
+		handlers.add(new SteamCycleHandler());
+		handlers.add(new FuelUseHandler());
+		handlers.add(new ExtractionHandler());
+		handlers.add(new NativeSmeltingHandler());
+		handlers.add(new ResourceProcessHandler());
+		handlers.add(new NuclearProcessHandler());
+		handlers.add(new UtilityProcessHandler());
 		//handlers.add(new AmmoPressHandler());
 
 		//this shit comes last

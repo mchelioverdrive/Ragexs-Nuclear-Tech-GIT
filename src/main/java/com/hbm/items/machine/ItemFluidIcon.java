@@ -38,6 +38,11 @@ public class ItemFluidIcon extends Item {
 
 	@Override
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean bool) {
+		if(stack.hasTagCompound() && stack.getTagCompound().hasKey("neiPseudoFluid")) {
+			list.add(getQuantity(stack) + " internal cascade aliquots");
+			list.add("Module-to-module stream; not a transportable registered fluid");
+			return;
+		}
 		FluidType type = Fluids.fromID(stack.getItemDamage());
 		if(getQuantity(stack) > 0) list.add(quantityText(stack));
 		if(getPressure(stack) > 0) list.add("Network pressure class: " + getPressure(stack) + " PU (not physical bar)");
@@ -49,6 +54,14 @@ public class ItemFluidIcon extends Item {
 	public static String quantityText(ItemStack stack) {
 		FluidType type = Fluids.fromID(stack.getItemDamage());
 		com.hbm.realsim.PhysicalState state = type.getPhysicalState();
+		com.hbm.realsim.SteamLedger.State steam = com.hbm.realsim.SteamLedger.state(type.getName());
+		if(steam != null && steam != com.hbm.realsim.SteamLedger.State.COLD) {
+			java.math.BigDecimal mass = stack.hasTagCompound() && stack.getTagCompound().hasKey("physicalMass")
+					? java.math.BigDecimal.valueOf(stack.getTagCompound().getLong("physicalMass"))
+					: java.math.BigDecimal.valueOf(steam.massPerUnit).multiply(java.math.BigDecimal.valueOf(getQuantity(stack)));
+			String liters = mass.divide(java.math.BigDecimal.valueOf(1000000L), 6, java.math.RoundingMode.DOWN).stripTrailingZeros().toPlainString();
+			return liters + " L water-equivalent (not vapor volume; fractional inventory retained)";
+		}
 		if(stack.hasTagCompound() && stack.getTagCompound().hasKey("physicalMass") && state.isResolved()) {
 			java.math.BigDecimal quantity = java.math.BigDecimal.valueOf(stack.getTagCompound().getLong("physicalMass"))
 					.divide(java.math.BigDecimal.valueOf(state.massUnits), 6, java.math.RoundingMode.DOWN).stripTrailingZeros();

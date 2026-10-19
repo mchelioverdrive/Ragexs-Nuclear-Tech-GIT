@@ -12,7 +12,6 @@ import com.hbm.inventory.recipes.anvil.AnvilRecipes;
 import com.hbm.inventory.recipes.anvil.AnvilSmithingRecipe;
 import com.hbm.lib.RefStrings;
 
-import codechicken.nei.NEIServerUtils;
 import codechicken.nei.PositionedStack;
 import codechicken.nei.recipe.TemplateRecipeHandler;
 import net.minecraft.client.Minecraft;
@@ -56,8 +55,14 @@ public class SmithingRecipeHandler extends SafeTemplateRecipeHandler implements 
 
 		public RecipeSet(AnvilSmithingRecipe recipe) {
 			this.input1 = NEISafe.positionedStack(recipe.getLeft(), 39, 24);
-			this.input2 = NEISafe.positionedStack(recipe.getRight(), 75, 24);
-			this.output = NEISafe.positionedStack(recipe.getOutput(NEISafe.firstStack(input1), NEISafe.firstStack(input2)), 111, 24);
+			if(recipe instanceof com.hbm.inventory.recipes.anvil.AnvilSmithingRenameRecipe) {
+				ItemStack tag = new ItemStack(net.minecraft.init.Items.name_tag);
+				tag.setStackDisplayName("Example name");
+				tag.getTagCompound().setBoolean("neiRetainedCatalyst", true);
+				this.input2 = NEISafe.positionedStack(tag, 75, 24);
+			} else this.input2 = NEISafe.positionedStack(recipe.getRight(), 75, 24);
+			this.output = !NEISafe.isValid(input1) || !NEISafe.isValid(input2) ? null
+					: NEISafe.positionedStack(recipe.getOutput(NEISafe.firstStack(input1), NEISafe.firstStack(input2)), 111, 24);
 			this.tier = recipe.tier;
 		}
 
@@ -97,7 +102,7 @@ public class SmithingRecipeHandler extends SafeTemplateRecipeHandler implements 
 		List<AnvilSmithingRecipe> recipes = AnvilRecipes.getSmithing();
 
 		for(AnvilSmithingRecipe recipe : recipes) {
-			if(NEIServerUtils.areStacksSameTypeCrafting(recipe.getSimpleOutput(), result)) {
+			if(NEISafe.matchesRecipeStack(recipe.getSimpleOutput(), result)) {
 				this.arecipes.add(new RecipeSet(recipe));
 			}
 		}
@@ -120,16 +125,20 @@ public class SmithingRecipeHandler extends SafeTemplateRecipeHandler implements 
 
 		outer:
 		for(AnvilSmithingRecipe recipe : recipes) {
+			if(recipe instanceof com.hbm.inventory.recipes.anvil.AnvilSmithingRenameRecipe && NEISafe.isValid(ingredient)
+					&& ingredient.getItem() == net.minecraft.init.Items.name_tag) {
+				this.arecipes.add(new RecipeSet(recipe)); continue;
+			}
 
 			for(ItemStack left : recipe.getLeft()) {
-				if(NEIServerUtils.areStacksSameTypeCrafting(left, ingredient)) {
+				if(NEISafe.matchesRecipeStack(left, ingredient)) {
 					this.arecipes.add(new RecipeSet(recipe));
 					continue outer;
 				}
 			}
 
 			for(ItemStack right : recipe.getRight()) {
-				if(NEIServerUtils.areStacksSameTypeCrafting(right, ingredient)) {
+				if(NEISafe.matchesRecipeStack(right, ingredient)) {
 					this.arecipes.add(new RecipeSet(recipe));
 					continue outer;
 				}

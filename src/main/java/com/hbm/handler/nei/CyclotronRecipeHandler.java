@@ -12,7 +12,6 @@ import com.hbm.inventory.gui.GUIMachineCyclotron;
 import com.hbm.inventory.recipes.CyclotronRecipes;
 import com.hbm.lib.RefStrings;
 
-import codechicken.nei.NEIServerUtils;
 import codechicken.nei.PositionedStack;
 import codechicken.nei.recipe.TemplateRecipeHandler;
 import net.minecraft.client.gui.inventory.GuiContainer;
@@ -87,7 +86,7 @@ public class CyclotronRecipeHandler extends SafeTemplateRecipeHandler implements
 	public void loadCraftingRecipes(ItemStack result) {
 		Map<Object[], Object> recipes = CyclotronRecipes.getRecipes();
 		for (Map.Entry<Object[], Object> recipe : recipes.entrySet()) {
-			if (NEIServerUtils.areStacksSameType((ItemStack)recipe.getValue(), result))
+			if (NEISafe.matchesRecipeStack((ItemStack)recipe.getValue(), result))
 				this.arecipes.add(new SmeltingSet((ItemStack)recipe.getKey()[0], (ItemStack)recipe.getKey()[1], (ItemStack)recipe.getValue()));
 		}
 	}
@@ -118,8 +117,8 @@ public class CyclotronRecipeHandler extends SafeTemplateRecipeHandler implements
 
 			if (particle == null || input == null || output == null) continue;
 
-			if (NEIServerUtils.areStacksSameType(ingredient, particle) ||
-				NEIServerUtils.areStacksSameType(ingredient, input)) {
+			if (NEISafe.matchesRecipeStack(ingredient, particle) ||
+				NEISafe.matchesRecipeStack(ingredient, input)) {
 
 				this.arecipes.add(new SmeltingSet(particle, input, output));
 			}

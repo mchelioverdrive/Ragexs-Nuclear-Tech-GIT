@@ -15,7 +15,6 @@ import com.hbm.inventory.recipes.HadronRecipes;
 import com.hbm.inventory.recipes.HadronRecipes.HadronRecipe;
 import com.hbm.lib.RefStrings;
 
-import codechicken.nei.NEIServerUtils;
 import codechicken.nei.PositionedStack;
 import codechicken.nei.recipe.TemplateRecipeHandler;
 import net.minecraft.client.Minecraft;
@@ -102,7 +101,7 @@ public class HadronRecipeHandler extends SafeTemplateRecipeHandler implements IC
 
 		for(HadronRecipe recipe : recipes) {
 
-			if(NEIServerUtils.areStacksSameTypeCrafting(recipe.out1, result) || NEIServerUtils.areStacksSameTypeCrafting(recipe.out2, result)) {
+			if(NEISafe.matchesRecipeStack(recipe.out1, result) || NEISafe.matchesRecipeStack(recipe.out2, result)) {
 				this.arecipes.add(new RecipeSet(recipe));
 			}
 		}
@@ -125,7 +124,7 @@ public class HadronRecipeHandler extends SafeTemplateRecipeHandler implements IC
 
 		for(HadronRecipe recipe : recipes) {
 
-			if(NEIServerUtils.areStacksSameTypeCrafting(recipe.in1.toStack(), ingredient) || NEIServerUtils.areStacksSameTypeCrafting(recipe.in2.toStack(), ingredient)) {
+			if(NEISafe.matchesRecipeStack(recipe.in1.toStack(), ingredient) || NEISafe.matchesRecipeStack(recipe.in2.toStack(), ingredient)) {
 				this.arecipes.add(new RecipeSet(recipe));
 			}
 		}

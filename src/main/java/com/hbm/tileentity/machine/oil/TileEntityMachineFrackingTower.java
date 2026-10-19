@@ -72,6 +72,12 @@ public class TileEntityMachineFrackingTower extends TileEntityOilDrillBase {
 		return delay;
 	}
 
+    @Override public ExtractionProfile getExtractionProfile() {
+        return new ExtractionProfile(25, oilPerDeposit, oilPerDunaDeposit, oilPerBedrockDepsoit,
+                gasPerDepositMin, gasPerDepositMax, gasPerBedrockDepositMin, gasPerBedrockDepositMax,
+                0, 0, 0, drainChance, DunadrainChance, solutionRequired);
+    }
+
 	@Override
 	public int getDrillDepth() {
 		return 0;

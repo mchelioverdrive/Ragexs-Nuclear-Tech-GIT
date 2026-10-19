@@ -75,10 +75,9 @@ public class CrucibleAlloyingHandler extends SafeTemplateRecipeHandler implement
 		@Override
 		public List<PositionedStack> getOtherStacks() {
 			List<PositionedStack> other = new ArrayList();
-			other.addAll(inputs);
 			other.add(crucible);
 			other.add(template);
-			other.addAll(outputs);
+			for(PositionedStack output : outputs) if(output != getResult()) other.add(output);
 			return NEISafe.getCycledIngredients(this, cycleticks / 20, other);
 		}
 	}
@@ -137,6 +136,11 @@ public class CrucibleAlloyingHandler extends SafeTemplateRecipeHandler implement
 
 	@Override
 	public void loadUsageRecipes(ItemStack ingredient) {
+		if(!NEISafe.isValid(ingredient)) return;
+		if(ingredient.getItem() == ModItems.crucible_template) {
+			for(CrucibleRecipe recipe : CrucibleRecipes.recipes) if(recipe.getId() == ingredient.getItemDamage()) arecipes.add(new RecipeSet(recipe));
+			return;
+		}
 
 		if(ingredient.getItem() != ModItems.scraps)
 			return;

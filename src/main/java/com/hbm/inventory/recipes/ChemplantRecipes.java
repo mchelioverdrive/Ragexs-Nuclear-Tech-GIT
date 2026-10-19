@@ -46,6 +46,10 @@ public class ChemplantRecipes extends SerializableRecipe {
 
 	@Override
 	public void registerDefaults() {
+        recipes.add(new ChemRecipe(1600, "IRON_CONCENTRATION", 1).petroleum(com.hbm.realsim.SteelmakingProcesses.concentrate()));
+        recipes.add(new ChemRecipe(1601, "IRON_PELLETIZING", 1).petroleum(com.hbm.realsim.SteelmakingProcesses.pelletize()));
+        recipes.add(new ChemRecipe(1602, "IRON_PELLET_HARDENING", 1).petroleum(com.hbm.realsim.SteelmakingProcesses.harden()));
+        recipes.add(new ChemRecipe(1603, "IRON_DIRECT_REDUCTION", 1).petroleum(com.hbm.realsim.SteelmakingProcesses.reduce()));
 
 
 

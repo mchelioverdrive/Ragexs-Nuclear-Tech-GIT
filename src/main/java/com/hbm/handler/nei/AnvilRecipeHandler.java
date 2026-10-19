@@ -19,7 +19,6 @@ import com.hbm.inventory.recipes.anvil.AnvilRecipes.OverlayType;
 import com.hbm.lib.RefStrings;
 import com.hbm.util.ItemStackUtil;
 
-import codechicken.nei.NEIServerUtils;
 import codechicken.nei.PositionedStack;
 import codechicken.nei.recipe.TemplateRecipeHandler;
 import net.minecraft.client.gui.inventory.GuiContainer;
@@ -135,7 +134,7 @@ public class AnvilRecipeHandler extends SafeTemplateRecipeHandler implements ICo
 		@Override
 		public List<PositionedStack> getOtherStacks() {
 			List<PositionedStack> other = new ArrayList();
-			other.addAll(output);
+			for(PositionedStack product : output) if(product != getResult()) other.add(product);
 			other.add(anvil);
 			return NEISafe.getCycledIngredients(this, cycleticks / 20, other);
 		}
@@ -168,7 +167,7 @@ public class AnvilRecipeHandler extends SafeTemplateRecipeHandler implements ICo
 		for(AnvilConstructionRecipe recipe : recipes) {
 
 			for(AnvilOutput out : recipe.output) {
-				if(NEIServerUtils.areStacksSameTypeCrafting(out.stack, result)) {
+				if(NEISafe.matchesRecipeStack(out.stack, result)) {
 					this.addRecipeToList(recipe);
 					break;
 				}
@@ -198,7 +197,7 @@ public class AnvilRecipeHandler extends SafeTemplateRecipeHandler implements ICo
 
 				List<ItemStack> stacks = in.extractForNEI();
 				for(ItemStack stack : stacks) {
-					if(NEIServerUtils.areStacksSameTypeCrafting(stack, ingredient)) {
+					if(NEISafe.matchesRecipeStack(stack, ingredient)) {
 						this.addRecipeToList(recipe);
 						break outer;
 					}
@@ -211,7 +210,9 @@ public class AnvilRecipeHandler extends SafeTemplateRecipeHandler implements ICo
 
 		List<Object> ins = new ArrayList();
 		for(AStack input : recipe.input) {
-			ins.add(input.extractForNEI());
+			List<ItemStack> choices = input == null ? java.util.Collections.emptyList() : NEISafe.copyValid(input.extractForNEI());
+			if(choices.isEmpty()) return; // An unavailable required alias is not a free ingredient or a fire placeholder.
+			ins.add(choices);
 		}
 
 		List<Object> outs = new ArrayList();

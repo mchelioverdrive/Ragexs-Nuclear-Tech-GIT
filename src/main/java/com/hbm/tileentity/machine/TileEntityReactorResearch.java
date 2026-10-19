@@ -72,6 +72,13 @@ public class TileEntityReactorResearch extends TileEntityMachineBase implements 
 	}
 
 	private static final HashMap<ComparableStack, ItemStack> fuelMap = new HashMap<ComparableStack, ItemStack>();
+	/** Read-only display snapshot; callers cannot mutate the reactor's fuel definitions. */
+	public static java.util.Map<ComparableStack, ItemStack> getFuelRecipes() {
+		java.util.Map<ComparableStack, ItemStack> copy = new java.util.HashMap<>();
+		for(java.util.Map.Entry<ComparableStack, ItemStack> entry : fuelMap.entrySet())
+			copy.put(new ComparableStack(entry.getKey().toStack()), entry.getValue().copy());
+		return java.util.Collections.unmodifiableMap(copy);
+	}
 	static {
 		fuelMap.put(new ComparableStack(ModItems.plate_fuel_u233), new ItemStack(ModItems.waste_plate_u233, 1, 1));
 		fuelMap.put(new ComparableStack(ModItems.plate_fuel_u235), new ItemStack(ModItems.waste_plate_u235, 1, 1));

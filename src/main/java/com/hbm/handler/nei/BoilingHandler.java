@@ -26,10 +26,12 @@ public class BoilingHandler extends NEIUniversalHandler {
     @Override public String getKey() { return "ntmBoiling"; }
     public static HashMap<Object, Object> cache;
     public static boolean isReload = false;
+    private static long fluidRevision = -1;
     private static boolean industrialOnly(ItemStack key) {
         return key.hasTagCompound() && key.getTagCompound().getString("boilerSteamOutlet").equals("HOTSTEAM");
     }
     @Override public void loadUsageRecipes(ItemStack ingredient) {
+        if(!NEISafe.isValid(ingredient)) return;
         boolean small = ingredient.getItem() == net.minecraft.item.Item.getItemFromBlock(ModBlocks.machine_boiler);
         boolean industrial = ingredient.getItem() == net.minecraft.item.Item.getItemFromBlock(ModBlocks.machine_industrial_boiler);
         if(small || industrial) {
@@ -44,8 +46,24 @@ public class BoilingHandler extends NEIUniversalHandler {
             net.minecraft.client.Minecraft.getMinecraft().fontRenderer.drawString("Heat source: " + temperature + " C+", 4, 55, 0x404040);
         }
     }
+    @Override public java.util.List<String> handleItemTooltip(codechicken.nei.recipe.GuiRecipe gui, ItemStack stack, java.util.List<String> lines, int recipe) {
+        if(isRecipeItem(stack, recipe)) {
+            ItemStack input = (ItemStack) ((RecipeSet) arecipes.get(recipe)).originalInputInstance;
+            SteamLedger.State in = SteamLedger.state(Fluids.fromID(input.getItemDamage()).getName());
+            if(in != null && input.hasTagCompound() && input.getTagCompound().hasKey("boilerSteamOutlet")) {
+                SteamLedger.State out = SteamLedger.state(input.getTagCompound().getString("boilerSteamOutlet"));
+                SteamLedger.Transition bill = SteamLedger.transition(in, out, SteamLedger.Route.BOILER, 980000);
+                lines.add("Mass conserving: one feed unit; fractional steam accumulates");
+                lines.add("Heat: " + SteamCycleHandler.energy(bill.heatJPerKg) + "/kg; pump work: " + SteamCycleHandler.energy(bill.workJPerKg) + "/kg");
+                lines.add(out == SteamLedger.State.HOT ? "Industrial boiler only; up to 12 MWth; paid feed-pump work" : "Small boiler: 200 kWth; industrial boiler: 12 MWth");
+                lines.add("Heat source >= " + (out.temperatureC + 30) + " C; startup heat required; feed and output room limit flow");
+            }
+        }
+        return super.handleItemTooltip(gui, stack, lines, recipe);
+    }
     public static HashMap<Object, Object> generateRecipes() {
-        if(cache != null && !isReload) return cache;
+        if(cache != null && !isReload && fluidRevision == Fluids.getRegistryRevision()) return cache;
+        fluidRevision = Fluids.getRegistryRevision();
         cache = new HashMap<>();
         for(int pressure = 0; pressure <= 1; pressure++) {
             addBlast(Fluids.AIR, Fluids.AIR_HEATED, pressure);
@@ -59,7 +77,7 @@ public class BoilingHandler extends NEIUniversalHandler {
                     ItemStack input = ItemFluidIcon.make(type, 1);
                     input.getTagCompound().setString("boilerSteamOutlet", outlet.identity);
                     input.getTagCompound().setInteger("boilerTemperature", outlet.temperatureC + 30);
-                    cache.put(input, ItemFluidIcon.makePhysical(new FluidStack(Fluids.fromName(outlet.identity), 1), type.getPhysicalState().massUnits * 995 / 1000));
+                    cache.put(input, ItemFluidIcon.makePhysical(new FluidStack(Fluids.fromName(outlet.identity), 1), steam.massPerUnit));
                 }
                 continue;
             }

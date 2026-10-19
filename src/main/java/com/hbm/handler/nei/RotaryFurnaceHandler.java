@@ -1,92 +1,68 @@
 package com.hbm.handler.nei;
 
 import java.awt.Rectangle;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
-
 import com.hbm.blocks.ModBlocks;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.gui.GUIMachineRotaryFurnace;
 import com.hbm.inventory.recipes.RotaryFurnaceRecipes;
 import com.hbm.inventory.recipes.RotaryFurnaceRecipes.RotaryFurnaceRecipe;
+import com.hbm.items.machine.ItemFluidIcon;
 import com.hbm.items.machine.ItemScraps;
-import com.hbm.util.I18nUtil;
-
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
+import com.hbm.realsim.*;
 import net.minecraft.item.ItemStack;
 
-public class RotaryFurnaceHandler extends NEIUniversalHandler {
-
-	public RotaryFurnaceHandler() {
-		super(ModBlocks.machine_rotary_furnace.getLocalizedName(), ModBlocks.machine_rotary_furnace, RotaryFurnaceRecipes.getRecipes());
-	}
-
-    @Override public int recipiesPerPage() { return 1; }
-    @Override public int getNEIHandlerHeight() { return 80; }
-    @Override public int getNEIMaxRecipesPerPage() { return 1; }
-
-	@Override
-	public String getKey() {
-		return "ntmRotaryFurnace";
-	}
-
-	@Override
-	public void loadTransferRects() {
-		super.loadTransferRects();
-		transferRectsGui.add(new RecipeTransferRect(new Rectangle(58, 19, 32, 10), "ntmRotaryFurnace"));
-		guiGui.add(GUIMachineRotaryFurnace.class);
-		RecipeTransferRectHandler.registerRectsToGuis(guiGui, transferRectsGui);
-	}
-
-    @Override public java.util.List<String> handleItemTooltip(codechicken.nei.recipe.GuiRecipe gui, ItemStack stack, java.util.List<String> lines, int recipe) {
-        // NEI calls this for every visible recipe, including when no item is hovered.
-        if(!isRecipeItem(stack, recipe)) return super.handleItemTooltip(gui, stack, lines, recipe);
-        RecipeSet page = (RecipeSet) arecipes.get(recipe);
-        Object[] key = (Object[]) page.originalInputInstance;
-        for(RotaryFurnaceRecipe bill : RotaryFurnaceRecipes.recipes) {
-            if(key.length != bill.ingredients.length + (bill.fluid == null ? 0 : 1) + 1) continue;
-            boolean match = true;
-            for(int i = 0; i < bill.ingredients.length; i++) if(key[i] != bill.ingredients[i]) match = false;
-            if(!match) continue;
-            long heatQuanta = com.hbm.realsim.PetroleumProcesses.ceilDiv(bill.thermalJoules * 2L, bill.duration) * bill.duration;
-            lines.add("Firebox heat per job: " + api.hbm.energymk2.EnergyUnits.formatJoules(heatQuanta));
-            lines.add("Solid fuel: " + api.hbm.energymk2.EnergyUnits.formatJoules(com.hbm.realsim.PetroleumProcesses.ceilDiv(heatQuanta * 1000000L, com.hbm.realsim.Combustion.FIREBOX_EFFICIENCY_PPM)) + " LHV per job (85% useful)");
-            com.hbm.realsim.SolidFuel fuel = com.hbm.realsim.SolidFuel.resolve(stack);
-            if(stack.hasTagCompound() && stack.getTagCompound().getBoolean("neiRotaryFuel") && fuel != null) {
-                long useful = java.math.BigInteger.valueOf(fuel.chemicalMicrojoules()).multiply(java.math.BigInteger.valueOf(com.hbm.realsim.Combustion.FIREBOX_EFFICIENCY_PPM))
-                        .divide(java.math.BigInteger.valueOf(500000000000L)).longValueExact();
-                lines.add(String.format(Locale.US, "%s: %.5f item equivalents/job", stack.getDisplayName(), heatQuanta / (double) useful));
-            }
-            lines.add("Whole fuel items are consumed; unused fuel energy is retained");
-            lines.add("Steam drive: " + bill.steam + " units/tick; " + ((long) bill.steam * bill.duration) + " units/job");
-            break;
-        }
-        return super.handleItemTooltip(gui, stack, lines, recipe);
+/** Native bills with independent process fuel, steam drive and fractional exhaust. */
+public class RotaryFurnaceHandler extends ProcessInfoHandler {
+    private static volatile List<Process> cache;
+    private static long revision = -1;
+    public static void invalidate() { cache = null; }
+    @Override public String getRecipeName() { return ModBlocks.machine_rotary_furnace.getLocalizedName(); }
+    @Override public String getOverlayIdentifier() { return "ntmRotaryFurnace"; }
+    @Override public void loadTransferRects() {
+        transferRects.add(new RecipeTransferRect(new Rectangle(58, 19, 32, 10), "ntmRotaryFurnace"));
     }
-
-	@Override
-	public void drawExtras(int recipe) {
-
-		RecipeSet rec = (RecipeSet) this.arecipes.get(recipe);
-		Object[] original = (Object[]) rec.originalInputInstance;
-		ItemStack output = rec.output[0].item;
-
-		outer: for(RotaryFurnaceRecipe arc : RotaryFurnaceRecipes.recipes) {
-
-			if(ItemStack.areItemStacksEqual(ItemScraps.create(arc.output, true), output) && arc.ingredients.length == original.length - (arc.fluid == null ? 0 : 1) - 1) {
-
-				for(int i = 0; i < arc.ingredients.length; i++) {
-					if(arc.ingredients[i] != original[i]) continue outer;
-				}
-
-				FontRenderer fontRenderer = Minecraft.getMinecraft().fontRenderer;
-				String duration = String.format(Locale.US, "%.2f s; fuel: hover", arc.duration / 20D);
-				String consumption = I18nUtil.resolveKey(Fluids.STEAM.getUnlocalizedName()) + ": " + String.format(Locale.US, "%,d", arc.steam) + " L/t";
-				int side = 160;
-				fontRenderer.drawString(duration, side - fontRenderer.getStringWidth(duration), 55, 0x404040);
-				fontRenderer.drawString(consumption, side - fontRenderer.getStringWidth(consumption), 67, 0x404040);
-				return;
-			}
-		}
-	}
+    @Override public Class<? extends net.minecraft.client.gui.inventory.GuiContainer> getGuiClass() { return GUIMachineRotaryFurnace.class; }
+    @Override protected List<Process> processes() { return snapshot(); }
+    @Override protected net.minecraft.block.Block[] machineBlocks() { return new net.minecraft.block.Block[] {ModBlocks.machine_rotary_furnace}; }
+    private static synchronized List<Process> snapshot() {
+        long current = dataRevision();
+        if(cache != null && revision == current) return cache;
+        revision = current;
+        List<ItemStack> fuels = new ArrayList<>();
+        for(ItemStack stack : NEISafe.solidFuelCandidates()) if(SolidFuel.resolve(stack) != null) {
+            ItemStack fuel = stack.copy(); fuel.stackSize = 1;
+            boolean duplicate = false;
+            for(ItemStack present : fuels) if(NEISafe.matchesRecipeStack(fuel, present)) { duplicate = true; break; }
+            if(!duplicate) fuels.add(fuel);
+        }
+        List<Process> rows = new ArrayList<>();
+        for(RotaryFurnaceRecipe bill : RotaryFurnaceRecipes.recipes) {
+            if(bill == null || bill.ingredients == null || bill.output == null || bill.duration <= 0 || bill.steam <= 0 || fuels.isEmpty()) continue;
+            List<ItemStack[]> in = new ArrayList<>();
+            boolean valid = true;
+            for(com.hbm.inventory.RecipesCommon.AStack ingredient : bill.ingredients) {
+                ItemStack[] choices = ingredient == null ? null : NEISafe.copyValid(ingredient.extractForNEI().toArray(new ItemStack[0]));
+                if(choices == null) { valid = false; break; }
+                in.add(choices);
+            }
+            if(!valid) continue;
+            if(bill.fluid != null) in.add(new ItemStack[] {ItemFluidIcon.make(bill.fluid)});
+            in.add(fuels.toArray(new ItemStack[0]));
+            int steam = Math.multiplyExact(bill.steam, bill.duration);
+            in.add(new ItemStack[] {ItemFluidIcon.make(Fluids.STEAM, steam)});
+            long heat = Math.multiplyExact(PetroleumProcesses.ceilDiv(bill.thermalJoules * 2L, bill.duration), bill.duration);
+            ItemStack exhaust = ItemFluidIcon.makePhysical(new com.hbm.inventory.FluidStack(Fluids.SPENTSTEAM, 1), SteamLedger.State.ORDINARY.mass(steam));
+            rows.add(new Process(ModBlocks.machine_rotary_furnace, in.toArray(new ItemStack[0][]),
+                    new ItemStack[] {ItemScraps.create(bill.output, true), exhaust},
+                    String.format(Locale.US, "%.2f s; %.2f L water-equivalent steam/job", bill.duration / 20D, steam / 100D),
+                    "Firebox heat: " + api.hbm.energymk2.EnergyUnits.formatJoules(heat) + " per job",
+                    "Fuel LHV: " + api.hbm.energymk2.EnergyUnits.formatJoules(PetroleumProcesses.ceilDiv(heat * 1000000L, Combustion.FIREBOX_EFFICIENCY_PPM)) + " per job (85% useful)",
+                    "Fuel alternatives are eligibility, not one item/job; credit retained",
+                    "Steam drive: " + bill.steam * 20 + " kW shaft; drain fractional exhaust", "Requires air; ingredients and process fluid consumed per job"));
+        }
+        cache = java.util.Collections.unmodifiableList(rows); return cache;
+    }
 }

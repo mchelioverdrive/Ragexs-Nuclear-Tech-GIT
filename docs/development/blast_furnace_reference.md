@@ -13,6 +13,9 @@ The default industrial bills are:
 | One iron-ore parcel + raw coal | 2 | 3 | 16 MJ | 2400 standard L |
 | Two iron ingots/dust + coal coke | 2 | 0 | 8 MJ | 1800 standard L |
 | Two iron ingots/dust + raw coal | 2 | 0 | 12 MJ | 2400 standard L |
+| Two hardened iron pellets + coal coke | 6 | 1 | 24 MJ | 3600 standard L |
+
+Hardened pellets retain one original powder equivalent each. Their three-steel recovery is intentionally gameplay-scaled; the ordinary ore and loose-metal bills remain unchanged. The [materials guide](../gameplay/materials.md#prepared-iron-and-bulk-steel) documents conditioning, wet agglomeration, electrically paid induration and optional hydrogen reduction into the separate Large Arc Furnace route. Pelletizing's limestone is already calcined during hardening. The existing optional extra flux slot still supplies its own calcination/slagging bill and CO2 independently.
 
 Steel uses the existing 1-kg/ingot planning convention. The ore parcel preserves the inherited three-ingot recoverable-iron yield; raw coal loses one ingot-equivalent into slag. Ore and slag items remain nominal mineral parcels, not a newly asserted universal block mass. The old high-yield ore/any-coke **default** has moved; old lower-yield steel and all general-purpose alloys remain in the Metallurgical Furnace. Its fuel economy, extension, RTG variant, command/IMC identity and `hbmBlastFurnace.json` customization remain intact. Enabled user overrides are authoritative and can deliberately reintroduce the old route. Industrial customization has its own `hbmIndustrialBlastFurnace.json`, with explicit heat (J) and air (standard L) bills. Upstream red-copper, meteorite/starmetal, protective-plate and firebrick recipes are intentionally not imported into this ferrous machine.
 

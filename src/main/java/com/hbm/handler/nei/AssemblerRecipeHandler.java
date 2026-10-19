@@ -15,7 +15,6 @@ import com.hbm.items.ModItems;
 import com.hbm.items.machine.ItemAssemblyTemplate;
 import com.hbm.lib.RefStrings;
 
-import codechicken.nei.NEIServerUtils;
 import codechicken.nei.PositionedStack;
 import codechicken.nei.recipe.TemplateRecipeHandler;
 import net.minecraft.client.gui.inventory.GuiContainer;
@@ -103,7 +102,7 @@ public class AssemblerRecipeHandler extends SafeTemplateRecipeHandler implements
 
 		for (Map.Entry<ItemStack, List<Object>> recipe : recipes.entrySet()) {
 
-			if (NEIServerUtils.areStacksSameTypeCrafting(recipe.getKey(), result))
+			if (NEISafe.matchesRecipeStack(recipe.getKey(), result))
 				this.arecipes.add(new SmeltingSet(recipe.getValue(), recipe.getKey()));
 		}
 	}
@@ -120,6 +119,12 @@ public class AssemblerRecipeHandler extends SafeTemplateRecipeHandler implements
 
 	@Override
 	public void loadUsageRecipes(ItemStack ingredient) {
+		if(!NEISafe.isValid(ingredient)) return;
+		if(ingredient.getItem() == ModItems.assembly_template) {
+			ComparableStack type = ItemAssemblyTemplate.readType(ingredient);
+			if(type != null) loadCraftingRecipes(type.toStack());
+			return;
+		}
 
 		Map<ItemStack, List<Object>> recipes = AssemblerRecipes.getRecipes();
 
@@ -127,7 +132,7 @@ public class AssemblerRecipeHandler extends SafeTemplateRecipeHandler implements
 		for (Map.Entry<ItemStack, List<Object>> recipe : recipes.entrySet()) {
 			for(Object value : recipe.getValue()) {
 				List<?> candidates = value instanceof List ? (List<?>) value : java.util.Arrays.asList(value);
-				for(Object candidate : candidates) if(candidate instanceof ItemStack && NEIServerUtils.areStacksSameTypeCrafting((ItemStack) candidate, ingredient)) {
+				for(Object candidate : candidates) if(candidate instanceof ItemStack && NEISafe.matchesRecipeStack((ItemStack) candidate, ingredient)) {
 					this.arecipes.add(new SmeltingSet(recipe.getValue(), recipe.getKey()));
 					continue outer;
 				}

@@ -106,7 +106,7 @@ public abstract class NEIUniversalHandler extends SafeTemplateRecipeHandler impl
 		public List<PositionedStack> getOtherStacks() {
 			List<PositionedStack> other = new ArrayList();
 			for(PositionedStack pos : output) {
-				other.add(pos);
+				if(pos != output[0]) other.add(pos);
 			}
 			other.add(machinePositioned);
 			return NEISafe.getCycledIngredients(this, cycleticks / 20, other);
@@ -328,6 +328,11 @@ public abstract class NEIUniversalHandler extends SafeTemplateRecipeHandler impl
 
 	@Override
 	public void loadUsageRecipes(ItemStack ingredient) {
+		if(!NEISafe.isValid(ingredient)) return;
+		if(machine != null) for(ItemStack catalyst : machine) if(NEISafe.matchesRecipeStack(catalyst, ingredient)) {
+			loadCraftingRecipes(getKey());
+			return;
+		}
 
 		outer: for(Entry<Object, Object> recipe : recipes.entrySet()) {
 			ItemStack[][] ins = NEISafe.copyRequired2D(InventoryUtil.extractObject(recipe.getKey()));

@@ -36,6 +36,9 @@ public class IndustrialBlastFurnaceRecipes extends SerializableRecipe {
         add("dustIron", 2, true, 2, 0, 8_000_000L, 1800);
         add("ingotIron", 2, false, 2, 0, 12_000_000L, 2400);
         add("dustIron", 2, false, 2, 0, 12_000_000L, 2400);
+        // Two prepared parcels retain two powder equivalents: 3 steel per original powder.
+        recipes.add(new Recipe(new com.hbm.inventory.RecipesCommon.ComparableStack(ModItems.iron_pellet_hardened, 2), true,
+                new ItemStack(ModItems.ingot_steel, 6), new ItemStack(ModItems.slagingot), 24_000_000L, 3600));
     }
     private static void add(String feed, int amount, boolean coke, int steel, int slag, long heat, int air) {
         recipes.add(new Recipe(new OreDictStack(feed, amount), coke, new ItemStack(ModItems.ingot_steel, steel),

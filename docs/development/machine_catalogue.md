@@ -145,3 +145,5 @@ Current owner index for the complete audited process, generator, consumer, react
 | Custom machines/addon fluids / CustomMachine, IConfigurableMachine, recipe loaders | [TileEntityCustomMachine](../../src/main/java/com/hbm/tileentity/machine/TileEntityCustomMachine.java) |
 
 Detailed current homes: [processes](process_reference.md), [generators](generator_reference.md), [thermal](thermal_reference.md), [manufacturing](manufacturing_reference.md), [materials](material_reference.md), [tanks](tank_reference.md), [compatibility](compatibility.md).
+
+NEI process models, recipe ownership, resource-production views, navigation evidence and boundary exclusions: [NEI coverage reference](nei_reference.md).

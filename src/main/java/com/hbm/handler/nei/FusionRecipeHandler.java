@@ -1,133 +1,46 @@
 package com.hbm.handler.nei;
 
 import java.awt.Rectangle;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-
+import java.util.*;
 import com.hbm.blocks.ModBlocks;
-import com.hbm.handler.imc.ICompatNHNEI;
+import com.hbm.inventory.fluid.FluidType;
+import com.hbm.inventory.fluid.Fluids;
+import com.hbm.inventory.fluid.trait.FT_Heatable;
 import com.hbm.inventory.gui.GUIITER;
 import com.hbm.inventory.recipes.FusionRecipes;
-import com.hbm.lib.RefStrings;
-
-import codechicken.nei.NEIServerUtils;
-import codechicken.nei.PositionedStack;
-import codechicken.nei.recipe.TemplateRecipeHandler;
-import net.minecraft.client.gui.inventory.GuiContainer;
+import com.hbm.items.machine.ItemFluidIcon;
 import net.minecraft.item.ItemStack;
 
-public class FusionRecipeHandler extends SafeTemplateRecipeHandler implements ICompatNHNEI {
-
-	@Override
-	public ItemStack[] getMachinesForRecipe() {
-		return new ItemStack[]{
-				new ItemStack(ModBlocks.iter)};
-	}
-	@Override
-	public String getRecipeID() {
-		return "fusion";
-	}
-    public LinkedList<RecipeTransferRect> transferRectsRec = new LinkedList<RecipeTransferRect>();
-    public LinkedList<RecipeTransferRect> transferRectsGui = new LinkedList<RecipeTransferRect>();
-    public LinkedList<Class<? extends GuiContainer>> guiRec = new LinkedList<Class<? extends GuiContainer>>();
-    public LinkedList<Class<? extends GuiContainer>> guiGui = new LinkedList<Class<? extends GuiContainer>>();
-
-    public class SmeltingSet extends TemplateRecipeHandler.CachedRecipe {
-
-		PositionedStack input;
-        PositionedStack result;
-
-        public SmeltingSet(ItemStack in, ItemStack out) {
-
-	this.input = NEISafe.positionedStack(in, 30, 24);
-            this.result = NEISafe.positionedStack(out, 120, 24);
+/** ITER coolant operations and timed byproducts are distinct native production paths. */
+public class FusionRecipeHandler extends ProcessInfoHandler {
+    private static List<Process> cache;
+    private static long revision = -1;
+    @Override public String getRecipeName() { return "Fusion Reactor"; }
+    @Override public String getOverlayIdentifier() { return "fusion"; }
+    @Override protected net.minecraft.block.Block[] machineBlocks() { return new net.minecraft.block.Block[] {ModBlocks.iter}; }
+    @Override public Class<? extends net.minecraft.client.gui.inventory.GuiContainer> getGuiClass() { return GUIITER.class; }
+    @Override public void loadTransferRects() { transferRects.add(new RecipeTransferRect(new Rectangle(69, 16, 44, 37), "fusion")); }
+    @Override protected List<Process> processes() { return snapshot(); }
+    private static synchronized List<Process> snapshot() {
+        long current = dataRevision(); if(cache != null && revision == current) return cache;
+        List<Process> rows = new ArrayList<>();
+        for(FluidType plasma : FusionRecipes.byproducts.keySet()) {
+            rows.add(new Process(ModBlocks.iter, inputs(ItemFluidIcon.make(plasma, 0)), new ItemStack[] {FusionRecipes.getByproduct(plasma)},
+                    "Timed byproduct: one item / " + FusionRecipes.getByproductDelay(plasma) / 20D + " s of powered plasma operation",
+                    "Plasma icon identifies continuous feed; no fixed batch quantity", "Requires intact fusion shield, magnet power and output space",
+                    "1 MW base auxiliary draw; shield changes power and breeding"));
+            int amount = Math.max(1, FusionRecipes.getCoolant(plasma));
+            for(FluidType cold : Fluids.getInNiceOrder()) {
+                if(!cold.hasTrait(FT_Heatable.class)) continue;
+                FT_Heatable.HeatingStep step = cold.getTrait(FT_Heatable.class).getFirstStep();
+                if(step == null || step.typeProduced == null) continue;
+                rows.add(new Process(ModBlocks.iter, inputs(ItemFluidIcon.make(plasma, 1), ItemFluidIcon.make(cold, amount)),
+                        new ItemStack[] {ItemFluidIcon.make(step.typeProduced, amount)},
+                        "One native plasma packet consumed per coolant operation", amount + " L cold coolant -> " + amount + " L hot coolant",
+                        "Up to 20 operations/tick (24,000/min); not fixed output", "Requires shield, magnet power and matching hot-fluid outlet",
+                        "Blocked cooling causes heat stress and shield damage", "Timed byproducts shown separately; no direct electrical output"));
+            }
         }
-
-        @Override
-		public List<PositionedStack> getIngredients() {
-
-            return new ArrayList() {{ add(input); }};
-        }
-
-        @Override
-		public PositionedStack getResult() {
-            return result;
-        }
+        cache = Collections.unmodifiableList(rows); revision = current; return cache;
     }
-
-	@Override
-	public String getRecipeName() {
-		return "Fusion Reactor";
-	}
-
-	@Override
-	public void loadCraftingRecipes(String outputId, Object... results) {
-
-		if(outputId.equals("fusion") && getClass() == FusionRecipeHandler.class) {
-
-			Map<ItemStack, ItemStack> recipes = FusionRecipes.getRecipes();
-
-			for(Map.Entry<ItemStack, ItemStack> recipe : recipes.entrySet()) {
-				this.arecipes.add(new SmeltingSet(recipe.getKey(), recipe.getValue()));
-			}
-
-		} else {
-			super.loadCraftingRecipes(outputId, results);
-		}
-	}
-
-	@Override
-	public void loadCraftingRecipes(ItemStack result) {
-
-		Map<ItemStack, ItemStack> recipes = FusionRecipes.getRecipes();
-
-		for(Map.Entry<ItemStack, ItemStack> recipe : recipes.entrySet()) {
-
-			if(NEIServerUtils.areStacksSameTypeCrafting(recipe.getValue(), result)) {
-				this.arecipes.add(new SmeltingSet(recipe.getKey(), recipe.getValue()));
-			}
-		}
-	}
-
-	@Override
-	public void loadUsageRecipes(String inputId, Object... ingredients) {
-
-		if(inputId.equals("fusion") && getClass() == FusionRecipeHandler.class) {
-			loadCraftingRecipes("fusion", new Object[0]);
-		} else {
-			super.loadUsageRecipes(inputId, ingredients);
-		}
-	}
-
-	@Override
-	public void loadUsageRecipes(ItemStack ingredient) {
-
-		Map<ItemStack, ItemStack> recipes = FusionRecipes.getRecipes();
-
-		for(Map.Entry<ItemStack, ItemStack> recipe : recipes.entrySet()) {
-
-			if(NEIServerUtils.areStacksSameTypeCrafting(recipe.getKey(), ingredient)) {
-				this.arecipes.add(new SmeltingSet(recipe.getKey(), recipe.getValue()));
-			}
-		}
-	}
-
-    @Override
-    public void loadTransferRects() {
-        transferRectsGui = new LinkedList<RecipeTransferRect>();
-        guiGui = new LinkedList<Class<? extends GuiContainer>>();
-
-        transferRects.add(new RecipeTransferRect(new Rectangle(52 - 5, 34 - 11, 18 * 4, 18), "fusion"));
-        transferRectsGui.add(new RecipeTransferRect(new Rectangle(115 - 5, 17 - 11, 18, 18), "fusion"));
-        guiGui.add(GUIITER.class);
-        RecipeTransferRectHandler.registerRectsToGuis(getRecipeTransferRectGuis(), transferRects);
-        RecipeTransferRectHandler.registerRectsToGuis(guiGui, transferRectsGui);
-    }
-
-	@Override
-	public String getGuiTexture() {
-		return RefStrings.MODID + ":textures/gui/nei/gui_nei_fusion.png";
-	}
 }

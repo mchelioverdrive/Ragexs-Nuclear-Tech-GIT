@@ -13,7 +13,6 @@ import com.hbm.inventory.gui.GUIDiFurnace;
 import com.hbm.inventory.recipes.BlastFurnaceRecipes;
 import com.hbm.inventory.recipes.MachineRecipes;
 
-import codechicken.nei.NEIServerUtils;
 import codechicken.nei.PositionedStack;
 import codechicken.nei.recipe.TemplateRecipeHandler;
 import net.minecraft.client.gui.inventory.GuiContainer;
@@ -109,7 +108,7 @@ public class AlloyFurnaceRecipeHandler extends SafeTemplateRecipeHandler impleme
 	public void loadCraftingRecipes(ItemStack result) {
 		Map<List<ItemStack>[], ItemStack> recipes = BlastFurnaceRecipes.getRecipesForNEI();
 		for(Entry<List<ItemStack>[], ItemStack> recipe : recipes.entrySet()) {
-			if(NEIServerUtils.areStacksSameType(recipe.getValue(), result))
+			if(NEISafe.matchesRecipeStack(recipe.getValue(), result))
 				this.arecipes.add(new SmeltingSet(recipe.getKey()[0], recipe.getKey()[1], recipe.getValue()));
 		}
 	}
@@ -126,7 +125,7 @@ public class AlloyFurnaceRecipeHandler extends SafeTemplateRecipeHandler impleme
 	@Override
 	public void loadUsageRecipes(ItemStack ingredient) {
 		for(ItemStack fuel : MachineRecipes.instance().getAlloyFuels()) {
-			if(NEIServerUtils.areStacksSameType(ingredient, fuel)) {
+			if(NEISafe.matchesRecipeStack(ingredient, fuel)) {
 				loadCraftingRecipes("alloysmelting");
 				return;
 			}
@@ -138,7 +137,7 @@ public class AlloyFurnaceRecipeHandler extends SafeTemplateRecipeHandler impleme
 			combined.addAll(recipe.getKey()[0]);
 			combined.addAll(recipe.getKey()[1]);
 			for(ItemStack combinedStack : combined) {
-				if(NEIServerUtils.areStacksSameType(ingredient, combinedStack)) {
+				if(NEISafe.matchesRecipeStack(ingredient, combinedStack)) {
 					this.arecipes.add(new SmeltingSet(recipe.getKey()[0], recipe.getKey()[1], recipe.getValue()));
 					break;
 				}

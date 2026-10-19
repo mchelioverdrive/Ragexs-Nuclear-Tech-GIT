@@ -98,6 +98,7 @@ public class ContainerMachineArcFurnaceLarge extends ContainerMoltenMaterials {
 		public boolean isItemValid(ItemStack stack) {
 			TileEntityMachineArcFurnaceLarge furnace = (TileEntityMachineArcFurnaceLarge) this.inventory;
 			if(furnace.liquidMode) return true;
+            if(furnace.acceptsSteelInput(stack)) return true; // Native slot limit splits held/shift-clicked charges.
 			ArcFurnaceRecipe recipe = ArcFurnaceRecipes.getOutput(stack, furnace.liquidMode);
 			if(recipe != null && recipe.solidOutput != null) {
 				return recipe.solidOutput.stackSize * stack.stackSize <= recipe.solidOutput.getMaxStackSize() && stack.stackSize <= furnace.getMaxInputSize();

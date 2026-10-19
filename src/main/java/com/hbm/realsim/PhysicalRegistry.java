@@ -174,6 +174,16 @@ public final class PhysicalRegistry {
         liquid("40_percent_calcium_chloride", "1.40", "0", "CALCIUM_CHLORIDE");
         liquid("20_percent_sodium_carbonate", "1.20", "0", "SODIUM_CARBONATE");
         solid("QUICKLIME_ITEM", "calcium_oxide", "1", "0");
+        solid("IRON_PREP_POWDER_ITEM", "iron", "1", "0");
+        solid("PELLET_LIMESTONE_ITEM", "calcium_carbonate", "1", "0");
+        solid("PELLET_CLAY_ITEM", "clay_binder_dose", ".1", "0");
+        long fine = PhysicalState.MASS_UNITS_PER_KG + SteelmakingProcesses.oxideOxygen();
+        long green = fine + PhysicalState.MASS_UNITS_PER_KG * 31 / 80;
+        long hardened = green - PhysicalState.MASS_UNITS_PER_KG / 4 - SteelmakingProcesses.fluxCO2() / 8;
+        String[] ironForms = {"IRON_FINES_ITEM", "IRON_GREEN_PELLET_ITEM", "IRON_HARD_PELLET_ITEM", "IRON_DRI_ITEM"};
+        long[] ironMass = {fine, green, hardened, hardened - SteelmakingProcesses.oxideOxygen()};
+        for(int i = 0; i < ironForms.length; i++) STATES.put(ironForms[i], new PhysicalState(ironForms[i], Phase.SOLID,
+                Basis.MATERIAL_ITEM, ironMass[i], BigDecimal.ZERO, "iron preparation parcel; final steel recovery is gameplay-scaled", null));
         solid("STRONTIUM_OXIDE_ITEM", "strontium_oxide", "1", "0");
         solid("STRONTIUM_CHLORIDE_ITEM", "strontium_chloride", "1", "0");
         solid("BARIUM_SULFIDE_ITEM", "barium_sulfide", "1", "5000000");

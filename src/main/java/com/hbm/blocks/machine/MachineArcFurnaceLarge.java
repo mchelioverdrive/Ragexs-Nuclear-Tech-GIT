@@ -42,6 +42,13 @@ public class MachineArcFurnaceLarge extends BlockDummyable implements ITooltipPr
 		return new int[] {4, 0, 2, 2, 2, 2};
 	}
 
+    @Override
+    public void breakBlock(World world, int x, int y, int z, net.minecraft.block.Block block, int meta) {
+        TileEntity tile = world.getTileEntity(x, y, z);
+        if(tile instanceof TileEntityMachineArcFurnaceLarge) ((TileEntityMachineArcFurnaceLarge) tile).dropOwnedSteelCharge();
+        super.breakBlock(world, x, y, z, block, meta);
+    }
+
 	@Override
 	public int getOffset() {
 		return 2;
@@ -108,5 +115,7 @@ public class MachineArcFurnaceLarge extends BlockDummyable implements ITooltipPr
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean ext) {
 		//this.addStandardInfo(stack, player, list, ext);
 		list.add(EnumChatFormatting.DARK_RED + I18nUtil.resolveKey("tooltip.furnace.monoxide"));
+        list.add("Solid steel charge: 8 DRI + coal coke + quicklime; 3 electrodes");
+        list.add("32 steel + 2 slag; 57.6 MJ electrical work");
 	}
 }

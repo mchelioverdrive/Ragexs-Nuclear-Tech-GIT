@@ -14,15 +14,29 @@ import com.hbm.main.MainRegistry;
 /** Ground-motion cue; contains physical source data and applies no damage or hurt animation. */
 public class NuclearSeismicPacket implements IMessage {
  private double x,y,z,yieldKt,coupling,burialDepth; private int duration; private float baseIntensity;
+ private boolean valid;
+ private static final java.util.Set<Integer> REJECTED_LENGTHS = java.util.Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<Integer, Boolean>());
  public NuclearSeismicPacket() { }
  public NuclearSeismicPacket(double x,double y,double z,double yieldKt,double coupling,double burialDepth,int duration,float baseIntensity){this.x=x;this.y=y;this.z=z;this.yieldKt=yieldKt;this.coupling=coupling;this.burialDepth=burialDepth;this.duration=duration;this.baseIntensity=baseIntensity;}
- public void fromBytes(ByteBuf b){x=b.readDouble();y=b.readDouble();z=b.readDouble();yieldKt=b.readDouble();coupling=b.readDouble();burialDepth=b.readDouble();duration=b.readInt();baseIntensity=b.readFloat();}
+ public void fromBytes(ByteBuf b){
+  valid = false;
+  // A gauge payload routed here is not a seismic event. Reject it before reading any fields.
+  int length = b.readableBytes();
+  if(length != 56) {
+   if(REJECTED_LENGTHS.add(length)) MainRegistry.logger.error("Rejected invalid seismic packet: expected 56 bytes, received " + length + ". Check matching HBM network registrations on both sides.");
+   b.skipBytes(length);
+   return;
+  }
+  x=b.readDouble();y=b.readDouble();z=b.readDouble();yieldKt=b.readDouble();coupling=b.readDouble();burialDepth=b.readDouble();duration=b.readInt();baseIntensity=b.readFloat();
+  valid = Double.isFinite(x) && Double.isFinite(y) && Double.isFinite(z) && Double.isFinite(yieldKt) && Double.isFinite(coupling) && Double.isFinite(burialDepth) && Float.isFinite(baseIntensity) && duration > 0;
+ }
  public void toBytes(ByteBuf b){b.writeDouble(x);b.writeDouble(y);b.writeDouble(z);b.writeDouble(yieldKt);b.writeDouble(coupling);b.writeDouble(burialDepth);b.writeInt(duration);b.writeFloat(baseIntensity);}
 	public static class Handler implements IMessageHandler<NuclearSeismicPacket, IMessage> {
 
 		@Override
 		@SideOnly(Side.CLIENT)
 		public IMessage onMessage(NuclearSeismicPacket message, MessageContext context) {
+			if(!message.valid) return null;
 
 			EntityPlayer player = Minecraft.getMinecraft().thePlayer;
 			if(player == null) return null;

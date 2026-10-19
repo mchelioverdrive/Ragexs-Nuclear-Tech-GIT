@@ -71,13 +71,42 @@ public class MaterialContractsTest {
     }
 
     @Before public void nativeItems() throws Exception {
-        for(String name : new String[] {"coke", "powder_coke", "lignite", "powder_lignite", "powder_coal", "briquette", "biomass", "biomass_compressed", "powder_sawdust", "powder_ash", "scrap", "dust", "sulfur", "solid_fuel", "rocket_fuel", "ingot_polymer", "ingot_pvc"}) {
+        for(String name : new String[] {"coke", "powder_coke", "lignite", "powder_lignite", "powder_coal", "briquette", "biomass", "biomass_compressed", "powder_sawdust", "powder_ash", "scrap", "dust", "sulfur", "solid_fuel", "rocket_fuel", "ingot_polymer", "ingot_pvc", "iron_dri", "quicklime", "ingot_steel", "slagingot"}) {
             Field field = ModItems.class.getField(name); previous.put(field, field.get(null)); field.set(null, new Item());
         }
 
     }
     @After public void restoreNativeItems() throws Exception {
         for(Map.Entry<Field, Object> entry : previous.entrySet()) entry.getKey().set(null, entry.getValue());
+    }
+    @Test public void arcSteelReservesAllFeedsAndPaysExactlyBeforeAtomicProducts() {
+        com.hbm.tileentity.machine.TileEntityMachineArcFurnaceLarge furnace = new com.hbm.tileentity.machine.TileEntityMachineArcFurnaceLarge();
+        furnace.lid = 1;
+        for(Item item : new Item[] {ModItems.iron_dri, ModItems.coke, ModItems.quicklime}) {
+            assertTrue(furnace.canInsertItem(5, new ItemStack(item), 0));
+            assertFalse(furnace.canExtractItem(5, new ItemStack(item), 0));
+        }
+        ItemStack[] slots = new ItemStack[25];
+        for(int i = 5; i < 13; i++) slots[i] = new ItemStack(ModItems.iron_dri);
+        slots[13] = new ItemStack(ModItems.coke); slots[14] = new ItemStack(ModItems.quicklime);
+        slots[13].setTagCompound(new NBTTagCompound()); slots[13].getTagCompound().setString("retained", "coke");
+        ArcSteelBatch batch = new ArcSteelBatch();
+        slots[14] = null; assertFalse(batch.reserve(slots)); assertNotNull(slots[5]);
+        slots[14] = new ItemStack(ModItems.quicklime);
+        assertTrue(batch.reserve(slots)); assertNull(slots[5]); assertFalse(batch.reserve(slots));
+        assertEquals(1, batch.pay(1)); assertEquals(0, batch.pay(0));
+        assertFalse(batch.finish(slots)); assertEquals(ArcSteelBatch.WORK_QUANTA - 1, batch.pay(Long.MAX_VALUE));
+        for(int i = 5; i < 25; i++) slots[i] = new ItemStack(ModItems.scrap, 64);
+        assertFalse(batch.finish(slots)); assertTrue(batch.complete());
+        slots[5] = null; slots[6] = null; assertTrue(batch.finish(slots));
+        assertSame(ModItems.ingot_steel, slots[5].getItem()); assertEquals(32, slots[5].stackSize);
+        assertSame(ModItems.slagingot, slots[6].getItem()); assertEquals(2, slots[6].stackSize);
+        assertFalse(batch.finish(slots)); assertEquals(0, batch.takeDrops().length);
+        slots = new ItemStack[25]; slots[5] = new ItemStack(ModItems.iron_dri, 8);
+        slots[6] = new ItemStack(ModItems.coke, 1, 2); slots[7] = new ItemStack(ModItems.quicklime);
+        assertFalse(batch.reserve(slots)); // Petroleum coke is not the specified steel charge.
+        slots[6] = new ItemStack(ModItems.coke); assertTrue(batch.reserve(slots)); batch.pay(1);
+        assertEquals(3, batch.takeDrops().length); assertEquals(0, batch.takeDrops().length);
     }
     @Test public void polymerAndSootFeedsUseTheirExactExistingAssaysAndForms() {
         assertEquals("polyethylene", PhysicalRegistry.get("POLYMER_ITEM").substance);

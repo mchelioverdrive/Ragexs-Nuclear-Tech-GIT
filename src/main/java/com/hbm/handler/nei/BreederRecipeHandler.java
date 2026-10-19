@@ -12,7 +12,6 @@ import com.hbm.inventory.recipes.BreederRecipes;
 import com.hbm.inventory.recipes.BreederRecipes.BreederRecipe;
 
 import codechicken.lib.gui.GuiDraw;
-import codechicken.nei.NEIServerUtils;
 import codechicken.nei.PositionedStack;
 import codechicken.nei.recipe.TemplateRecipeHandler;
 import net.minecraft.client.gui.inventory.GuiContainer;
@@ -96,7 +95,7 @@ public class BreederRecipeHandler extends SafeTemplateRecipeHandler implements I
 
 		for(Map.Entry<ItemStack, BreederRecipe> recipe : recipes) {
 
-			if(NEIServerUtils.areStacksSameType(
+			if(NEISafe.matchesRecipeStack(
 				result,
 				recipe.getValue().output)) {
 
@@ -128,7 +127,7 @@ public class BreederRecipeHandler extends SafeTemplateRecipeHandler implements I
 
 		for(Map.Entry<ItemStack, BreederRecipe> recipe : recipes) {
 
-			if(NEIServerUtils.areStacksSameType(
+			if(NEISafe.matchesRecipeStack(
 				ingredient,
 				recipe.getKey())) {
 

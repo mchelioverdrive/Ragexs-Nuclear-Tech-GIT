@@ -18,7 +18,6 @@ import com.hbm.lib.RefStrings;
 import com.hbm.util.ItemStackUtil;
 import com.hbm.util.Tuple.Pair;
 
-import codechicken.nei.NEIServerUtils;
 import codechicken.nei.PositionedStack;
 import codechicken.nei.recipe.TemplateRecipeHandler;
 import net.minecraft.client.gui.inventory.GuiContainer;
@@ -111,9 +110,8 @@ public class CustomMachineHandler extends SafeTemplateRecipeHandler {
 		@Override
 		public List<PositionedStack> getOtherStacks() {
 			List<PositionedStack> other = new ArrayList();
-			other.addAll(inputs);
 			other.add(machine);
-			other.addAll(outputs);
+			for(PositionedStack output : outputs) if(output != getResult()) other.add(output);
 			return NEISafe.getCycledIngredients(this, cycleticks / 20, other);
 		}
 	}
@@ -161,7 +159,7 @@ public class CustomMachineHandler extends SafeTemplateRecipeHandler {
 
 			for(Pair<ItemStack, Float> stack : recipe.outputItems) {
 
-				if(NEIServerUtils.areStacksSameTypeCrafting(stack.getKey(), result)) {
+				if(NEISafe.matchesRecipeStack(stack.getKey(), result)) {
 					this.arecipes.add(new RecipeSet(recipe));
 					continue outer;
 				}
@@ -200,7 +198,7 @@ public class CustomMachineHandler extends SafeTemplateRecipeHandler {
 				List<ItemStack> stacks = stack.extractForNEI();
 
 				for(ItemStack sta : stacks) {
-					if(NEIServerUtils.areStacksSameTypeCrafting(ingredient, sta)) {
+					if(NEISafe.matchesRecipeStack(ingredient, sta)) {
 						this.arecipes.add(new RecipeSet(recipe));
 						continue outer;
 					}
@@ -219,7 +217,7 @@ public class CustomMachineHandler extends SafeTemplateRecipeHandler {
 	}
 
 	public static boolean compareFluidStacks(ItemStack sta1, ItemStack sta2) {
-		return NEISafe.isValid(sta1) && NEISafe.isValid(sta2) && sta1.getItem() == sta2.getItem() && sta1.getItemDamage() == sta2.getItemDamage();
+		return NEISafe.matchesRecipeStack(sta1, sta2);
 	}
 
 	@Override

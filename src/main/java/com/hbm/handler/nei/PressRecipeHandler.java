@@ -20,7 +20,6 @@ import com.hbm.items.machine.ItemStamp.StampType;
 import com.hbm.lib.RefStrings;
 import com.hbm.util.Tuple.Pair;
 
-import codechicken.nei.NEIServerUtils;
 import codechicken.nei.PositionedStack;
 import codechicken.nei.recipe.TemplateRecipeHandler;
 import net.minecraft.client.gui.inventory.GuiContainer;
@@ -98,7 +97,7 @@ public class PressRecipeHandler extends SafeTemplateRecipeHandler implements ICo
 		HashMap<Pair<AStack, StampType>, ItemStack> recipes = PressRecipes.recipes;
 
 		for(Map.Entry<Pair<AStack, StampType>, ItemStack> recipe : recipes.entrySet()) {
-			if(NEIServerUtils.areStacksSameType(recipe.getValue(), result))
+			if(NEISafe.matchesRecipeStack(recipe.getValue(), result))
 				this.arecipes.add(new SmeltingSet(ItemStamp.stamps.get(recipe.getKey().getValue()), recipe.getKey().getKey(), recipe.getValue()));
 		}
 	}

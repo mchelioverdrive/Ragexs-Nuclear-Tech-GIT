@@ -10,7 +10,6 @@ import com.hbm.inventory.recipes.MachineRecipes;
 import com.hbm.items.ModItems;
 import com.hbm.lib.RefStrings;
 
-import codechicken.nei.NEIServerUtils;
 import codechicken.nei.PositionedStack;
 import codechicken.nei.recipe.TemplateRecipeHandler;
 import net.minecraft.client.gui.inventory.GuiContainer;
@@ -83,7 +82,7 @@ public class FluidRecipeHandler extends SafeTemplateRecipeHandler implements ICo
 	public void loadCraftingRecipes(ItemStack result) {
 		Map<Object, Object> recipes = MachineRecipes.instance().getFluidContainers();
 		for (Map.Entry<Object, Object> recipe : recipes.entrySet()) {
-			if (NEIServerUtils.areStacksSameType((ItemStack)recipe.getValue(), result) || compareFluidStacks(result, (ItemStack)recipe.getKey()))
+			if (NEISafe.matchesRecipeStack((ItemStack)recipe.getValue(), result) || compareFluidStacks(result, (ItemStack)recipe.getKey()))
 				this.arecipes.add(new SmeltingSet((ItemStack)recipe.getKey(), (ItemStack)recipe.getValue()));
 		}
 	}
@@ -101,7 +100,7 @@ public class FluidRecipeHandler extends SafeTemplateRecipeHandler implements ICo
 	public void loadUsageRecipes(ItemStack ingredient) {
 		Map<Object, Object> recipes = MachineRecipes.instance().getFluidContainers();
 		for (Map.Entry<Object, Object> recipe : recipes.entrySet()) {
-			if (NEIServerUtils.areStacksSameType((ItemStack)recipe.getValue(), ingredient) || compareFluidStacks(ingredient, (ItemStack)recipe.getKey()))
+			if (NEISafe.matchesRecipeStack((ItemStack)recipe.getValue(), ingredient) || compareFluidStacks(ingredient, (ItemStack)recipe.getKey()))
 				this.arecipes.add(new SmeltingSet((ItemStack)recipe.getKey(), (ItemStack)recipe.getValue()));
 		}
 	}

@@ -147,7 +147,7 @@ public class RefineryRecipeHandler extends SafeTemplateRecipeHandler implements 
 	}
 
 	private boolean compareFluidStacks(ItemStack sta1, ItemStack sta2) {
-		return NEISafe.isValid(sta1) && NEISafe.isValid(sta2) && sta1.getItem() == sta2.getItem() && sta1.getItemDamage() == sta2.getItemDamage();
+		return NEISafe.matchesRecipeStack(sta1, sta2);
 	}
 
 	@Override

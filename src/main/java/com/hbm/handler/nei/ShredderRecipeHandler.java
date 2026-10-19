@@ -15,7 +15,6 @@ import com.hbm.inventory.recipes.MachineRecipes;
 import com.hbm.inventory.recipes.ShredderRecipes;
 import com.hbm.lib.RefStrings;
 
-import codechicken.nei.NEIServerUtils;
 import codechicken.nei.PositionedStack;
 import codechicken.nei.recipe.TemplateRecipeHandler;
 import net.minecraft.client.gui.inventory.GuiContainer;
@@ -107,7 +106,7 @@ public class ShredderRecipeHandler extends SafeTemplateRecipeHandler implements 
 	public void loadCraftingRecipes(ItemStack result) {
 		Map<Object, Object> recipes = ShredderRecipes.getShredderRecipes();
 		for(Map.Entry<Object, Object> recipe : recipes.entrySet()) {
-			if(NEIServerUtils.areStacksSameType((ItemStack) recipe.getValue(), result))
+			if(NEISafe.matchesRecipeStack((ItemStack) recipe.getValue(), result))
 				this.arecipes.add(new SmeltingSet(((ComparableStack) recipe.getKey()).toStack(), (ItemStack) recipe.getValue()));
 		}
 	}
@@ -125,7 +124,7 @@ public class ShredderRecipeHandler extends SafeTemplateRecipeHandler implements 
 	public void loadUsageRecipes(ItemStack ingredient) {
 		Map<Object, Object> recipes = ShredderRecipes.getShredderRecipes();
 		for(Map.Entry<Object, Object> recipe : recipes.entrySet()) {
-			if(NEIServerUtils.areStacksSameTypeCrafting(ingredient, ((ComparableStack) recipe.getKey()).toStack()))
+			if(NEISafe.matchesRecipeStack(ingredient, ((ComparableStack) recipe.getKey()).toStack()))
 				this.arecipes.add(new SmeltingSet(((ComparableStack) recipe.getKey()).toStack(), (ItemStack) recipe.getValue()));
 		}
 	}

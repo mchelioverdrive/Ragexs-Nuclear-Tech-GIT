@@ -13,7 +13,6 @@ import com.hbm.inventory.recipes.CrucibleRecipes;
 import com.hbm.items.machine.ItemMold;
 import com.hbm.lib.RefStrings;
 
-import codechicken.nei.NEIServerUtils;
 import codechicken.nei.PositionedStack;
 import codechicken.nei.recipe.TemplateRecipeHandler;
 import net.minecraft.client.gui.inventory.GuiContainer;
@@ -67,12 +66,7 @@ public class CrucibleCastingHandler extends SafeTemplateRecipeHandler implements
 
 		@Override
 		public List<PositionedStack> getOtherStacks() {
-			List<PositionedStack> other = new ArrayList();
-			other.add(input);
-			other.add(mold);
-			other.add(basin);
-			other.add(output);
-			return NEISafe.getCycledIngredients(this, cycleticks / 20, other);
+			return java.util.Collections.emptyList();
 		}
 	}
 
@@ -103,7 +97,7 @@ public class CrucibleCastingHandler extends SafeTemplateRecipeHandler implements
 	public void loadCraftingRecipes(ItemStack result) {
 
 		for(ItemStack[] recipe : CrucibleRecipes.getMoldRecipes()) {
-			if(NEIServerUtils.areStacksSameTypeCrafting(recipe[3], result)) {
+			if(NEISafe.matchesRecipeStack(recipe[3], result)) {
 				this.arecipes.add(new RecipeSet(recipe));
 			}
 		}
@@ -125,7 +119,7 @@ public class CrucibleCastingHandler extends SafeTemplateRecipeHandler implements
 		for(ItemStack[] recipe : CrucibleRecipes.getMoldRecipes()) {
 
 			for(int i = 0; i < 3; i++) {
-				if(NEIServerUtils.areStacksSameTypeCrafting(recipe[i], ingredient)) {
+				if(NEISafe.matchesRecipeStack(recipe[i], ingredient)) {
 					this.arecipes.add(new RecipeSet(recipe));
 					break;
 				}

@@ -9,9 +9,7 @@ import com.hbm.items.ModItems;
 import com.hbm.lib.Library;
 import com.hbm.machine.MachineDirtyCause;
 import com.hbm.machine.MachineExecutionStrategy;
-import com.hbm.packet.PacketDispatcher;
-import com.hbm.packet.toclient.AuxElectricityPacket;
-import com.hbm.packet.toclient.AuxGaugePacket;
+import com.hbm.tileentity.IBufPacketReceiver;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityLoadedBase;
 import com.hbm.util.CompatEnergyControl;
@@ -19,7 +17,7 @@ import com.hbm.util.CompatEnergyControl;
 import api.hbm.energymk2.IEnergyReceiverMK2;
 import api.hbm.energymk2.IBatteryItem;
 import api.hbm.tile.IInfoProviderEC;
-import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint;
+import io.netty.buffer.ByteBuf;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.entity.player.EntityPlayer;
@@ -32,7 +30,7 @@ import net.minecraft.nbt.NBTTagList;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class TileEntityMachineArcFurnace extends TileEntityLoadedBase implements ISidedInventory, IEnergyReceiverMK2, IGUIProvider, IInfoProviderEC, com.hbm.realsim.IMachineInfo {
+public class TileEntityMachineArcFurnace extends TileEntityLoadedBase implements ISidedInventory, IEnergyReceiverMK2, IGUIProvider, IInfoProviderEC, IBufPacketReceiver, com.hbm.realsim.IMachineInfo {
 
 	private ItemStack slots[];
 	
@@ -498,16 +496,22 @@ public class TileEntityMachineArcFurnace extends TileEntityLoadedBase implements
 
 	private void sendRuntimeState() {
 		if(worldObj == null || worldObj.isRemote) return;
-		this.sendEnergyState();
-		TargetPoint point = new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 50);
-		PacketDispatcher.wrapper.sendToAllAround(new AuxGaugePacket(xCoord, yCoord, zCoord, dualCookTime, 0), point);
-		PacketDispatcher.wrapper.sendToAllAround(new AuxGaugePacket(xCoord, yCoord, zCoord, runtimeMaterialEligible && this.hasPower() ? 1 : 0, 1), point);
+		this.sendStandard(50);
 	}
 
 	private void sendEnergyState() {
-		if(worldObj == null || worldObj.isRemote) return;
-		TargetPoint point = new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 50);
-		PacketDispatcher.wrapper.sendToAllAround(new AuxElectricityPacket(xCoord, yCoord, zCoord, energyQuanta), point);
+		this.sendRuntimeState();
+	}
+
+	@Override public void serialize(ByteBuf buf) {
+		buf.writeLong(energyQuanta);
+		buf.writeInt(dualCookTime);
+		buf.writeBoolean(runtimeMaterialEligible && hasPower());
+	}
+	@Override public void deserialize(ByteBuf buf) {
+		energyQuanta = buf.readLong();
+		setClientProgress(buf.readInt());
+		setClientProgressing(buf.readBoolean());
 	}
 
 	@Override

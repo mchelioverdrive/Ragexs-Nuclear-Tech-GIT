@@ -49,3 +49,19 @@
 - Consecutive pole removals now retain every queued split branch; previously, a later removal could replace earlier split seeds and leave disconnected islands sharing a network. Seed scanning also consumes the existing topology work budget.
 
 - Reattachment compares retained node ports with restored pole records and native geometry, replacing stale edges or old pole/cable ports. Loaded incompatible or over-range saved wires are reconciled at both ends.
+
+2026-10-18 22:04 — Prepare iron pellets and add DRI electric steelmaking
+
+- Added conditioned iron oxide fines, green pellets, hardened pellets and direct reduced iron. Existing Chemical Reactor templates perform oxidative conditioning, limestone/clay/water agglomeration, electrically heated induration and paid hydrogen reduction with explicit physical reactant/product bills and retained fractional outputs.
+- Hardened pellets feed the existing Industrial Blast Furnace at three steel per original powder equivalent, with less coke and slag per steel. Ordinary ore/coke remains three steel plus two slag; loose-powder and existing alloy/recycling routes retain their bills.
+- The existing Large Arc Furnace accepts a solid eight-DRI, coal-coke and quicklime charge for 32 steel plus two slag at 57.6 MJ electrical work. Native electrical admission, buffering, upgrades, multiblock, electrodes and MachineRuntime remain authoritative. Reserved inputs/products and paid work persist across interruption; blocked outputs retain ownership and controller removal releases owned material once.
+- Added NEI ingredients/products and English labels; documented the complete chain, utilities and intentionally gameplay-scaled final recovery factors. New iron intermediates have no generic metal aliases or reverse conversions. No RF dependency, new machine block, molten-steel fluid or changes to existing fluid identities were introduced.
+
+## 2026-10-19 08:53 — Complete native NEI process visibility and protect small-furnace synchronization
+
+- Add read-only production and continuous-operation views for steam condensation/expansion/recovery, fuels and process heat, oil extraction, bedrock drilling, native smelting, environmental utilities and reactor/ICF paths. Use native definitions, physical bills, configured quantities and explicit variable-rate conditions; preserve processing balances and inventories.
+- Rebuild Rotary Furnace, Industrial Blast Furnace, gas-centrifuge, cryogenic separation, spent-fuel cooling and fusion views around their actual processing models. Show paid rotary steam and exhaust, optional blast flux/enrichment, internal cascade stages, exact fractional products, coolant operations and separately timed fusion byproducts.
+- Unify safe item/fluid navigation, filled-container matching and bounded ingredient cycling; preserve pseudo-stream and ICF pellet identities. Repair template/naming/filled-container Uses paths, reject empty required choices before NEI can fabricate fire placeholders, remove duplicate displayed products, fix SILEX fractional fluid ratios and register GTNH catalysts by registry ID. Keep informational snapshots cached and client-only; replace the shared fluid registry's direct NEI dependency with a neutral revision counter.
+- Synchronize the Small Arc Furnace with the existing typed tile-state packet, including its opening snapshot. Reject incorrectly sized seismic payloads before reading fields so a misrouted gauge payload cannot trigger the reported buffer exception; keep packet IDs and furnace processing unchanged.
+- Flatten breeder recipe export entries so multiple flux variants serialize without a list-to-recipe cast failure; preserve the existing JSON schema and runtime recipe map.
+- Document native process coverage, conditional production quantities, storage/transport boundaries and informational navigation semantics in the development references.

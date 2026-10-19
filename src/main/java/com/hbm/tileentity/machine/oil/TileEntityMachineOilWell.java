@@ -71,6 +71,12 @@ public class TileEntityMachineOilWell extends TileEntityOilDrillBase {
 		return delay;
 	}
 
+    @Override public ExtractionProfile getExtractionProfile() {
+        return new ExtractionProfile(200, oilPerDeposit, oilPerDunaDeposit, oilPerBedrockDepsoit,
+                gasPerDepositMin, gasPerDepositMax, gasPerBedrockDepositMin, gasPerBedrockDepositMax,
+                gasPerDeposit, petgasPerDepositMin, petgasPerDepositMax, drainChance, drainChanceDuna, 0);
+    }
+
 	@Override
 	public void onDrill(int y) {
 		Block b = worldObj.getBlock(xCoord, y, zCoord);

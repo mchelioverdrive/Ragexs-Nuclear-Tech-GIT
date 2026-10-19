@@ -16,12 +16,13 @@ public class IMCHandlerNHNEI {
 
 			Class<? extends TemplateRecipeHandler> handlerClass = handler.getClass();
 
-			if(handler instanceof ICompatNHNEI && ((ICompatNHNEI) handler).getMachinesForRecipe() != null) {
-				String blockName = "hbm:" + ((ICompatNHNEI) handler).getMachinesForRecipe()[0].getUnlocalizedName();
+			ItemStack[] machines = handler instanceof ICompatNHNEI ? ((ICompatNHNEI) handler).getMachinesForRecipe() : null;
+			if(machines != null && machines.length > 0) {
+				String blockName = net.minecraft.item.Item.itemRegistry.getNameForObject(machines[0].getItem());
 				String hClass = handlerClass.getName();
 				sendHandler(hClass, ((ICompatNHNEI) handler).getRecipeID(), blockName, ((ICompatNHNEI) handler).getNEIMaxRecipesPerPage(), ((ICompatNHNEI) handler).getNEIHandlerHeight());
-				for(ItemStack stack : ((ICompatNHNEI) handler).getMachinesForRecipe()) {
-					sendCatalyst(hClass, "hbm:" + stack.getUnlocalizedName());
+				for(ItemStack stack : machines) {
+					sendCatalyst(hClass, net.minecraft.item.Item.itemRegistry.getNameForObject(stack.getItem()));
 				}
 			}
 		}

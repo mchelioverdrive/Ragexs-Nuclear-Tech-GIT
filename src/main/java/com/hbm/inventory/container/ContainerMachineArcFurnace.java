@@ -41,6 +41,7 @@ public class ContainerMachineArcFurnace extends Container {
 	@Override
 	public void addCraftingToCrafters(ICrafting crafting) {
 		super.addCraftingToCrafters(crafting);
+		if(diFurnace.getWorldObj() != null && !diFurnace.getWorldObj().isRemote) diFurnace.sendStandard(50);
 	}
 
 	@Override

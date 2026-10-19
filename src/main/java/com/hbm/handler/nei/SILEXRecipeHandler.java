@@ -17,7 +17,6 @@ import com.hbm.lib.RefStrings;
 import com.hbm.util.I18nUtil;
 import com.hbm.util.WeightedRandomObject;
 
-import codechicken.nei.NEIServerUtils;
 import codechicken.nei.PositionedStack;
 import codechicken.nei.recipe.TemplateRecipeHandler;
 import net.minecraft.client.Minecraft;
@@ -55,7 +54,7 @@ public class SILEXRecipeHandler extends SafeTemplateRecipeHandler implements ICo
 			this.input = NEISafe.positionedStack(input, 12, 24);
 			this.outputs = new ArrayList<PositionedStack>();
 			this.chances = new ArrayList<Double>();
-			this.produced = recipe.fluidProduced / recipe.fluidConsumed;
+			this.produced = recipe.fluidProduced / (double) recipe.fluidConsumed;
 			this.crystalStrength = recipe.laserStrength;
 
 			double weight = 0;
@@ -131,7 +130,7 @@ public class SILEXRecipeHandler extends SafeTemplateRecipeHandler implements ICo
 
 			for(WeightedRandomObject out : recipe.getValue().outputs) {
 
-				if(NEIServerUtils.areStacksSameTypeCrafting(out.asStack(), result)) {
+				if(NEISafe.matchesRecipeStack(out.asStack(), result)) {
 					this.arecipes.add(new RecipeSet(recipe.getKey(), recipe.getValue()));
 				}
 			}
@@ -157,7 +156,7 @@ public class SILEXRecipeHandler extends SafeTemplateRecipeHandler implements ICo
 
 			if(recipe.getKey() instanceof ItemStack) {
 
-				if (NEIServerUtils.areStacksSameTypeCrafting(ingredient, (ItemStack)recipe.getKey()))
+				if (NEISafe.matchesRecipeStack(ingredient, (ItemStack)recipe.getKey()))
 					this.arecipes.add(new RecipeSet(recipe.getKey(), recipe.getValue()));
 
 			} else if (recipe.getKey() instanceof ArrayList) {
@@ -165,7 +164,7 @@ public class SILEXRecipeHandler extends SafeTemplateRecipeHandler implements ICo
 				for(Object o : (ArrayList)recipe.getKey()) {
 					ItemStack stack = (ItemStack)o;
 
-					if (NEIServerUtils.areStacksSameTypeCrafting(ingredient, stack))
+					if (NEISafe.matchesRecipeStack(ingredient, stack))
 						this.arecipes.add(new RecipeSet(stack, recipe.getValue()));
 				}
 			}

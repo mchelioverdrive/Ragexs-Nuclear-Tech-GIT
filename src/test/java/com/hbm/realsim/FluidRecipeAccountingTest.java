@@ -7,6 +7,27 @@ import net.minecraft.nbt.NBTTagCompound;
 
 /** Exercises the same bills and ownership accounts used by native recipe adapters. */
 public class FluidRecipeAccountingTest {
+    @Test public void ironPreparationClosesMassUsesRealReducingGasAndKeepsWholeParcels() {
+        ProcessRecipe[] stages = {SteelmakingProcesses.concentrate(), SteelmakingProcesses.pelletize(), SteelmakingProcesses.harden(), SteelmakingProcesses.reduce()};
+        for(ProcessRecipe stage : stages) {
+            assertClosed(stage);
+            ProcessRecipe electric = stage.electricallyDriven(); ChemicalFuelProcesses.validateReactorRating(electric);
+            assertEquals(stage.workQuanta + stage.heatQuanta, electric.workQuanta);
+            assertTrue(electric.rejectedWatts <= 1000000);
+            assertEquals(8 * PhysicalRegistry.get(stage.outputs[0]).massUnits, stage.productMass[0]);
+            ProcessBatch batch = new ProcessBatch(); batch.reserve(electric); batch.advance(1);
+            NBTTagCompound saved = new NBTTagCompound(); batch.write(saved); batch = new ProcessBatch(); batch.read(saved);
+            assertEquals(1, batch.ticks()); assertEquals(electric.id, batch.recipe().id);
+            assertFalse(batch.complete());
+            for(int t = 2; t <= electric.duration; t++) batch.advance(t);
+            int[] products = batch.finish(); assertEquals(8, products[0]);
+            assertFalse(batch.active());
+        }
+        assertEquals("HYDROGEN_GAS", stages[3].inputs[0]); assertTrue(stages[3].quantities[0] > 0);
+        assertTrue(stages[3].heatQuanta > 0); assertEquals(900, stages[3].referenceTemperatureC);
+        assertEquals(8 * PhysicalState.MASS_UNITS_PER_KG + stages[3].productMass[1] - ChemistryProcesses.mass("HYDROGEN_GAS", stages[3].quantities[0]) + stages[3].productMass[2],
+                stages[0].productMass[0]);
+    }
     @Test public void industrialLotsKeepPerUnitEnergyCarriersLossesAndStoredPaidBatches() {
         ProcessRecipe original = OrganicProcesses.tnt(), larger = original.rebatch(3, original.duration * 2);
         assertEquals(original.id, larger.id); assertEquals(original.referenceTemperatureC, larger.referenceTemperatureC);

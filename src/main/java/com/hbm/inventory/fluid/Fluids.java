@@ -14,7 +14,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonWriter;
-import com.hbm.handler.nei.BoilingHandler;
 import com.hbm.handler.pollution.PollutionHandler;
 import com.hbm.handler.pollution.PollutionHandler.PollutionType;
 import com.hbm.inventory.fluid.trait.*;
@@ -33,6 +32,8 @@ import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
 
 public class Fluids {
+	private static long registryRevision;
+	public static long getRegistryRevision() { return registryRevision; }
 
 	public static final Gson gson = new Gson();
 
@@ -1502,7 +1503,7 @@ public class Fluids {
 			readTraits(config);
 		}
 		SteamLedgerValidator.validate();
-		BoilingHandler.isReload=true;
+		registryRevision++;
 	}
 	private static void registerCalculatedFuel(FluidType type, double base, double combustMult, FuelGrade grade) {
 
