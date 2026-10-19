@@ -560,8 +560,12 @@ public class UniNodespace {
 		}
 
 		private void restart(List<GenNode> newSeeds) {
+			// Another removal can arrive before this split finishes. Keep the earlier branches;
+			// replacing their seeds can leave disconnected islands sharing the source network.
+			LinkedHashSet<GenNode> combined = new LinkedHashSet<GenNode>(this.seeds);
+			combined.addAll(newSeeds);
 			this.seeds.clear();
-			for(GenNode seed : newSeeds) if(seed != null && !this.seeds.contains(seed)) this.seeds.add(seed);
+			for(GenNode seed : combined) if(seed != null) this.seeds.add(seed);
 			this.visited.clear();
 			this.frontier.clear();
 			this.components.clear();
@@ -586,6 +590,8 @@ public class UniNodespace {
 				if(this.frontier.isEmpty()) {
 					this.current = null;
 					while(this.seedIndex < this.seeds.size()) {
+						if(used >= budget) return used;
+						used++;
 						GenNode seed = this.seeds.get(this.seedIndex++);
 						if(seed.expired || seed.net != this.source || this.visited.contains(seed)) continue;
 						this.current = new ArrayList<GenNode>();
@@ -598,6 +604,7 @@ public class UniNodespace {
 						break;
 					}
 				}
+				if(used >= budget) return used;
 				GenNode node = this.frontier.remove();
 				// Stale/duplicate dequeues are work too; they must consume this tick's budget.
 				used++;

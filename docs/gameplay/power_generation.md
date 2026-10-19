@@ -53,6 +53,27 @@ Radiation engines, matter conversion, ZPE shafts and fictional laser power retai
 
 Plan average supply, simultaneous peak load and storage discharge power separately. An 8-kW furnace, 2-kW press and 3-kW Fabrication Machine can overwhelm one starter if run together. Stagger jobs, add generation or provide a battery able to supply the peak. Generators have little internal electrical storage; external batteries bridge interruptions. Fuel delivery, clear byproducts and dependable cooling matter as much as the nameplate.
 
+## Cable Drum and overhead wires
+
+Right-click two loaded poles or connectors with the Cable Drum. Each completed attempt clears the selection; select the start again after an error. A selection identifies its dimension and the particular placed pole, so breaking and replacing that pole requires selecting it again. Existing established wires belong to the poles, not the drum.
+
+Ordinary distribution poles connect directly regardless of model or material. Single/triple/quadruple labels describe visible wire mounts, not voltage ratings. RTM does not simulate nominal voltage, insulation, phase balance or wire losses; the two service classes below preserve the largest transmission pylon's existing substation requirement without inventing voltage values.
+
+| Registered infrastructure | Wire service | Mounts | Maximum span | Permitted wire peers / local cable access |
+| --- | --- | --- | --- | --- |
+| Electricity Connector (`red_connector`) | Distribution | Single | 10 m | Any distribution pole/connector; local cable on its mounting face |
+| Electricity Pylon (`red_pylon`) | Distribution | Single | 25 m | Any distribution pole/connector; local cables around its base |
+| Medium Wooden Electricity Pylon (`red_pylon_medium_wood`) | Distribution | Triple | 45 m | Any distribution pole/connector; no local cable tap |
+| Medium Wooden Electricity Pylon with Transformer (`red_pylon_medium_wood_transformer`) | Distribution | Triple | 45 m | Any distribution pole/connector; local cable opposite its facing |
+| Medium Steel Electricity Pylon (`red_pylon_medium_steel`) | Distribution | Triple | 45 m | Any distribution pole/connector; no local cable tap |
+| Medium Steel Electricity Pylon with Transformer (`red_pylon_medium_steel_transformer`) | Distribution | Triple | 45 m | Any distribution pole/connector; local cable opposite its facing |
+| Large Electricity Pylon (`red_pylon_large`) | Transmission | Quadruple | 100 m | Large pylons and substations; reach distribution through a substation's cable ports |
+| Substation (`substation`) | Transmission wire terminal / cable interface | Quadruple | 20 m | Large pylons and other substations; existing ground cable ports connect to the ordinary grid |
+
+Each span uses the shorter endpoint's limit, measured between its attachment points. Mixed single/triple poles draw the supported common mount count. Self-connections and duplicate spans are rejected. There is no separate branch-count or wire-throughput cap in the existing system; generator, consumer and cable behavior is unchanged. A wire never supplies a voltage conversion. Medium transformer variants retain their existing cable tap; they do not impose a substation requirement on ordinary overhead links.
+
+Breaking a connected endpoint removes its wires while preserving unrelated branches. Unloaded peers are repaired from a saved removal journal when they next attach; cleanup does not load their chunks. Existing coordinate-based pole saves remain readable. Duplicate or malformed wire records and loaded one-sided orphan records are discarded without recreating blocks.
+
 
 ## When electrical demand disappears
 

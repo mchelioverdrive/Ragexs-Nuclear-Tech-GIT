@@ -78,9 +78,8 @@ public class Substation extends BlockDummyable implements ITooltipProvider {
 		if(world.isRemote) {
 			return true;
 		} else if(!player.isSneaking()) {
-			int[] pos = this.findCore(world, x, y, z);
-			TileEntityPylonBase te = (TileEntityPylonBase) world.getTileEntity(pos[0], pos[1], pos[2]);
-			return te.setColor(player.getHeldItem());
+			TileEntityPylonBase te = TileEntityPylonBase.findPylon(world, x, y, z);
+			return te != null && te.setColor(player.getHeldItem());
 		} else {
 			return false;
 		}

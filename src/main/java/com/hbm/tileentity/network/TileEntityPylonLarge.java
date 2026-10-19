@@ -5,6 +5,8 @@ import com.hbm.blocks.BlockDummyable;
 import net.minecraft.util.Vec3;
 
 public class TileEntityPylonLarge extends TileEntityPylonBase {
+	@Override
+	public WireClass getWireClass() { return WireClass.TRANSMISSION; }
 
 	@Override
 	public ConnectionType getConnectionType() {

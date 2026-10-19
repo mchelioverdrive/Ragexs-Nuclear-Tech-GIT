@@ -48,8 +48,8 @@ public abstract class PylonBase extends BlockContainer implements ITooltipProvid
 		if(world.isRemote) {
 			return true;
 		} else if(!player.isSneaking()) {
-			TileEntityPylonBase te = (TileEntityPylonBase) world.getTileEntity(x, y, z);
-			return te.setColor(player.getHeldItem());
+			TileEntityPylonBase te = TileEntityPylonBase.findPylon(world, x, y, z);
+			return te != null && te.setColor(player.getHeldItem());
 		} else {
 			return false;
 		}

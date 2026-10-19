@@ -11,6 +11,8 @@ import net.minecraft.util.Vec3;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileEntitySubstation extends TileEntityPylonBase {
+	@Override
+	public WireClass getWireClass() { return WireClass.TRANSMISSION; }
 
 	@Override
 	public ConnectionType getConnectionType() {

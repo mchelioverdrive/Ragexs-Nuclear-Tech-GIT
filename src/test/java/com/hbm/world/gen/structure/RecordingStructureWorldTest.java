@@ -74,8 +74,8 @@ public class RecordingStructureWorldTest {
         }
     }
 
-    private static class ServerLoader extends LaunchClassLoader {
-        ServerLoader(URL[] urls) { super(urls); }
+    public static class ServerLoader extends LaunchClassLoader {
+        public ServerLoader(URL[] urls) { super(urls); }
 
         @Override protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
             if(name.startsWith("net.minecraft.client.") || name.equals("net.minecraft.world.storage.SaveHandlerMP"))

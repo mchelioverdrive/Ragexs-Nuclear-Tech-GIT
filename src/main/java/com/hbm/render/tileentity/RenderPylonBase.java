@@ -30,13 +30,16 @@ public abstract class RenderPylonBase extends TileEntitySpecialRenderer {
 		for(int i = 0; i < pyl.connected.size(); i++) {
 
 			int[] wire = pyl.connected.get(i);
-			TileEntity tile = pyl.getWorldObj().getTileEntity(wire[0], wire[1], wire[2]);
+			if(wire == null || wire.length != 3) continue;
+			TileEntity tile = TileEntityPylonBase.loadedPylon(pyl.getWorldObj(), wire[0], wire[1], wire[2]);
 
 			if(tile instanceof TileEntityPylonBase) {
 				TileEntityPylonBase pylon = (TileEntityPylonBase) tile;
+				if(pylon == pyl || !pylon.hasConnection(pyl.xCoord, pyl.yCoord, pyl.zCoord)) continue;
 
 				Vec3[] m1 = pyl.getMountPos();
 				Vec3[] m2 = pylon.getMountPos();
+				if(m1 == null || m2 == null || m1.length == 0 || m2.length == 0) continue;
 
 				int lineCount = Math.min(m1.length, m2.length);
 
