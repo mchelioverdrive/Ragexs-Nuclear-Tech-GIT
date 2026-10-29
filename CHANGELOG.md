@@ -105,3 +105,9 @@
 
 - Set chlorocalcite dissolution and conditioning to 50 and 40 seconds per existing doubled batch so liquid products fit the 12 L/min specialty flow limit. Preserve reaction quantities, mass accounting, paid energy, recipe IDs and saved active batches.
 - Serialize blast-furnace OreDictionary stack inputs through the existing stack writer, preventing unfinished JSON fields during template generation. Preserve counted OreDictionary requirements when reading recipe overrides in either input slot, including the six-steel ferrochrome stainless charge.
+
+
+2026-10-29 19:03 — Add Lunchables and Lunchly lunch kits
+
+- Add craftable Lunchables and MrBeast's Lunchly foods with transparent package sprites. Each restores six hunger points and applies 250 points of the existing carcinogen exposure on consumption, respecting the carcinogen-disable setting.
+- Add independent, prerequisite-free "I love my carcinogens" and "FDA approved TM" achievements for eating 100 of the respective food. Separate named Minecraft statistics retain each player's progress across death, reconnects, restarts and item-ID remapping; only completed server-side consumption advances progress.

@@ -2237,6 +2237,8 @@ public class ModItems {
 
 	//public static Item bomb_waffle;
 	public static Item schnitzel_vegan;
+	public static Item lunchables;
+	public static Item lunchly;
 	public static Item cotton_candy;
 	//public static Item apple_lead;
 	//public static Item apple_schrabidium;
@@ -5968,6 +5970,8 @@ public class ModItems {
 
 		//bomb_waffle = new ItemWaffle(20, false).setUnlocalizedName("bomb_waffle").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":bomb_waffle");
 		schnitzel_vegan = new ItemSchnitzelVegan(3, true).setUnlocalizedName("schnitzel_vegan").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":schnitzel_vegan");
+		lunchables = new ItemLunchKit(false).setUnlocalizedName("lunchables").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":lunchables");
+		lunchly = new ItemLunchKit(true).setUnlocalizedName("lunchly").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":lunchly");
 		cotton_candy = new ItemCottonCandy(5, false).setUnlocalizedName("cotton_candy").setCreativeTab(MainRegistry.consumableTab).setFull3D().setTextureName(RefStrings.MODID + ":cotton_candy");
 		//apple_lead = new ItemAppleSchrabidium(5, 0, false).setUnlocalizedName("apple_lead").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":apple_lead");
 		//apple_schrabidium = new ItemAppleSchrabidium(20, 100, false).setUnlocalizedName("apple_schrabidium").setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":apple_schrabidium");
@@ -9701,6 +9705,8 @@ public class ModItems {
 		//Food
 		//GameRegistry.registerItem(bomb_waffle, bomb_waffle.getUnlocalizedName());
 		GameRegistry.registerItem(schnitzel_vegan, schnitzel_vegan.getUnlocalizedName());
+		GameRegistry.registerItem(lunchables, lunchables.getUnlocalizedName());
+		GameRegistry.registerItem(lunchly, lunchly.getUnlocalizedName());
 		GameRegistry.registerItem(cotton_candy, cotton_candy.getUnlocalizedName());
 		//GameRegistry.registerItem(apple_lead, apple_lead.getUnlocalizedName());
 		//GameRegistry.registerItem(apple_schrabidium, apple_schrabidium.getUnlocalizedName());

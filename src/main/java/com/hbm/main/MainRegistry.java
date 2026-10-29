@@ -81,6 +81,8 @@ import net.minecraft.item.ItemArmor.ArmorMaterial;
 import net.minecraft.item.ItemStack;
 import net.minecraft.stats.Achievement;
 import net.minecraft.stats.AchievementList;
+import net.minecraft.stats.StatBase;
+import net.minecraft.util.ChatComponentTranslation;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.WeightedRandomChestContent;
@@ -241,6 +243,10 @@ public class MainRegistry {
 	public static Achievement achFrackingTower;
 	public static Achievement achMercury;
 	public static Achievement achCarcinogen;
+	public static Achievement achLunchables;
+	public static Achievement achLunchly;
+	public static StatBase statLunchablesEaten;
+	public static StatBase statLunchlyEaten;
 	public static Achievement achDetonator;
 	public static Achievement achHemp;
 	//public static Achievement achSelenium;
@@ -807,6 +813,10 @@ public class MainRegistry {
 		achHelenKeller = new Achievement("achievement.helenKeller", "helenKeller", 10, -2, new ItemStack(ModItems.crystal_meth), achChemplant).initIndependentStat().setSpecial().registerStat();
 		achMercury = new Achievement("achievement.mercuryProduction", "mercuryProduction", 3, 1, ModItems.ingot_mercury, achBlastFurnace).initIndependentStat().registerStat();
 		achCarcinogen = new Achievement("achievement.carcinogenExposure", "carcinogenExposure", 4, -6, ModItems.ingot_asbestos, null).initIndependentStat().registerStat();
+		statLunchablesEaten = new StatBase("stat.hbm.lunchablesEaten", new ChatComponentTranslation("stat.hbm.lunchablesEaten")).initIndependentStat().registerStat();
+		statLunchlyEaten = new StatBase("stat.hbm.lunchlyEaten", new ChatComponentTranslation("stat.hbm.lunchlyEaten")).initIndependentStat().registerStat();
+		achLunchables = new Achievement("achievement.lunchables", "lunchables", 0, -6, ModItems.lunchables, null).initIndependentStat().registerStat();
+		achLunchly = new Achievement("achievement.lunchly", "lunchly", 2, -6, ModItems.lunchly, null).initIndependentStat().registerStat();
 		achDetonator = new Achievement("achievement.detonatorCraft", "detonatorCraft", 4, -1, ModItems.detonator, achSolderingStation).initIndependentStat().registerStat();
 		achHemp = new Achievement("achievement.hempDiscovery", "hempDiscovery", -6, -2, new ItemStack(ModBlocks.plant_flower, 1, com.hbm.blocks.generic.BlockNTMFlower.EnumFlowerType.WEED.ordinal()), null).initIndependentStat().registerStat();
 
@@ -861,6 +871,8 @@ public class MainRegistry {
 				achFrackingTower,
 				achMercury,
 				achCarcinogen,
+				achLunchables,
+				achLunchly,
 				achDetonator,
 				achHemp,
 				//achSelenium,

@@ -45,6 +45,8 @@ public class ConsumableRecipes {
 		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.bomb_caller, 1, 8), new Object[] { "TRG", 'T', ModItems.iv_blood,'G',ModItems.acetylene_torch, 'R', ModItems.detonator_laser });
 
 		//Food
+		CraftingManager.addShapelessAuto(new ItemStack(ModItems.lunchables), new Object[] { Items.paper, Items.bread, Items.cooked_chicken, ModItems.cheese });
+		CraftingManager.addShapelessAuto(new ItemStack(ModItems.lunchly), new Object[] { Items.paper, Items.bread, Items.cooked_chicken, ModItems.cheese, ModItems.chocolate, Items.sugar });
 		//CraftingManager.addRecipeAuto(new ItemStack(ModItems.bomb_waffle, 1), new Object[] { "WEW", "MPM", "WEW", 'W', Items.wheat, 'E', Items.egg, 'M', Items.milk_bucket, 'P', ModItems.man_core });
 		CraftingManager.addRecipeAuto(new ItemStack(ModItems.schnitzel_vegan, 2), new Object[] { "RWR", "WPW", "RWR", 'W', Items.carrot, 'R', Items.reeds, 'P', Items.pumpkin_seeds });
 		CraftingManager.addRecipeAuto(new ItemStack(ModItems.cotton_candy, 1), new Object[] { " S ", "SPS", " H ", 'P', Items.dye, 'S', Items.sugar, 'H', Items.stick });
