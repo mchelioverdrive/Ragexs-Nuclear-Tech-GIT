@@ -13,9 +13,22 @@ final class NuclearBlockBehavior {
 
 	private static final Map<Class<?>, Boolean> nativeBaseRemoval = new HashMap<Class<?>, Boolean>();
 	private static final Map<Block, Boolean> stairRemoval = new java.util.IdentityHashMap<Block, Boolean>();
+	private static final Map<Class<?>, Boolean> neighborNoop = new HashMap<Class<?>, Boolean>();
+	private static final String NEIGHBOR_METHOD = cpw.mods.fml.relauncher.ReflectionHelper.findMethod(Block.class, null,
+			new String[] { "onNeighborBlockChange", "func_149695_a" }, World.class, int.class, int.class, int.class, Block.class).getName();
 	private static final String BREAK_METHOD = cpw.mods.fml.relauncher.ReflectionHelper.findMethod(Block.class, null,
 			new String[] { "breakBlock", "func_149749_a" }, World.class, int.class, int.class, int.class, Block.class, int.class).getName();
 	private NuclearBlockBehavior() { }
+	static boolean passiveNeighbor(Block block) {
+		Class<?> type = block.getClass();
+		Boolean passive = neighborNoop.get(type);
+		if(passive == null) {
+			try { passive = type.getMethod(NEIGHBOR_METHOD, World.class, int.class, int.class, int.class, Block.class).getDeclaringClass() == Block.class; }
+			catch(ReflectiveOperationException failure) { passive = false; }
+			neighborNoop.put(type, passive);
+		}
+		return passive;
+	}
 
 	static boolean progressive(Block block) {
 		Class<?> type = block.getClass();

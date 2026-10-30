@@ -56,6 +56,62 @@ public final class ExplosionTerrainAccess {
 	private static final Map<Long, History> histories = new LinkedHashMap<Long, History>();
 	private static long retainedBytes;
 	private static long unchangedAirLightChecks;
+	private static final java.util.Set<PressureSection> pressureSections = new java.util.HashSet<PressureSection>();
+	private static final java.util.IdentityHashMap<Block, Byte> pressureKinds = new java.util.IdentityHashMap<Block, Byte>();
+	/** One streamed section per selector, never a footprint-wide discovery index.
+	 * Ordered bits are column-major and top-down. Original geological barriers
+	 * still end columns after excavation; removed targets themselves need no work.
+	 * Observer dirties are reclassified before consumption, including thermal changes. */
+	static final class PressureSection implements AutoCloseable {
+		final History history;
+		final int x, y, z;
+		final java.util.BitSet interesting = new java.util.BitSet(4096), targets = new java.util.BitSet(4096), dirty = new java.util.BitSet(4096);
+		private PressureSection(History history, int x, int y, int z) {
+			this.history = history; this.x = x; this.y = y; this.z = z;
+			dirty.set(0, 4096); pressureSections.add(this); bytes.addAndGet(2048L);
+		}
+		boolean refresh(Access access, java.util.BitSet blocked, int minimum, int maximum, int legacyColumn, int legacyY, int cursor, long deadline) {
+			Chunk chunk = chunk(access, x, z, deadline);
+			if(chunk == null) return false;
+			int i;
+			while((i = dirty.nextSetBit(0)) >= 0 && ExplosionWorkScheduler.before(deadline)) {
+				if(blocked.get(i >> 4)) { dirty.clear(i, (i | 15) + 1); continue; }
+				int xx = (x << 4) + (i >> 4 & 15), yy = (y << 4) + 15 - (i & 15), zz = (z << 4) + (i >> 8);
+				int column = i >> 4;
+				if(yy < minimum || yy > maximum || column < legacyColumn || column == legacyColumn && legacyY >= 0 && yy > legacyY) {
+					interesting.clear(i); targets.clear(i); dirty.clear(i); continue;
+				}
+				Block live = chunk.getBlock(xx & 15, yy, zz & 15);
+				Block source = pressureSource(history, xx, yy, zz, live);
+				Byte kind = pressureKinds.get(source);
+				if(kind == null) {
+					kind = (byte)(NuclearBlockBehavior.pressureTarget(source) ? 1 : source.getMaterial().blocksMovement() || source.getMaterial().isLiquid() ? 2 : 0);
+					pressureKinds.put(source, kind);
+				}
+				boolean wasBarrier = interesting.get(i) && !targets.get(i);
+				boolean target = kind == 1 && live != Blocks.air;
+				targets.set(i, target); interesting.set(i, target || kind == 2); dirty.clear(i);
+				int end = (i | 15) + 1;
+				if(kind == 2) {
+					if(i < cursor) blocked.set(column);
+					// Nothing below this geological barrier can be exposed in this
+					// section column. Do not classify the remaining fifteen cells.
+					interesting.clear(i + 1, end); targets.clear(i + 1, end); dirty.clear(i + 1, end);
+				} else if(wasBarrier) dirty.set(i + 1, end);
+			}
+			return dirty.isEmpty();
+		}
+		void dirty(int xx, int yy, int zz) { dirty.set((zz & 15) << 8 | (xx & 15) << 4 | 15 - (yy & 15)); }
+		public void close() { if(pressureSections.remove(this)) bytes.addAndGet(-2048L); }
+	}
+	static PressureSection pressureSection(History history, int x, int y, int z) {
+		return reserve(2048L, null) ? new PressureSection(history, x, y, z) : null;
+	}
+	static Block pressureSource(History history, int x, int y, int z, Block live) {
+		if(live != Blocks.air) return live;
+		long value = history.original(x >> 4, y >> 4, z >> 4, (y & 15) << 8 | (z & 15) << 4 | (x & 15));
+		return value < 0 ? live : Block.getBlockById((int)(value >>> 35) & 65535);
+	}
 
 	static boolean canRemoveSection(World world, Chunk chunk, int section) {
 		// World overrides/snapshot capture and non-native storage retain their
@@ -133,6 +189,8 @@ public final class ExplosionTerrainAccess {
 		private int cachedX, cachedY, cachedZ;
 		private boolean cached;
 		private Originals cachedSection;
+		private Iterator<Map.Entry<Key, Originals>> releasing;
+		private boolean releasedUnowned;
 		public History(World world) { this.world = world; histories.put(id, this); }
 		public long bytes() { return allocated; }
 		private Originals section(int x, int y, int z) {
@@ -143,6 +201,10 @@ public final class ExplosionTerrainAccess {
 			return cachedSection;
 		}
 		boolean hasSection(int x, int y, int z) { return section(x, y, z) != null; }
+		int highestSection(int x, int z) {
+			for(int y = 15; y >= 0; y--) if(hasSection(x, y, z)) return y;
+			return -1;
+		}
 		private long original(int x, int y, int z, int bit) {
 			Originals section = section(x, y, z); return section == null ? -1L : section.get(bit);
 		}
@@ -151,6 +213,7 @@ public final class ExplosionTerrainAccess {
 			return value == -1L ? Blocks.air : Block.getBlockById((int)(value >>> 35) & 65535);
 		}
 		public boolean remember(int x, int y, int z, Block block) {
+			releasing = null; releasedUnowned = false;
 			Originals section = section(x >> 4, y >> 4, z >> 4);
 			int bit = (y & 15) << 8 | (z & 15) << 4 | (x & 15);
 			boolean existing = section != null && section.get(bit) != -1L;
@@ -172,8 +235,21 @@ public final class ExplosionTerrainAccess {
 			// need the removed source ID. The otherwise unused sign bit records this.
 			Originals section = section(x, y, z); if(section != null) section.replace(bit);
 		}
-		public void clear() { sections.clear(); cached = false; cachedSection = null; retainedBytes -= allocated; bytes.addAndGet(-allocated); allocated = 0; restored = 0; }
+		public void clear() { sections.clear(); releasing = null; releasedUnowned = true; cached = false; cachedSection = null; retainedBytes -= allocated; bytes.addAndGet(-allocated); allocated = 0; restored = 0; }
+		boolean releasePending() { return allocated != 0 && !releasedUnowned; }
+		void releaseUnowned(net.minecraft.util.LongHashMap owners, long deadline) {
+			if(releasedUnowned) return;
+			if(releasing == null) releasing = sections.entrySet().iterator();
+			while(releasing.hasNext() && ExplosionWorkScheduler.before(deadline)) {
+				Map.Entry<Key, Originals> entry = releasing.next();
+				if(owners.containsItem(entry.getKey().chunk)) continue; // Pending callbacks still need source IDs.
+				long freed = 256L + entry.getValue().values.length * 8L;
+				releasing.remove(); allocated -= freed; retainedBytes -= freed; bytes.addAndGet(-freed); cached = false; cachedSection = null;
+			}
+			if(!releasing.hasNext()) { releasing = null; releasedUnowned = true; }
+		}
 		public void releaseChunk(int x, int z) {
+			releasing = null; releasedUnowned = false;
 			cached = false; cachedSection = null;
 			for(int y = 0; y < 16; y++) {
 				Originals data = sections.remove(new Key(world, x, y, z));
@@ -226,6 +302,7 @@ public final class ExplosionTerrainAccess {
 					data.put((int)(value >>> 51 & 4095), value);
 				}
 				sections.put(new Key(world, item.getInteger("x"), item.getInteger("y"), item.getInteger("z")), data);
+				releasing = null; releasedUnowned = false;
 				cached = false; cachedSection = null;
 				allocated += needed; retainedBytes += needed; bytes.addAndGet(needed); restored++;
 			}
@@ -336,6 +413,7 @@ public final class ExplosionTerrainAccess {
 		private int paletteSize;
 		private long allocatedBytes;
 		private final java.util.BitSet solids = new java.util.BitSet();
+		private final java.util.BitSet surface = new java.util.BitSet();
 		// Dirty notifications are not evidence that resistance changed (lighting
 		// sends render notifications too). Validate under the server work deadline
 		// before publication/adoption, instead of throwing away useful ray work.
@@ -360,6 +438,7 @@ public final class ExplosionTerrainAccess {
 		public boolean vanillaAir(int bit) { return (flags(bit) & 1) == 0; }
 		public boolean air(int bit) { return (flags(bit) & 4) != 0; }
 		public java.util.BitSet solids() { return (java.util.BitSet)solids.clone(); }
+		public java.util.BitSet surfaceSamples() { return (java.util.BitSet)surface.clone(); }
 		public boolean contains(int x, int y, int z) { return x >> 4 == chunkX && y >> 4 == sectionY && z >> 4 == chunkZ; }
 	}
 	private static final class Capture {
@@ -643,6 +722,9 @@ public final class ExplosionTerrainAccess {
 			byte flags = (byte)((block != Blocks.air ? 1 : 0) | (liquid ? 2 : 0) | (access.world.isAirBlock(bx, by, bz) ? 4 : 0));
 			long retained = original(access.history, x, y, z, bit, block);
 			if(retained != -1L) { resistance = Float.intBitsToFloat((int)retained); flags = (byte)(retained >>> 32 & 7); }
+			Block source = retained == -1L ? block : Block.getBlockById((int)(retained >>> 35) & 65535);
+			// Diagnostic surface: grass, or the top opaque column sample at capture.
+			if(source == Blocks.grass || (flags & 6) == 0 && by == chunk.getHeightValue(bx & 15, bz & 15) - 1) capture.data.surface.set(bit);
 			if(!capture.put(bit, resistance, flags)) { access.defer(); return null; }
 			if((flags & 6) == 0) capture.data.solids.set(bit);
 			capture.cursor++;
@@ -776,6 +858,7 @@ public final class ExplosionTerrainAccess {
 	}
 	private static void invalidate(Chunk chunk) {
 		if(chunk.worldObj.isRemote) return;
+		for(PressureSection section : pressureSections) if(section.history.world == chunk.worldObj && section.x == chunk.xPosition && section.z == chunk.zPosition) section.dirty.set(0, 4096);
 		boolean known = airColumns.containsKey(new Key(chunk.worldObj, chunk.xPosition, -2, chunk.zPosition));
 		Iterator<Map.Entry<Key, Capture>> iterator = snapshots.entrySet().iterator();
 		long coord = ChunkCoordIntPair.chunkXZ2Int(chunk.xPosition, chunk.zPosition);
@@ -792,6 +875,7 @@ public final class ExplosionTerrainAccess {
 		if(known) rememberAir(chunk);
 	}
 	public static void unload(World world) {
+		for(PressureSection section : pressureSections.toArray(new PressureSection[0])) if(section.history.world == world) section.close();
 		for(History history : histories.values().toArray(new History[0])) if(history.world == world) history.close();
 		Iterator<Validation> pending = validations.iterator();
 		while(pending.hasNext()) {
@@ -811,6 +895,7 @@ public final class ExplosionTerrainAccess {
 		while(columns.hasNext()) if(columns.next().world == world) { columns.remove(); bytes.addAndGet(-AIR_COLUMN_BYTES); }
 	}
 	public static void clear() {
+		for(PressureSection section : pressureSections.toArray(new PressureSection[0])) section.close();
 		for(History history : histories.values().toArray(new History[0])) history.close();
 		while(!validations.isEmpty()) finishValidation(validations.removeFirst());
 		for(Map.Entry<World, Observer> entry : observers.entrySet()) entry.getKey().removeWorldAccess(entry.getValue());
@@ -836,6 +921,7 @@ public final class ExplosionTerrainAccess {
 			}
 		}
 		public void markBlockForUpdate(int x, int y, int z) {
+			for(PressureSection section : pressureSections) if(section.history.world == world && section.x == x >> 4 && section.y == y >> 4 && section.z == z >> 4) section.dirty(x, y, z);
 			forgetAir(world, x >> 4, z >> 4, y >> 4, y >> 4);
 			if(snapshots.isEmpty()) return;
 			markPoint(x, y, z, 0);
@@ -850,6 +936,7 @@ public final class ExplosionTerrainAccess {
 		}
 		public void markBlockForRenderUpdate(int x, int y, int z) { markBlockForUpdate(x, y, z); }
 		public void markBlockRangeForRenderUpdate(int x, int y, int z, int x2, int y2, int z2) {
+			for(PressureSection section : pressureSections) if(section.history.world == world && section.x >= x >> 4 && section.x <= x2 >> 4 && section.y >= y >> 4 && section.y <= y2 >> 4 && section.z >= z >> 4 && section.z <= z2 >> 4) section.dirty.set(0, 4096);
 			int minX = x >> 4, maxX = x2 >> 4, minZ = z >> 4, maxZ = z2 >> 4, minY = Math.max(0, y >> 4), maxY = Math.min(15, y2 >> 4);
 			if(minX > maxX || minY > maxY || minZ > maxZ) return;
 			if(((long)maxX - minX + 1) * ((long)maxZ - minZ + 1) <= 64) {

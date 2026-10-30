@@ -37,25 +37,45 @@ final class ExplosionRayWorker {
 		Lifecycle(long jobId, long worldLifecycleId) { this.jobId = jobId; this.worldLifecycleId = worldLifecycleId; }
 	}
 	static final class State implements Cloneable {
-		int posX, posY, posZ, length, rayLength, surfaceY, step, buildStep, tipX, tipY, tipZ, initialStrength, gspNum, gspNumMax, rayLimit;
-		boolean contained, finishing, hasTip, building, active, recorded, balanced;
+		int posX, posY, posZ, length, rayLength, surfaceY, step, buildStep, tipX, tipY, tipZ, initialStrength, gspNum, gspNumMax, rayLimit, directionOrder;
+		boolean contained, finishing, hasTip, building, active, recorded;
 		double dx, dy, dz, buildLength, bx, by, bz, gx, gy;
 		float strength, tx, ty, tz, airResistance;
 		State copy() {
 			try { return (State)clone(); } catch(CloneNotSupportedException impossible) { throw new AssertionError(impossible); }
 		}
 	}
-	// Equal-area Fibonacci sphere, visited in interleaved latitude thirds.
-	// This changes longitudes from the legacy recurrence, never density/energy.
-	static double latitude(int number, int count) {
+	static final int DIRECTION_ORDER = 2;
+	/** Interleave recursively partitioned index intervals, with deterministic child
+	 * swaps to decorrelate Fibonacci azimuths. Each interval receives every local
+	 * ordinal exactly once, including the unpaired ordinal of an odd-sized interval.
+	 * No direction array or startup pass is needed; lookup takes O(log(count)). */
+	static int directionIndex(int number, int count, int order) {
 		int i = number - 1, band = i % 3;
-		int index = band * (count / 3) + Math.min(band, count % 3) + i / 3;
+		if(order == 1) return band * (count / 3) + Math.min(band, count % 3) + i / 3;
+		int start = 0, size = count;
+		while(size > 1) {
+			int half = (size + 1) >>> 1;
+			int hash = (start * 0x9e3779b9) ^ (size * 0x85ebca6b);
+			hash ^= hash >>> 16; hash *= 0x7feb352d; hash ^= hash >>> 15;
+			boolean lower = (size % 2 != 0 && i == size - 1) || ((i & 1) == (hash & 1));
+			i >>>= 1;
+			if(lower) size = half; else { start += half; size -= half; }
+		}
+		return start;
+	}
+	static double latitude(int number, int count, int order) {
+		int index = directionIndex(number, count, order);
 		return Math.acos(count <= 1 ? 0D : -1D + 2D * index / (count - 1D));
 	}
-	static double longitude(int number, int count) {
-		int i = number - 1, band = i % 3;
-		int index = band * (count / 3) + Math.min(band, count % 3) + i / 3;
+	static double longitude(int number, int count, int order) {
+		int index = directionIndex(number, count, order);
 		return index * (Math.PI * (3D - Math.sqrt(5D))) % (Math.PI * 2D);
+	}
+	static int directionCell(double dy, double azimuth) {
+		int elevation = Math.max(0, Math.min(7, (int)((dy + 1D) * 4D)));
+		int az = Math.max(0, Math.min(11, (int)(azimuth / (Math.PI * 2D) * 12D)));
+		return elevation * 12 + az;
 	}
 	static final class Result {
 		final State state;
@@ -65,7 +85,7 @@ final class ExplosionRayWorker {
 		boolean missing;
 		int chunkX, sectionY, chunkZ;
 		int completedRays;
-		final long[] directions = new long[3];
+		final long[] directions = new long[96];
 		int operations, sectionMisses;
 		long calculationNanos, cpuNanos, traversalOperations, reconstructionOperations, reusedSamples, skippedReconstruction, attenuationHits, sharedSnapshotHits;
 		final java.util.HashSet<Long> qualified;
@@ -226,8 +246,9 @@ final class ExplosionRayWorker {
 						s.tipX = (int)Math.floor(s.tx); s.tipY = (int)Math.floor(s.ty); s.tipZ = (int)Math.floor(s.tz);
 						s.buildStep = 0; s.building = true;
 					} else {
-						if(s.balanced && s.gspNum < s.gspNumMax) {
-							s.gx = latitude(s.gspNum + 1, s.gspNumMax); s.gy = longitude(s.gspNum + 1, s.gspNumMax);
+						output.directions[directionCell(s.dy, s.gy)]++;
+						if(s.directionOrder != 0 && s.gspNum < s.gspNumMax) {
+							s.gx = latitude(s.gspNum + 1, s.gspNumMax, s.directionOrder); s.gy = longitude(s.gspNum + 1, s.gspNumMax, s.directionOrder);
 						} else if(s.gspNum < s.gspNumMax) {
 							int k = s.gspNum + 1;
 							double hk = -1.0 + 2.0 * (k - 1.0) / (s.gspNumMax - 1.0);
@@ -235,7 +256,7 @@ final class ExplosionRayWorker {
 							// The pole has no longitude; keep its Cartesian direction finite.
 							s.gy = hk >= 1D ? 0D : (s.gy + 3.6 / Math.sqrt(s.gspNumMax) / Math.sqrt(1.0 - hk * hk)) % (Math.PI * 2);
 						} else { s.gx = 0.0; s.gy = 0.0; }
-						s.gspNum++; output.completedRays++; output.directions[s.dy < -1D / 3D ? 0 : s.dy > 1D / 3D ? 2 : 1]++;
+						s.gspNum++; output.completedRays++;
 						s.active = s.finishing = s.recorded = s.hasTip = false;
 						output.qualified.clear();
 						continue;
