@@ -29,7 +29,7 @@ public class ExplosionNukeRayBatched {
 	int posX, posY, posZ;
 	World world;
 	int strength, length;
-	private final int rayLength;
+	private int rayLength;
 	private boolean contained;
 	private int surfaceY;
 	int gspNumMax, gspNum;
@@ -88,10 +88,15 @@ public class ExplosionNukeRayBatched {
 		this(world, x, y, z, strength, speed, length, false, 256);
 	}
 	public ExplosionNukeRayBatched(World world, int x, int y, int z, int strength, int speed, int length, boolean contained, int surfaceY) {
+		this(world, x, y, z, strength, speed, length, contained, surfaceY, strength);
+	}
+	public ExplosionNukeRayBatched(World world, int x, int y, int z, int strength, int speed, int length, boolean contained, int surfaceY, int reach) {
 		this.world = world; posX = x; posY = y; posZ = z;
 		terrain = new Access(world);
 		this.strength = strength; this.length = length; this.contained = contained; this.surfaceY = surfaceY;
-		rayLength = (int)Math.ceil(strength);
+		// Resistance energy and ray density still use strength. A weakly coupled
+		// surface burst must nevertheless traverse the air gap to its contact point.
+		rayLength = Math.max(strength, reach);
 		gspNumMax = (int)(2.5 * Math.PI * Math.pow(strength, 2));
 		gspNum = 1; gspX = Math.PI;
 	}
@@ -428,6 +433,7 @@ public class ExplosionNukeRayBatched {
 		gspNum = tag.getInteger("gspNum"); gspX = tag.getDouble("gspX"); gspY = tag.getDouble("gspY");
 		if(tag.hasKey("contained")) contained = tag.getBoolean("contained");
 		if(tag.hasKey("surfaceY")) surfaceY = tag.getInteger("surfaceY");
+		rayLength = tag.hasKey("rayLength") ? tag.getInteger("rayLength") : strength;
 		rayActive = tag.getBoolean("rayActive"); rayFinishing = tag.getBoolean("rayFinishing");
 		rayX = tag.getDouble("rayX"); rayY = tag.getDouble("rayY"); rayZ = tag.getDouble("rayZ");
 		rayStep = tag.getInteger("rayStep"); rayStrength = tag.getFloat("rayStrength");
@@ -550,6 +556,7 @@ public class ExplosionNukeRayBatched {
 		tag.setBoolean("snapshotPending", snapshotPending); tag.setInteger("snapshotX", snapshotX); tag.setInteger("snapshotY", snapshotY); tag.setInteger("snapshotZ", snapshotZ);
 		tag.setInteger("gspNum", gspNum); tag.setDouble("gspX", gspX); tag.setDouble("gspY", gspY);
 		tag.setBoolean("complete", isAusf3Complete); tag.setBoolean("contained", contained); tag.setInteger("surfaceY", surfaceY);
+		tag.setInteger("rayLength", rayLength);
 		tag.setBoolean("rayActive", rayActive); tag.setBoolean("rayFinishing", rayFinishing);
 		tag.setBoolean("rayRecorded", rayRecorded);
 		tag.setDouble("rayX", rayX); tag.setDouble("rayY", rayY); tag.setDouble("rayZ", rayZ);

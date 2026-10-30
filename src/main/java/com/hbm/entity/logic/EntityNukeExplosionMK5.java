@@ -63,6 +63,27 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 	private ExplosionTerrainAccess.Access ignitionTerrain;
 	private ExplosionTerrainAccess.Access breachTerrain;
 	private NuclearBurstResolver.ReleaseSearch breachSearch;
+	private NuclearBurstResolver.GroundSearch groundSearch;
+	private final ExplosionWorkScheduler.Job classificationWork = new ExplosionWorkScheduler.Job() {
+		public net.minecraft.entity.Entity owner() { return EntityNukeExplosionMK5.this; }
+		public long activeTick() { return activeWorkTick; }
+		public void suspend() { if(breachTerrain != null) breachTerrain.cancel(); }
+		public boolean ready(long tick) { return breachTerrain().ready(tick); }
+		public void run(long deadline, long tick) {
+			groundSearch.advance(breachTerrain(), deadline);
+			if(groundSearch.context == null) return;
+			burstContext = groundSearch.context;
+			spec = NuclearDetonationSpec.fromLegacyRadius(burstContext.legacyRadius);
+			spec.createsFallout = fallout; spec.salted = salted; copyContext(spec, burstContext);
+			effects = NuclearEffectsSolver.solve(spec);
+			double terrainRadius = spec.burstType == BurstType.SUBSURFACE ? effects.cavityRadius : effects.craterRadius;
+			strength = Math.max(1, (int)Math.ceil(terrainRadius * 2D));
+			speed = Math.max(1, (int)Math.ceil(100000D / strength));
+			if(GeneralConfig.enableExtendedLogging) MainRegistry.logger.log(Level.INFO, "[NUKE] type=" + spec.burstType + " yieldKt=" + spec.yieldKt + " surfaceY=" + burstContext.surfaceY + " coupling=" + spec.groundCoupling + " burialDepth=" + spec.burialDepth + " atmosphericRelease=" + spec.atmosphericReleaseFactor + " crater=" + effects.craterRadius + " fallout=" + effects.falloutSourceStrength);
+			groundSearch = null;
+			ExplosionWorkScheduler.remove(this);
+		}
+	};
 	private ExplosionTerrainAccess.Access breachTerrain() {
 		if(breachTerrain == null) breachTerrain = new ExplosionTerrainAccess.Access(worldObj);
 		return breachTerrain;
@@ -90,7 +111,8 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 		public void run(long deadline, long tick) {
 			if(!ExplosionWorkScheduler.before(deadline)) return;
 			if(explosion == null) {
-				explosion = new ExplosionNukeRayBatched(worldObj, (int)posX, (int)posY, (int)posZ, strength, speed, length, false, (int)Math.floor(burstContext != null ? burstContext.surfaceY : posY + spec.burialDepth));
+				int reach = spec.burstType == BurstType.SURFACE ? Math.max(strength, (int)Math.ceil(effects.fireballRadius) + 2) : strength;
+				explosion = new ExplosionNukeRayBatched(worldObj, (int)Math.floor(posX), (int)Math.floor(posY), (int)Math.floor(posZ), strength, speed, length, false, (int)Math.floor(posY - spec.burstHeight), reach);
 				if(pendingExplosionData != null) { explosion.readFromNBT(pendingExplosionData); pendingExplosionData = null; }
 			}
 			if(!explosion.isAusf3Complete) explosion.collectTip(speed * 10, deadline, tick);
@@ -115,9 +137,11 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 
 	@Override public void onUpdate() {
 		if(strength == 0) { clearChunkLoader(); setDead(); return; }
+		if(worldObj.isRemote) return;
 		if(!worldObj.isRemote) loadChunk((int)Math.floor(posX / 16D), (int)Math.floor(posZ / 16D));
+		activeWorkTick = ExplosionWorkScheduler.currentTick();
+		if(!ensureEffects()) return;
 		for(Object player : worldObj.playerEntities) ((EntityPlayer)player).triggerAchievement(MainRegistry.achManhattan);
-		ensureEffects();
 		if(!worldObj.isRemote) {
 			activeWorkTick = ExplosionWorkScheduler.currentTick();
 			if(!seismicSent) { sendSeismicShake(); seismicSent = true; }
@@ -135,13 +159,14 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 		} else if(currentShockRadius >= effects.lightBlastRadius) finishDetonation();
 	}
 
-	private void ensureEffects() {
+	private boolean ensureEffects() {
 		if(spec == null) {
-			burstContext = NuclearBurstResolver.resolve(worldObj, posX, posY, posZ, Math.max(1, length));
-			spec = NuclearDetonationSpec.fromLegacyRadius(burstContext.legacyRadius);
-			spec.createsFallout = fallout; spec.salted = salted; copyContext(spec, burstContext);
+			if(groundSearch == null) groundSearch = new NuclearBurstResolver.GroundSearch(posX, posY, posZ, Math.max(1, length));
+			ExplosionWorkScheduler.register(classificationWork);
+			return false;
 		}
 		if(effects == null) effects = NuclearEffectsSolver.solve(spec);
+		return true;
 	}
 
 
@@ -420,7 +445,8 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 			rain.setPosition(spec.burstType == BurstType.SUBSURFACE ? spec.breachX + 0.5D : posX, spec.burstType == BurstType.SUBSURFACE ? spec.breachY + 0.5D : posY, spec.burstType == BurstType.SUBSURFACE ? spec.breachZ + 0.5D : posZ); rain.setSalted(salted);
 			rain.setSourceMultiplier(effects.falloutSourceStrength / Math.max(0.001D, spec.yieldKt * spec.fissionFraction));
 			rain.setScale((int)((length * 2.5D + falloutAdd) * BombConfig.falloutRange / 100D * rain.getSourceMultiplier()));
-			worldObj.spawnEntityInWorld(rain); falloutSpawned = true;
+			falloutSpawned = worldObj.spawnEntityInWorld(rain);
+			if(!falloutSpawned) { rain.setDead(); return; }
 		}
 		// Fallout starts at the original finish condition, even if ignition needs more ticks.
 		if(ignitionJob != null && !groundIgnitionComplete) return;
@@ -431,6 +457,7 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 		if(explosion != null) explosion.cancelWorkers();
 		if(ignitionTerrain != null) ignitionTerrain.cancel();
 		if(breachTerrain != null) breachTerrain.cancel();
+		groundSearch = null;
 		ignitionJob = null;
 		super.setDead();
 	}
@@ -444,6 +471,7 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 		// Legacy thermalApplied means the old synchronous ignition pass already ran.
 		groundIgnitionComplete = nbt.hasKey("groundIgnitionComplete") ? nbt.getBoolean("groundIgnitionComplete") : ignitionJob == null && thermalApplied;
 		lastIgnitionTick = Long.MIN_VALUE;
+		if(nbt.hasKey("burstResolved") && !nbt.getBoolean("burstResolved")) { spec = null; effects = null; groundSearch = null; return; }
 		spec = NuclearDetonationSpec.fromLegacyRadius(Math.max(1, length)); if(nbt.hasKey("yieldKt")) spec.yieldKt = nbt.getDouble("yieldKt"); spec.fissionFraction = nbt.getDouble("fissionFraction"); spec.burstHeight = nbt.getDouble("burstHeight"); spec.groundCoupling = nbt.getDouble("groundCoupling"); spec.thermalFraction = nbt.getDouble("thermalFraction"); spec.promptGammaFraction = nbt.getDouble("gammaFraction"); spec.promptNeutronFraction = nbt.getDouble("neutronFraction"); spec.createsFallout = fallout; spec.createsEMP = nbt.getBoolean("emp"); spec.salted = salted;
 		try { spec.burstType = BurstType.valueOf(nbt.getString("burstType")); } catch(IllegalArgumentException ex) { spec.burstType = BurstType.SURFACE; }
 		if(nbt.hasKey("burialDepth")) { spec.burialDepth = nbt.getDouble("burialDepth"); spec.predictedBreakthroughFactor = spec.surfaceBreakthroughFactor = nbt.getDouble("surfaceBreakthrough"); spec.actualSurfaceBreach = nbt.getBoolean("actualSurfaceBreach"); spec.atmosphericReleaseFactor = nbt.getDouble("atmosphericRelease"); spec.surfaceDeformationFactor = nbt.getDouble("surfaceDeformation"); spec.breachConfirmationComplete = nbt.getBoolean("breachConfirmed"); spec.contained = nbt.getBoolean("contained"); spec.vented = nbt.getBoolean("vented"); spec.breachX = nbt.getInteger("breachX"); spec.breachY = nbt.getInteger("breachY"); spec.breachZ = nbt.getInteger("breachZ"); }
@@ -454,7 +482,9 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 	@Override protected void writeEntityToNBT(NBTTagCompound nbt) {
 		NBTTagCompound request = new NBTTagCompound(); ignitionTerrain().write(request); nbt.setTag("ignitionTerrainRequest", request);
 		NBTTagCompound breachRequest = new NBTTagCompound(); breachTerrain().write(breachRequest); nbt.setTag("breachTerrainRequest", breachRequest);
-		ensureEffects(); nbt.setInteger("ticksExisted", ticksExisted); nbt.setInteger("strength", strength); nbt.setInteger("speed", speed); nbt.setInteger("length", length); nbt.setBoolean("fallout", fallout); nbt.setBoolean("salted", salted); nbt.setInteger("falloutAdd", falloutAdd); nbt.setDouble("previousShock", previousShockRadius); nbt.setDouble("currentShock", currentShockRadius); nbt.setBoolean("promptApplied", promptApplied); nbt.setBoolean("thermalApplied", thermalApplied); nbt.setBoolean("falloutSpawned", falloutSpawned); nbt.setBoolean("seismicSent", seismicSent);
+		nbt.setInteger("ticksExisted", ticksExisted); nbt.setInteger("strength", strength); nbt.setInteger("speed", speed); nbt.setInteger("length", length); nbt.setBoolean("fallout", fallout); nbt.setBoolean("salted", salted); nbt.setInteger("falloutAdd", falloutAdd); nbt.setDouble("previousShock", previousShockRadius); nbt.setDouble("currentShock", currentShockRadius); nbt.setBoolean("promptApplied", promptApplied); nbt.setBoolean("thermalApplied", thermalApplied); nbt.setBoolean("falloutSpawned", falloutSpawned); nbt.setBoolean("seismicSent", seismicSent);
+		nbt.setBoolean("burstResolved", spec != null);
+		if(spec == null) return; // No effects ran: restart the read-only contact search after reload.
 		nbt.setBoolean("groundIgnitionComplete", groundIgnitionComplete);
 		if(ignitionJob != null) { NBTTagCompound ignitionWork = new NBTTagCompound(); ignitionJob.writeToNBT(ignitionWork); nbt.setTag("thermalIgnitionJob", ignitionWork); }
 		if(explosion != null) { NBTTagCompound terrainWork = new NBTTagCompound(); explosion.writeToNBT(terrainWork); nbt.setTag("terrainWork", terrainWork); }
@@ -466,15 +496,12 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 	public static EntityNukeExplosionMK5 statFac(World world, int r, double x, double y, double z) {
 		if(GeneralConfig.enableExtendedLogging && !world.isRemote) MainRegistry.logger.log(Level.INFO, "[NUKE] Initialized explosion at " + x + " / " + y + " / " + z + " with legacy radius " + r + "!");
 		if(r == 0) r = 25;
-		NuclearBurstContext context = NuclearBurstResolver.resolve(world, x, y, z, Math.max(1, r));
-		EntityNukeExplosionMK5 mk5 = new EntityNukeExplosionMK5(world); mk5.length = context.legacyRadius; mk5.burstContext = context; mk5.spec = NuclearDetonationSpec.fromLegacyRadius(context.legacyRadius); copyContext(mk5.spec, context); mk5.effects = NuclearEffectsSolver.solve(mk5.spec);
-		double terrainRadius = context.burstType == BurstType.SUBSURFACE ? mk5.effects.cavityRadius : mk5.effects.craterRadius;
-		mk5.strength = Math.max(1, (int)Math.ceil(terrainRadius * 2D)); mk5.speed = Math.max(1, (int)Math.ceil(100000D / mk5.strength)); mk5.setPosition(x, y, z);
-		if(GeneralConfig.enableExtendedLogging && !world.isRemote) MainRegistry.logger.log(Level.INFO, "[NUKE] type=" + context.burstType + " yieldKt=" + context.yieldKt + " surfaceY=" + context.surfaceY + " burialDepth=" + context.burialDepth + " coupling=" + context.groundCoupling + " predictedBreakthrough=" + context.predictedBreakthroughFactor + " confirmedBreach=" + context.actualSurfaceBreach + " atmosphericRelease=" + context.atmosphericReleaseFactor + " breach=" + context.breachX + "," + context.breachY + "," + context.breachZ + " contained=" + context.contained + " vented=" + context.vented + " thermal=" + mk5.effects.thermalRadius + " blast=" + mk5.effects.lightBlastRadius + " crater=" + mk5.effects.craterRadius + " fallout=" + mk5.effects.falloutSourceStrength);
+		EntityNukeExplosionMK5 mk5 = new EntityNukeExplosionMK5(world);
+		mk5.length = Math.max(1, r); mk5.strength = 1; mk5.speed = 1; mk5.setPosition(x, y, z);
 		return mk5;
 	}
 	private static void copyContext(NuclearDetonationSpec target, NuclearBurstContext context) { target.burstType = context.burstType; target.burstHeight = context.burstHeight; target.groundCoupling = context.groundCoupling; target.burialDepth = context.burialDepth; target.predictedBreakthroughFactor = target.surfaceBreakthroughFactor = context.predictedBreakthroughFactor; target.actualSurfaceBreach = context.actualSurfaceBreach; target.atmosphericReleaseFactor = context.atmosphericReleaseFactor; target.surfaceDeformationFactor = context.surfaceDeformationFactor; target.contained = context.contained; target.vented = context.vented; target.breachX = context.breachX; target.breachY = context.breachY; target.breachZ = context.breachZ; }
-	public static EntityNukeExplosionMK5 statFacNoRad(World world, int r, double x, double y, double z) { EntityNukeExplosionMK5 mk5 = statFac(world, r, x, y, z); mk5.fallout = false; mk5.spec.createsFallout = false; return mk5; }
-	public static EntityNukeExplosionMK5 statFacSalted(World world, int r, double x, double y, double z) { EntityNukeExplosionMK5 mk5 = statFac(world, r, x, y, z); mk5.salted = true; mk5.spec.salted = true; return mk5; }
+	public static EntityNukeExplosionMK5 statFacNoRad(World world, int r, double x, double y, double z) { EntityNukeExplosionMK5 mk5 = statFac(world, r, x, y, z); mk5.fallout = false; return mk5; }
+	public static EntityNukeExplosionMK5 statFacSalted(World world, int r, double x, double y, double z) { EntityNukeExplosionMK5 mk5 = statFac(world, r, x, y, z); mk5.salted = true; return mk5; }
 	public EntityNukeExplosionMK5 moreFallout(int fallout) { falloutAdd = fallout; return this; }
 }

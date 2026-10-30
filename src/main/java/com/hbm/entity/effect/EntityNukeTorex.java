@@ -9,6 +9,8 @@ import com.hbm.main.MainRegistry;
 import com.hbm.explosion.nuclear.BurstType;
 import com.hbm.explosion.nuclear.NuclearBurstContext;
 import com.hbm.explosion.nuclear.NuclearBurstResolver;
+import com.hbm.explosion.ExplosionTerrainAccess;
+import com.hbm.explosion.ExplosionWorkScheduler;
 import com.hbm.render.entity.effect.NukeCloudClient;
 import com.hbm.util.TrackerUtil;
 
@@ -46,6 +48,24 @@ public class EntityNukeTorex extends Entity {
 	private double resolvedBurstHeight;
 	private double resolvedFireballRadius;
 	private double resolvedGroundCoupling = 1D;
+	private NuclearBurstResolver.GroundSearch groundSearch;
+	private ExplosionTerrainAccess.Access classificationTerrain;
+	private long activeWorkTick = Long.MIN_VALUE;
+	private final ExplosionWorkScheduler.Job classificationWork = new ExplosionWorkScheduler.Job() {
+		public Entity owner() { return EntityNukeTorex.this; }
+		public long activeTick() { return activeWorkTick; }
+		public void suspend() { if(classificationTerrain != null) classificationTerrain.cancel(); }
+		public boolean ready(long tick) { return classificationTerrain.ready(tick); }
+		public void run(long deadline, long tick) {
+			groundSearch.advance(classificationTerrain, deadline);
+			if(groundSearch.context == null) return;
+			NuclearBurstContext context = groundSearch.context;
+			applyBurstContext(context).setScale(MathHelper.clamp_float((float)context.effects.visualScale, 0.5F, 5F));
+			dataWatcher.updateObject(17, (byte)0);
+			groundSearch = null; ticksExisted = 0;
+			ExplosionWorkScheduler.remove(this);
+		}
+	};
 
 	public EntityNukeTorex(World world) {
 		super(world);
@@ -68,6 +88,7 @@ public class EntityNukeTorex extends Entity {
 		this.dataWatcher.addObject(14, new Float(0F));
 		this.dataWatcher.addObject(15, new Float(0F));
 		this.dataWatcher.addObject(16, new Float(1F));
+		this.dataWatcher.addObject(17, (byte)0);
 	}
 
 	@Override @SideOnly(Side.CLIENT) public int getBrightnessForRender(float interp) { return 15728880; }
@@ -75,6 +96,14 @@ public class EntityNukeTorex extends Entity {
 
 	@Override
 	public void onUpdate() {
+		if(dataWatcher.getWatchableObjectByte(17) != 0) {
+			ticksExisted = 0;
+			if(!worldObj.isRemote) {
+				activeWorkTick = ExplosionWorkScheduler.currentTick();
+				ExplosionWorkScheduler.register(classificationWork);
+			}
+			return;
+		}
 		if(isContainedVisual()) { if(!worldObj.isRemote || ticksExisted > 2) setDead(); return; }
 
 		if(worldObj.isRemote) updateClient();
@@ -237,6 +266,8 @@ public class EntityNukeTorex extends Entity {
 
 	@Override
 	public void setDead() {
+		if(!worldObj.isRemote) ExplosionWorkScheduler.remove(this);
+		if(classificationTerrain != null) classificationTerrain.cancel();
 		super.setDead();
 		if(worldObj.isRemote) releaseClient();
 	}
@@ -560,8 +591,11 @@ public class EntityNukeTorex extends Entity {
 	public static void statFacBale(World world, double x, double y, double z, float scale) { statFac(world, x, y, z, scale); }
 
 	public static void statFac(World world, double x, double y, double z, float scale) {
-		NuclearBurstContext context = NuclearBurstResolver.resolve(world, x, y, z, Math.max(1, Math.round(scale)));
-		EntityNukeTorex torex = new EntityNukeTorex(world).applyBurstContext(context).setScale(MathHelper.clamp_float((float)context.effects.visualScale, 0.5F, 5F));
+		if(world.isRemote) return;
+		EntityNukeTorex torex = new EntityNukeTorex(world);
+		torex.groundSearch = new NuclearBurstResolver.GroundSearch(x, y, z, Math.max(1, Math.round(scale)));
+		torex.classificationTerrain = new ExplosionTerrainAccess.Access(world);
+		torex.dataWatcher.updateObject(17, (byte)1);
 		torex.setPosition(x, y, z);
 		torex.forceSpawn = true;
 		world.spawnEntityInWorld(torex);

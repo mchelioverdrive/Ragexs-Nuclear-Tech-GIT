@@ -111,3 +111,10 @@
 
 - Add craftable Lunchables and MrBeast's Lunchly foods with transparent package sprites. Each restores six hunger points and applies 250 points of the existing carcinogen exposure on consumption, respecting the carcinogen-disable setting.
 - Add independent, prerequisite-free "I love my carcinogens" and "FDA approved TM" achievements for eating 100 of the respective food. Separate named Minecraft statistics retain each player's progress across death, reconnects, restarts and item-ID remapping; only completed server-side consumption advances progress.
+
+2026-10-29 19:55 — Restore surface nuclear terrain processing and fallout lifecycle
+
+- Bind procedural explosion and fallout tickets to their real assigned central chunk before the first update, avoiding Forge's neighboring-chunk update gate and premature unloading. Forget local ticket handles after Forge unload cleanup instead of releasing already-discarded world ticket maps.
+- Resolve ordinary nuclear and factory-created mushroom-cloud terrain contact with a resumable voxel search under the existing shared server work budget and chunk-loading policy. Account for nearby cliffs and uneven terrain within the fireball, exclude the source block from burial detection, and retain genuine airburst, underground-release, underwater and vacuum distinctions.
+- Allow weakly coupled surface crater rays to cross the air gap without increasing resistance energy or ray density. Preserve negative detonation coordinates and save the traversal reach alongside existing mask/checkpoint data; keep legacy terrain saves on their original reach.
+- Keep crater completion and breach confirmation ahead of fallout deposition, retain the source's ownership until fallout spawning succeeds, and allow zero-delay or legacy negative-delay fallout queues to resume. Preserve weapon yields, fallout strengths/ranges, material transformations, contamination, server-thread mutation and existing worker/thermal/mask optimizations.

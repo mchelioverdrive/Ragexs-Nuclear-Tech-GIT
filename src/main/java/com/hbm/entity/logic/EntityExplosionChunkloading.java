@@ -22,8 +22,17 @@ public abstract class EntityExplosionChunkloading extends Entity implements IChu
 	@Override
 	protected void entityInit() {
 		// Entity construction occurs before its final position is set. Bind now,
-		// force only the real central chunk from the update path.
+		// then force the real central chunk when the caller assigns its position.
 		if(!worldObj.isRemote && com.hbm.config.BombConfig.chunkloading) init(ForgeChunkManager.requestTicket(MainRegistry.instance, worldObj, Type.ENTITY));
+	}
+
+	@Override
+	public void setPosition(double x, double y, double z) {
+		super.setPosition(x, y, z);
+		// Forge can withhold onUpdate until neighboring chunks exist. Waiting for
+		// that update to force this chunk leaves new explosions/fallout unable to
+		// bootstrap, or lets them unload before their pending work ever runs.
+		if(worldObj != null && !worldObj.isRemote && !isDead && loaderTicket != null) loadChunk((int)Math.floor(x / 16D), (int)Math.floor(z / 16D));
 	}
 
 	@Override
@@ -71,7 +80,13 @@ public abstract class EntityExplosionChunkloading extends Entity implements IChu
 
 	public static void releaseWorldTickets(World world) {
 		for(EntityExplosionChunkloading entity : ticketOwners.toArray(new EntityExplosionChunkloading[0])) {
-			if(entity.worldObj == world) entity.clearChunkLoader();
+			if(entity.worldObj == world) {
+				// Forge's HIGHEST-priority unload handler already discarded its world
+				// ticket maps. Calling releaseTicket here can dereference those maps.
+				entity.loaderTicket = null;
+				entity.loadedChunk = null;
+				ticketOwners.remove(entity);
+			}
 		}
 	}
 

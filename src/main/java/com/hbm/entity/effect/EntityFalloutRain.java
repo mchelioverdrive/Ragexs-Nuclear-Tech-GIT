@@ -100,9 +100,9 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 		activeWorkTick = ExplosionWorkScheduler.currentTick();
 		if(delayTick != activeWorkTick) {
 			delayTick = activeWorkTick;
-			eligible = tickDelay == 0;
-			if(eligible) tickDelay = BombConfig.fDelay;
-			tickDelay--;
+			eligible = tickDelay <= 0;
+			if(eligible) tickDelay = Math.max(1, BombConfig.fDelay);
+			tickDelay = Math.max(0, tickDelay - 1);
 		}
 		ExplosionWorkScheduler.register(falloutWork);
 	}
