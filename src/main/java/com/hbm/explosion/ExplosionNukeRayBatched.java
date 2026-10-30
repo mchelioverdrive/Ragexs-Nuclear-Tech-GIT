@@ -97,6 +97,10 @@ public class ExplosionNukeRayBatched {
 	private long selectedBlocks, destroyedBlocks, rejectedBatches, lastDiagnosticTick = Long.MIN_VALUE;
 	private boolean savedDiagnostics;
 	private boolean removalFailureReported;
+	private long deferredBlocks, deferredEffects, fastRemovals, normalRemovals, sectionsAdvanced, chunksAdvanced, preservationNanos;
+	private long diagnosticRemoved;
+	private final int[] columnBits = new int[16];
+	private final BitSet columnChanged = new BitSet(4096);
 	public void includeInitializationDelay(long nanos) { startedAt -= Math.max(0L, nanos); }
 
 	public void logStatus(String status) {
@@ -107,7 +111,8 @@ public class ExplosionNukeRayBatched {
 		long now = System.nanoTime();
 		MainRegistry.logger.info("[NUKE TERRAIN] dim=" + world.provider.dimensionId + " at=" + posX + "," + posY + "," + posZ + " strength=" + strength + " reach=" + rayLength + " limit=" + length + " rays=" + gspNumMax + " status=" + status
 				+ " completedRays=" + completedRays + " remainingRays=" + Math.max(0, gspNumMax - completedRays) + " selected=" + selectedBlocks + " removed=" + destroyedBlocks
-				+ " pendingExcavation=" + pendingBlocks + " pendingTerminalEffects=" + pendingEffects + " retainedOriginalBytes=" + originals.bytes() + " collectionComplete=" + isAusf3Complete + " excavationWait=" + excavationWait
+				+ " pendingExcavation=" + pendingBlocks + " pendingTerminalEffects=" + pendingEffects + " deferredBlocks=" + deferredBlocks + " deferredTerminalEffects=" + deferredEffects + " retainedOriginalBytes=" + originals.bytes() + " collectionComplete=" + isAusf3Complete + " excavationWait=" + excavationWait
+				+ " fastPathRemoved=" + fastRemovals + " normalPathRemoved=" + normalRemovals + " intervalRemoved=" + (destroyedBlocks - diagnosticRemoved) + " sectionsAdvanced=" + sectionsAdvanced + " chunksAdvanced=" + chunksAdvanced + " preservationActiveMs=" + preservationNanos / 1000000L
 				+ " submitted=" + submittedBatches + " accepted=" + acceptedBatches + " rejected=" + rejectedBatches + " snapshotRejections=" + snapshotRejections + " workerFailures=" + workerFailures
 				+ " captures=" + captures + " reuse=" + reuse + " sectionMisses=" + sectionMisses + " repeatedOperations=" + repeatedOperations + " fallbacks=" + fallbackActivations + " wait=" + waitReason
 				+ " traversalOps=" + traversalOperations + " reconstructionOps=" + reconstructionOperations + " reusedTraversalSamples=" + reusedSamples + " skippedReconstructionSamples=" + skippedReconstruction + " attenuationCacheHits=" + attenuationHits
@@ -115,6 +120,7 @@ public class ExplosionNukeRayBatched {
 				+ " elapsedMs=" + (now - startedAt) / 1000000L + " collectionElapsedMs=" + ((collectionFinishedAt == 0 ? now : collectionFinishedAt) - collectionStartedAt) / 1000000L
 				+ " firstRemovalMs=" + (firstRemovalAt == 0 ? -1 : (firstRemovalAt - startedAt) / 1000000L) + " applicationElapsedMs=" + (firstRemovalAt == 0 ? 0 : (now - firstRemovalAt) / 1000000L)
 				+ " collectionServerActiveElapsedMs=" + collectionServerNanos / 1000000L + " applicationServerActiveElapsedMs=" + removalServerNanos / 1000000L + " workerActiveElapsedMs=" + workerNanos / 1000000L + " workerCpuMs=" + (workerCpuNanos < 0 ? -1 : workerCpuNanos / 1000000L) + " " + ExplosionTerrainAccess.diagnostics() + " " + terrain.status());
+		diagnosticRemoved = destroyedBlocks;
 	}
 
 	// New saves decode a section at a time. Saving during decoding retains the original snapshot.
@@ -130,6 +136,7 @@ public class ExplosionNukeRayBatched {
 		// or upgrade a completed normal hit to one terminal notification.
 		final BitSet destruction = new BitSet();
 		final BitSet pending = new BitSet(), completed = new BitSet(), notified = new BitSet();
+		final BitSet deferred = new BitSet(), effects = new BitSet(), deferredEffects = new BitSet();
 		BitSet tips;
 	}
 	private static class ChunkMask {
@@ -138,7 +145,8 @@ public class ExplosionNukeRayBatched {
 		final SectionMask[] sections = new SectionMask[16];
 		ChunkMask previous, next, orderPrevious, orderNext;
 		boolean queued;
-		long pending, effects, blockedTick = Long.MIN_VALUE;
+		int cursorSection, cursorBit;
+		long pending, effects, deferred, deferredEffects, blockedTick = Long.MIN_VALUE;
 		ChunkMask(long key, int distance) { this.key = key; this.distance = distance; }
 	}
 	private static class DistanceBucket {
@@ -177,11 +185,22 @@ public class ExplosionNukeRayBatched {
 	}
 
 	public boolean hasPendingWork() { return restoring != null || legacy != null || !isAusf3Complete || !ranges.isEmpty() || rayActive || buildActive || pendingBlocks != 0 || pendingEffects != 0 || firstChunk != null; }
-	/** Both stages get bounded turns inside the scheduler's unchanged slice. */
+	/** Bounded opportunities, then donate unused time to the remaining ready stage. */
 	public void advance(long deadline, long tick) {
-		long middle = System.nanoTime() + Math.max(0L, (deadline - System.nanoTime()) / 2);
-		if(excavationFirst) { processChunk(middle); if(ExplosionWorkScheduler.before(deadline)) collectTip(Integer.MAX_VALUE, deadline, tick); }
-		else { collectTip(Integer.MAX_VALUE, middle, tick); if(ExplosionWorkScheduler.before(deadline)) processChunk(deadline); }
+		if(!restore(deadline) || !migrate(deadline)) return;
+		boolean collect = collectionReady(tick, Integer.MAX_VALUE), excavate = excavationReady(tick) || cleanupCursor != null || isAusf3Complete && firstChunk == null && originals.bytes() != 0;
+		boolean firstExcavate = excavate && (excavationFirst || !collect);
+		long turn = collect && excavate ? Math.min(deadline, System.nanoTime() + 250_000L) : deadline;
+		if(firstExcavate) processChunk(turn); else if(collect) collectTip(Integer.MAX_VALUE, turn, tick);
+		if(ExplosionWorkScheduler.before(deadline)) {
+			if(firstExcavate && collectionReady(tick, Integer.MAX_VALUE)) collectTip(Integer.MAX_VALUE, Math.min(deadline, System.nanoTime() + 250_000L), tick);
+			else if(!firstExcavate && (excavationReady(tick) || cleanupCursor != null)) processChunk(Math.min(deadline, System.nanoTime() + 250_000L));
+		}
+		// Never spin waiting for worker results. Each stage is tried at most twice
+		// per dispatch; global round-robin ownership and deadline remain unchanged.
+		if(ExplosionWorkScheduler.before(deadline) && (excavationReady(tick) || cleanupCursor != null)) processChunk(deadline);
+		if(ExplosionWorkScheduler.before(deadline) && collectionReady(tick, Integer.MAX_VALUE)) collectTip(Integer.MAX_VALUE, deadline, tick);
+		if(isAusf3Complete && firstChunk == null) originals.clear();
 		excavationFirst = !excavationFirst;
 	}
 	private int reservedRays() {
@@ -224,8 +243,9 @@ public class ExplosionNukeRayBatched {
 		return chunk;
 	}
 	private void enqueue(ChunkMask chunk) {
-		if(chunk.queued) return;
+		if(chunk.queued || chunk.pending - chunk.deferred + chunk.effects - chunk.deferredEffects == 0) return;
 		chunk.queued = true; queuedChunks++;
+		if(excavationTick == ExplosionWorkScheduler.currentTick() && chunk.blockedTick == excavationTick) excavationAttempts++;
 		DistanceBucket bucket = ordering.get(chunk.distance);
 		if(bucket == null) { bucket = new DistanceBucket(); ordering.put(chunk.distance, bucket); }
 		chunk.orderPrevious = bucket.last;
@@ -240,11 +260,34 @@ public class ExplosionNukeRayBatched {
 	}
 	private void dequeue(ChunkMask chunk) {
 		chunk.queued = false; queuedChunks--;
+		if(excavationTick == ExplosionWorkScheduler.currentTick() && chunk.blockedTick == excavationTick) excavationAttempts--;
 		DistanceBucket bucket = ordering.get(chunk.distance);
 		if(chunk.orderPrevious == null) bucket.first = chunk.orderNext; else chunk.orderPrevious.orderNext = chunk.orderNext;
 		if(chunk.orderNext == null) bucket.last = chunk.orderPrevious; else chunk.orderNext.orderPrevious = chunk.orderPrevious;
 		if(bucket.first == null) ordering.remove(chunk.distance);
 		chunk.orderPrevious = chunk.orderNext = null;
+	}
+	private void wake(ChunkMask chunk) {
+		if(chunk.queued && excavationTick == ExplosionWorkScheduler.currentTick() && chunk.blockedTick == excavationTick) excavationAttempts--;
+		chunk.blockedTick = Long.MIN_VALUE;
+		chunk.cursorSection = chunk.cursorBit = 0;
+		enqueue(chunk);
+		// Late worker hits may precede the active cursor, including in an earlier
+		// section. Revisit only pending work; completed bits still prevent repeats.
+		if(removalActive && removalKey == chunk.key) { removalSection = removalBit = 0; }
+	}
+	private void block(ChunkMask chunk, long tick) {
+		if(chunk.queued && chunk.blockedTick != tick) excavationAttempts++;
+		chunk.blockedTick = tick; removalActive = false;
+	}
+	private void addEffect(ChunkMask chunk, SectionMask section, int bit) {
+		if(section.effects.get(bit) || section.deferredEffects.get(bit) || section.notified.get(bit)) return;
+		chunk.effects++; pendingEffects++;
+		if(isAusf3Complete) section.effects.set(bit);
+		else { section.deferredEffects.set(bit); chunk.deferredEffects++; deferredEffects++; }
+	}
+	private void deferBlock(ChunkMask chunk, SectionMask section, int bit) {
+		section.pending.clear(bit); section.deferred.set(bit); chunk.deferred++; deferredBlocks++;
 	}
 	private void addRayChunk(long key) {
 		if(!rayChunks.containsItem(key)) { rayChunks.add(key, Boolean.TRUE); rayChunkKeys.add(key); }
@@ -256,24 +299,26 @@ public class ExplosionNukeRayBatched {
 		if(section == null) chunk.sections[y >> 4] = section = new SectionMask();
 		int bit = (y & 15) << 8 | (z & 15) << 4 | (x & 15);
 		if(!section.destruction.get(bit)) { section.destruction.set(bit); selectedBlocks++; }
-		if(!section.completed.get(bit) && !section.pending.get(bit)) { section.pending.set(bit); chunk.pending++; pendingBlocks++; excavationAttempts = 0; }
+		boolean added = !section.completed.get(bit) && !section.pending.get(bit) && !section.deferred.get(bit);
+		if(added) { section.pending.set(bit); chunk.pending++; pendingBlocks++; }
 		if(tip) {
 			if(section.tips == null) section.tips = new BitSet();
-			if(!section.tips.get(bit) && section.completed.get(bit) && !section.notified.get(bit)) { chunk.effects++; pendingEffects++; excavationAttempts = 0; }
+			if(!section.tips.get(bit) && section.completed.get(bit)) { addEffect(chunk, section, bit); added = true; }
 			section.tips.set(bit);
 		}
-		if(chunk.pending + chunk.effects > 0) { enqueue(chunk); chunk.blockedTick = Long.MIN_VALUE; }
+		if(added) wake(chunk);
 	}
 	private void merge(ChunkMask chunk, SectionMask section, BitSet hits, BitSet tips) {
 		int previous = section.destruction.cardinality(); section.destruction.or(hits);
 		selectedBlocks += section.destruction.cardinality() - previous;
 		int pending = section.pending.cardinality();
-		section.pending.or(hits); section.pending.andNot(section.completed);
+		section.pending.or(hits); section.pending.andNot(section.completed); section.pending.andNot(section.deferred);
 		int added = section.pending.cardinality() - pending; chunk.pending += added; pendingBlocks += added;
 		if(section.tips == null) section.tips = new BitSet();
 		BitSet late = (BitSet)tips.clone(); late.andNot(section.tips); late.and(section.completed); late.andNot(section.notified);
-		chunk.effects += late.cardinality(); pendingEffects += late.cardinality(); section.tips.or(tips);
-		if(chunk.pending + chunk.effects > 0) { enqueue(chunk); chunk.blockedTick = Long.MIN_VALUE; if(added > 0 || !late.isEmpty()) excavationAttempts = 0; }
+		for(int bit = late.nextSetBit(0); bit >= 0; bit = late.nextSetBit(bit + 1)) addEffect(chunk, section, bit);
+		section.tips.or(tips);
+		if(added > 0 || !late.isEmpty()) wake(chunk);
 	}
 
 	/** Legacy API retained for callers outside the governed entity path. */
@@ -357,7 +402,6 @@ public class ExplosionNukeRayBatched {
 		// and terminal callbacks still own the terrain/fallout completion boundary.
 		isAusf3Complete = true; collectionFinishedAt = System.nanoTime();
 		cleanupCursor = firstChunk;
-		excavationTick = Long.MIN_VALUE;
 		workers.remove(this); waitReason = "mask application"; logStatus("collection complete");
 	}
 
@@ -691,94 +735,160 @@ public class ExplosionNukeRayBatched {
 		// originals together with the last possible late terminal notification.
 		while(cleanupCursor != null && ExplosionWorkScheduler.before(deadline)) {
 			ChunkMask done = cleanupCursor; cleanupCursor = done.next;
+			// Collection is the only blocker for these entries. Activate once at
+			// that transition rather than rediscovering them on every mask pass.
+			if(isAusf3Complete) {
+				for(SectionMask section : done.sections) if(section != null) {
+					section.pending.or(section.deferred); section.deferred.clear();
+					section.effects.or(section.deferredEffects); section.deferredEffects.clear();
+				}
+				deferredBlocks -= done.deferred; deferredEffects -= done.deferredEffects;
+				done.deferred = done.deferredEffects = 0; wake(done);
+			}
 			if(done.pending + done.effects == 0) {
 				originals.releaseChunk((int)done.key, (int)(done.key >> 32)); removeChunk(done);
 				if(removalActive && removalKey == done.key) removalActive = false;
 			}
 		}
 		if(firstChunk == null) { if(isAusf3Complete) { originals.clear(); excavationWait = "complete"; } return; }
-		if(!excavationReady(tick)) return;
-		ChunkMask chunk = removalActive ? (ChunkMask)chunks.getValueByKey(removalKey) : null;
-		if(chunk == null || !chunk.queued) {
-			java.util.Map.Entry<Integer, DistanceBucket> entry = ordering.ceilingEntry(nextDistance);
-			if(entry == null) entry = ordering.firstEntry();
-			if(entry == null) return;
-			chunk = entry.getValue().first; nextDistance = entry.getKey() + 1;
-			dequeue(chunk); enqueue(chunk); // Rotate within a distance bucket too.
-			excavationAttempts++;
-			if(chunk.blockedTick == tick) return;
-			removalKey = chunk.key; removalSection = removalBit = 0; removalActive = true;
-		}
-		if(ExplosionTerrainAccess.chunk(removalTerrain, (int)chunk.key, (int)(chunk.key >> 32), deadline) == null) {
-			chunk.blockedTick = tick; removalActive = false; excavationWait = removalTerrain.status(); return;
-		}
-		while(removalSection < 16 && ExplosionWorkScheduler.before(deadline)) {
-			SectionMask section = chunk.sections[removalSection];
-			if(section == null) { removalSection++; removalBit = 0; continue; }
-			int bit = section.pending.nextSetBit(removalBit);
-			if(section.tips != null) {
-				int terminal = section.tips.nextSetBit(removalBit);
-				while(terminal >= 0 && (!section.completed.get(terminal) || section.notified.get(terminal))) terminal = section.tips.nextSetBit(terminal + 1);
-				if(terminal >= 0 && (bit < 0 || terminal < bit)) bit = terminal;
+		while(excavationReady(tick) && ExplosionWorkScheduler.before(deadline)) {
+			ChunkMask chunk = removalActive ? (ChunkMask)chunks.getValueByKey(removalKey) : null;
+			if(chunk == null || !chunk.queued) {
+				int searched = 0;
+				do {
+					java.util.Map.Entry<Integer, DistanceBucket> entry = ordering.ceilingEntry(nextDistance);
+					if(entry == null) entry = ordering.firstEntry();
+					if(entry == null) return;
+					chunk = entry.getValue().first; nextDistance = entry.getKey() + 1;
+					dequeue(chunk); enqueue(chunk); // Rotate within a distance bucket too.
+				} while(chunk.blockedTick == tick && ++searched < queuedChunks && ExplosionWorkScheduler.before(deadline));
+				if(chunk.blockedTick == tick || !ExplosionWorkScheduler.before(deadline)) return;
+				removalKey = chunk.key; removalSection = chunk.cursorSection; removalBit = chunk.cursorBit; removalActive = true;
 			}
-			if(bit < 0) { removalSection++; removalBit = 0; continue; }
-			removalBit = bit;
-			int x = ((int)chunk.key << 4) + (bit & 15), y = (removalSection << 4) + (bit >> 8), z = ((int)(chunk.key >> 32) << 4) + ((bit >> 4) & 15);
-			boolean tip = section.tips != null && section.tips.get(bit);
-			if(section.completed.get(bit)) {
-				if(!isAusf3Complete) { excavationWait = "terminal neighbor callbacks await calculations"; removalBit++; continue; }
-				if(!ExplosionTerrainAccess.neighbors(removalTerrain, x, z, deadline)) { removalActive = false; chunk.blockedTick = tick; return; }
-				// A late tip upgrades the effect, never repeats the removal. Preserve
-				// the old block argument used by Forge's flag-3 notification path.
-				world.notifyBlockChange(x, y, z, originals.source(x, y, z));
-				section.notified.set(bit); chunk.effects--; pendingEffects--; removalBit++; continue;
-			}
-			Block block = world.getBlock(x, y, z);
-			if(!ExplosionWorkScheduler.before(deadline)) return;
-			boolean change = !block.getMaterial().isLiquid() && !world.isAirBlock(x, y, z);
-			if(!ExplosionWorkScheduler.before(deadline)) return;
-			if(change) {
-				if(!isAusf3Complete) {
-					// Unknown breakBlock/TE callbacks can mutate arbitrarily far away,
-					// including uncaptured sections. Defer only that cell; do not run
-					// such callbacks and then pretend a local snapshot covered them.
-					if(!safeProgressiveBlock(block) || world.getTileEntity(x, y, z) != null || getClass() != ExplosionNukeRayBatched.class) { excavationWait = "unsafe block callback"; removalBit++; continue; }
-					if(!originals.remember(x, y, z, block)) { excavationWait = "original terrain memory ceiling"; removalBit++; continue; }
+			try {
+				net.minecraft.world.chunk.Chunk live = ExplosionTerrainAccess.chunk(removalTerrain, (int)chunk.key, (int)(chunk.key >> 32), deadline);
+				if(live == null) {
+					block(chunk, tick); excavationWait = removalTerrain.status(); continue;
 				}
-				if(tip && isAusf3Complete) {
-					if(!ExplosionTerrainAccess.neighbors(removalTerrain, x, z, deadline)) { removalActive = false; chunk.blockedTick = tick; return; }
-					if(!ExplosionWorkScheduler.before(deadline)) return;
-					handleTip(x, y, z);
-				}
-				else { if(!ExplosionWorkScheduler.before(deadline)) return; world.setBlock(x, y, z, Blocks.air, 0, 2); }
-				if(!world.isAirBlock(x, y, z)) {
-					// A denied/failed world update is not completed destruction work.
-					chunk.blockedTick = tick; removalActive = false;
-					excavationWait = "world rejected block removal";
-					if(!removalFailureReported && (lastDiagnosticTick == Long.MIN_VALUE || tick - lastDiagnosticTick >= 200)) {
-						logStatus("waiting; world rejected block removal"); lastDiagnosticTick = tick;
+				while(removalSection < 16 && ExplosionWorkScheduler.before(deadline)) {
+					SectionMask section = chunk.sections[removalSection];
+					if(section == null) { removalSection++; removalBit = 0; continue; }
+					int bit = section.pending.nextSetBit(removalBit);
+					int terminal = section.effects.nextSetBit(removalBit);
+					if(terminal >= 0 && (bit < 0 || terminal < bit)) bit = terminal;
+					if(bit < 0) { sectionsAdvanced++; removalSection++; removalBit = 0; continue; }
+					removalBit = bit;
+					int x = ((int)chunk.key << 4) + (bit & 15), y = (removalSection << 4) + (bit >> 8), z = ((int)(chunk.key >> 32) << 4) + ((bit >> 4) & 15);
+					boolean tip = section.tips != null && section.tips.get(bit);
+					if(section.completed.get(bit)) {
+						if(!ExplosionTerrainAccess.neighbors(removalTerrain, x, z, deadline)) { block(chunk, tick); break; }
+						if(!ExplosionWorkScheduler.before(deadline)) return;
+						// A late tip upgrades the effect, never repeats the removal. Preserve
+						// the old block argument used by Forge's flag-3 notification path.
+						world.notifyBlockChange(x, y, z, originals.source(x, y, z));
+						section.notified.set(bit); section.effects.clear(bit); chunk.effects--; pendingEffects--; removalBit++; continue;
 					}
-					removalFailureReported = true;
-					return;
+					Block block = world.getBlock(x, y, z);
+					if(!ExplosionWorkScheduler.before(deadline)) return;
+					boolean change = !block.getMaterial().isLiquid() && !world.isAirBlock(x, y, z);
+					if(!ExplosionWorkScheduler.before(deadline)) return;
+					if(change) {
+						if(getClass() == ExplosionNukeRayBatched.class && ExplosionTerrainAccess.canRemoveSection(world, live, removalSection)
+								&& safeProgressiveBlock(block) && (!tip || !isAusf3Complete)) {
+							if(applySectionColumn(chunk, section, live, bit, deadline)) { removalBit = bit + 1; continue; }
+							if(!ExplosionWorkScheduler.before(deadline)) return;
+						}
+						if(!isAusf3Complete) {
+							// Unknown breakBlock/TE callbacks can mutate arbitrarily far away,
+							// including uncaptured sections. Defer only that cell; do not run
+							// such callbacks and then pretend a local snapshot covered them.
+							if(!safeProgressiveBlock(block) || block.hasTileEntity(world.getBlockMetadata(x, y, z)) || world.getTileEntity(x, y, z) != null || getClass() != ExplosionNukeRayBatched.class) { excavationWait = "special callbacks await calculations"; deferBlock(chunk, section, bit); removalBit++; continue; }
+							// Memory can be freed by another calculation before ours ends.
+							// Retry this cursor next tick, without rescanning deferred callbacks.
+							if(!remember(x, y, z, block)) { excavationWait = "original terrain memory ceiling"; block(chunk, tick); break; }
+						}
+						if(tip && isAusf3Complete) {
+							if(!ExplosionTerrainAccess.neighbors(removalTerrain, x, z, deadline)) { block(chunk, tick); break; }
+							if(!ExplosionWorkScheduler.before(deadline)) return;
+							handleTip(x, y, z);
+						}
+						else { if(!ExplosionWorkScheduler.before(deadline)) return; world.setBlock(x, y, z, Blocks.air, 0, 2); }
+						if(!world.isAirBlock(x, y, z)) {
+							// A denied/failed world update is not completed destruction work.
+							block(chunk, tick);
+							excavationWait = "world rejected block removal";
+							if(!removalFailureReported && (lastDiagnosticTick == Long.MIN_VALUE || tick - lastDiagnosticTick >= 200)) {
+								logStatus("waiting; world rejected block removal"); lastDiagnosticTick = tick;
+							}
+							removalFailureReported = true;
+							break;
+						}
+						destroyedBlocks++; normalRemovals++;
+						if(tip && isAusf3Complete) section.notified.set(bit);
+						if(firstRemovalAt == 0) { firstRemovalAt = System.nanoTime(); logStatus("first successful block removal"); }
+						removalFailureReported = false;
+						if(tip && !isAusf3Complete) addEffect(chunk, section, bit);
+					}
+					// Callbacks, tile cleanup, lighting and sync finish before the bit/cursor
+					// advances, even if the indivisible world removal overruns the slice.
+					section.pending.clear(bit); section.completed.set(bit); chunk.pending--; pendingBlocks--;
+					if(!change) section.notified.set(bit); // No removal means no later terminal effect.
+					removalBit = bit + 1;
+					excavationWait = "progressing";
 				}
-				destroyedBlocks++;
-				if(tip && isAusf3Complete) section.notified.set(bit);
-				if(firstRemovalAt == 0) { firstRemovalAt = System.nanoTime(); logStatus("first successful block removal"); }
-				removalFailureReported = false;
-				if(tip && !isAusf3Complete) { chunk.effects++; pendingEffects++; }
+				if(removalSection == 16) {
+					removalActive = false; chunksAdvanced++;
+					if(chunk.pending - chunk.deferred + chunk.effects - chunk.deferredEffects == 0) {
+						dequeue(chunk);
+						if(isAusf3Complete && chunk.pending + chunk.effects == 0) { originals.releaseChunk((int)chunk.key, (int)(chunk.key >> 32)); removeChunk(chunk); }
+					} else {
+						// Late insertion before the cursor remains ready in the next pass.
+						removalSection = removalBit = 0;
+					}
+				}
+			} finally {
+				chunk.cursorSection = removalSection; chunk.cursorBit = removalBit;
+				// A large partial chunk yields to the next queued chunk on the next
+				// dispatch. Its own cursor survives independently of queue rotation.
+				removalActive = false;
 			}
-			// Callbacks, tile cleanup, lighting and sync finish before the bit/cursor
-			// advances, even if the indivisible world removal overruns the slice.
+		}
+		if(queuedChunks == 0 && (deferredBlocks != 0 || deferredEffects != 0)) excavationWait = "deferred callbacks await calculations";
+	}
+	private boolean remember(int x, int y, int z, Block block) {
+		long start = System.nanoTime();
+		try { return originals.remember(x, y, z, block); }
+		finally { preservationNanos += System.nanoTime() - start; }
+	}
+	private boolean applySectionColumn(ChunkMask chunk, SectionMask section, net.minecraft.world.chunk.Chunk live, int first, long deadline) {
+		int count = 0;
+		for(int bit = first; bit < 4096 && ExplosionWorkScheduler.before(deadline); bit += 256) {
+			if(!section.pending.get(bit) || isAusf3Complete && section.tips != null && section.tips.get(bit)) continue;
+			int x = (live.xPosition << 4) + (bit & 15), y = (removalSection << 4) + (bit >> 8), z = (live.zPosition << 4) + (bit >> 4 & 15);
+			Block block = live.getBlock(bit & 15, y, bit >> 4 & 15);
+			// Positive opacity makes the highest native removal schedule the same
+			// skylight gap work as every lower removal. Zero-opacity cells fall back.
+			if(!safeProgressiveBlock(block) || block.getMaterial().isLiquid() || world.isAirBlock(x, y, z)
+					|| block.hasTileEntity(live.getBlockMetadata(bit & 15, y, bit >> 4 & 15)) || world.getTileEntity(x, y, z) != null
+					|| block.getLightOpacity(world, x, y, z) <= 0) continue;
+			if(!isAusf3Complete && !remember(x, y, z, block)) break;
+			columnBits[count++] = bit;
+		}
+		if(count < 2 || columnBits[0] != first || !ExplosionWorkScheduler.before(deadline)) return false;
+		columnChanged.clear();
+		// At most sixteen cells form one indivisible column transaction. Finish
+		// its lighting/sync even if a native callback overruns; start no next batch.
+		ExplosionTerrainAccess.removeSectionColumn(world, live, removalSection, columnBits, count, columnChanged);
+		for(int bit = columnChanged.nextSetBit(0); bit >= 0; bit = columnChanged.nextSetBit(bit + 1)) {
 			section.pending.clear(bit); section.completed.set(bit); chunk.pending--; pendingBlocks--;
-			if(!change) section.notified.set(bit); // No removal means no later terminal effect.
-			removalBit = bit + 1;
-			excavationWait = "progressing";
+			destroyedBlocks++; fastRemovals++;
+			if(section.tips != null && section.tips.get(bit)) addEffect(chunk, section, bit);
 		}
-		if(removalSection == 16) {
-			removalActive = false;
-			if(chunk.pending + chunk.effects == 0) { dequeue(chunk); if(isAusf3Complete) { originals.releaseChunk((int)chunk.key, (int)(chunk.key >> 32)); removeChunk(chunk); } }
-			else chunk.blockedTick = tick;
+		if(!columnChanged.isEmpty()) {
+			excavationWait = "progressing section batches";
+			if(firstRemovalAt == 0) { firstRemovalAt = System.nanoTime(); logStatus("first successful section removal"); }
 		}
+		return columnChanged.get(first);
 	}
 	private static boolean safeProgressiveBlock(Block block) {
 		// Exact native classes audited against Forge 1614: base breakBlock, no TE,
@@ -801,7 +911,7 @@ public class ExplosionNukeRayBatched {
 
 	public void readFromNBT(NBTTagCompound tag) {
 		cancelWorkers(); terrain.read(tag);
-		originals.clear(); pendingBlocks = pendingEffects = 0; queuedChunks = 0; nextDistance = 0; excavationTick = Long.MIN_VALUE;
+		originals.clear(); pendingBlocks = pendingEffects = deferredBlocks = deferredEffects = 0; queuedChunks = 0; nextDistance = 0; excavationTick = Long.MIN_VALUE; excavationAttempts = 0;
 		ranges.clear(); corridor.clear(); allocating = null; rangeCursor = 0;
 		savedDiagnostics = tag.hasKey("selectedBlocks"); selectedBlocks = tag.getLong("selectedBlocks"); destroyedBlocks = tag.getLong("destroyedBlocks"); rejectedBatches = tag.getLong("rejectedBatches");
 		chunks = new LongHashMap(); firstChunk = lastChunk = cleanupCursor = null; ordering.clear();
@@ -864,6 +974,8 @@ public class ExplosionNukeRayBatched {
 		reusedSamples = tag.getLong("reusedSamples"); skippedReconstruction = tag.getLong("skippedReconstruction"); attenuationHits = tag.getLong("attenuationHits"); workerCpuNanos = tag.getLong("workerCpuNanos");
 		sharedSnapshotHits = tag.getLong("sharedSnapshotHits");
 		collectionServerNanos = tag.getLong("collectionServerNanos"); removalServerNanos = tag.getLong("removalServerNanos");
+		fastRemovals = tag.getLong("fastRemovals"); normalRemovals = tag.getLong("normalRemovals");
+		sectionsAdvanced = tag.getLong("sectionsAdvanced"); chunksAdvanced = tag.getLong("chunksAdvanced"); preservationNanos = tag.getLong("preservationNanos"); diagnosticRemoved = destroyedBlocks;
 		terrain.snapshotCaptures = tag.getLong("snapshotCaptures"); terrain.snapshotReuses = tag.getLong("snapshotReuses");
 		long now = System.nanoTime(); startedAt = now - tag.getLong("elapsedNanos");
 		collectionStartedAt = startedAt + tag.getLong("collectionOffsetNanos");
@@ -915,20 +1027,32 @@ public class ExplosionNukeRayBatched {
 				section.pending.or(progressive ? BitSet.valueOf(data.getByteArray("pending")) : section.destruction);
 				section.pending.and(section.destruction);
 				if(progressive) { section.completed.or(BitSet.valueOf(data.getByteArray("completed"))); section.completed.and(section.destruction); section.notified.or(BitSet.valueOf(data.getByteArray("notified"))); section.notified.and(section.completed); }
+				section.pending.andNot(section.completed);
+				if(!restoring.getBoolean("complete")) {
+					section.deferred.or(BitSet.valueOf(data.getByteArray("deferred"))); section.deferred.and(section.pending); section.pending.andNot(section.deferred);
+				}
 				if(data.hasKey("tips")) {
 					section.tips = BitSet.valueOf(data.getByteArray("tips")); section.tips.and(section.destruction);
 				}
 				ChunkMask chunk = chunkMask(readCoord(item)); chunk.sections[sectionY] = section;
+				chunk.cursorSection = item.hasKey("cursorSection") ? item.getInteger("cursorSection") : removalActive && removalKey == chunk.key ? removalSection : 0;
+				chunk.cursorBit = item.hasKey("cursorBit") ? item.getInteger("cursorBit") : removalActive && removalKey == chunk.key ? removalBit : 0;
 				int effects = 0;
-				if(section.tips != null) { BitSet late = (BitSet)section.tips.clone(); late.and(section.completed); late.andNot(section.notified); effects = late.cardinality(); }
-				chunk.pending += section.pending.cardinality(); pendingBlocks += section.pending.cardinality(); chunk.effects += effects; pendingEffects += effects;
+				if(section.tips != null) {
+					BitSet late = (BitSet)section.tips.clone(); late.and(section.completed); late.andNot(section.notified); effects = late.cardinality();
+					if(restoring.getBoolean("complete")) section.effects.or(late);
+					else { section.deferredEffects.or(late); chunk.deferredEffects += effects; deferredEffects += effects; }
+				}
+				int deferred = section.deferred.cardinality(), pending = section.pending.cardinality() + deferred;
+				chunk.deferred += deferred; deferredBlocks += deferred;
+				chunk.pending += pending; pendingBlocks += pending; chunk.effects += effects; pendingEffects += effects;
 				if(chunk.pending + chunk.effects > 0) enqueue(chunk);
 			} else if(restorePhase == 1) {
 				int[] keys = restoring.getIntArray("rayChunks");
 				if(restoreIndex < keys.length / 2) { addRayChunk(ChunkCoordIntPair.chunkXZ2Int(keys[restoreIndex * 2], keys[restoreIndex * 2 + 1])); restoreIndex++; }
 				else restorePhase++;
 			} else {
-				isAusf3Complete = legacy == null && restoring.getBoolean("complete"); restoring = null;
+				isAusf3Complete = legacy == null && restoring.getBoolean("complete"); restoring = null; removalActive = false;
 				if(isAusf3Complete) cleanupCursor = firstChunk;
 			}
 		}
@@ -1004,6 +1128,7 @@ public class ExplosionNukeRayBatched {
 		tag.setLong("reusedSamples", reusedSamples); tag.setLong("skippedReconstruction", skippedReconstruction); tag.setLong("attenuationHits", attenuationHits); tag.setLong("workerCpuNanos", workerCpuNanos);
 		tag.setLong("sharedSnapshotHits", sharedSnapshotHits);
 		tag.setLong("collectionServerNanos", collectionServerNanos); tag.setLong("removalServerNanos", removalServerNanos);
+		tag.setLong("fastRemovals", fastRemovals); tag.setLong("normalRemovals", normalRemovals); tag.setLong("sectionsAdvanced", sectionsAdvanced); tag.setLong("chunksAdvanced", chunksAdvanced); tag.setLong("preservationNanos", preservationNanos);
 		tag.setLong("elapsedNanos", System.nanoTime() - startedAt); tag.setBoolean("collectionTimed", collectionFinishedAt != 0);
 		tag.setLong("collectionOffsetNanos", collectionStartedAt - startedAt);
 		tag.setLong("collectionElapsedNanos", collectionFinishedAt == 0 ? 0 : collectionFinishedAt - startedAt);
@@ -1043,13 +1168,17 @@ public class ExplosionNukeRayBatched {
 		NBTTagList savedChunks = new NBTTagList();
 		for(ChunkMask chunk = firstChunk; chunk != null; chunk = chunk.next) {
 			NBTTagCompound item = new NBTTagCompound(); item.setInteger("x", (int)chunk.key); item.setInteger("z", (int)(chunk.key >> 32));
+			item.setInteger("cursorSection", chunk.cursorSection); item.setInteger("cursorBit", chunk.cursorBit);
 			NBTTagList sections = new NBTTagList();
 			for(int y = 0; y < 16; y++) {
 				SectionMask section = chunk.sections[y];
 				if(section == null || section.destruction.isEmpty()) continue;
 				NBTTagCompound data = new NBTTagCompound(); data.setInteger("y", y);
 				data.setByteArray("destruction", section.destruction.toByteArray());
-				data.setByteArray("pending", section.pending.toByteArray()); data.setByteArray("completed", section.completed.toByteArray()); data.setByteArray("notified", section.notified.toByteArray());
+				// Keep the v3 pending union for older progressive saves/readers; the
+				// additional classification prevents rescans in this implementation.
+				BitSet pending = (BitSet)section.pending.clone(); pending.or(section.deferred);
+				data.setByteArray("pending", pending.toByteArray()); data.setByteArray("deferred", section.deferred.toByteArray()); data.setByteArray("completed", section.completed.toByteArray()); data.setByteArray("notified", section.notified.toByteArray());
 				if(section.tips != null && !section.tips.isEmpty()) data.setByteArray("tips", section.tips.toByteArray());
 				sections.appendTag(data);
 			}

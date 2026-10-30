@@ -15,6 +15,7 @@ import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.storage.AnvilChunkLoader;
+import net.minecraft.world.chunk.storage.ExtendedBlockStorage;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.event.world.ChunkEvent;
 import net.minecraftforge.event.world.WorldEvent;
@@ -55,6 +56,49 @@ public final class ExplosionTerrainAccess {
 	private static final Map<Long, History> histories = new LinkedHashMap<Long, History>();
 	private static long retainedBytes;
 
+	static boolean canRemoveSection(World world, Chunk chunk, int section) {
+		// World overrides/snapshot capture and non-native storage retain their
+		// authoritative setBlock path. Never bypass a mod's mutation policy.
+		return (world.getClass() == WorldServer.class || world.getClass() == net.minecraft.world.WorldServerMulti.class)
+				&& !world.captureBlockSnapshots && chunk.getClass() == Chunk.class
+				&& chunk.getBlockStorageArray()[section] != null
+				&& chunk.getBlockStorageArray()[section].getClass() == ExtendedBlockStorage.class
+				&& Blocks.air.getClass() == net.minecraft.block.BlockAir.class
+				&& chunk.xPosition >= -1875000 && chunk.xPosition < 1875000 && chunk.zPosition >= -1875000 && chunk.zPosition < 1875000;
+	}
+
+	/** One bounded column inside one section, ascending Y, positive old opacity.
+	 * Callers certify exact callback-free classes, no TEs, and retain originals
+	 * before entry. The highest cell MUST use the native chunk setter last: it
+	 * relights the whole newly opened column and schedules gap lighting once.
+	 * Lower cells use the counted section setter, never raw block-array writes. */
+	static void removeSectionColumn(World world, Chunk chunk, int sy, int[] bits, int count, java.util.BitSet changed) {
+		ExtendedBlockStorage storage = chunk.getBlockStorageArray()[sy];
+		int last = bits[count - 1], lx = last & 15, lz = last >> 4 & 15;
+		int x = (chunk.xPosition << 4) + lx, z = (chunk.zPosition << 4) + lz;
+		for(int i = 0; i < count - 1; i++) {
+			int bit = bits[i], y = (sy << 4) + (bit >> 8);
+			if(y >= chunk.precipitationHeightMap[lz << 4 | lx] - 1) chunk.precipitationHeightMap[lz << 4 | lx] = -999;
+			storage.func_150818_a(lx, bit >> 8, lz, Blocks.air);
+			storage.setExtBlockMetadata(lx, bit >> 8, lz, 0);
+			changed.set(bit);
+		}
+		// Even if the native anchor rejects its change, the lower successful
+		// changes still need lighting, saving and sync before mask commit.
+		try {
+			if(chunk.func_150807_a(lx, (sy << 4) + (last >> 8), lz, Blocks.air, 0)) changed.set(last);
+		} finally {
+			if(!changed.isEmpty()) chunk.setChunkModified();
+			for(int bit = changed.nextSetBit(0); bit >= 0; bit = changed.nextSetBit(bit + 1)) {
+				int y = (sy << 4) + (bit >> 8);
+				world.func_147451_t(x, y, z);
+				// Keep Forge's watcher accumulation and all world observers. Render
+				// range notifications alone do not send server block changes in 1.7.10.
+				world.markAndNotifyBlock(x, y, z, chunk, null, Blocks.air, 2);
+			}
+		}
+	}
+
 	/** Sparse originals belong to a calculation view, not the evictable cache.
 	 * Only certified callback-free removals may enter this journal. Each packed
 	 * value preserves the exact float, three classification flags and source ID. */
@@ -63,9 +107,18 @@ public final class ExplosionTerrainAccess {
 		final World world;
 		private final LinkedHashMap<Key, Originals> sections = new LinkedHashMap<Key, Originals>();
 		private long allocated;
+		private int cachedX, cachedY, cachedZ;
+		private boolean cached;
+		private Originals cachedSection;
 		public History(World world) { this.world = world; histories.put(id, this); }
 		public long bytes() { return allocated; }
-		private Originals section(int x, int y, int z) { return sections.get(new Key(world, x, y, z)); }
+		private Originals section(int x, int y, int z) {
+			if(!cached || cachedX != x || cachedY != y || cachedZ != z) {
+				cachedX = x; cachedY = y; cachedZ = z; cached = true;
+				cachedSection = sections.get(new Key(world, x, y, z));
+			}
+			return cachedSection;
+		}
 		boolean hasSection(int x, int y, int z) { return section(x, y, z) != null; }
 		private long original(int x, int y, int z, int bit) {
 			Originals section = section(x, y, z); return section == null ? -1L : section.get(bit);
@@ -75,16 +128,17 @@ public final class ExplosionTerrainAccess {
 			return value == -1L ? Blocks.air : Block.getBlockById((int)(value >>> 35) & 65535);
 		}
 		public boolean remember(int x, int y, int z, Block block) {
-			Key key = new Key(world, x >> 4, y >> 4, z >> 4);
-			Originals section = sections.get(key);
+			Originals section = section(x >> 4, y >> 4, z >> 4);
 			int bit = (y & 15) << 8 | (z & 15) << 4 | (x & 15);
 			boolean existing = section != null && section.get(bit) != -1L;
-			int capacity = section == null ? 16 : section.values.length;
-			long needed = section == null ? 256L + capacity * 8L : !existing && section.size == capacity ? capacity * 8L : 0L;
+			int capacity = section == null ? 32 : section.values.length;
+			int nextCapacity = capacity * 2;
+			long needed = section == null ? 256L + capacity * 8L : !existing && !section.dense && section.size >= capacity / 2 ? (nextCapacity - capacity) * 8L : 0L;
 			// Leave at least half the shared ceiling for calculation/capture buffers.
 			if(retainedBytes + needed > (long)BombConfig.explosionSnapshotBudgetMiB * 524288L || !reserve(needed, null)) return false;
-			if(section == null) { section = new Originals(capacity); sections.put(key, section); }
-			else if(!existing && section.size == capacity) section.values = java.util.Arrays.copyOf(section.values, capacity * 2);
+			if(section == null) {
+				section = new Originals(capacity); sections.put(new Key(world, x >> 4, y >> 4, z >> 4), section); cachedSection = section;
+			} else if(needed != 0) section.grow(nextCapacity);
 			allocated += needed; retainedBytes += needed; bytes.addAndGet(needed);
 			byte flags = (byte)((block != Blocks.air ? 1 : 0) | (block.getMaterial().isLiquid() ? 2 : 0) | (world.isAirBlock(x, y, z) ? 4 : 0));
 			long value = (long)bit << 51 | (long)(Block.getIdFromBlock(block) & 65535) << 35 | (long)flags << 32 | (Float.floatToIntBits(ExplosionNukeRayBatched.masqueradeResistance(block)) & 0xffffffffL);
@@ -95,8 +149,9 @@ public final class ExplosionTerrainAccess {
 			// need the removed source ID. The otherwise unused sign bit records this.
 			Originals section = section(x, y, z); if(section != null) section.replace(bit);
 		}
-		public void clear() { sections.clear(); retainedBytes -= allocated; bytes.addAndGet(-allocated); allocated = 0; restored = 0; }
+		public void clear() { sections.clear(); cached = false; cachedSection = null; retainedBytes -= allocated; bytes.addAndGet(-allocated); allocated = 0; restored = 0; }
 		public void releaseChunk(int x, int z) {
+			cached = false; cachedSection = null;
 			for(int y = 0; y < 16; y++) {
 				Originals data = sections.remove(new Key(world, x, y, z));
 				if(data != null) { long freed = 256L + data.values.length * 8L; allocated -= freed; retainedBytes -= freed; bytes.addAndGet(-freed); }
@@ -109,7 +164,23 @@ public final class ExplosionTerrainAccess {
 				NBTTagCompound item = new NBTTagCompound(); Key key = entry.getKey(); Originals data = entry.getValue();
 				item.setInteger("x", (int)key.chunk); item.setInteger("y", key.section); item.setInteger("z", (int)(key.chunk >> 32));
 				int[] values = new int[data.size * 2];
-				for(int i = 0; i < data.size; i++) { values[i * 2] = (int)data.values[i]; values[i * 2 + 1] = (int)(data.values[i] >>> 32); }
+				long[] ordered = data.values;
+				if(!data.dense) {
+					ordered = new long[data.size]; int used = 0;
+					for(long value : data.values) if(value != -1L) ordered[used++] = value;
+					// Sorting is only needed at the save boundary, for older v3 readers.
+					for(int i = 1; i < ordered.length; i++) {
+						long value = ordered[i]; int j = i;
+						while(j > 0 && (ordered[j - 1] >>> 51 & 4095) > (value >>> 51 & 4095)) { ordered[j] = ordered[j - 1]; j--; }
+						ordered[j] = value;
+					}
+				}
+				int cursor = 0;
+				for(long value : ordered) {
+					if(value == -1L) continue;
+					if(cursor == values.length) break;
+					values[cursor++] = (int)value; values[cursor++] = (int)(value >>> 32);
+				}
 				item.setIntArray("values", values); list.appendTag(item);
 			}
 			tag.setTag("originalTerrain", list);
@@ -120,13 +191,19 @@ public final class ExplosionTerrainAccess {
 			net.minecraft.nbt.NBTTagList list = tag.getTagList("originalTerrain", 10);
 			while(restored < list.tagCount() && ExplosionWorkScheduler.before(deadline)) {
 				NBTTagCompound item = list.getCompoundTagAt(restored); int[] values = item.getIntArray("values");
-				long needed = 256L + Math.max(1, values.length / 2) * 8L;
+				int capacity = 32;
+				while(capacity < 4096 && capacity / 2 < values.length / 2) capacity *= 2;
+				long needed = 256L + capacity * 8L;
 				// Saved dependencies must survive even if the configured ceiling was
 				// reduced. Wait instead of silently using the excavated live terrain.
 				if(!reserve(needed, null)) return false;
-				Originals data = new Originals(values.length / 2);
-				for(int i = 0; i + 1 < values.length; i += 2) data.values[data.size++] = (values[i] & 0xffffffffL) | (long)values[i + 1] << 32;
+				Originals data = new Originals(capacity);
+				for(int i = 0; i + 1 < values.length; i += 2) {
+					long value = (values[i] & 0xffffffffL) | (long)values[i + 1] << 32;
+					data.put((int)(value >>> 51 & 4095), value);
+				}
 				sections.put(new Key(world, item.getInteger("x"), item.getInteger("y"), item.getInteger("z")), data);
+				cached = false; cachedSection = null;
 				allocated += needed; retainedBytes += needed; bytes.addAndGet(needed); restored++;
 			}
 			return restored == list.tagCount();
@@ -134,16 +211,21 @@ public final class ExplosionTerrainAccess {
 		private int restored;
 	}
 	private static final class Originals {
-		long[] values; int size;
-		Originals(int capacity) { values = new long[Math.max(1, capacity)]; }
+		long[] values; int size; boolean dense;
+		Originals(int capacity) { values = new long[capacity]; dense = capacity == 4096; java.util.Arrays.fill(values, -1L); }
 		int index(int bit) {
-			int low = 0, high = size;
-			while(low < high) { int mid = (low + high) >>> 1; if((values[mid] >>> 51 & 4095) < bit) low = mid + 1; else high = mid; }
-			return low;
+			int slot = (bit * 0x9e3779b9 >>> 16) & (values.length - 1);
+			while(values[slot] != -1L && (values[slot] >>> 51 & 4095) != bit) slot = (slot + 1) & (values.length - 1);
+			return slot;
 		}
-		long get(int bit) { int i = index(bit); return i < size && (values[i] >>> 51 & 4095) == bit ? values[i] : -1L; }
-		void put(int bit, long value) { int i = index(bit); if(i < size && (values[i] >>> 51 & 4095) == bit) { values[i] = value; return; } System.arraycopy(values, i, values, i + 1, size - i); values[i] = value; size++; }
-		void replace(int bit) { int i = index(bit); if(i < size && (values[i] >>> 51 & 4095) == bit) values[i] |= Long.MIN_VALUE; }
+		long get(int bit) { return values[dense ? bit : index(bit)]; }
+		void put(int bit, long value) { int i = dense ? bit : index(bit); if(values[i] == -1L) size++; values[i] = value; }
+		void replace(int bit) { int i = dense ? bit : index(bit); if(values[i] != -1L) values[i] |= Long.MIN_VALUE; }
+		void grow(int capacity) {
+			long[] previous = values; values = new long[capacity]; java.util.Arrays.fill(values, -1L);
+			dense = capacity == 4096; size = 0;
+			for(long value : previous) if(value != -1L) put((int)(value >>> 51 & 4095), value);
+		}
 	}
 	private static void retireView(long view) {
 		Iterator<Map.Entry<Key, Capture>> iterator = snapshots.entrySet().iterator();
