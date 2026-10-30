@@ -152,3 +152,7 @@
 - Continue across ready chunks under the existing deadline, retain independent partial chunk cursors, skip tick-blocked chunks and donate unused collection/excavation time to useful work. Preserve the shared default 5 ms budget, bounded loading, ray calculations, yields and progressive excavation.
 - Separate collection-dependent special removals and terminal effects from ready masks; activate them once calculations finish, retain late tip upgrades and persist their ownership with existing progressive NBT. Cache retained terrain sections and use sparse hash storage with dense indexed storage as occupancy grows, preserving exact resistance, flags, source IDs, memory accounting and previous saves.
 - Extend existing rate-limited diagnostics with fast/normal removal counts, interval removals, section/chunk progress, original-terrain preservation time and deferred work counts.
+
+2026-10-30 17:19 — Preserve excavation queue ownership across deadline yields
+
+- Rotate chunk links within their distance bucket without dequeuing and conditionally re-enqueuing. A slice that consumes or defers its last ready cell can otherwise lose queue membership on its next pass, causing a second dequeue to crash or unlink another chunk. Make removal of an already-dequeued chunk harmless while preserving deferred work, late mask insertion, fairness and queue counters.

@@ -259,6 +259,7 @@ public class ExplosionNukeRayBatched {
 		if(chunk.queued) dequeue(chunk);
 	}
 	private void dequeue(ChunkMask chunk) {
+		if(!chunk.queued) return;
 		chunk.queued = false; queuedChunks--;
 		if(excavationTick == ExplosionWorkScheduler.currentTick() && chunk.blockedTick == excavationTick) excavationAttempts--;
 		DistanceBucket bucket = ordering.get(chunk.distance);
@@ -266,6 +267,15 @@ public class ExplosionNukeRayBatched {
 		if(chunk.orderNext == null) bucket.last = chunk.orderPrevious; else chunk.orderNext.orderPrevious = chunk.orderPrevious;
 		if(bucket.first == null) ordering.remove(chunk.distance);
 		chunk.orderPrevious = chunk.orderNext = null;
+	}
+	private void rotate(DistanceBucket bucket) {
+		ChunkMask chunk = bucket.first;
+		if(chunk == bucket.last) return;
+		// Rotation preserves queue ownership even if the last ready cell was
+		// consumed just before a deadline. Only retirement may dequeue that chunk.
+		bucket.first = chunk.orderNext; bucket.first.orderPrevious = null;
+		chunk.orderPrevious = bucket.last; chunk.orderNext = null;
+		bucket.last.orderNext = chunk; bucket.last = chunk;
 	}
 	private void wake(ChunkMask chunk) {
 		if(chunk.queued && excavationTick == ExplosionWorkScheduler.currentTick() && chunk.blockedTick == excavationTick) excavationAttempts--;
@@ -760,7 +770,7 @@ public class ExplosionNukeRayBatched {
 					if(entry == null) entry = ordering.firstEntry();
 					if(entry == null) return;
 					chunk = entry.getValue().first; nextDistance = entry.getKey() + 1;
-					dequeue(chunk); enqueue(chunk); // Rotate within a distance bucket too.
+					rotate(entry.getValue());
 				} while(chunk.blockedTick == tick && ++searched < queuedChunks && ExplosionWorkScheduler.before(deadline));
 				if(chunk.blockedTick == tick || !ExplosionWorkScheduler.before(deadline)) return;
 				removalKey = chunk.key; removalSection = chunk.cursorSection; removalBit = chunk.cursorBit; removalActive = true;
