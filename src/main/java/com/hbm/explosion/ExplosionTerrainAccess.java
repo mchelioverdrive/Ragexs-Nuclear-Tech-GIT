@@ -48,9 +48,11 @@ public final class ExplosionTerrainAccess {
 		private boolean pending;
 		private int x, z;
 		private long blockedTick = Long.MIN_VALUE;
+		public long snapshotCaptures, snapshotReuses;
 		public Access(World world) { this.world = world; observe(world); worldLifecycleId = worldLifecycleId(world); }
-		public boolean ready(long tick) { return blockedTick != tick; }
+		public boolean ready(long tick) { return blockedTick != tick || pending && loaded(world, x, z) != null; }
 		public void defer() { blockedTick = ExplosionWorkScheduler.currentTick(); }
+		public String status() { return pending ? "waitingForChunk=" + x + "," + z + " loading=" + BombConfig.explosionTerrainLoading + " generation=" + BombConfig.explosionTerrainGeneration : "terrainReady=true"; }
 		public void write(NBTTagCompound tag) {
 			tag.setBoolean("chunkRequest", pending); tag.setInteger("requestX", x); tag.setInteger("requestZ", z);
 		}
@@ -252,9 +254,15 @@ public final class ExplosionTerrainAccess {
 				if(old.data.readers == 0 && (old.cursor == 4096 || old.requested < ExplosionWorkScheduler.currentTick() - 1)) { iterator.remove(); retire(old.data); }
 			}
 			if(bytes.get() + SNAPSHOT_BYTES > budget || snapshots.size() >= MAX_SNAPSHOTS) { access.defer(); return null; }
-			capture = new Capture(key, chunk, access.id); snapshots.put(key, capture); bytes.addAndGet(SNAPSHOT_BYTES); captures++;
+			capture = new Capture(key, chunk, access.id); snapshots.put(key, capture); bytes.addAndGet(SNAPSHOT_BYTES); captures++; access.snapshotCaptures++;
 		}
+		else if(capture.data.complete) access.snapshotReuses++;
 		capture.requested = ExplosionWorkScheduler.currentTick();
+		// A null storage section is vanilla air throughout; custom air still takes
+		// the callback path. No need to perform 4096 identical world reads.
+		if(capture.data.zeroAirSection && capture.cursor == 0) {
+			java.util.Arrays.fill(capture.data.flags, (byte)4); capture.cursor = 4096;
+		}
 		while(capture.cursor < 4096 && ExplosionWorkScheduler.before(deadline)) {
 			int bit = capture.cursor;
 			int bx = (x << 4) + (bit & 15), by = (y << 4) + (bit >> 8), bz = (z << 4) + ((bit >> 4) & 15);
@@ -272,6 +280,23 @@ public final class ExplosionTerrainAccess {
 		return capture.data;
 	}
 	public static void retain(Snapshot snapshot) { if(snapshot != null) synchronized(snapshot) { snapshot.readers++; } }
+	/** Reuse already captured nearby sections in one bounded worker handoff. A ray
+	 * can cross and revisit section boundaries without waiting another server tick.
+	 * Missing sections still use the normal budgeted request/capture path. */
+	static Snapshot[] workerSnapshots(Access access, Snapshot required, java.util.List<int[]> corridor, long deadline) {
+		java.util.ArrayList<Snapshot> batch = new java.util.ArrayList<Snapshot>();
+		if(required != null) batch.add(required);
+		// Look up only the bounded working set actually read by this range. Do
+		// not scan the global cache or capture speculative sections in the blast.
+		for(int i = corridor.size() - 1; i >= 0 && batch.size() < ExplosionRayWorker.MAX_BATCH_SNAPSHOTS && ExplosionWorkScheduler.before(deadline); i--) {
+			int[] coord = corridor.get(i);
+			Capture capture = snapshots.get(new Key(access.world, coord[0], coord[1], coord[2]));
+			if(capture != null && capture.data != required && capture.data.valid && capture.data.complete) {
+				batch.add(capture.data); access.snapshotReuses++;
+			}
+		}
+		return batch.toArray(new Snapshot[batch.size()]);
+	}
 	public static void release(Snapshot snapshot) {
 		if(snapshot != null) synchronized(snapshot) { if(--snapshot.readers == 0 && snapshot.retired) bytes.addAndGet(-SNAPSHOT_BYTES); }
 	}

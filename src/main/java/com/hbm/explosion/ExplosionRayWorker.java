@@ -12,8 +12,10 @@ import com.hbm.explosion.ExplosionTerrainAccess.Snapshot;
 
 /** Pure bounded computation. Inputs contain no Minecraft world objects or callbacks. */
 final class ExplosionRayWorker {
-	static final int MAX_BATCH_STEPS = 512;
-	static final int MAX_BATCH_RAYS = 64;
+	static final int MAX_BATCH_STEPS = 32768;
+	static final int MAX_BATCH_RAYS = 256;
+	static final int MAX_BATCH_SNAPSHOTS = 64;
+	static final int MAX_JOB_BATCHES = 4;
 	static final int MAX_OUTSTANDING_BATCHES = 64;
 	static final int RESUME_BATCH_RESERVE = 16;
 	static final int EXECUTOR_QUEUE_CAPACITY = 64;
@@ -31,47 +33,69 @@ final class ExplosionRayWorker {
 		volatile boolean cancelled;
 		Lifecycle(long jobId, long worldLifecycleId) { this.jobId = jobId; this.worldLifecycleId = worldLifecycleId; }
 	}
-	static final class State {
+	static final class State implements Cloneable {
 		int posX, posY, posZ, length, rayLength, surfaceY, step, buildStep, tipX, tipY, tipZ, initialStrength, gspNum, gspNumMax, rayLimit;
 		boolean contained, finishing, hasTip, building, active, recorded;
 		double dx, dy, dz, buildLength, bx, by, bz, gx, gy;
 		float strength, tx, ty, tz, airResistance;
+		State copy() {
+			try { return (State)clone(); } catch(CloneNotSupportedException impossible) { throw new AssertionError(impossible); }
+		}
 	}
 	static final class Result {
 		final State state;
-		final long jobId, lifecycleId, worldLifecycleId, snapshotId;
-		final BitSet destruction = new BitSet(4096), tips = new BitSet(4096);
-		boolean qualified, missing;
+		final long jobId, lifecycleId, worldLifecycleId;
+		final Mask[] masks;
+		boolean missing;
 		int chunkX, sectionY, chunkZ;
 		int completedRays;
-		Result(State state, Lifecycle lifecycle, Snapshot snapshot) { this.state = state; jobId = lifecycle.jobId; lifecycleId = lifecycle.id; worldLifecycleId = lifecycle.worldLifecycleId; snapshotId = snapshot == null ? 0 : snapshot.id; }
+		int operations, sectionMisses;
+		long calculationNanos;
+		final java.util.HashSet<Long> qualified;
+		Result(State state, Lifecycle lifecycle, Snapshot[] snapshots, long[] eligible) {
+			this.state = state; jobId = lifecycle.jobId; lifecycleId = lifecycle.id; worldLifecycleId = lifecycle.worldLifecycleId;
+			masks = new Mask[snapshots.length];
+			for(int i = 0; i < masks.length; i++) masks[i] = new Mask(snapshots[i]);
+			qualified = new java.util.HashSet<Long>();
+			for(long key : eligible) qualified.add(key);
+		}
+	}
+	static final class Mask {
+		final Snapshot snapshot;
+		final BitSet destruction = new BitSet(), tips = new BitSet();
+		boolean used;
+		Mask(Snapshot snapshot) { this.snapshot = snapshot; }
 	}
 	static final class Batch implements Runnable {
 		final Lifecycle lifecycle;
 		final State state;
-		final boolean eligible;
+		final long[] eligible;
 		final AtomicBoolean started = new AtomicBoolean(), disposed = new AtomicBoolean();
 		volatile boolean cancelled;
 		volatile Result result;
 		volatile Throwable failure;
-		Snapshot snapshot;
-		Batch(State state, Snapshot snapshot, boolean eligible, Lifecycle lifecycle) {
-			this.state = state; this.snapshot = snapshot; this.eligible = eligible; this.lifecycle = lifecycle;
+		Snapshot[] snapshots;
+		private Snapshot snapshot;
+		private Mask mask;
+		Batch(State state, Snapshot[] snapshots, long[] eligible, Lifecycle lifecycle) {
+			this.state = state; this.snapshots = snapshots; this.eligible = eligible; this.lifecycle = lifecycle;
 		}
 		public void run() {
 			if(!started.compareAndSet(false, true)) return;
 			Result output = null;
-			try { output = new Result(state, lifecycle, snapshot); calculate(output); }
+			long startedAt = System.nanoTime();
+			try { output = new Result(state, lifecycle, snapshots, eligible); calculate(output); }
 			catch(Throwable failed) { failure = failed; }
 			finally {
+				if(output != null) output.calculationNanos = System.nanoTime() - startedAt;
 				result = output; // Volatile publication includes all primitive state and masks.
 				if(cancelled || lifecycle.cancelled) dispose();
 			}
 		}
 		private void calculate(Result output) {
 			State s = state;
-			boolean rayEligible = eligible;
 			for(int operations = 0; operations < MAX_BATCH_STEPS; operations++) {
+				output.operations++;
 				if(operations % CANCELLATION_INTERVAL == 0 && (cancelled || lifecycle.cancelled || Thread.currentThread().isInterrupted())) return;
 				if(s.gspNum > s.gspNumMax || output.completedRays >= s.rayLimit) return;
 				if(!s.active) {
@@ -91,25 +115,35 @@ final class ExplosionRayWorker {
 							int k = s.gspNum + 1;
 							double hk = -1.0 + 2.0 * (k - 1.0) / (s.gspNumMax - 1.0);
 							s.gx = Math.acos(hk);
-							double lon = s.gy + 3.6 / Math.sqrt(s.gspNumMax) / Math.sqrt(1.0 - hk * hk);
-							s.gy = lon % (Math.PI * 2);
+							// The pole has no longitude; keep its Cartesian direction finite.
+							s.gy = hk >= 1D ? 0D : (s.gy + 3.6 / Math.sqrt(s.gspNumMax) / Math.sqrt(1.0 - hk * hk)) % (Math.PI * 2);
 						} else { s.gx = 0.0; s.gy = 0.0; }
 						s.gspNum++; output.completedRays++;
 						s.active = s.finishing = s.recorded = s.hasTip = false;
-						output.qualified = false; rayEligible = false;
+						output.qualified.clear();
 						continue;
 					}
 				}
 				if(s.building) {
-					if(!(s.buildStep < s.buildLength)) { s.building = false; s.recorded = true; continue; }
+					if(!(s.buildStep < s.buildLength)) {
+						// Include the last positive sample, including a source-only hit.
+						if(s.tipY >= 0 && s.tipY < 256) {
+							if(!available(output, s.tipX, s.tipY, s.tipZ)) return;
+							int tip = bit(s.tipX, s.tipY, s.tipZ);
+							if(!snapshot.air(tip) && !snapshot.liquid(tip)) { mask.destruction.set(tip); mask.tips.set(tip); }
+						}
+						s.building = false; s.recorded = true; continue;
+					}
 					int x = (int)Math.floor(s.posX + s.bx * s.buildStep), y = (int)Math.floor(s.posY + s.by * s.buildStep), z = (int)Math.floor(s.posZ + s.bz * s.buildStep);
+					long chunk = chunkKey(x >> 4, z >> 4);
+					int entry = Math.max(0, Math.min(Math.abs(s.posX - (x >> 4 << 4)), Math.abs(s.posZ - (z >> 4 << 4))) - 16);
+					if(!output.qualified.contains(chunk) || s.buildStep < entry) { s.buildStep++; continue; }
 					if(y >= 0 && y < 256 && x >= -30000000 && z >= -30000000 && x < 30000000 && z < 30000000) {
 						if(!available(output, x, y, z)) return;
-						int entry = Math.max(0, Math.min(Math.abs(s.posX - (x >> 4 << 4)), Math.abs(s.posZ - (z >> 4 << 4))) - 16);
 						int bit = bit(x, y, z);
-						if((rayEligible || output.qualified) && s.buildStep >= entry && !snapshot.air(bit) && !snapshot.liquid(bit)) {
-							output.destruction.set(bit);
-							if(x == s.tipX && y == s.tipY && z == s.tipZ) output.tips.set(bit);
+						if(!snapshot.air(bit) && !snapshot.liquid(bit)) {
+							mask.destruction.set(bit);
+							if(x == s.tipX && y == s.tipY && z == s.tipZ) mask.tips.set(bit);
 						}
 					}
 					s.buildStep++;
@@ -140,7 +174,7 @@ final class ExplosionRayWorker {
 				double fac = (100 - (double)s.step / s.rayLength * 100) * .07D;
 				if(!liquid) s.strength -= Math.pow(stored ? snapshot.resistance(bit) : s.airResistance, 7.5D - fac);
 				if(s.strength > 0 && stored && !snapshot.vanillaAir(bit) && !liquid) {
-					s.tx = x; s.ty = y; s.tz = z; s.hasTip = true; output.qualified = true;
+					s.tx = x; s.ty = y; s.tz = z; s.hasTip = true; output.qualified.add(chunkKey(ix >> 4, iz >> 4));
 				}
 				if(s.strength <= 0 || s.step + 1 >= s.length || s.step == s.rayLength - 1) s.finishing = true;
 				s.step++;
@@ -148,6 +182,10 @@ final class ExplosionRayWorker {
 		}
 		private boolean available(Result result, int x, int y, int z) {
 			if(snapshot != null && snapshot.contains(x, y, z)) return true;
+			for(Mask item : result.masks) {
+				if(item.snapshot.contains(x, y, z)) { snapshot = item.snapshot; mask = item; item.used = true; return true; }
+			}
+			result.sectionMisses++;
 			result.missing = true; result.chunkX = x >> 4; result.sectionY = y >> 4; result.chunkZ = z >> 4; return false;
 		}
 		void cancel() {
@@ -159,16 +197,18 @@ final class ExplosionRayWorker {
 		}
 		void dispose() {
 			if(disposed.compareAndSet(false, true)) {
-				ExplosionTerrainAccess.release(snapshot); snapshot = null; outstanding.decrementAndGet();
+				for(Snapshot item : snapshots) ExplosionTerrainAccess.release(item);
+				snapshots = null; snapshot = null; mask = null; outstanding.decrementAndGet();
 			}
 		}
 	}
 	private static int bit(int x, int y, int z) { return (y & 15) << 8 | (z & 15) << 4 | (x & 15); }
+	private static long chunkKey(int x, int z) { return (long)x & 0xffffffffL | ((long)z & 0xffffffffL) << 32; }
 	static boolean available(boolean resuming) {
 		int limit = resuming ? MAX_OUTSTANDING_BATCHES : MAX_OUTSTANDING_BATCHES - RESUME_BATCH_RESERVE;
 		return accepting && outstanding.get() < limit;
 	}
-	static Batch submit(State state, Snapshot snapshot, boolean eligible, Lifecycle lifecycle) {
+	static Batch submit(State state, Snapshot[] snapshots, long[] eligible, Lifecycle lifecycle) {
 		if(!available(state.active || state.building) || lifecycle.cancelled) return null;
 		if(pool == null) {
 			int count = BombConfig.explosionWorkerThreads;
@@ -176,8 +216,9 @@ final class ExplosionRayWorker {
 				Thread thread = new Thread(task, "RNT-explosion-" + threadIds.incrementAndGet()); thread.setDaemon(true); return thread;
 			}, new ThreadPoolExecutor.AbortPolicy());
 		}
-		Batch batch = new Batch(state, snapshot, eligible, lifecycle);
-		ExplosionTerrainAccess.retain(snapshot); outstanding.incrementAndGet();
+		Batch batch = new Batch(state, snapshots, eligible, lifecycle);
+		for(Snapshot snapshot : snapshots) ExplosionTerrainAccess.retain(snapshot);
+		outstanding.incrementAndGet();
 		try { pool.execute(batch); return batch; }
 		catch(java.util.concurrent.RejectedExecutionException full) { batch.dispose(); return null; }
 		catch(Throwable failed) { batch.failure = failed; return batch; }
