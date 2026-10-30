@@ -107,7 +107,7 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 		public net.minecraft.entity.Entity owner() { return EntityNukeExplosionMK5.this; }
 		public long activeTick() { return activeWorkTick; }
 		public void suspend() { if(explosion != null) explosion.cancelWorkers(); if(breachTerrain != null) breachTerrain.cancel(); }
-		public boolean ready(long tick) { return breachTerrain().ready(tick) && (explosion == null || explosion.canWork(tick, speed * 10)); }
+		public boolean ready(long tick) { return breachTerrain().ready(tick) && (explosion == null || explosion.canWork(tick, Integer.MAX_VALUE)); }
 		public void run(long deadline, long tick) {
 			if(!ExplosionWorkScheduler.before(deadline)) return;
 			if(explosion == null) {
@@ -117,7 +117,10 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 				if(pendingExplosionData != null) { explosion.readFromNBT(pendingExplosionData); pendingExplosionData = null; }
 				explosion.logStatus("initialized type=" + spec.burstType + " yieldKt=" + spec.yieldKt);
 			}
-			if(!explosion.isAusf3Complete) explosion.collectTip(speed * 10, deadline, tick);
+			// The shared time budget and bounded worker batches govern this path.
+			// The legacy inverse-strength ray allowance made completion time grow
+			// cubically even when workers could finish the calculation immediately.
+			if(!explosion.isAusf3Complete) explosion.collectTip(Integer.MAX_VALUE, deadline, tick);
 			if(explosion.isAusf3Complete && ExplosionWorkScheduler.before(deadline)) explosion.processChunk(deadline);
 			if(!explosion.hasPendingWork() && ExplosionWorkScheduler.before(deadline)) {
 				if(confirmPostExcavationBreach(deadline)) {

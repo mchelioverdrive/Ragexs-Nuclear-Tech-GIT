@@ -65,7 +65,9 @@ public final class ExplosionWorkScheduler {
 			}
 			if(!job.ready(tick)) {
 				queue.addLast(job);
-				if(++idle >= queue.size()) break;
+				// Cached validation is useful server work even while every ray
+				// worker is running. Drain it under the deadline, never poll workers.
+				if(++idle >= queue.size() && !ExplosionTerrainAccess.hasValidationWork()) break;
 				continue;
 			}
 			idle = 0;

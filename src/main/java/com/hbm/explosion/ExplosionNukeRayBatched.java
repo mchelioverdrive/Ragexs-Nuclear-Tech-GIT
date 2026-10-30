@@ -57,6 +57,7 @@ public class ExplosionNukeRayBatched {
 	private RayRange allocating;
 	private int rangeCursor;
 	private long completedRays, submittedBatches, acceptedBatches, snapshotRejections, workerFailures, repeatedOperations, workerNanos, sectionMisses, fallbackActivations;
+	private long traversalOperations, reconstructionOperations, reusedSamples, skippedReconstruction, attenuationHits, workerCpuNanos, sharedSnapshotHits;
 	private long startedAt = System.nanoTime(), collectionFinishedAt, firstRemovalAt, collectionServerNanos, removalServerNanos;
 	private long collectionStartedAt = startedAt;
 	private String waitReason = "ready";
@@ -70,9 +71,11 @@ public class ExplosionNukeRayBatched {
 		final Access access = new Access(world);
 		ArrayList<Long> qualified = new ArrayList<Long>();
 		ExplosionRayWorker.Batch batch;
+		ExplosionRayWorker.Scratch scratch = new ExplosionRayWorker.Scratch();
+		final ArrayList<int[]> workingSet = new ArrayList<int[]>(corridor);
 		boolean sealed, fallback, pending;
-		int x, y, z, rejections;
-		RayRange(ExplosionRayWorker.State state, int end) { this.state = state; this.end = end; }
+		int x, y, z, rejections, fallbackEnd;
+		RayRange(ExplosionRayWorker.State state, int end) { this.state = state; this.end = end; fallbackEnd = end; }
 	}
 
 	private boolean buildActive, buildRestricted, buildInChunk;
@@ -94,13 +97,15 @@ public class ExplosionNukeRayBatched {
 		long captures = terrain.snapshotCaptures, reuse = terrain.snapshotReuses;
 		for(RayRange range : ranges) { captures += range.access.snapshotCaptures; reuse += range.access.snapshotReuses; }
 		long now = System.nanoTime();
-		MainRegistry.logger.info("[NUKE TERRAIN] dim=" + world.provider.dimensionId + " at=" + posX + "," + posY + "," + posZ + " strength=" + strength + " reach=" + rayLength + " limit=" + length + " status=" + status
+		MainRegistry.logger.info("[NUKE TERRAIN] dim=" + world.provider.dimensionId + " at=" + posX + "," + posY + "," + posZ + " strength=" + strength + " reach=" + rayLength + " limit=" + length + " rays=" + gspNumMax + " status=" + status
 				+ " completedRays=" + completedRays + " remainingRays=" + Math.max(0, gspNumMax - completedRays) + " selected=" + selectedBlocks + " removed=" + destroyedBlocks
 				+ " submitted=" + submittedBatches + " accepted=" + acceptedBatches + " rejected=" + rejectedBatches + " snapshotRejections=" + snapshotRejections + " workerFailures=" + workerFailures
 				+ " captures=" + captures + " reuse=" + reuse + " sectionMisses=" + sectionMisses + " repeatedOperations=" + repeatedOperations + " fallbacks=" + fallbackActivations + " wait=" + waitReason
+				+ " traversalOps=" + traversalOperations + " reconstructionOps=" + reconstructionOperations + " reusedTraversalSamples=" + reusedSamples + " skippedReconstructionSamples=" + skippedReconstruction + " attenuationCacheHits=" + attenuationHits
+				+ " sharedSnapshotHits=" + sharedSnapshotHits
 				+ " elapsedMs=" + (now - startedAt) / 1000000L + " collectionElapsedMs=" + ((collectionFinishedAt == 0 ? now : collectionFinishedAt) - collectionStartedAt) / 1000000L
 				+ " firstRemovalMs=" + (firstRemovalAt == 0 ? -1 : (firstRemovalAt - startedAt) / 1000000L) + " applicationElapsedMs=" + (collectionFinishedAt == 0 ? 0 : (now - collectionFinishedAt) / 1000000L)
-				+ " collectionServerWorkMs=" + collectionServerNanos / 1000000L + " applicationServerWorkMs=" + removalServerNanos / 1000000L + " workerCalculationMs=" + workerNanos / 1000000L + " " + terrain.status());
+				+ " collectionServerActiveElapsedMs=" + collectionServerNanos / 1000000L + " applicationServerActiveElapsedMs=" + removalServerNanos / 1000000L + " workerActiveElapsedMs=" + workerNanos / 1000000L + " workerCpuMs=" + (workerCpuNanos < 0 ? -1 : workerCpuNanos / 1000000L) + " " + ExplosionTerrainAccess.diagnostics() + " " + terrain.status());
 	}
 
 	// New saves decode a section at a time. Saving during decoding retains the original snapshot.
@@ -252,6 +257,7 @@ public class ExplosionNukeRayBatched {
 				// Stop on leaving storage, but permit a source outside it to approach it.
 				if((y < 0 && (posY >= 0 || rayY <= 0)) || (y >= 256 && (posY < 256 || rayY >= 0))) { rayFinishing = true; break; }
 				int ix = (int)Math.floor(x), iy = (int)Math.floor(y), iz = (int)Math.floor(z);
+				traversalOperations++;
 				// Null sections contain only vanilla air. Do not trust isEmpty(): custom air
 				// blocks can have resistance. Keep the world border's air behavior as well.
 				if(iy >= 0 && iy < 256 && ix >= -30000000 && iz >= -30000000 && ix < 30000000 && iz < 30000000) {
@@ -322,7 +328,7 @@ public class ExplosionNukeRayBatched {
 			if(rangeCursor >= ranges.size()) rangeCursor = 0;
 			RayRange range = ranges.get(rangeCursor++);
 			if(!range.sealed) continue;
-			if(range.batch != null) adopt(range);
+			if(range.batch != null) adopt(range, deadline);
 			if(range.batch != null) continue;
 			if(range.state.gspNum >= range.end) {
 				terrain.snapshotCaptures += range.access.snapshotCaptures; terrain.snapshotReuses += range.access.snapshotReuses;
@@ -336,18 +342,61 @@ public class ExplosionNukeRayBatched {
 			if(range.pending) {
 				required = ExplosionTerrainAccess.snapshot(range.access, range.x, range.y, range.z, deadline);
 				if(required == null) { waitReason = "snapshot capture or terrain: " + range.access.status(); continue; }
+				remember(range, required);
+				prepareCorridor(range, deadline);
+			} else if(!range.state.active && posY >= 0 && posY < 256 && posX >= -30000000 && posX < 30000000 && posZ >= -30000000 && posZ < 30000000) {
+				// Avoid submitting an empty batch just to discover the source section.
+				required = ExplosionTerrainAccess.snapshot(range.access, posX >> 4, posY >> 4, posZ >> 4, deadline);
+				if(required == null) { waitReason = "source snapshot"; continue; }
 			}
-			Snapshot[] inputs = ExplosionTerrainAccess.workerSnapshots(range.access, required, corridor, deadline);
+			Snapshot[] inputs = ExplosionTerrainAccess.workerSnapshots(range.access, required, range.workingSet, deadline);
 			if(!ExplosionWorkScheduler.before(deadline)) continue;
 			ExplosionRayWorker.State state = range.state.copy();
 			// Outstanding batches reserve from the same ray allowance as fallback;
 			// parallelism must not multiply the caller's per-tick completed-ray cap.
 			state.rayLimit = Math.min(count - raysThisTick - reserved, range.end - state.gspNum);
-			range.batch = ExplosionRayWorker.submit(state, inputs, qualifiedKeys(range), lifecycle);
+			BitSet[] covered = new BitSet[inputs.length];
+			for(int i = 0; i < inputs.length; i++) {
+				Snapshot input = inputs[i];
+				ChunkMask chunk = (ChunkMask)chunks.getValueByKey(ChunkCoordIntPair.chunkXZ2Int(input.chunkX, input.chunkZ));
+				SectionMask section = chunk == null ? null : chunk.sections[input.sectionY];
+				covered[i] = section == null ? new BitSet() : (BitSet)section.destruction.clone();
+			}
+			range.batch = ExplosionRayWorker.submit(state, inputs, covered, qualifiedKeys(range), lifecycle, range.scratch);
 			if(range.batch == null) { range.access.defer(); waitReason = "worker queue"; }
 			else { submittedBatches++; waitReason = "worker calculation"; }
 		}
 		if(gspNum > gspNumMax && ranges.isEmpty() && ExplosionWorkScheduler.before(deadline)) finishCollection();
+	}
+
+	/** Prepare a short geometric continuation in already-loaded terrain. This
+	 * amortizes section handoffs without speculative chunk loading, unbounded
+	 * capture queues or world reads from workers. Resistance still decides reach. */
+	private void prepareCorridor(RayRange range, long deadline) {
+		ExplosionRayWorker.State s = range.state;
+		boolean build = s.building;
+		int step = build ? s.buildStep : s.step;
+		int limit = build ? (int)Math.ceil(s.buildLength) : Math.min(s.rayLength, Math.max(1, s.length));
+		double dx = build ? s.bx : s.dx, dy = build ? s.by : s.dy, dz = build ? s.bz : s.dz;
+		for(int sections = 0; sections < 4 && step < limit && ExplosionWorkScheduler.before(deadline); sections++) {
+			int x = corridorCoordinate(posX, dx, step, build), y = corridorCoordinate(posY, dy, step, build), z = corridorCoordinate(posZ, dz, step, build);
+			if(y < 0 || y >= 256 || x < -30000000 || x >= 30000000 || z < -30000000 || z >= 30000000 || !build && s.contained && y >= s.surfaceY) return;
+			if(ExplosionTerrainAccess.loaded(world, x >> 4, z >> 4) == null) return;
+			Snapshot snapshot = ExplosionTerrainAccess.snapshot(range.access, x >> 4, y >> 4, z >> 4, deadline);
+			if(snapshot == null) return;
+			remember(range, snapshot);
+			int low = step + 1, high = limit;
+			while(low < high) {
+				int middle = low + (high - low) / 2;
+				if(snapshot.contains(corridorCoordinate(posX, dx, middle, build), corridorCoordinate(posY, dy, middle, build), corridorCoordinate(posZ, dz, middle, build))) low = middle + 1;
+				else high = middle;
+			}
+			step = low;
+		}
+	}
+	private static int corridorCoordinate(int origin, double direction, int step, boolean build) {
+		double value = origin + direction * step;
+		return (int)Math.floor(build ? value : (double)(float)value);
 	}
 
 	private long[] qualifiedKeys(RayRange range) {
@@ -356,7 +405,7 @@ public class ExplosionNukeRayBatched {
 		return keys;
 	}
 
-	private void adopt(RayRange range) {
+	private void adopt(RayRange range, long deadline) {
 		ExplosionRayWorker.Batch batch = range.batch;
 		int batchInputStep = range.state.step, batchInputBuildStep = range.state.buildStep;
 		ExplosionRayWorker.Result result = batch.result;
@@ -364,30 +413,39 @@ public class ExplosionNukeRayBatched {
 		if(batch.failure != null) {
 			workerFailures++; rejectedBatches++;
 			MainRegistry.logger.error("Explosion terrain worker failed; retaining range checkpoint for bounded server fallback", batch.failure);
-			batch.cancel(); range.batch = null; activateFallback(range, "worker failure"); return;
+			batch.cancel(); range.batch = null; activateFallback(range, "worker failure", true); return;
 		}
-		workerNanos += result.calculationNanos; sectionMisses += result.sectionMisses;
 		boolean valid = !lifecycle.cancelled && !batch.cancelled && result.jobId == lifecycle.jobId && result.lifecycleId == lifecycle.id && result.worldLifecycleId == terrain.worldLifecycleId;
 		boolean invalidSnapshot = false;
-		for(ExplosionRayWorker.Mask mask : result.masks) {
+		if(valid) for(ExplosionRayWorker.Mask mask : result.masks) {
 			// Cached inputs not actually read cannot invalidate useful work.
-			if(mask.used && (!mask.snapshot.valid || mask.snapshot.worldLifecycleId != terrain.worldLifecycleId)) invalidSnapshot = true;
+			if(!mask.used) continue;
+			if(mask.snapshot.worldLifecycleId != terrain.worldLifecycleId) { invalidSnapshot = true; break; }
+			if(!ExplosionTerrainAccess.validate(range.access, mask.snapshot, deadline)) { waitReason = "snapshot validation: " + range.access.status(); return; }
+			// Once rejection is certain, loading/validating the remaining sections
+			// only delays retry/fallback and can create another global wait barrier.
+			if(!mask.snapshot.valid) { invalidSnapshot = true; break; }
 		}
+		workerNanos += result.calculationNanos; sectionMisses += result.sectionMisses;
+		if(workerCpuNanos >= 0) workerCpuNanos = result.cpuNanos < 0 ? -1 : workerCpuNanos + result.cpuNanos;
+		traversalOperations += result.traversalOperations; reconstructionOperations += result.reconstructionOperations;
+		reusedSamples += result.reusedSamples; skippedReconstruction += result.skippedReconstruction; attenuationHits += result.attenuationHits;
+		sharedSnapshotHits += result.sharedSnapshotHits;
 		if(!valid || invalidSnapshot) {
 			rejectedBatches++; repeatedOperations += result.operations;
 			batch.dispose(); range.batch = null;
 			if(invalidSnapshot) {
 				snapshotRejections++; range.rejections++;
-				if(range.rejections >= INVALIDATION_RETRIES) activateFallback(range, "repeated snapshot invalidation without committed progress");
+				if(range.rejections >= INVALIDATION_RETRIES) activateFallback(range, "repeated snapshot invalidation without committed progress", false);
 			}
 			if(!range.fallback) waitReason = "snapshot retry"; return;
 		}
 		// All input versions are checked before this bounded, indivisible OR/cursor
 		// commit. No world callbacks run here and only the server owns these masks.
-		for(int i = result.masks.length - 1; i >= 0; i--) {
-			ExplosionRayWorker.Mask mask = result.masks[i];
+		for(int i = result.masks.size() - 1; i >= 0; i--) {
+			ExplosionRayWorker.Mask mask = result.masks.get(i);
 			Snapshot snapshot = mask.snapshot;
-			if(mask.used) remember(snapshot);
+			if(mask.used) remember(range, snapshot);
 			if(mask.destruction.isEmpty()) continue;
 			ChunkMask chunk = chunkMask(ChunkCoordIntPair.chunkXZ2Int(snapshot.chunkX, snapshot.chunkZ));
 			SectionMask section = chunk.sections[snapshot.sectionY];
@@ -410,19 +468,33 @@ public class ExplosionNukeRayBatched {
 		batch.dispose(); range.batch = null;
 	}
 
-	private void remember(Snapshot snapshot) {
-		for(int i = 0; i < corridor.size(); i++) {
-			int[] coord = corridor.get(i);
-			if(coord[0] == snapshot.chunkX && coord[1] == snapshot.sectionY && coord[2] == snapshot.chunkZ) { corridor.remove(i); break; }
+	private void remember(RayRange range, Snapshot snapshot) {
+		remember(range.workingSet, snapshot); remember(corridor, snapshot);
+	}
+	private static void remember(ArrayList<int[]> workingSet, Snapshot snapshot) {
+		for(int i = 0; i < workingSet.size(); i++) {
+			int[] coord = workingSet.get(i);
+			if(coord[0] == snapshot.chunkX && coord[1] == snapshot.sectionY && coord[2] == snapshot.chunkZ) { workingSet.remove(i); workingSet.add(coord); return; }
 		}
-		if(corridor.size() == ExplosionRayWorker.MAX_BATCH_SNAPSHOTS) corridor.remove(0);
-		corridor.add(new int[] { snapshot.chunkX, snapshot.sectionY, snapshot.chunkZ });
+		if(workingSet.size() == ExplosionRayWorker.MAX_BATCH_SNAPSHOTS) workingSet.remove(0);
+		workingSet.add(new int[] { snapshot.chunkX, snapshot.sectionY, snapshot.chunkZ });
 	}
 
-	private void activateFallback(RayRange range, String reason) {
+	private void activateFallback(RayRange range, String reason, boolean failed) {
 		if(range.batch != null) { range.batch.cancel(); range.batch = null; }
+		range.scratch = new ExplosionRayWorker.Scratch();
+		// A changing section must not demote thousands of unrelated future rays.
+		// Finish this ray against live terrain, then resume parallel calculation.
+		// An actual worker exception still keeps the failed range off that path.
+		range.fallbackEnd = failed ? range.end : Math.min(range.end, range.state.gspNum + 1);
 		waitReason = "bounded server fallback";
-		if(!range.fallback) { range.fallback = true; fallbackActivations++; logStatus("range fallback: " + reason); }
+		if(!range.fallback) {
+			range.fallback = true; fallbackActivations++;
+			long tick = ExplosionWorkScheduler.currentTick();
+			if(fallbackActivations == 1 || lastDiagnosticTick == Long.MIN_VALUE || tick - lastDiagnosticTick >= 200) {
+				logStatus("range fallback: " + reason); lastDiagnosticTick = tick;
+			}
+		}
 		range.pending = false;
 	}
 
@@ -434,13 +506,16 @@ public class ExplosionNukeRayBatched {
 		int previous = range.state.gspNum;
 		applyState(range.state); rayChunks = new LongHashMap(); rayChunkKeys = new ArrayList<Long>();
 		for(long key : range.qualified) addRayChunk(key);
-		try { collectServer(count, deadline, range.access, range.end); }
+		try { collectServer(count, deadline, range.access, range.fallback ? range.fallbackEnd : range.end); }
 		finally {
 			range.state = captureState(); range.qualified.clear(); range.qualified.addAll(rayChunkKeys);
 			completedRays += gspNum - previous;
 			applyState(allocator); rayChunks = savedChunks; rayChunkKeys = savedKeys;
 		}
-		waitReason = "bounded server fallback: " + range.access.status();
+		if(range.state.gspNum >= range.fallbackEnd && range.fallbackEnd < range.end) {
+			range.fallback = false; range.rejections = 0;
+			waitReason = "worker resume after fallback ray";
+		} else waitReason = "bounded server fallback: " + range.access.status();
 	}
 
 	private ExplosionRayWorker.State captureState() {
@@ -471,6 +546,7 @@ public class ExplosionNukeRayBatched {
 		if(lifecycle != null) lifecycle.cancelled = true;
 		for(RayRange range : ranges) {
 			if(range.batch != null) { range.batch.cancel(); range.batch = null; }
+			range.scratch = new ExplosionRayWorker.Scratch();
 			range.access.cancel();
 		}
 		terrain.cancel(); workers.remove(this);
@@ -517,6 +593,7 @@ public class ExplosionNukeRayBatched {
 		boolean sampled = false, eligible = false;
 		int entryStep = 0;
 		while(buildStep < buildLength && ExplosionWorkScheduler.before(deadline)) {
+			reconstructionOperations++;
 			int x = (int)Math.floor(posX + buildX * buildStep), y = (int)Math.floor(posY + buildY * buildStep), z = (int)Math.floor(posZ + buildZ * buildStep);
 			long key = ChunkCoordIntPair.chunkXZ2Int(x >> 4, z >> 4);
 			if(buildRestricted) {
@@ -662,6 +739,7 @@ public class ExplosionNukeRayBatched {
 			NBTTagCompound item = savedRanges.getCompoundTagAt(i);
 			RayRange range = new RayRange(readState(item), item.getInteger("end"));
 			range.sealed = item.getBoolean("sealed"); range.fallback = item.getBoolean("fallback"); range.rejections = item.getInteger("rejections");
+			range.fallbackEnd = !range.fallback ? range.end : item.hasKey("fallbackEnd") ? Math.max(range.state.gspNum, Math.min(range.end, item.getInteger("fallbackEnd"))) : Math.min(range.end, range.state.gspNum + 1);
 			int[] keys = item.getIntArray("qualified");
 			for(int k = 0; k + 1 < keys.length; k += 2) range.qualified.add(ChunkCoordIntPair.chunkXZ2Int(keys[k], keys[k + 1]));
 			ranges.add(range); if(!range.sealed) allocating = range;
@@ -670,6 +748,9 @@ public class ExplosionNukeRayBatched {
 		submittedBatches = tag.getLong("submittedBatches"); acceptedBatches = tag.getLong("acceptedBatches"); snapshotRejections = tag.getLong("snapshotRejections");
 		workerFailures = tag.getLong("workerFailures"); repeatedOperations = tag.getLong("repeatedOperations"); workerNanos = tag.getLong("workerNanos");
 		sectionMisses = tag.getLong("sectionMisses"); fallbackActivations = tag.getLong("fallbackActivations");
+		traversalOperations = tag.getLong("traversalOperations"); reconstructionOperations = tag.getLong("reconstructionOperations");
+		reusedSamples = tag.getLong("reusedSamples"); skippedReconstruction = tag.getLong("skippedReconstruction"); attenuationHits = tag.getLong("attenuationHits"); workerCpuNanos = tag.getLong("workerCpuNanos");
+		sharedSnapshotHits = tag.getLong("sharedSnapshotHits");
 		collectionServerNanos = tag.getLong("collectionServerNanos"); removalServerNanos = tag.getLong("removalServerNanos");
 		terrain.snapshotCaptures = tag.getLong("snapshotCaptures"); terrain.snapshotReuses = tag.getLong("snapshotReuses");
 		long now = System.nanoTime(); startedAt = now - tag.getLong("elapsedNanos");
@@ -794,6 +875,9 @@ public class ExplosionNukeRayBatched {
 		tag.setLong("completedRays", completedRays); tag.setLong("submittedBatches", submittedBatches); tag.setLong("acceptedBatches", acceptedBatches);
 		tag.setLong("snapshotRejections", snapshotRejections); tag.setLong("workerFailures", workerFailures); tag.setLong("repeatedOperations", repeatedOperations);
 		tag.setLong("workerNanos", workerNanos); tag.setLong("sectionMisses", sectionMisses); tag.setLong("fallbackActivations", fallbackActivations);
+		tag.setLong("traversalOperations", traversalOperations); tag.setLong("reconstructionOperations", reconstructionOperations);
+		tag.setLong("reusedSamples", reusedSamples); tag.setLong("skippedReconstruction", skippedReconstruction); tag.setLong("attenuationHits", attenuationHits); tag.setLong("workerCpuNanos", workerCpuNanos);
+		tag.setLong("sharedSnapshotHits", sharedSnapshotHits);
 		tag.setLong("collectionServerNanos", collectionServerNanos); tag.setLong("removalServerNanos", removalServerNanos);
 		tag.setLong("elapsedNanos", System.nanoTime() - startedAt); tag.setBoolean("collectionTimed", collectionFinishedAt != 0);
 		tag.setLong("collectionOffsetNanos", collectionStartedAt - startedAt);
@@ -806,6 +890,7 @@ public class ExplosionNukeRayBatched {
 			// recomputed after reload without duplicating ownership or losing masks.
 			NBTTagCompound item = writeState(range.state);
 			item.setInteger("end", range.end); item.setBoolean("sealed", range.sealed); item.setBoolean("fallback", range.fallback); item.setInteger("rejections", range.rejections);
+			item.setInteger("fallbackEnd", range.fallbackEnd);
 			int[] qualified = new int[range.qualified.size() * 2];
 			for(int i = 0; i < range.qualified.size(); i++) { long key = range.qualified.get(i); qualified[i * 2] = (int)key; qualified[i * 2 + 1] = (int)(key >> 32); }
 			item.setIntArray("qualified", qualified); savedRanges.appendTag(item);
