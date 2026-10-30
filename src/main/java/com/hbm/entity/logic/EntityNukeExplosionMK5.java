@@ -107,7 +107,10 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 		public net.minecraft.entity.Entity owner() { return EntityNukeExplosionMK5.this; }
 		public long activeTick() { return activeWorkTick; }
 		public void suspend() { if(explosion != null) explosion.cancelWorkers(); if(breachTerrain != null) breachTerrain.cancel(); }
-		public boolean ready(long tick) { return breachTerrain().ready(tick) && (explosion == null || explosion.canWork(tick, Integer.MAX_VALUE)); }
+		public boolean ready(long tick) {
+			if(explosion == null) return true;
+			return explosion.hasPendingWork() ? explosion.canWork(tick, Integer.MAX_VALUE) : breachTerrain().ready(tick);
+		}
 		public void run(long deadline, long tick) {
 			if(!ExplosionWorkScheduler.before(deadline)) return;
 			if(explosion == null) {
@@ -120,8 +123,7 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 			// The shared time budget and bounded worker batches govern this path.
 			// The legacy inverse-strength ray allowance made completion time grow
 			// cubically even when workers could finish the calculation immediately.
-			if(!explosion.isAusf3Complete) explosion.collectTip(Integer.MAX_VALUE, deadline, tick);
-			if(explosion.isAusf3Complete && ExplosionWorkScheduler.before(deadline)) explosion.processChunk(deadline);
+			explosion.advance(deadline, tick);
 			if(!explosion.hasPendingWork() && ExplosionWorkScheduler.before(deadline)) {
 				if(confirmPostExcavationBreach(deadline)) {
 					explosion.logStatus("terrain task completed; fallout may proceed");
@@ -486,12 +488,20 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 
 	@Override public void setDead() {
 		if(explosion != null && explosion.hasPendingWork()) explosion.logStatus("canceled; owner removed with pending terrain");
-		if(explosion != null) explosion.cancelWorkers();
+		if(explosion != null) explosion.dispose();
 		if(ignitionTerrain != null) ignitionTerrain.cancel();
 		if(breachTerrain != null) breachTerrain.cancel();
 		groundSearch = null;
 		ignitionJob = null;
 		super.setDead();
+	}
+
+	/** World removal also happens for unloaded, living entities. Keep their
+	 * checkpoint, but release the transient calculation view from global caches. */
+	public void detachTerrain() {
+		if(explosion == null || isDead) return;
+		pendingExplosionData = new NBTTagCompound(); explosion.writeToNBT(pendingExplosionData);
+		explosion.dispose(); explosion = null;
 	}
 
 	@Override protected void readEntityFromNBT(NBTTagCompound nbt) {

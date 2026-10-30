@@ -146,7 +146,7 @@ public class BombConfig {
 		loads.comment = "Positive server-wide limit on explicit terrain chunk loads per tick across governed MK5, ignition and fallout jobs and dimensions. Loaded chunks are reused. Synchronous loads, generation/population and mod callbacks cannot be interrupted; their incidental work can exceed the shared deadline.";
 		loads.setMinValue(1); explosionChunkLoadsPerTick = Math.max(1, loads.getInt(1)); loads.set(explosionChunkLoadsPerTick);
 		Property snapshots = config.get(CATEGORY_NUKE, "6.09_explosionSnapshotBudgetMiB", 64);
-		snapshots.comment = "Positive shared MiB ceiling for section snapshot buffers, including incomplete captures and retired snapshots with active readers. Captures run on the server thread; workers receive only immutable primitive terrain data. Requests and batches also have fixed queue limits.";
+		snapshots.comment = "Positive shared MiB ceiling for section snapshot buffers, including incomplete captures, retired snapshots with active readers and retained original terrain for progressive excavation. New retained originals may use at most half this ceiling; affected excavation pauses when it cannot retain required data while calculation continues. Captures run on the server thread; workers receive only immutable primitive terrain data. Requests and batches also have fixed queue limits.";
 		snapshots.setMinValue(1); explosionSnapshotBudgetMiB = Math.max(1, snapshots.getInt(64)); snapshots.set(explosionSnapshotBudgetMiB);
 		int workerDefault = Math.max(1, Math.min(4, Runtime.getRuntime().availableProcessors() - 2));
 		Property workers = config.get(CATEGORY_NUKE, "6.10_explosionWorkerThreads", workerDefault);

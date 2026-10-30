@@ -52,17 +52,117 @@ public final class ExplosionTerrainAccess {
 	public static String diagnostics() { return "globalSnapshotEvictions=" + evictions + " globalSnapshotInvalidations=" + invalidations + " globalUnchangedValidations=" + unchangedValidations + " globalAirSectionReuses=" + airSectionReuses + " globalUniformAirCaptures=" + uniformAirCaptures + " globalChunkLoads=" + chunkLoadsStarted + " pendingSnapshotValidations=" + validations.size() + " globalValidationActiveElapsedMs=" + validationNanos / 1000000L + " globalChunkLoadActiveElapsedMs=" + loadingNanos / 1000000L + " snapshotBytes=" + bytes.get(); }
 	static boolean hasValidationWork() { return !validations.isEmpty(); }
 	private static final Map<World, Observer> observers = new java.util.IdentityHashMap<World, Observer>();
+	private static final Map<Long, History> histories = new LinkedHashMap<Long, History>();
+	private static long retainedBytes;
+
+	/** Sparse originals belong to a calculation view, not the evictable cache.
+	 * Only certified callback-free removals may enter this journal. Each packed
+	 * value preserves the exact float, three classification flags and source ID. */
+	public static final class History {
+		final long id = sequence.incrementAndGet();
+		final World world;
+		private final LinkedHashMap<Key, Originals> sections = new LinkedHashMap<Key, Originals>();
+		private long allocated;
+		public History(World world) { this.world = world; histories.put(id, this); }
+		public long bytes() { return allocated; }
+		private Originals section(int x, int y, int z) { return sections.get(new Key(world, x, y, z)); }
+		boolean hasSection(int x, int y, int z) { return section(x, y, z) != null; }
+		private long original(int x, int y, int z, int bit) {
+			Originals section = section(x, y, z); return section == null ? -1L : section.get(bit);
+		}
+		public Block source(int x, int y, int z) {
+			long value = original(x >> 4, y >> 4, z >> 4, (y & 15) << 8 | (z & 15) << 4 | (x & 15));
+			return value == -1L ? Blocks.air : Block.getBlockById((int)(value >>> 35) & 65535);
+		}
+		public boolean remember(int x, int y, int z, Block block) {
+			Key key = new Key(world, x >> 4, y >> 4, z >> 4);
+			Originals section = sections.get(key);
+			int bit = (y & 15) << 8 | (z & 15) << 4 | (x & 15);
+			boolean existing = section != null && section.get(bit) != -1L;
+			int capacity = section == null ? 16 : section.values.length;
+			long needed = section == null ? 256L + capacity * 8L : !existing && section.size == capacity ? capacity * 8L : 0L;
+			// Leave at least half the shared ceiling for calculation/capture buffers.
+			if(retainedBytes + needed > (long)BombConfig.explosionSnapshotBudgetMiB * 524288L || !reserve(needed, null)) return false;
+			if(section == null) { section = new Originals(capacity); sections.put(key, section); }
+			else if(!existing && section.size == capacity) section.values = java.util.Arrays.copyOf(section.values, capacity * 2);
+			allocated += needed; retainedBytes += needed; bytes.addAndGet(needed);
+			byte flags = (byte)((block != Blocks.air ? 1 : 0) | (block.getMaterial().isLiquid() ? 2 : 0) | (world.isAirBlock(x, y, z) ? 4 : 0));
+			long value = (long)bit << 51 | (long)(Block.getIdFromBlock(block) & 65535) << 35 | (long)flags << 32 | (Float.floatToIntBits(ExplosionNukeRayBatched.masqueradeResistance(block)) & 0xffffffffL);
+			section.put(bit, value); return true;
+		}
+		private void replaced(int x, int y, int z, int bit) {
+			// A replacement ends the resistance override, but a late tip can still
+			// need the removed source ID. The otherwise unused sign bit records this.
+			Originals section = section(x, y, z); if(section != null) section.replace(bit);
+		}
+		public void clear() { sections.clear(); retainedBytes -= allocated; bytes.addAndGet(-allocated); allocated = 0; restored = 0; }
+		public void releaseChunk(int x, int z) {
+			for(int y = 0; y < 16; y++) {
+				Originals data = sections.remove(new Key(world, x, y, z));
+				if(data != null) { long freed = 256L + data.values.length * 8L; allocated -= freed; retainedBytes -= freed; bytes.addAndGet(-freed); }
+			}
+		}
+		public void close() { clear(); histories.remove(id); retireView(id); }
+		public void write(NBTTagCompound tag) {
+			net.minecraft.nbt.NBTTagList list = new net.minecraft.nbt.NBTTagList();
+			for(Map.Entry<Key, Originals> entry : sections.entrySet()) {
+				NBTTagCompound item = new NBTTagCompound(); Key key = entry.getKey(); Originals data = entry.getValue();
+				item.setInteger("x", (int)key.chunk); item.setInteger("y", key.section); item.setInteger("z", (int)(key.chunk >> 32));
+				int[] values = new int[data.size * 2];
+				for(int i = 0; i < data.size; i++) { values[i * 2] = (int)data.values[i]; values[i * 2 + 1] = (int)(data.values[i] >>> 32); }
+				item.setIntArray("values", values); list.appendTag(item);
+			}
+			tag.setTag("originalTerrain", list);
+		}
+		/** Restore under the slice deadline. Failure to reserve keeps the NBT
+		 * cursor intact and forbids both calculation and excavation. */
+		public boolean restore(NBTTagCompound tag, long deadline) {
+			net.minecraft.nbt.NBTTagList list = tag.getTagList("originalTerrain", 10);
+			while(restored < list.tagCount() && ExplosionWorkScheduler.before(deadline)) {
+				NBTTagCompound item = list.getCompoundTagAt(restored); int[] values = item.getIntArray("values");
+				long needed = 256L + Math.max(1, values.length / 2) * 8L;
+				// Saved dependencies must survive even if the configured ceiling was
+				// reduced. Wait instead of silently using the excavated live terrain.
+				if(!reserve(needed, null)) return false;
+				Originals data = new Originals(values.length / 2);
+				for(int i = 0; i + 1 < values.length; i += 2) data.values[data.size++] = (values[i] & 0xffffffffL) | (long)values[i + 1] << 32;
+				sections.put(new Key(world, item.getInteger("x"), item.getInteger("y"), item.getInteger("z")), data);
+				allocated += needed; retainedBytes += needed; bytes.addAndGet(needed); restored++;
+			}
+			return restored == list.tagCount();
+		}
+		private int restored;
+	}
+	private static final class Originals {
+		long[] values; int size;
+		Originals(int capacity) { values = new long[Math.max(1, capacity)]; }
+		int index(int bit) {
+			int low = 0, high = size;
+			while(low < high) { int mid = (low + high) >>> 1; if((values[mid] >>> 51 & 4095) < bit) low = mid + 1; else high = mid; }
+			return low;
+		}
+		long get(int bit) { int i = index(bit); return i < size && (values[i] >>> 51 & 4095) == bit ? values[i] : -1L; }
+		void put(int bit, long value) { int i = index(bit); if(i < size && (values[i] >>> 51 & 4095) == bit) { values[i] = value; return; } System.arraycopy(values, i, values, i + 1, size - i); values[i] = value; size++; }
+		void replace(int bit) { int i = index(bit); if(i < size && (values[i] >>> 51 & 4095) == bit) values[i] |= Long.MIN_VALUE; }
+	}
+	private static void retireView(long view) {
+		Iterator<Map.Entry<Key, Capture>> iterator = snapshots.entrySet().iterator();
+		while(iterator.hasNext()) { Map.Entry<Key, Capture> entry = iterator.next(); if(entry.getKey().view == view) { iterator.remove(); retire(entry.getValue().data); } }
+	}
 
 	/** One pending request per caller; the authoritative cursor remains with that caller. */
 	public static final class Access {
 		public final World world;
 		public final long id = sequence.incrementAndGet();
 		public final long worldLifecycleId;
+		final History history;
+		final long view;
 		private boolean pending;
 		private int x, z;
 		private long blockedTick = Long.MIN_VALUE;
 		public long snapshotCaptures, snapshotReuses;
-		public Access(World world) { this.world = world; observe(world); worldLifecycleId = worldLifecycleId(world); }
+		public Access(World world) { this(world, null); }
+		public Access(World world, History history) { this.world = world; this.history = history; view = history == null ? 0 : history.id; observe(world); worldLifecycleId = worldLifecycleId(world); }
 		public boolean ready(long tick) { return blockedTick != tick || pending && loaded(world, x, z) != null; }
 		public void defer() { blockedTick = ExplosionWorkScheduler.currentTick(); }
 		public String status() { return pending ? "waitingForChunk=" + x + "," + z + " loading=" + BombConfig.explosionTerrainLoading + " generation=" + BombConfig.explosionTerrainGeneration : "terrainReady=true"; }
@@ -88,21 +188,23 @@ public final class ExplosionTerrainAccess {
 		final World world;
 		final long chunk;
 		final int section;
-		Key(World world, int x, int y, int z) { this.world = world; chunk = ChunkCoordIntPair.chunkXZ2Int(x, z); section = y; }
-		public int hashCode() { return System.identityHashCode(world) * 31 + (int)(chunk ^ (chunk >>> 32)) * 17 + section; }
+		final long view;
+		Key(World world, int x, int y, int z) { this(world, x, y, z, 0); }
+		Key(World world, int x, int y, int z, long view) { this.world = world; chunk = ChunkCoordIntPair.chunkXZ2Int(x, z); section = y; this.view = view; }
+		public int hashCode() { return System.identityHashCode(world) * 31 + (int)(chunk ^ (chunk >>> 32)) * 17 + section + (int)view * 31; }
 		public boolean equals(Object other) {
 			if(!(other instanceof Key)) return false;
-			Key key = (Key)other; return world == key.world && chunk == key.chunk && section == key.section;
+			Key key = (Key)other; return world == key.world && chunk == key.chunk && section == key.section && view == key.view;
 		}
 	}
 	private static final class WorkerKey {
-		final long lifecycle, chunk;
+		final long lifecycle, chunk, view;
 		final int section;
-		WorkerKey(long lifecycle, int x, int y, int z) { this.lifecycle = lifecycle; chunk = ChunkCoordIntPair.chunkXZ2Int(x, z); section = y; }
-		public int hashCode() { return (int)(lifecycle ^ lifecycle >>> 32) * 31 + (int)(chunk ^ chunk >>> 32) * 17 + section; }
+		WorkerKey(long lifecycle, int x, int y, int z, long view) { this.lifecycle = lifecycle; chunk = ChunkCoordIntPair.chunkXZ2Int(x, z); section = y; this.view = view; }
+		public int hashCode() { return (int)(lifecycle ^ lifecycle >>> 32) * 31 + (int)(chunk ^ chunk >>> 32) * 17 + section + (int)view * 31; }
 		public boolean equals(Object other) {
 			if(!(other instanceof WorkerKey)) return false;
-			WorkerKey key = (WorkerKey)other; return lifecycle == key.lifecycle && chunk == key.chunk && section == key.section;
+			WorkerKey key = (WorkerKey)other; return lifecycle == key.lifecycle && chunk == key.chunk && section == key.section && view == key.view;
 		}
 	}
 	private static final class Request {
@@ -117,6 +219,7 @@ public final class ExplosionTerrainAccess {
 	public static final class Snapshot {
 		public final long id;
 		public final long captureJobId, worldLifecycleId;
+		final long view;
 		public final int chunkX, sectionY, chunkZ;
 		public final boolean zeroAirSection;
 		// Typical sections contain only a few exact resistance/flag pairs. Keep
@@ -140,6 +243,7 @@ public final class ExplosionTerrainAccess {
 		private boolean uniformAir;
 		private Snapshot(Key key, boolean zeroAirSection, long captureJobId) {
 			id = sequence.incrementAndGet(); this.captureJobId = captureJobId; worldLifecycleId = worldLifecycleId(key.world);
+			view = key.view;
 			chunkX = (int)key.chunk; chunkZ = (int)(key.chunk >> 32); sectionY = key.section; this.zeroAirSection = zeroAirSection;
 			paletteResistance = zeroAirSection ? null : new float[256]; paletteFlags = zeroAirSection ? null : new byte[256]; indices = zeroAirSection ? null : new byte[4096];
 			allocatedBytes = zeroAirSection ? AIR_SNAPSHOT_BYTES : SNAPSHOT_BYTES + CAPTURE_SCRATCH_BYTES;
@@ -374,25 +478,27 @@ public final class ExplosionTerrainAccess {
 	}
 
 	public static Snapshot snapshot(Access access, int x, int y, int z, long deadline) {
-		Key key = new Key(access.world, x, y, z);
+		Key key = new Key(access.world, x, y, z, access.view);
 		Capture capture = snapshots.get(key);
 		if(capture != null && capture.data.complete && capture.data.valid) {
 			if(!validate(access, capture.data, deadline)) return null;
 			if(capture.data.valid) {
 				// Validation can finish in a later slice than the capture itself.
-				published.put(new WorkerKey(capture.data.worldLifecycleId, x, y, z), capture.data);
+				published.put(new WorkerKey(capture.data.worldLifecycleId, x, y, z, access.view), capture.data);
 				rememberVerifiedAir(access.world, capture.data);
 				access.pending = false; access.snapshotReuses++; return capture.data;
 			}
 		}
 		Integer knownAir = airColumns.get(new Key(access.world, x, -2, z));
 		boolean air = knownAir != null && (knownAir & 1 << y) != 0 && ExplosionNukeRayBatched.masqueradeResistance(Blocks.air) == 0F;
+		boolean original = access.history != null && access.history.hasSection(x, y, z);
+		if(original) air = false;
 		if(air) { airSectionReuses++; access.snapshotReuses++; }
 		Chunk chunk = air ? null : chunk(access, x, z, deadline);
 		if(!air && chunk == null || !ExplosionWorkScheduler.before(deadline)) return null;
 		if(chunk != null) {
 			rememberAir(chunk);
-			air = chunk.getBlockStorageArray()[y] == null && ExplosionNukeRayBatched.masqueradeResistance(Blocks.air) == 0F;
+			air = !original && chunk.getBlockStorageArray()[y] == null && ExplosionNukeRayBatched.masqueradeResistance(Blocks.air) == 0F;
 		}
 		if(capture != null && (!capture.data.valid || !capture.data.complete && capture.source != chunk)) { snapshots.remove(key); retire(capture.data); capture = null; }
 		if(capture == null) {
@@ -430,6 +536,8 @@ public final class ExplosionTerrainAccess {
 			boolean liquid = block.getMaterial().isLiquid();
 			float resistance = liquid ? 0F : ExplosionNukeRayBatched.masqueradeResistance(block);
 			byte flags = (byte)((block != Blocks.air ? 1 : 0) | (liquid ? 2 : 0) | (access.world.isAirBlock(bx, by, bz) ? 4 : 0));
+			long retained = original(access.history, x, y, z, bit, block);
+			if(retained != -1L) { resistance = Float.intBitsToFloat((int)retained); flags = (byte)(retained >>> 32 & 7); }
 			if(!capture.put(bit, resistance, flags)) { access.defer(); return null; }
 			if((flags & 6) == 0) capture.data.solids.set(bit);
 			capture.cursor++;
@@ -450,7 +558,7 @@ public final class ExplosionTerrainAccess {
 			captures--;
 		}
 		if(!validate(access, capture.data, deadline) || !capture.data.valid) return null;
-		published.put(new WorkerKey(capture.data.worldLifecycleId, x, y, z), capture.data);
+		published.put(new WorkerKey(capture.data.worldLifecycleId, x, y, z, access.view), capture.data);
 		rememberVerifiedAir(access.world, capture.data);
 		access.pending = false;
 		return capture.data;
@@ -470,6 +578,8 @@ public final class ExplosionTerrainAccess {
 			boolean liquid = block.getMaterial().isLiquid();
 			float resistance = liquid ? 0F : ExplosionNukeRayBatched.masqueradeResistance(block);
 			byte flags = (byte)((block != Blocks.air ? 1 : 0) | (liquid ? 2 : 0) | (world.isAirBlock(x, y, z) ? 4 : 0));
+			long retained = original(histories.get(snapshot.view), snapshot.chunkX, snapshot.sectionY, snapshot.chunkZ, bit, block);
+			if(retained != -1L) { resistance = Float.intBitsToFloat((int)retained); flags = (byte)(retained >>> 32 & 7); }
 			if(flags != snapshot.flags(bit) || Float.floatToIntBits(resistance) != Float.floatToIntBits(snapshot.resistance(bit))) {
 				snapshot.valid = false; invalidations++; return true;
 			}
@@ -477,6 +587,14 @@ public final class ExplosionTerrainAccess {
 		}
 		if(!snapshot.dirty.isEmpty()) return false;
 		rememberVerifiedAir(world, snapshot); return true;
+	}
+	private static long original(History history, int x, int y, int z, int bit, Block live) {
+		if(history == null) return -1L;
+		// Only our post-removal vanilla air is overlaid. Other world changes still
+		// invalidate snapshots, including replacements at a previously removed cell.
+		if(live != Blocks.air) { history.replaced(x, y, z, bit); return -1L; }
+		long value = history.original(x, y, z, bit);
+		return value < 0 ? -1L : value;
 	}
 	public static void retain(Snapshot snapshot) {
 		if(snapshot != null && !tryRetain(snapshot)) throw new IllegalStateException("Cannot retain a retired explosion snapshot");
@@ -489,8 +607,8 @@ public final class ExplosionTerrainAccess {
 	}
 	/** Acquire only existing immutable data. Retirement and retaining synchronize
 	 * on the same buffer, so no worker can resurrect an evicted allocation. */
-	static Snapshot acquire(long lifecycle, int x, int y, int z) {
-		Snapshot snapshot = published.get(new WorkerKey(lifecycle, x, y, z));
+	static Snapshot acquire(long lifecycle, long view, int x, int y, int z) {
+		Snapshot snapshot = published.get(new WorkerKey(lifecycle, x, y, z, view));
 		if(snapshot == null) return null;
 		return tryRetain(snapshot) ? snapshot : null;
 	}
@@ -504,7 +622,7 @@ public final class ExplosionTerrainAccess {
 		// not scan the global cache or capture speculative sections in the blast.
 		for(int i = corridor.size() - 1; i >= 0 && batch.size() < ExplosionRayWorker.MAX_BATCH_SNAPSHOTS && ExplosionWorkScheduler.before(deadline); i--) {
 			int[] coord = corridor.get(i);
-			Capture capture = snapshots.get(new Key(access.world, coord[0], coord[1], coord[2]));
+			Capture capture = snapshots.get(new Key(access.world, coord[0], coord[1], coord[2], access.view));
 			if(capture != null && capture.data != required && capture.data.valid && capture.data.complete) {
 				batch.add(capture.data); access.snapshotReuses++;
 			}
@@ -517,7 +635,7 @@ public final class ExplosionTerrainAccess {
 	private static void retire(Snapshot snapshot) {
 		synchronized(snapshot) {
 			snapshot.valid = false;
-			published.remove(new WorkerKey(snapshot.worldLifecycleId, snapshot.chunkX, snapshot.sectionY, snapshot.chunkZ), snapshot);
+			published.remove(new WorkerKey(snapshot.worldLifecycleId, snapshot.chunkX, snapshot.sectionY, snapshot.chunkZ, snapshot.view), snapshot);
 			if(!snapshot.retired) {
 				snapshot.retired = true; if(!snapshot.complete) captures--;
 				if(snapshot.readers == 0) bytes.addAndGet(-snapshot.allocatedBytes);
@@ -569,6 +687,7 @@ public final class ExplosionTerrainAccess {
 		if(known) rememberAir(chunk);
 	}
 	public static void unload(World world) {
+		for(History history : histories.values().toArray(new History[0])) if(history.world == world) history.close();
 		Iterator<Validation> pending = validations.iterator();
 		while(pending.hasNext()) {
 			Validation validation = pending.next();
@@ -587,6 +706,7 @@ public final class ExplosionTerrainAccess {
 		while(columns.hasNext()) if(columns.next().world == world) { columns.remove(); bytes.addAndGet(-AIR_COLUMN_BYTES); }
 	}
 	public static void clear() {
+		for(History history : histories.values().toArray(new History[0])) history.close();
 		while(!validations.isEmpty()) finishValidation(validations.removeFirst());
 		for(Map.Entry<World, Observer> entry : observers.entrySet()) entry.getKey().removeWorldAccess(entry.getValue());
 		observers.clear();
@@ -613,7 +733,11 @@ public final class ExplosionTerrainAccess {
 		public void markBlockForUpdate(int x, int y, int z) {
 			forgetAir(world, x >> 4, z >> 4, y >> 4, y >> 4);
 			if(snapshots.isEmpty()) return;
-			Capture capture = snapshots.get(new Key(world, x >> 4, y >> 4, z >> 4));
+			markPoint(x, y, z, 0);
+			for(History history : histories.values()) if(history.world == world) markPoint(x, y, z, history.id);
+		}
+		private void markPoint(int x, int y, int z, long view) {
+			Capture capture = snapshots.get(new Key(world, x >> 4, y >> 4, z >> 4, view));
 			if(capture != null) {
 				capture.data.dirty.set((y & 15) << 8 | (z & 15) << 4 | (x & 15));
 				queueValidation(world, loaded(world, x >> 4, z >> 4), capture.data);
@@ -637,9 +761,8 @@ public final class ExplosionTerrainAccess {
 			if(snapshots.isEmpty()) return;
 			if(((long)maxX - minX + 1) * ((long)maxZ - minZ + 1) * (maxY - minY + 1) <= 64) {
 				for(int cx = minX; cx <= maxX; cx++) for(int cz = minZ; cz <= maxZ; cz++) for(int sy = minY; sy <= maxY; sy++) {
-					Key key = new Key(world, cx, sy, cz);
-					Capture capture = snapshots.get(key);
-					if(capture != null) { dirty(capture, key, x, y, z, x2, y2, z2); queueValidation(world, loaded(world, cx, cz), capture.data); }
+					markRange(new Key(world, cx, sy, cz), x, y, z, x2, y2, z2);
+					for(History history : histories.values()) if(history.world == world) markRange(new Key(world, cx, sy, cz, history.id), x, y, z, x2, y2, z2);
 				}
 				return;
 			}
@@ -651,8 +774,14 @@ public final class ExplosionTerrainAccess {
 				}
 			}
 		}
+		private void markRange(Key key, int x, int y, int z, int x2, int y2, int z2) {
+			Capture capture = snapshots.get(key);
+			if(capture != null) { dirty(capture, key, x, y, z, x2, y2, z2); queueValidation(world, loaded(world, (int)key.chunk, (int)(key.chunk >> 32)), capture.data); }
+		}
 		public void onEntityCreate(Entity entity) { }
-		public void onEntityDestroy(Entity entity) { }
+		public void onEntityDestroy(Entity entity) {
+			if(entity instanceof com.hbm.entity.logic.EntityNukeExplosionMK5) ((com.hbm.entity.logic.EntityNukeExplosionMK5)entity).detachTerrain();
+		}
 		public void playSound(String sound, double x, double y, double z, float volume, float pitch) { }
 		public void playSoundToNearExcept(EntityPlayer player, String sound, double x, double y, double z, float volume, float pitch) { }
 		public void spawnParticle(String particle, double x, double y, double z, double vx, double vy, double vz) { }

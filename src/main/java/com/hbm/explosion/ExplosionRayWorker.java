@@ -335,7 +335,7 @@ final class ExplosionRayWorker {
 			// This lookup performs no world access or capture. Extra retained inputs
 			// are bounded separately from the initial window and share its byte cap.
 			if(acquired.size() < MAX_BATCH_SNAPSHOTS) {
-				Snapshot shared = ExplosionTerrainAccess.acquire(lifecycle.worldLifecycleId, x >> 4, y >> 4, z >> 4);
+				Snapshot shared = ExplosionTerrainAccess.acquire(lifecycle.worldLifecycleId, lifecycle.jobId, x >> 4, y >> 4, z >> 4);
 				if(shared != null) {
 					acquired.add(shared); snapshot = shared; mask = new Mask(shared, new BitSet()); mask.used = true;
 					result.masks.add(mask); result.versions.put(shared.id, mask); result.sharedSnapshotHits++; return true;
