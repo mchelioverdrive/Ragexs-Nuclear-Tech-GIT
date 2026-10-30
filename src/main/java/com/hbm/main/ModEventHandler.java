@@ -954,6 +954,7 @@ public class ModEventHandler {
 
 	@SubscribeEvent
 	public void worldTick(WorldTickEvent event) {
+		if(event.phase == Phase.END && !event.world.isRemote) com.hbm.explosion.NuclearDropSuppression.tick(event.world);
 
 
 		if(event.world != null && !event.world.isRemote) {
@@ -2135,6 +2136,7 @@ public class ModEventHandler {
 
 	@SubscribeEvent
 	public void filterBrokenEntity(EntityJoinWorldEvent event) {
+		com.hbm.explosion.NuclearDropSuppression.spawning(event);
 
 		Entity entity = event.entity;
 		Entity[] parts = entity.getParts();
@@ -2151,5 +2153,10 @@ public class ModEventHandler {
 				}
 			}
 		}
+	}
+
+	@SubscribeEvent(priority = cpw.mods.fml.common.eventhandler.EventPriority.LOWEST)
+	public void suppressNuclearHarvest(net.minecraftforge.event.world.BlockEvent.HarvestDropsEvent event) {
+		com.hbm.explosion.NuclearDropSuppression.harvest(event);
 	}
 }

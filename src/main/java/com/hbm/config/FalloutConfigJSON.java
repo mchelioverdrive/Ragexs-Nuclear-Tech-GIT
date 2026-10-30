@@ -326,7 +326,10 @@ public class FalloutConfigJSON {
 				if(originalBlock == ModBlocks.sellafield_bedrock && conversion.block != ModBlocks.sellafield_bedrock) return false;
 				if(y == 0 && conversion.block != ModBlocks.sellafield_bedrock) return false;
 
-				world.setBlock(x, y, z, conversion.block, conversion.meta, 3);
+				try(com.hbm.explosion.NuclearDropSuppression.Scope scope = com.hbm.explosion.NuclearDropSuppression.enter(world)) {
+					if(conversion.block != b) com.hbm.explosion.NuclearDropSuppression.clearInventory(world, x, y, z);
+					world.setBlock(x, y, z, conversion.block, conversion.meta, 3);
+				}
 				return true;
 			}
 

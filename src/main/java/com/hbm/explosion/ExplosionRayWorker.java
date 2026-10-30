@@ -38,12 +38,24 @@ final class ExplosionRayWorker {
 	}
 	static final class State implements Cloneable {
 		int posX, posY, posZ, length, rayLength, surfaceY, step, buildStep, tipX, tipY, tipZ, initialStrength, gspNum, gspNumMax, rayLimit;
-		boolean contained, finishing, hasTip, building, active, recorded;
+		boolean contained, finishing, hasTip, building, active, recorded, balanced;
 		double dx, dy, dz, buildLength, bx, by, bz, gx, gy;
 		float strength, tx, ty, tz, airResistance;
 		State copy() {
 			try { return (State)clone(); } catch(CloneNotSupportedException impossible) { throw new AssertionError(impossible); }
 		}
+	}
+	// Equal-area Fibonacci sphere, visited in interleaved latitude thirds.
+	// This changes longitudes from the legacy recurrence, never density/energy.
+	static double latitude(int number, int count) {
+		int i = number - 1, band = i % 3;
+		int index = band * (count / 3) + Math.min(band, count % 3) + i / 3;
+		return Math.acos(count <= 1 ? 0D : -1D + 2D * index / (count - 1D));
+	}
+	static double longitude(int number, int count) {
+		int i = number - 1, band = i % 3;
+		int index = band * (count / 3) + Math.min(band, count % 3) + i / 3;
+		return index * (Math.PI * (3D - Math.sqrt(5D))) % (Math.PI * 2D);
 	}
 	static final class Result {
 		final State state;
@@ -53,6 +65,7 @@ final class ExplosionRayWorker {
 		boolean missing;
 		int chunkX, sectionY, chunkZ;
 		int completedRays;
+		final long[] directions = new long[3];
 		int operations, sectionMisses;
 		long calculationNanos, cpuNanos, traversalOperations, reconstructionOperations, reusedSamples, skippedReconstruction, attenuationHits, sharedSnapshotHits;
 		final java.util.HashSet<Long> qualified;
@@ -213,14 +226,16 @@ final class ExplosionRayWorker {
 						s.tipX = (int)Math.floor(s.tx); s.tipY = (int)Math.floor(s.ty); s.tipZ = (int)Math.floor(s.tz);
 						s.buildStep = 0; s.building = true;
 					} else {
-						if(s.gspNum < s.gspNumMax) {
+						if(s.balanced && s.gspNum < s.gspNumMax) {
+							s.gx = latitude(s.gspNum + 1, s.gspNumMax); s.gy = longitude(s.gspNum + 1, s.gspNumMax);
+						} else if(s.gspNum < s.gspNumMax) {
 							int k = s.gspNum + 1;
 							double hk = -1.0 + 2.0 * (k - 1.0) / (s.gspNumMax - 1.0);
 							s.gx = Math.acos(hk);
 							// The pole has no longitude; keep its Cartesian direction finite.
 							s.gy = hk >= 1D ? 0D : (s.gy + 3.6 / Math.sqrt(s.gspNumMax) / Math.sqrt(1.0 - hk * hk)) % (Math.PI * 2);
 						} else { s.gx = 0.0; s.gy = 0.0; }
-						s.gspNum++; output.completedRays++;
+						s.gspNum++; output.completedRays++; output.directions[s.dy < -1D / 3D ? 0 : s.dy > 1D / 3D ? 2 : 1]++;
 						s.active = s.finishing = s.recorded = s.hasTip = false;
 						output.qualified.clear();
 						continue;

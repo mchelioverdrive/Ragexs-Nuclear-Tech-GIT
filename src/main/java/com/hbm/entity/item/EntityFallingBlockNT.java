@@ -105,6 +105,8 @@ public class EntityFallingBlockNT extends Entity {
 		if(this.getBlock().getMaterial() == Material.air || this.getBlock() instanceof ISpotlight) {
 			this.setDead();
 		} else {
+			if(falloutCollapse && fallingTicks == 0 && !worldObj.isRemote
+					&& !com.hbm.explosion.NuclearDropSuppression.prepareMutation(worldObj, MathHelper.floor_double(posX), MathHelper.floor_double(posY), MathHelper.floor_double(posZ))) return;
 			this.prevPosX = this.posX;
 			this.prevPosY = this.posY;
 			this.prevPosZ = this.posZ;
@@ -116,6 +118,7 @@ public class EntityFallingBlockNT extends Entity {
 			this.motionZ *= 0.98D;
 
 			if(!this.worldObj.isRemote) {
+				try(com.hbm.explosion.NuclearDropSuppression.Scope scope = falloutCollapse ? com.hbm.explosion.NuclearDropSuppression.enter(worldObj) : null) {
 				int x = MathHelper.floor_double(this.posX);
 				int y = MathHelper.floor_double(this.posY);
 				int z = MathHelper.floor_double(this.posZ);
@@ -127,6 +130,7 @@ public class EntityFallingBlockNT extends Entity {
 						return;
 					}
 
+					if(falloutCollapse) com.hbm.explosion.NuclearDropSuppression.clearInventory(worldObj, x, y, z);
 					this.worldObj.setBlockToAir(x, y, z);
 				}
 
@@ -174,6 +178,7 @@ public class EntityFallingBlockNT extends Entity {
 					}
 
 					this.setDead();
+				}
 				}
 			}
 		}

@@ -285,6 +285,8 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 			if(collapseCount > MAX_PENDING_COLLAPSES - MAX_COLLAPSES_PER_BLOCK) return false;
 			// Once a block is selected, finish all its random effects and callbacks atomically.
 
+			if(!com.hbm.explosion.NuclearDropSuppression.prepareMutation(worldObj, x, y, z)) return false;
+			try(com.hbm.explosion.NuclearDropSuppression.Scope scope = com.hbm.explosion.NuclearDropSuppression.enter(worldObj)) {
 			Block above = blockAt(sections, x, y + 1, z);
 			int meta = section.getExtBlockMetadata(x & 15, y & 15, z & 15);
 
@@ -378,6 +380,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 
 			if(!transformed && b.isNormalCube()) {
 				columnDepth++;
+			}
 			}
 			columnY--; // Advance only after effects and collapse queueing finish.
 		}

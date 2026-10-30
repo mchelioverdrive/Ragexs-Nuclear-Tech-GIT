@@ -50,11 +50,12 @@ public final class ExplosionTerrainAccess {
 	private static int loads;
 	private static int captures;
 	private static long evictions, invalidations, unchangedValidations, airSectionReuses, uniformAirCaptures, chunkLoadsStarted, validationNanos, loadingNanos;
-	public static String diagnostics() { return "globalSnapshotEvictions=" + evictions + " globalSnapshotInvalidations=" + invalidations + " globalUnchangedValidations=" + unchangedValidations + " globalAirSectionReuses=" + airSectionReuses + " globalUniformAirCaptures=" + uniformAirCaptures + " globalChunkLoads=" + chunkLoadsStarted + " pendingSnapshotValidations=" + validations.size() + " globalValidationActiveElapsedMs=" + validationNanos / 1000000L + " globalChunkLoadActiveElapsedMs=" + loadingNanos / 1000000L + " snapshotBytes=" + bytes.get(); }
+	public static String diagnostics() { return "globalSnapshotEvictions=" + evictions + " globalSnapshotInvalidations=" + invalidations + " globalUnchangedValidations=" + unchangedValidations + " globalAirSectionReuses=" + airSectionReuses + " globalUniformAirCaptures=" + uniformAirCaptures + " globalChunkLoads=" + chunkLoadsStarted + " pendingSnapshotValidations=" + validations.size() + " globalValidationActiveElapsedMs=" + validationNanos / 1000000L + " globalChunkLoadActiveElapsedMs=" + loadingNanos / 1000000L + " unchangedAirLightChecks=" + unchangedAirLightChecks + " snapshotBytes=" + bytes.get(); }
 	static boolean hasValidationWork() { return !validations.isEmpty(); }
 	private static final Map<World, Observer> observers = new java.util.IdentityHashMap<World, Observer>();
 	private static final Map<Long, History> histories = new LinkedHashMap<Long, History>();
 	private static long retainedBytes;
+	private static long unchangedAirLightChecks;
 
 	static boolean canRemoveSection(World world, Chunk chunk, int section) {
 		// World overrides/snapshot capture and non-native storage retain their
@@ -91,16 +92,38 @@ public final class ExplosionTerrainAccess {
 			if(!changed.isEmpty()) chunk.setChunkModified();
 			for(int bit = changed.nextSetBit(0); bit >= 0; bit = changed.nextSetBit(bit + 1)) {
 				int y = (sy << 4) + (bit >> 8);
-				world.func_147451_t(x, y, z);
+				updateRemovedAirLight(world, x, y, z);
 				// Keep Forge's watcher accumulation and all world observers. Render
 				// range notifications alone do not send server block changes in 1.7.10.
 				world.markAndNotifyBlock(x, y, z, chunk, null, Blocks.air, 2);
 			}
 		}
 	}
+	/** Native air has zero emission and opacity clamped to one by Forge's
+	 * computeLightValue. Skip only a proven no-op light queue invocation; all
+	 * changed light, height/gap maintenance and watcher notifications still run. */
+	private static void updateRemovedAirLight(World world, int x, int y, int z) {
+		if(Blocks.air.getLightValue(world, x, y, z) != 0 || Blocks.air.getLightOpacity(world, x, y, z) != 0) {
+			world.func_147451_t(x, y, z); return;
+		}
+		int block = 0, sky = 0;
+		for(net.minecraftforge.common.util.ForgeDirection side : net.minecraftforge.common.util.ForgeDirection.VALID_DIRECTIONS) {
+			int xx = x + side.offsetX, yy = y + side.offsetY, zz = z + side.offsetZ;
+			if(yy < 0 || yy > 255 || loaded(world, xx >> 4, zz >> 4) == null) { world.func_147451_t(x, y, z); return; }
+			block = Math.max(block, world.getSavedLightValue(net.minecraft.world.EnumSkyBlock.Block, xx, yy, zz) - 1);
+			if(!world.provider.hasNoSky) sky = Math.max(sky, world.getSavedLightValue(net.minecraft.world.EnumSkyBlock.Sky, xx, yy, zz) - 1);
+		}
+		if(!world.provider.hasNoSky) {
+			if(world.canBlockSeeTheSky(x, y, z)) sky = 15;
+			if(world.getSavedLightValue(net.minecraft.world.EnumSkyBlock.Sky, x, y, z) != sky) world.updateLightByType(net.minecraft.world.EnumSkyBlock.Sky, x, y, z);
+			else unchangedAirLightChecks++;
+		}
+		if(world.getSavedLightValue(net.minecraft.world.EnumSkyBlock.Block, x, y, z) != block) world.updateLightByType(net.minecraft.world.EnumSkyBlock.Block, x, y, z);
+		else unchangedAirLightChecks++;
+	}
 
 	/** Sparse originals belong to a calculation view, not the evictable cache.
-	 * Only certified callback-free removals may enter this journal. Each packed
+	 * Only audited removals with no unjournaled resistance changes enter this journal. Each packed
 	 * value preserves the exact float, three classification flags and source ID. */
 	public static final class History {
 		final long id = sequence.incrementAndGet();

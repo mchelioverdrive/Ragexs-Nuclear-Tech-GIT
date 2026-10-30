@@ -156,3 +156,10 @@
 2026-10-30 17:19 — Preserve excavation queue ownership across deadline yields
 
 - Rotate chunk links within their distance bucket without dequeuing and conditionally re-enqueuing. A slice that consumes or defers its last ready cell can otherwise lose queue membership on its next pass, causing a second dequeue to crash or unlink another chunk. Make removal of an already-dequeued chunk harmless while preserving deferred work, late mask insertion, fairness and queue counters.
+
+2026-10-30 18:20 — Balance nuclear destruction and suppress attributable block drops
+
+- Interleave new ray directions across latitude thirds and apply sections around burst height while excavation continues. Keep legacy saved direction checkpoints, ray count, resistance, yields and configured ranges; Fibonacci longitudes change individual new crater boundaries.
+- Admit audited RNT ores, plants, waste/scorched terrain and native stair delegates by removal semantics rather than mining drops; re-audit saved deferrals under the application budget. Feed bounded, shielded pressure-front selections into the existing destruction masks and original-terrain journal, sharing completion and saved cursors without a second crater processor.
+- Remove fragile attachments before support, suppress nuclear callbacks safely, clear destroyed inventories, and persist bounded exact delayed leaf/plant/gravity attribution. Extend suppression to existing fallout transformations and capped collapse callbacks without affecting player items or global drop rules.
+- Retain section batching and client notifications, avoid proven no-op native air-light queue calls, and extend rate-limited diagnostics with directional progress, pressure work, deferral reasons, suppression, memory waits and surface maintenance.

@@ -123,6 +123,7 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 			// The shared time budget and bounded worker batches govern this path.
 			// The legacy inverse-strength ray allowance made completion time grow
 			// cubically even when workers could finish the calculation immediately.
+			coordinatePressureBlocks();
 			explosion.advance(deadline, tick);
 			if(!explosion.hasPendingWork() && ExplosionWorkScheduler.before(deadline)) {
 				if(confirmPostExcavationBreach(deadline)) {
@@ -165,6 +166,7 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 			applyThermalGroundIgnition();
 			if(!promptApplied && (spec.burstType != BurstType.SUBSURFACE || spec.actualSurfaceBreach)) { applyPromptRadiation(); promptApplied = true; }
 			advanceShockFront();
+			coordinatePressureBlocks();
 			if(ignitionJob != null && !groundIgnitionComplete) ExplosionWorkScheduler.register(ignitionWork);
 		}
 		if(worldObj.isRemote) return;
@@ -203,6 +205,15 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 		return true;
 	}
 
+
+	/** Enroll a newly released subsurface front even if crater work already ended. */
+	private void coordinatePressureBlocks() {
+		if(explosion == null || spec.contained) return;
+		double sourceX = spec.vented ? spec.breachX + .5D : posX;
+		double sourceY = spec.vented ? spec.breachY + .5D : (spec.burstType == BurstType.SURFACE && burstContext != null ? burstContext.surfaceY + .5D : posY);
+		double sourceZ = spec.vented ? spec.breachZ + .5D : posZ;
+		explosion.reachPressureFront(sourceX, sourceY, sourceZ, currentShockRadius, effects.lightBlastRadius, effects.moderateBlastRadius, spec.vented ? spec.surfaceBreakthroughFactor : 1D);
+	}
 
 	private void advanceShockFront() {
 		if(spec.contained) { if(currentShockRadius == 0D) ExplosionNukeGeneric.dealGroundShock(worldObj, posX, posY, posZ, effects.groundShockRadius, spec.burialDepth); currentShockRadius = effects.lightBlastRadius; return; }
