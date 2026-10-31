@@ -164,6 +164,19 @@ public final class NuclearBurstResolver {
    }
   }
  }
- private static double calculateBreakthrough(World w,int x,int y,int z,int sy,double base){double reach=Math.max(1D,base*.55D),cost=0D;for(int yy=y+1;yy<sy;yy++){Block b=w.getBlock(x,yy,z);if(b==Blocks.air)continue;if(b.getMaterial().isLiquid())cost+=.25D;else cost+=1D+Math.min(8D,Math.max(0D,b.getExplosionResistance(null))/12D);}return clamp((reach-cost)/Math.max(1D,reach*.65D));}
+ /** Vertical aggregate overburden is bounded by Minecraft's 256-block height.
+  * Ordinary geology uses unit cover; only structural barriers need resistance. */
+ private static double calculateBreakthrough(World w,int x,int y,int z,int sy,double base) {
+  double reach=Math.max(1D,base*.55D),cost=0D;
+  for(int yy=Math.max(0,y+1);yy<Math.min(256,sy);yy++) {
+   Block b=w.getBlock(x,yy,z);
+   if(b==Blocks.air)continue;
+   float cover=ExplosionTerrainAccess.groundShieldingCost(w,b,x,yy,z,x,y,z);
+   if(Float.isInfinite(cover))return 0D;
+   cost+=b.getMaterial().isLiquid()?.25D:1D+Math.min(8D,Math.max(0D,cover-1D)/12D);
+   if(cost>=reach)return 0D;
+  }
+  return clamp((reach-cost)/Math.max(1D,reach*.65D));
+ }
  private static double clamp(double v){return Math.max(0D,Math.min(1D,v));}
 }

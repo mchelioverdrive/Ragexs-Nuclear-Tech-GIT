@@ -13,23 +13,64 @@ final class NuclearBlockBehavior {
 
 	private static final Map<Class<?>, Boolean> nativeBaseRemoval = new HashMap<Class<?>, Boolean>();
 	private static final Map<Block, Boolean> stairRemoval = new java.util.IdentityHashMap<Block, Boolean>();
-	private static final Map<Class<?>, Boolean> neighborNoop = new HashMap<Class<?>, Boolean>();
-	private static final String NEIGHBOR_METHOD = cpw.mods.fml.relauncher.ReflectionHelper.findMethod(Block.class, null,
-			new String[] { "onNeighborBlockChange", "func_149695_a" }, World.class, int.class, int.class, int.class, Block.class).getName();
 	private static final String BREAK_METHOD = cpw.mods.fml.relauncher.ReflectionHelper.findMethod(Block.class, null,
 			new String[] { "breakBlock", "func_149749_a" }, World.class, int.class, int.class, int.class, Block.class, int.class).getName();
 	private NuclearBlockBehavior() { }
-	static boolean passiveNeighbor(Block block) {
-		Class<?> type = block.getClass();
-		Boolean passive = neighborNoop.get(type);
-		if(passive == null) {
-			try { passive = type.getMethod(NEIGHBOR_METHOD, World.class, int.class, int.class, int.class, Block.class).getDeclaringClass() == Block.class; }
-			catch(ReflectiveOperationException failure) { passive = false; }
-			neighborNoop.put(type, passive);
-		}
-		return passive;
+	/** Roles are properties of block definitions, not cached resistance values. */
+	static boolean ordinaryTerrain(Block b) {
+		if(b == null) return false;
+		return b == ModBlocks.stone_gneiss || b == ModBlocks.scorched_stone || b == ModBlocks.ore_gneiss_iron || b == ModBlocks.ore_gneiss_gold
+				|| b == ModBlocks.ore_gneiss_copper || b == ModBlocks.ore_gneiss_lithium || b == ModBlocks.ore_gneiss_schrabidium
+				|| b == ModBlocks.ore_gneiss_rare || b == ModBlocks.ore_gneiss_gas || b == ModBlocks.ore_coal_oil || b == ModBlocks.ore_coal_oil_burning
+				|| b == Blocks.stone || b == Blocks.dirt || b == Blocks.grass || b == Blocks.sand || b == Blocks.gravel
+				|| b == Blocks.sandstone || b == Blocks.clay || b == Blocks.hardened_clay || b == Blocks.stained_hardened_clay
+				|| b == Blocks.netherrack || b == Blocks.end_stone || b == Blocks.mycelium || b == Blocks.soul_sand || b == ModBlocks.stone_porous
+				|| b instanceof net.minecraft.block.BlockOre || b instanceof net.minecraft.block.BlockRedstoneOre
+				|| b instanceof com.hbm.blocks.generic.BlockOre || b instanceof com.hbm.blocks.generic.BlockOreOutgas
+				|| b.getClass() == com.hbm.blocks.generic.BlockOutgas.class && b != ModBlocks.ancient_scrap
+				|| b instanceof com.hbm.blocks.generic.BlockDirt || b instanceof com.hbm.blocks.generic.WasteEarth;
 	}
-
+	static boolean constructionBarrier(Block b) {
+		// Actual RNT concrete/ducrete families include metadata slabs and stair delegates.
+		String name = (String)Block.blockRegistry.getNameForObject(b);
+		return b instanceof com.hbm.blocks.IRadResistantBlock || name != null && (name.contains("concrete")
+				|| name.contains("ducrete") || name.contains("reinforced") || name.contains("blast_door")
+				|| name.contains("vault_door") || name.contains("airlock") || name.contains("seal_door")
+				|| name.contains("brick_slab") || name.contains("brick_double_slab"));
+	}
+	static boolean weak(Block b) {
+		Material m = b.getMaterial();
+		return m == Material.wood || m == Material.glass || m == Material.leaves || m == Material.plants
+				|| m == Material.vine || m == Material.cloth || m == Material.circuits || m == Material.gourd
+				|| m == Material.snow || m == Material.craftedSnow || b == Blocks.farmland;
+	}
+	/** Ordinary stone and ores contribute aggregate overburden only. Never call their
+	 * explosion resistance to classify or excavate them. Unknown/structural blocks
+	 * retain Forge's position/metadata/explosion-context callback on the server thread. */
+	static float cost(World world, Block b, int x, int y, int z, double sx, double sy, double sz) {
+		if(b == Blocks.air || b.isAir(world, x, y, z)) return 0F;
+		if(b == Blocks.bedrock || b.getBlockHardness(world, x, y, z) < 0F) return Float.POSITIVE_INFINITY;
+		if(b.getMaterial().isLiquid()) return 2F;
+		if(ordinaryTerrain(b)) return 1F;
+		if(b == Blocks.obsidian) return 19F; // Retain the former stone-times-three nuclear override.
+		if(!constructionBarrier(b) && weak(b)) return b.getMaterial() == Material.wood ? 5F : 1F;
+		float r = b.getExplosionResistance(null, world, x, y, z, sx, sy, sz);
+		// Existing protected-block threshold remains authoritative for unknown blocks.
+		// RNT construction barriers are destructible by core energy; ultra-resistant
+		// materials (e.g. reinforced CMB brick) remain protected even in the core.
+		if(!Float.isFinite(r) || r < 0F || r >= (constructionBarrier(b) ? 2000F : ExplosionNukeGeneric.LIQUID_RESISTANCE_THRESHOLD)) return Float.POSITIVE_INFINITY;
+		return Math.max(1F, r + 1F);
+	}
+	static float summaryCost(World world, Block b, int x, int y, int z) {
+		if(b == Blocks.air || b.isAir(world, x, y, z)) return 0F;
+		if(b == Blocks.bedrock || b.getBlockHardness(world, x, y, z) < 0F) return Float.POSITIVE_INFINITY;
+		if(b.getMaterial().isLiquid()) return 2F;
+		if(ordinaryTerrain(b)) return 1F;
+		if(!constructionBarrier(b) && weak(b)) return b.getMaterial() == Material.wood ? 5F : 1F;
+		// A marker locates structural barriers without capturing their potentially
+		// metadata/TE/context-dependent resistance in a reusable section summary.
+		return -1F;
+	}
 	static boolean progressive(Block block) {
 		Class<?> type = block.getClass();
 		if(type == net.minecraft.block.BlockStairs.class) {
@@ -67,6 +108,7 @@ final class NuclearBlockBehavior {
 	}
 
 	static boolean pressureTarget(Block block) {
+		if(constructionBarrier(block)) return true;
 		Material m = block.getMaterial();
 		return m == Material.wood || m == Material.glass || m == Material.leaves || m == Material.plants
 				|| m == Material.vine || m == Material.cloth || m == Material.circuits || m == Material.gourd

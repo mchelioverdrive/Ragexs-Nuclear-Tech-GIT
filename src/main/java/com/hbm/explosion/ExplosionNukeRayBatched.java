@@ -1,14 +1,15 @@
 package com.hbm.explosion;
 
-import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.TreeMap;
 
-import com.hbm.config.BombConfig;
 import com.hbm.config.GeneralConfig;
 import com.hbm.main.MainRegistry;
 import com.hbm.explosion.ExplosionTerrainAccess.Access;
 import com.hbm.explosion.ExplosionTerrainAccess.Snapshot;
+import com.hbm.explosion.nuclear.BurstType;
+import com.hbm.explosion.nuclear.NuclearDetonationSpec;
+import com.hbm.explosion.nuclear.NuclearEffectsProfile;
 
 import net.minecraft.block.Block;
 import net.minecraft.init.Blocks;
@@ -19,135 +20,66 @@ import net.minecraft.util.MathHelper;
 import net.minecraft.world.ChunkCoordIntPair;
 import net.minecraft.world.World;
 
+/** Geometric nuclear excavation. The historical public name is kept for integrations. */
 public class ExplosionNukeRayBatched {
-	private static final int WORK_VERSION = 3;
-	// Optional range checkpoints extend the stage 3 mask payload. Old scalar
-	// ray checkpoints enter the same allocator without rebuilding committed masks.
-	// x occupies the low signed int, z the high signed int, as in chunkXZ2Int.
+	private static final int WORK_VERSION = 4;
+	private static final int MAX_PENDING_BLOCKS = 32768, MAX_MASK_CHUNKS = 128;
 	private LongHashMap chunks = new LongHashMap();
-	private ChunkMask firstChunk, lastChunk;
-	private ChunkMask cleanupCursor;
-	private int cleanupSection, cleanupBit;
+	private ChunkMask firstChunk, lastChunk, cleanupCursor;
+
 	private final TreeMap<Integer, DistanceBucket> ordering = new TreeMap<Integer, DistanceBucket>();
 	int posX, posY, posZ;
 	World world;
 	int strength, length;
-	private int rayLength;
-	private boolean contained;
-	private int directionOrder = ExplosionRayWorker.DIRECTION_ORDER;
-	private PressureWork pressure;
-	private long memoryWaits, surfaceCallbackNanos;
-	private long surfaceSelected, surfaceRemoved, firstSurfaceRemovalAt;
-	private final long[] removedBands = new long[3], completedDirections = new long[96];
-	private final java.util.LinkedHashMap<String, Long> deferralNames = new java.util.LinkedHashMap<String, Long>();
-	private final java.util.ArrayList<String> skippedSamples = new java.util.ArrayList<String>();
-	private int surfaceY;
-	int gspNumMax, gspNum;
-	double gspX, gspY;
-	public boolean isAusf3Complete;
-
-	private boolean rayActive, rayFinishing, rayRecorded, hasTip;
-	private double rayX, rayY, rayZ;
-	private int rayStep;
-	private float rayStrength, tipX, tipY, tipZ;
-	// Only the unfinished ray retains qualifying chunks; completed rays retain no endpoints.
-	private LongHashMap rayChunks = new LongHashMap();
-	private ArrayList<Long> rayChunkKeys = new ArrayList<Long>();
-	private long collectionTick = Long.MIN_VALUE;
-	private int raysThisTick;
-	private final Access terrain;
-	private final Access removalTerrain;
+	private final Access terrain, removalTerrain;
 	private final ExplosionTerrainAccess.History originals;
+	private CraterWork crater;
+	private PressureWork pressure;
+	// Compatibility field: it now reports geometric enumeration completion.
+	public boolean isAusf3Complete;
 	private long pendingBlocks, pendingEffects;
-	private int queuedChunks, nextDistance;
+	private int queuedChunks, maskChunks, nextDistance;
 	private long excavationTick = Long.MIN_VALUE;
 	private int excavationAttempts;
 	private boolean excavationFirst;
 	private String excavationWait = "no committed masks";
-	private ExplosionRayWorker.Lifecycle lifecycle;
-	private static final java.util.Set<ExplosionNukeRayBatched> workers = new java.util.HashSet<ExplosionNukeRayBatched>();
-	private final ArrayList<RayRange> ranges = new ArrayList<RayRange>();
-	// Server-only coordinates, not retained snapshot references. Successor ranges
-	// reuse the explosion's working set without pinning buffers outside the cap.
-	private final ArrayList<int[]> corridor = new ArrayList<int[]>();
-	private RayRange allocating;
-	private int rangeCursor;
-	private long completedRays, submittedBatches, acceptedBatches, snapshotRejections, workerFailures, repeatedOperations, workerNanos, sectionMisses, fallbackActivations;
-	private long traversalOperations, reconstructionOperations, reusedSamples, skippedReconstruction, attenuationHits, workerCpuNanos, sharedSnapshotHits;
-	private long startedAt = System.nanoTime(), collectionFinishedAt, firstRemovalAt, collectionServerNanos, removalServerNanos;
-	private long collectionStartedAt = startedAt;
-	private String waitReason = "ready";
-	private static final int INVALIDATION_RETRIES = 3;
-
-	/** Each disjoint range owns its checkpoint; workers receive a private copy.
-	 * The main cursor reserves the saved direction sequence independently of workers. */
-	private final class RayRange {
-		ExplosionRayWorker.State state;
-		final int end;
-		final Access access = new Access(world, originals);
-		ArrayList<Long> qualified = new ArrayList<Long>();
-		ExplosionRayWorker.Batch batch;
-		ExplosionRayWorker.Scratch scratch = new ExplosionRayWorker.Scratch();
-		final ArrayList<int[]> workingSet = new ArrayList<int[]>(corridor);
-		boolean sealed, fallback, pending;
-		int x, y, z, rejections, fallbackEnd;
-		RayRange(ExplosionRayWorker.State state, int end) { this.state = state; this.end = end; fallbackEnd = end; }
-	}
-
-	private boolean buildActive, buildRestricted, buildInChunk;
-	private long buildChunk;
-	private int buildStep, buildTipX, buildTipY, buildTipZ;
-	private double buildLength, buildX, buildY, buildZ;
-
 	private boolean removalActive;
 	private long removalKey;
 	private int removalSection, removalBit;
-	private long selectedBlocks, destroyedBlocks, rejectedBatches, lastDiagnosticTick = Long.MIN_VALUE;
-	private boolean savedDiagnostics;
-	private boolean removalFailureReported;
-	private long deferredBlocks, deferredEffects, fastRemovals, normalRemovals, sectionsAdvanced, chunksAdvanced, preservationNanos;
-	private long diagnosticRemoved;
+	private long selectedBlocks, destroyedBlocks, lastDiagnosticTick = Long.MIN_VALUE;
+	private boolean removalFailureReported, savedDiagnostics;
+	private boolean materialReleased;
+	private long fastRemovals, normalRemovals, sectionsAdvanced, chunksAdvanced, preservationNanos;
+	private long memoryWaits, surfaceCallbackNanos, surfaceSelected, surfaceRemoved, firstSurfaceRemovalAt;
+	private long startedAt = System.nanoTime(), firstRemovalAt, removalServerNanos;
+	private final long[] removedBands = new long[3];
 	private final int[] columnBits = new int[16];
+	private final Block[] columnSources = new Block[16];
+	private final int[] columnMetadata = new int[16];
 	private final BitSet columnChanged = new BitSet(4096);
-	public void includeInitializationDelay(long nanos) { startedAt -= Math.max(0L, nanos); }
-
-	public void logStatus(String status) {
-		if(isAusf3Complete && selectedBlocks == 0) status += "; no solid samples passed reach/resistance checks";
-		if(!GeneralConfig.enableExtendedLogging) return;
-		long captures = terrain.snapshotCaptures, reuse = terrain.snapshotReuses;
-		for(RayRange range : ranges) { captures += range.access.snapshotCaptures; reuse += range.access.snapshotReuses; }
-		long now = System.nanoTime();
-		MainRegistry.logger.info("[NUKE TERRAIN] dim=" + world.provider.dimensionId + " at=" + posX + "," + posY + "," + posZ + " strength=" + strength + " reach=" + rayLength + " limit=" + length + " rays=" + gspNumMax + " status=" + status
-				+ " completedRays=" + completedRays + " remainingRays=" + Math.max(0, gspNumMax - completedRays) + " selected=" + selectedBlocks + " removed=" + destroyedBlocks
-				+ " pendingExcavation=" + pendingBlocks + " pendingTerminalEffects=" + pendingEffects + " deferredBlocks=" + deferredBlocks + " deferredTerminalEffects=" + deferredEffects + " retainedOriginalBytes=" + originals.bytes() + " collectionComplete=" + isAusf3Complete + " excavationWait=" + excavationWait
-				+ " readyExcavation=" + (pendingBlocks - deferredBlocks) + " removedLowerHorizontalUpper=" + java.util.Arrays.toString(removedBands) + " completedElevation8Azimuth12=" + java.util.Arrays.toString(completedDirections) + " directionOrder=" + directionOrder + " pressure=" + (pressure == null ? "none" : pressure.status()) + " suppressedDrops=" + NuclearDropSuppression.suppressed() + " originalMemoryWaits=" + memoryWaits + " surfaceMaintenanceMs=" + surfaceCallbackNanos / 1000000L + " deferredByName=" + deferralNames + " skippedSamples=" + skippedSamples
-				+ " fastPathRemoved=" + fastRemovals + " normalPathRemoved=" + normalRemovals + " intervalRemoved=" + (destroyedBlocks - diagnosticRemoved) + " sectionsAdvanced=" + sectionsAdvanced + " chunksAdvanced=" + chunksAdvanced + " preservationActiveMs=" + preservationNanos / 1000000L
-				+ " submitted=" + submittedBatches + " accepted=" + acceptedBatches + " rejected=" + rejectedBatches + " snapshotRejections=" + snapshotRejections + " workerFailures=" + workerFailures
-				+ " captures=" + captures + " reuse=" + reuse + " sectionMisses=" + sectionMisses + " repeatedOperations=" + repeatedOperations + " fallbacks=" + fallbackActivations + " wait=" + waitReason
-				+ " traversalOps=" + traversalOperations + " reconstructionOps=" + reconstructionOperations + " reusedTraversalSamples=" + reusedSamples + " skippedReconstructionSamples=" + skippedReconstruction + " attenuationCacheHits=" + attenuationHits
-				+ " sharedSnapshotHits=" + sharedSnapshotHits
-				+ " surfaceSelected=" + surfaceSelected + " surfaceRemoved=" + surfaceRemoved + " firstSurfaceRemovalMs=" + (firstSurfaceRemovalAt == 0 ? -1 : (firstSurfaceRemovalAt - startedAt) / 1000000L)
-				+ " callbackDependencies=[rays=" + !raysComplete() + ",pressure=" + (pressure != null && !pressure.complete) + ",unsafeBlocks=" + deferredBlocks + ",unsafeNotifications=" + deferredEffects + "]"
-				+ " elapsedMs=" + (now - startedAt) / 1000000L + " collectionElapsedMs=" + ((collectionFinishedAt == 0 ? now : collectionFinishedAt) - collectionStartedAt) / 1000000L
-				+ " firstRemovalMs=" + (firstRemovalAt == 0 ? -1 : (firstRemovalAt - startedAt) / 1000000L) + " applicationElapsedMs=" + (firstRemovalAt == 0 ? 0 : (now - firstRemovalAt) / 1000000L)
-				+ " collectionServerActiveElapsedMs=" + collectionServerNanos / 1000000L + " applicationServerActiveElapsedMs=" + removalServerNanos / 1000000L + " workerActiveElapsedMs=" + workerNanos / 1000000L + " workerCpuMs=" + (workerCpuNanos < 0 ? -1 : workerCpuNanos / 1000000L) + " " + ExplosionTerrainAccess.diagnostics() + " " + terrain.status());
-		diagnosticRemoved = destroyedBlocks;
-	}
-
-	// New saves decode a section at a time. Saving during decoding retains the original snapshot.
+	private final BitSet columnMaterial = new BitSet(4096);
+	private static final java.util.Set<ExplosionNukeRayBatched> active = new java.util.HashSet<ExplosionNukeRayBatched>();
 	private NBTTagCompound restoring;
 	private int restorePhase, restoreIndex, restoreSection;
-	// Endpoint NBT exists only at the old-save boundary, never as the live terrain engine.
-	private NBTTagCompound legacy;
-	private int legacyPhase, legacyIndex, legacyPoint;
-	private boolean legacyChunkStarted;
-
+	public void includeInitializationDelay(long nanos) { startedAt -= Math.max(0L, nanos); }
+	public void logStatus(String status) {
+		if(!GeneralConfig.enableExtendedLogging) return;
+		MainRegistry.logger.info("[NUKE TERRAIN] dim=" + world.provider.dimensionId + " at=" + posX + "," + posY + "," + posZ
+				+ " status=" + status + " craterComplete=" + isAusf3Complete + " selected=" + selectedBlocks + " removed=" + destroyedBlocks
+				+ " pending=" + pendingBlocks + " masks=" + maskChunks + " effects=" + pendingEffects
+				+ " pressure=" + (pressure == null ? "none" : pressure.status()) + " retainedOriginalBytes=" + originals.bytes()
+				+ " fastRemoved=" + fastRemovals + " normalRemoved=" + normalRemovals + " wait=" + excavationWait
+				+ " surfaceSelected=" + surfaceSelected + " surfaceRemoved=" + surfaceRemoved + " memoryWaits=" + memoryWaits
+				+ " preservationMs=" + preservationNanos / 1000000L + " callbackMs=" + surfaceCallbackNanos / 1000000L
+				+ " craterShieldSamples=" + crater.shield.traversal + " craterShieldReuse=" + crater.shield.reused
+				+ " elapsedMs=" + (System.nanoTime() - startedAt) / 1000000L + " " + ExplosionTerrainAccess.diagnostics());
+	}
 	private static class SectionMask {
 		// Coverage survives pending-bit clearing. Late results can add new work
 		// or upgrade a completed normal hit to one terminal notification.
 		final BitSet destruction = new BitSet();
 		final BitSet pending = new BitSet(), completed = new BitSet(), notified = new BitSet();
-		final BitSet deferred = new BitSet(), effects = new BitSet(), deferredEffects = new BitSet();
+		final BitSet effects = new BitSet();
 		final BitSet surface = new BitSet();
 		BitSet tips;
 	}
@@ -158,7 +90,7 @@ public class ExplosionNukeRayBatched {
 		ChunkMask previous, next, orderPrevious, orderNext;
 		boolean queued;
 		int cursorSection, cursorBit;
-		long pending, effects, deferred, deferredEffects, blockedTick = Long.MIN_VALUE;
+		long pending, effects, blockedTick = Long.MIN_VALUE;
 		ChunkMask(long key, int distance) { this.key = key; this.distance = distance; }
 	}
 	private static class DistanceBucket {
@@ -166,85 +98,63 @@ public class ExplosionNukeRayBatched {
 	}
 
 	public ExplosionNukeRayBatched(World world, int x, int y, int z, int strength, int speed, int length) {
-		this(world, x, y, z, strength, speed, length, false, 256);
+		this(world, x, y, z, strength, speed, length, false, y, strength);
 	}
 	public ExplosionNukeRayBatched(World world, int x, int y, int z, int strength, int speed, int length, boolean contained, int surfaceY) {
 		this(world, x, y, z, strength, speed, length, contained, surfaceY, strength);
 	}
 	public ExplosionNukeRayBatched(World world, int x, int y, int z, int strength, int speed, int length, boolean contained, int surfaceY, int reach) {
-		this.world = world; posX = x; posY = y; posZ = z;
-		originals = new ExplosionTerrainAccess.History(world);
-		terrain = new Access(world, originals);
-		removalTerrain = new Access(world);
-		this.strength = strength; this.length = length; this.contained = contained; this.surfaceY = surfaceY;
-		// Resistance energy and ray density still use strength. A weakly coupled
-		// surface burst must nevertheless traverse the air gap to its contact point.
-		rayLength = Math.max(strength, reach);
-		gspNumMax = (int)(2.5 * Math.PI * Math.pow(strength, 2));
-		gspNum = 1; gspX = ExplosionRayWorker.latitude(1, gspNumMax, directionOrder); gspY = ExplosionRayWorker.longitude(1, gspNumMax, directionOrder);
+		this.world = world; posX = x; posY = y; posZ = z; this.strength = strength; this.length = length;
+		originals = new ExplosionTerrainAccess.History(world, x, y, z);
+		terrain = new Access(world, originals); removalTerrain = new Access(world);
+		double radius = Math.max(0D, strength * .5D);
+		crater = new CraterWork(radius, radius * .30D, radius * .15D, contained ? y : surfaceY);
+		isAusf3Complete = crater.complete;
+		active.add(this);
 	}
-
-	private void generateGspUp() {
-		if(directionOrder != 0 && gspNum < gspNumMax) {
-			gspX = ExplosionRayWorker.latitude(gspNum + 1, gspNumMax, directionOrder); gspY = ExplosionRayWorker.longitude(gspNum + 1, gspNumMax, directionOrder);
-		} else if(gspNum < gspNumMax) {
-			int k = gspNum + 1;
-			double hk = -1.0 + 2.0 * (k - 1.0) / (gspNumMax - 1.0);
-			gspX = Math.acos(hk);
-			// Longitude is undefined at the pole. Dividing by zero here produces
-			// NaN directions (even NaN * step zero) and reads chunk 0,0.
-			gspY = hk >= 1D ? 0D : (gspY + 3.6 / Math.sqrt(gspNumMax) / Math.sqrt(1.0 - hk * hk)) % (Math.PI * 2);
-		} else { gspX = 0.0; gspY = 0.0; }
-		gspNum++;
+	/** Authoritative yield/coupling dimensions come from the effects solver, never the fireball. */
+	public void configureCrater(NuclearDetonationSpec spec, NuclearEffectsProfile effects, double surfaceY) {
+		boolean buried = spec.burstType == BurstType.SUBSURFACE;
+		double radius = buried ? effects.cavityRadius : effects.craterRadius;
+		if(spec.burstType == BurstType.AIR || spec.burstType == BurstType.VACUUM) radius = 0D;
+		crater = new CraterWork(radius, buried ? effects.cavityRadius : effects.craterDepth,
+				buried ? effects.cavityRadius : effects.craterDepth * .5D, buried ? posY + .5D : surfaceY);
+		isAusf3Complete = crater.complete;
 	}
-
-	public boolean hasPendingWork() { return pressure != null && !pressure.complete || restoring != null || legacy != null || !isAusf3Complete || !ranges.isEmpty() || rayActive || buildActive || pendingBlocks != 0 || pendingEffects != 0 || firstChunk != null || originals.bytes() != 0; }
-	/** Bounded opportunities, then donate unused time to the remaining ready stage. */
+	public boolean hasPendingWork() { return restoring != null || !crater.complete || pressure != null && !pressure.complete || firstChunk != null || originals.bytes() != 0; }
+	public boolean craterFinished() { return restoring == null && crater.complete && pendingBlocks == 0 && pendingEffects == 0; }
+	public boolean hasMaterialRelease() { return materialReleased; }
+	private boolean selectionCapacity() { return pendingBlocks + pendingEffects < MAX_PENDING_BLOCKS && maskChunks < MAX_MASK_CHUNKS; }
+	private boolean craterCapacity() {
+		// Reserve admission space for the pressure cursor. Excavation waiting on
+		// retained-history memory must not prevent pressure from advancing and
+		// releasing that history behind its local shielding window.
+		return pendingBlocks + pendingEffects < MAX_PENDING_BLOCKS / 2 && maskChunks < MAX_MASK_CHUNKS / 2;
+	}
+	public boolean canWork(long tick, int count) {
+		if(lastDiagnosticTick == Long.MIN_VALUE || tick - lastDiagnosticTick >= 200) { logStatus("geometric excavation"); lastDiagnosticTick = tick; }
+		return restoring != null || cleanupCursor != null || excavationReady(tick) || selectorsComplete() && originals.releasePending()
+				|| craterCapacity() && !crater.complete && terrain.ready(tick) || selectionCapacity() && pressure != null && pressure.ready(tick);
+	}
+	/** Each resumable phase receives a bounded opportunity within the shared scheduler slice. */
 	public void advance(long deadline, long tick) {
-		if(!restore(deadline) || !migrate(deadline)) return;
-		if(pressure != null && !pressure.complete) pressure.advance(Math.min(deadline, System.nanoTime() + 250_000L));
-		boolean collect = collectionReady(tick, Integer.MAX_VALUE), excavate = excavationReady(tick) || cleanupCursor != null || selectorsComplete() && firstChunk == null && originals.bytes() != 0;
-		boolean firstExcavate = excavate && (excavationFirst || !collect);
-		long turn = collect && excavate ? Math.min(deadline, System.nanoTime() + 250_000L) : deadline;
-		if(firstExcavate) processChunk(turn); else if(collect) collectTip(Integer.MAX_VALUE, turn, tick);
-		if(ExplosionWorkScheduler.before(deadline)) {
-			if(firstExcavate && collectionReady(tick, Integer.MAX_VALUE)) collectTip(Integer.MAX_VALUE, Math.min(deadline, System.nanoTime() + 250_000L), tick);
-			else if(!firstExcavate && (excavationReady(tick) || cleanupCursor != null)) processChunk(Math.min(deadline, System.nanoTime() + 250_000L));
-		}
-		// Never spin waiting for worker results. Each stage is tried at most twice
-		// per dispatch; global round-robin ownership and deadline remain unchanged.
-		if(ExplosionWorkScheduler.before(deadline) && (excavationReady(tick) || cleanupCursor != null)) processChunk(deadline);
-		if(ExplosionWorkScheduler.before(deadline) && collectionReady(tick, Integer.MAX_VALUE)) collectTip(Integer.MAX_VALUE, deadline, tick);
-		// Donate a worker/chunk wait to pressure instead of leaving most of the
-		// shared slice unused. The outer scheduler still rotates other explosions.
-		if(ExplosionWorkScheduler.before(deadline) && pressure != null && pressure.ready(tick)) pressure.advance(deadline);
+		if(!restore(deadline)) return;
+		if(excavationFirst) processChunk(Math.min(deadline, System.nanoTime() + 250_000L));
+		if(!crater.complete && craterCapacity() && terrain.ready(tick)) crater.advance(Math.min(deadline, System.nanoTime() + 250_000L));
+		if(pressure != null && pressure.ready(tick) && selectionCapacity()) pressure.advance(Math.min(deadline, System.nanoTime() + 250_000L));
+		if(ExplosionWorkScheduler.before(deadline)) processChunk(deadline);
 		if(selectorsComplete() && ExplosionWorkScheduler.before(deadline)) originals.releaseUnowned(chunks, deadline);
+		else if(ExplosionWorkScheduler.before(deadline)) originals.releaseUnowned(chunks, (cx, cz) -> needsOriginals(cx, cz), deadline);
 		if(selectorsComplete() && firstChunk == null) originals.clear();
 		excavationFirst = !excavationFirst;
 	}
-	private int reservedRays() {
-		int reserved = 0;
-		for(RayRange range : ranges) if(range.batch != null) reserved += range.batch.state.rayLimit;
-		return reserved;
-	}
-	public boolean canWork(long tick, int count) {
-		if(lastDiagnosticTick == Long.MIN_VALUE || tick - lastDiagnosticTick >= 200) { logStatus("progressive collection/excavation"); lastDiagnosticTick = tick; }
-		if(restoring != null || legacy != null || pressure != null && pressure.ready(tick)) return true;
-		if(cleanupCursor != null || selectorsComplete() && originals.releasePending() || excavationReady(tick)) return true;
-		return collectionReady(tick, count);
-	}
 	private boolean excavationReady(long tick) { return queuedChunks > 0 && (removalActive || excavationTick != tick || excavationAttempts < queuedChunks); }
-	private boolean collectionReady(long tick, int count) {
-		if(isAusf3Complete) return false;
-		if(collectionTick == tick && raysThisTick >= count) { waitReason = "ray allowance"; return false; }
-		if(ranges.isEmpty() && (BombConfig.explosionWorkerThreads == 0 || gspNum > gspNumMax)) return terrain.ready(tick);
-		int slots = Math.max(1, Math.min(ExplosionRayWorker.MAX_JOB_BATCHES, BombConfig.explosionWorkerThreads));
-		if(allocating != null || gspNum <= gspNumMax && ranges.size() < slots) return true;
-		for(RayRange range : ranges) {
-			if(range.batch != null) { if(range.batch.result != null || range.batch.failure != null) return true; }
-			else if(range.state.gspNum >= range.end || range.access.ready(tick) && count - (collectionTick == tick ? raysThisTick : 0) > reservedRays()) return true;
-		}
-		waitReason = "workers or terrain"; return false;
+	private boolean needsOriginals(int x, int z) {
+		// Both selectors stream outward. Six completed chunk rings exceed the
+		// 64-block local shielding window plus cell/chunk boundary rounding.
+		int ring = Math.max(Math.abs(x - (posX >> 4)), Math.abs(z - (posZ >> 4)));
+		if(!crater.complete && ring + 6 >= (int)Math.ceil((Math.sqrt(crater.chunkIndex + 1D) - 1D) / 2D)) return true;
+		return pressure != null && pressure.needsOriginals(x, z);
 	}
 	private int distance(long key) {
 		return Math.abs((posX >> 4) - (int)key) + Math.abs((posZ >> 4) - (int)(key >> 32));
@@ -255,14 +165,14 @@ public class ExplosionNukeRayBatched {
 	private ChunkMask chunkMask(long key) {
 		ChunkMask chunk = (ChunkMask)chunks.getValueByKey(key);
 		if(chunk != null) return chunk;
-		chunk = new ChunkMask(key, distance(key)); chunks.add(key, chunk);
+		chunk = new ChunkMask(key, distance(key)); chunks.add(key, chunk); maskChunks++;
 		chunk.previous = lastChunk;
 		if(lastChunk == null) firstChunk = chunk; else lastChunk.next = chunk;
 		lastChunk = chunk;
 		return chunk;
 	}
 	private void enqueue(ChunkMask chunk) {
-		if(chunk.queued || chunk.pending - chunk.deferred + chunk.effects - chunk.deferredEffects == 0) return;
+		if(chunk.queued || chunk.pending + chunk.effects == 0) return;
 		chunk.queued = true; queuedChunks++;
 		if(excavationTick == ExplosionWorkScheduler.currentTick() && chunk.blockedTick == excavationTick) excavationAttempts++;
 		DistanceBucket bucket = ordering.get(chunk.distance);
@@ -272,7 +182,7 @@ public class ExplosionNukeRayBatched {
 		bucket.last = chunk;
 	}
 	private void removeChunk(ChunkMask chunk) {
-		chunks.remove(chunk.key);
+		chunks.remove(chunk.key); maskChunks--;
 		if(chunk.previous == null) firstChunk = chunk.next; else chunk.previous.next = chunk.next;
 		if(chunk.next == null) lastChunk = chunk.previous; else chunk.next.previous = chunk.previous;
 		if(chunk.queued) dequeue(chunk);
@@ -301,7 +211,7 @@ public class ExplosionNukeRayBatched {
 		chunk.blockedTick = Long.MIN_VALUE;
 		chunk.cursorSection = chunk.cursorBit = 0;
 		enqueue(chunk);
-		// Late worker hits may precede the active cursor, including in an earlier
+		// Another effect can select a cell before the active cursor, including in an earlier
 		// section. Revisit only pending work; completed bits still prevent repeats.
 		if(removalActive && removalKey == chunk.key) { removalSection = removalBit = 0; }
 	}
@@ -310,46 +220,15 @@ public class ExplosionNukeRayBatched {
 		chunk.blockedTick = tick; removalActive = false;
 	}
 	private void addEffect(ChunkMask chunk, SectionMask section, int bit) {
-		if(section.effects.get(bit) || section.deferredEffects.get(bit) || section.notified.get(bit)) return;
+		if(section.effects.get(bit) || section.notified.get(bit)) return;
 		chunk.effects++; pendingEffects++;
-		int x = ((int)chunk.key << 4) + (bit & 15), z = ((int)(chunk.key >> 32) << 4) + (bit >> 4 & 15);
-		int sy = 0; while(sy < 16 && chunk.sections[sy] != section) sy++;
-		if(callbacksReady(x, (sy << 4) + (bit >> 8), z)) section.effects.set(bit);
-		else { section.deferredEffects.set(bit); chunk.deferredEffects++; deferredEffects++; }
+		section.effects.set(bit);
 	}
-	private void deferBlock(ChunkMask chunk, SectionMask section, int bit) {
-		section.pending.clear(bit); section.deferred.set(bit); chunk.deferred++; deferredBlocks++;
-		if(!GeneralConfig.enableExtendedLogging) return;
-		int x = ((int)chunk.key << 4) + (bit & 15), y = (sectionAt(removalSection) << 4) + (bit >> 8), z = ((int)(chunk.key >> 32) << 4) + (bit >> 4 & 15);
-		Block b = world.getBlock(x, y, z);
-		String reason = Block.blockRegistry.getNameForObject(b) + (b.hasTileEntity(world.getBlockMetadata(x, y, z)) ? ": tile callback" : ": unaudited removal callback");
-		if(deferralNames.containsKey(reason) || deferralNames.size() < 32) deferralNames.put(reason, deferralNames.containsKey(reason) ? deferralNames.get(reason) + 1 : 1L);
-		if(skippedSamples.size() < 8) skippedSamples.add(x + "," + y + "," + z + " " + reason);
-	}
-	private void addRayChunk(long key) {
-		if(!rayChunks.containsItem(key)) { rayChunks.add(key, Boolean.TRUE); rayChunkKeys.add(key); }
-	}
-	private boolean selectorsComplete() { return isAusf3Complete && (pressure == null || pressure.complete); }
-	private boolean raysComplete() { return isAusf3Complete && ranges.isEmpty() && !rayActive && !buildActive && restoring == null && legacy == null; }
-	private void beginCleanup() { cleanupCursor = firstChunk; cleanupSection = cleanupBit = 0; }
+	private boolean selectorsComplete() { return restoring == null && crater.complete && (pressure == null || pressure.complete); }
+	private void beginCleanup() { cleanupCursor = firstChunk; }
 	private void releaseOriginals(ChunkMask chunk) {
-		// Coverage belongs to rays/removals. Original resistance has a separate
-		// owner: future pressure paths can cross already excavated inner chunks.
-		if(raysComplete() && (pressure == null || !pressure.needsOriginals((int)chunk.key, (int)(chunk.key >> 32)))) originals.releaseChunk((int)chunk.key, (int)(chunk.key >> 32));
-	}
-	private boolean callbacksReady(int x, int y, int z) {
-		if(selectorsComplete()) return true;
-		if(!raysComplete() || getClass() != ExplosionNukeRayBatched.class) return false;
-		// Native flag-3 notification only touches these six neighbors. A proven
-		// base no-op cannot corrupt distant unfinished pressure checks. Unknown
-		// neighbor/TE callbacks retain the full selector dependency.
-		for(net.minecraftforge.common.util.ForgeDirection d : net.minecraftforge.common.util.ForgeDirection.VALID_DIRECTIONS) {
-			int yy = y + d.offsetY;
-			if(yy < 0 || yy >= 256) continue;
-			net.minecraft.world.chunk.Chunk neighbor = ExplosionTerrainAccess.loaded(world, (x + d.offsetX) >> 4, (z + d.offsetZ) >> 4);
-			if(neighbor == null || !NuclearBlockBehavior.passiveNeighbor(neighbor.getBlock((x + d.offsetX) & 15, yy, (z + d.offsetZ) & 15))) return false;
-		}
-		return true;
+		// Geometry-edge shielding and pressure can still need excavated overburden.
+		if(selectorsComplete()) originals.releaseChunk((int)chunk.key, (int)(chunk.key >> 32));
 	}
 	private int band(int y) { return y < posY - 16 ? 0 : y > posY + 16 ? 2 : 1; }
 	private int sectionAt(int ordinal) {
@@ -377,9 +256,9 @@ public class ExplosionNukeRayBatched {
 			if(yy < 0 || yy > 255 || !NuclearBlockBehavior.attachedTo(world, xx, yy, zz, x, y, z)) continue;
 			if(!ExplosionWorkScheduler.before(deadline) || depth >= 256) return false;
 			Block child = world.getBlock(xx, yy, zz);
-			float resistance = child.getExplosionResistance(null);
-			if(resistance < 0F || resistance >= ExplosionNukeGeneric.LIQUID_RESISTANCE_THRESHOLD) continue;
-			if(!selectorsComplete() && (!safeProgressiveBlock(child) || child.hasTileEntity(world.getBlockMetadata(xx, yy, zz)))) return false;
+			float resistance = NuclearBlockBehavior.cost(world, child, xx, yy, zz, posX, posY, posZ);
+			if(Float.isInfinite(resistance)) continue;
+
 			if(!clearAttachments(xx, yy, zz, deadline, depth + 1)) return false;
 			if(!selectorsComplete() && !remember(xx, yy, zz, child)) return false;
 			if(!ExplosionWorkScheduler.before(deadline)) return false;
@@ -390,17 +269,11 @@ public class ExplosionNukeRayBatched {
 				world.setBlock(xx, yy, zz, Blocks.air, 0, 2);
 			}
 			if(!world.isAirBlock(xx, yy, zz)) return false;
-			boolean active = removalActive; removalActive = false;
-			record(xx, yy, zz, false); removalActive = active;
-			ChunkMask owner = (ChunkMask)chunks.getValueByKey(ChunkCoordIntPair.chunkXZ2Int(xx >> 4, zz >> 4));
-			SectionMask section = owner.sections[yy >> 4]; int bit = (yy & 15) << 8 | (zz & 15) << 4 | (xx & 15);
-			if(section.pending.get(bit)) { section.pending.clear(bit); owner.pending--; pendingBlocks--; }
-			if(section.deferred.get(bit)) { section.deferred.clear(bit); owner.deferred--; deferredBlocks--; owner.pending--; pendingBlocks--; }
-			section.completed.set(bit); destroyedBlocks++; normalRemovals++; removedBands[band(yy)]++; surfaceRemoved(section, bit);
-			if(selectorsComplete()) {
-				try(NuclearDropSuppression.Scope scope = NuclearDropSuppression.enter(world)) { world.notifyBlockChange(xx, yy, zz, child); }
-				section.notified.set(bit);
-			} else addEffect(owner, section, bit);
+			// Geometry and pressure both skip live air. No extra completed mask is
+			// needed for an attachment; any existing pending bit will retire as air.
+			destroyedBlocks++; normalRemovals++; removedBands[band(yy)]++;
+			materialReleased |= NuclearBlockBehavior.ordinaryTerrain(child) || NuclearBlockBehavior.constructionBarrier(child);
+			try(NuclearDropSuppression.Scope scope = NuclearDropSuppression.enter(world)) { world.notifyBlockChange(xx, yy, zz, child); }
 		}
 		return ExplosionWorkScheduler.before(deadline);
 	}
@@ -412,82 +285,49 @@ public class ExplosionNukeRayBatched {
 		if(pressure == null) pressure = new PressureWork(x, y, z, maximum, fivePsi, factor);
 		pressure.reached = Math.max(pressure.reached, reached);
 	}
-	/** Exact pressure prefix: reuse requires the same initial energy, proven
-	 * identical sampled voxels and still-valid original-view section versions.
-	 * Ambiguous rounding, replacements and cache eviction take the exact path. */
-	private static final class PressurePrefix {
-		final double[] low = new double[3], high = new double[3];
-		final java.util.ArrayList<java.lang.ref.WeakReference<Snapshot>> sections = new java.util.ArrayList<java.lang.ref.WeakReference<Snapshot>>(32);
-		int count, step, lastX, lastY, lastZ;
-		double initial, energy;
-		void reset(double initial) {
-			java.util.Arrays.fill(low, -Double.MAX_VALUE); java.util.Arrays.fill(high, Double.MAX_VALUE);
-			sections.clear(); count = step = 0; this.initial = initial;
-		}
-		void copy(PressurePrefix other) {
-			System.arraycopy(other.low, 0, low, 0, 3); System.arraycopy(other.high, 0, high, 0, 3);
-			sections.clear(); sections.addAll(other.sections);
-			count = other.count; step = other.step; initial = other.initial; energy = other.energy;
-			lastX = other.lastX; lastY = other.lastY; lastZ = other.lastZ;
-		}
-		boolean sample(int step, double x, double y, double z, int xx, int yy, int zz, Snapshot section) {
-			int i = 0; while(i < count && sections.get(i).get() != section) i++;
-			if(i == count) { if(count == 32) return false; sections.add(new java.lang.ref.WeakReference<Snapshot>(section)); count++; }
-			if(step > 0) { bound(0, x, xx, step); bound(1, y, yy, step); bound(2, z, zz, step); }
-			return true;
-		}
-		private void bound(int axis, double origin, int cell, int step) {
-			// Conservative error envelope for origin + delta * (step / steps).
-			double error = 1e-9D + 4D * (Math.ulp(origin) + Math.ulp((double)cell));
-			low[axis] = Math.max(low[axis], (cell + error - origin) / step);
-			high[axis] = Math.min(high[axis], (cell + 1D - error - origin) / step);
-		}
-		boolean fits(double dx, double dy, double dz) { return dx > low[0] && dx < high[0] && dy > low[1] && dy < high[1] && dz > low[2] && dz < high[2]; }
-	}
 	private final class PressureWork {
 		final Access access = new Access(world, originals);
-		double x, y, z, maximum, fivePsi, factor, reached, energy, initialEnergy;
-		int chunkIndex, sectionY = -1, entry, targetX, targetY, targetZ, sightStep, sightSteps;
-		int chunkX, chunkZ, lastX = Integer.MIN_VALUE, lastY, lastZ;
+		double x, y, z, maximum, fivePsi, factor, reached, energy;
+		long chunkIndex;
+		int sectionY = -1, entry, targetX, targetY, targetZ;
+		int chunkX, chunkZ;
 		int legacyColumn, legacyY = -1;
 		final BitSet blockedColumns = new BitSet(256);
 		ExplosionTerrainAccess.PressureSection section;
-		final PressurePrefix[] prefixes = new PressurePrefix[6];
-		final PressurePrefix trace = new PressurePrefix();
-		boolean tracing, prefixReady, candidate, complete, chunkStarted;
+		final Shielding shield;
+		boolean candidate, complete, chunkStarted;
 		long frontWait = Long.MIN_VALUE, inspected, selected, shielded, skippedSections, inspectedSections, skippedChunks, traversal, reused, activeNanos;
 		PressureWork(double x, double y, double z, double maximum, double fivePsi, double factor) {
-			this.x = x; this.y = y; this.z = z; this.maximum = maximum; this.fivePsi = fivePsi; this.factor = factor;
+			this.x = x; this.y = y; this.z = z; this.maximum = maximum; this.fivePsi = fivePsi; this.factor = factor; shield = new Shielding(access, x, y, z);
+			complete = !finite(x) || !finite(y) || !finite(z) || !finite(maximum) || !finite(fivePsi) || !finite(factor) || maximum <= 0D || fivePsi <= 0D;
 		}
 		PressureWork(NBTTagCompound t) {
 			this(t.getDouble("x"), t.getDouble("y"), t.getDouble("z"), t.getDouble("maximum"), t.getDouble("fivePsi"), t.getDouble("factor"));
-			reached = t.getDouble("reached"); chunkIndex = t.getInteger("chunk");
+			reached = t.getDouble("reached"); chunkIndex = t.getLong("chunk");
 			if(t.getInteger("selectorVersion") == 1) {
 				sectionY = t.getInteger("sectionY"); entry = t.getInteger("entry"); chunkStarted = t.getBoolean("chunkStarted");
-				blockedColumns.or(BitSet.valueOf(t.getByteArray("blocked"))); legacyColumn = t.getInteger("legacyColumn"); legacyY = t.getInteger("legacyY");
+				byte[] blocked = t.getByteArray("blocked");
+				blockedColumns.or(BitSet.valueOf(blocked.length <= 32 ? blocked : java.util.Arrays.copyOf(blocked, 32))); legacyColumn = t.getInteger("legacyColumn"); legacyY = t.getInteger("legacyY");
 			} else {
 				// Old column sweeps resume only their unvisited cells. Do not reinterpret
 				// a saved column/Y cursor as a new section cursor or repeat callbacks.
 				legacyColumn = t.getInteger("column"); legacyY = t.getInteger("scanY");
 			}
-			complete = t.getBoolean("complete"); inspected = t.getLong("inspected"); selected = t.getLong("selected"); shielded = t.getLong("shielded");
+			complete |= t.getBoolean("complete"); inspected = t.getLong("inspected"); selected = t.getLong("selected"); shielded = t.getLong("shielded");
 			skippedSections = t.getLong("skippedSections"); inspectedSections = t.getLong("inspectedSections"); skippedChunks = t.getLong("skippedChunks");
 			traversal = t.getLong("traversal"); reused = t.getLong("reused"); activeNanos = t.getLong("activeNanos");
+			shield.traversal = traversal; shield.reused = reused;
+			long extent = (long)Math.ceil(maximum / 16D) + 1L;
+			if(!t.hasKey("chunk") || !finite(reached) || reached < 0D || chunkIndex < 0L || chunkIndex > (2L * extent + 1L) * (2L * extent + 1L)
+					|| sectionY < -1 || sectionY > 15 || entry < 0 || entry > 4096 || legacyColumn < 0 || legacyColumn > 256 || legacyY < -1 || legacyY > 255) complete = true;
 		}
 		boolean ready(long tick) { return !complete && frontWait != tick && access.ready(tick); }
 		String status() { return "[chunk=" + chunkIndex + ",section=" + sectionY + ",entry=" + entry + ",inspected=" + inspected + ",selected=" + selected + ",shielded=" + shielded + ",sectionsSkipped=" + skippedSections + ",sectionsInspected=" + inspectedSections + ",chunksRejected=" + skippedChunks + ",traversalOps=" + traversal + ",reusedSamples=" + reused + ",activeMs=" + activeNanos / 1000000L + ",complete=" + complete + "]"; }
 		void closeSection() { if(section != null) { section.close(); section = null; } }
-		void cancel() { closeSection(); access.cancel(); java.util.Arrays.fill(prefixes, null); trace.reset(0D); tracing = false; }
+		void cancel() { closeSection(); access.cancel(); shield.cancel(); }
 		void coordinates() {
-			int ring = (int)Math.ceil((Math.sqrt(chunkIndex + 1D) - 1D) / 2D), dx = 0, dz = 0;
-			if(ring > 0) {
-				int d = (2 * ring + 1) * (2 * ring + 1) - 1 - chunkIndex, side = d / (2 * ring), offset = d % (2 * ring);
-				if(side == 0) { dx = ring - offset; dz = -ring; }
-				else if(side == 1) { dx = -ring; dz = -ring + offset; }
-				else if(side == 2) { dx = -ring + offset; dz = ring; }
-				else { dx = ring; dz = ring - offset; }
-			}
-			chunkX = (MathHelper.floor_double(x) >> 4) + dx; chunkZ = (MathHelper.floor_double(z) >> 4) + dz;
+			int[] offset = spiral(chunkIndex);
+			chunkX = (MathHelper.floor_double(x) >> 4) + offset[0]; chunkZ = (MathHelper.floor_double(z) >> 4) + offset[1];
 		}
 		double minimumDistanceSquared(int cx, int cz) {
 			double dx = Math.max(0D, Math.max((cx << 4) + .5D - x, x - ((cx << 4) + 15.5D)));
@@ -495,16 +335,13 @@ public class ExplosionNukeRayBatched {
 			return dx * dx + dz * dz;
 		}
 		boolean needsOriginals(int cx, int cz) {
-			// Shielding samples lie inside the convex horizontal footprint, but a
-			// sampled voxel's center can lie outside it. Use chunk VOLUME bounds.
-			double dx = Math.max(0D, Math.max((cx << 4) - x, x - ((cx << 4) + 16D)));
-			double dz = Math.max(0D, Math.max((cz << 4) - z, z - ((cz << 4) + 16D)));
-			return !complete && dx * dx + dz * dz <= maximum * maximum;
+			int ring = Math.max(Math.abs(cx - (MathHelper.floor_double(x) >> 4)), Math.abs(cz - (MathHelper.floor_double(z) >> 4)));
+			return !complete && ring + 6 >= (int)Math.ceil((Math.sqrt(chunkIndex + 1D) - 1D) / 2D);
 		}
 		void advance(long deadline) {
 			if(!ready(ExplosionWorkScheduler.currentTick())) return;
 			long start = System.nanoTime();
-			try { select(deadline); } finally { activeNanos += System.nanoTime() - start; }
+			try { select(deadline); } finally { activeNanos += System.nanoTime() - start; traversal = shield.traversal; reused = shield.reused; }
 		}
 		void select(long deadline) {
 			long tick = ExplosionWorkScheduler.currentTick();
@@ -513,7 +350,7 @@ public class ExplosionNukeRayBatched {
 			int maximumY = Math.min(255, MathHelper.floor_double(y + ExplosionNukeGeneric.getBlastHeightAbove(maximum)));
 			// The shared scheduler deadline is the governor, including discovery and
 			// shielding. Every cursor is resumable; there is no per-tick operation cap.
-			while(ExplosionWorkScheduler.before(deadline)) {
+			while(selectionCapacity() && ExplosionWorkScheduler.before(deadline)) {
 				if(candidate) { if(!selectCandidate(deadline)) return; continue; }
 				if(chunkIndex >= (2L * extent + 1) * (2L * extent + 1)) {
 					complete = true; cancel(); beginCleanup(); return;
@@ -557,72 +394,22 @@ public class ExplosionNukeRayBatched {
 				if(Math.abs(yy + .5D - y) > (yy >= y ? ExplosionNukeGeneric.getBlastHeightAbove(maximum) : ExplosionNukeGeneric.getBlastHeightBelow(maximum))) { entry++; continue; }
 				if(Math.abs(yy + .5D - y) > (yy >= y ? ExplosionNukeGeneric.getBlastHeightAbove(reached) : ExplosionNukeGeneric.getBlastHeightBelow(reached))) { frontWait = tick; return; }
 				Block block = live.getBlock(xx & 15, yy, zz & 15);
-				float resistance = block.getExplosionResistance(null);
-				energy = initialEnergy = ExplosionNukeGeneric.getOverpressurePsi(distance / fivePsi) * factor;
-				if(!NuclearBlockBehavior.pressureTarget(block) || resistance < 0F || resistance >= ExplosionNukeGeneric.LIQUID_RESISTANCE_THRESHOLD || energy <= resistance + 1D) { entry++; continue; }
-				targetX = xx; targetY = yy; targetZ = zz; sightStep = 0; lastX = Integer.MIN_VALUE;
-				sightSteps = Math.max(1, (int)Math.ceil(Math.max(Math.abs(xx + .5D - x), Math.max(Math.abs(yy + .5D - y), Math.abs(zz + .5D - z))) * 2D));
-				candidate = true; prefixReady = false;
+				float resistance = NuclearBlockBehavior.cost(world, block, xx, yy, zz, x, y, z);
+				energy = Math.min(4096D, ExplosionNukeGeneric.getOverpressurePsi(distance / fivePsi) * factor);
+				if(!NuclearBlockBehavior.pressureTarget(block) || Float.isInfinite(resistance) || energy <= resistance) { entry++; continue; }
+				targetX = xx; targetY = yy; targetZ = zz; candidate = true;
 			}
 		}
 		private boolean selectCandidate(long deadline) {
-			if(!prefixReady) {
-				trace.reset(initialEnergy); tracing = true;
-				for(int i = prefixes.length - 1; i >= 0; i--) {
-					PressurePrefix saved = prefixes[i];
-					if(saved == null || saved.initial != initialEnergy || saved.step >= sightSteps || saved.lastX == targetX && saved.lastY == targetY && saved.lastZ == targetZ
-							|| !saved.fits((targetX + .5D - x) / sightSteps, (targetY + .5D - y) / sightSteps, (targetZ + .5D - z) / sightSteps)) continue;
-					boolean valid = true;
-					for(int s = 0; s < saved.count; s++) {
-						Snapshot input = saved.sections.get(s).get();
-						if(input == null || !input.valid) { valid = false; break; }
-						if(!ExplosionTerrainAccess.validate(access, input, deadline)) return false;
-						if(!input.valid) { valid = false; break; }
-					}
-					if(valid) { trace.copy(saved); sightStep = saved.step; energy = saved.energy; lastX = saved.lastX; lastY = saved.lastY; lastZ = saved.lastZ; reused += saved.step; break; }
-				}
-				prefixReady = true;
-			}
-			while(sightStep < sightSteps && ExplosionWorkScheduler.before(deadline)) {
-				double f = sightStep / (double)sightSteps;
-				int xx = MathHelper.floor_double(x + (targetX + .5D - x) * f), yy = MathHelper.floor_double(y + (targetY + .5D - y) * f), zz = MathHelper.floor_double(z + (targetZ + .5D - z) * f);
-				traversal++;
-				if(yy < 0 || yy > 255) { tracing = false; sightStep++; continue; }
-				Snapshot sample = ExplosionTerrainAccess.snapshot(access, xx >> 4, yy >> 4, zz >> 4, deadline);
-				if(sample == null) return false;
-				if(sample.isZeroAir()) {
-					// All original samples in this monotone section interval contribute
-					// exactly zero. Jump to its exit, retaining the original sample grid.
-					int low = sightStep + 1, high = sightSteps;
-					while(low < high) {
-						int mid = low + (high - low) / 2; double mf = mid / (double)sightSteps;
-						if(sample.contains(MathHelper.floor_double(x + (targetX + .5D - x) * mf), MathHelper.floor_double(y + (targetY + .5D - y) * mf), MathHelper.floor_double(z + (targetZ + .5D - z) * mf))) low = mid + 1; else high = mid;
-					}
-					reused += low - sightStep; sightStep = low; tracing = false; continue;
-				}
-				if(tracing && !trace.sample(sightStep, x, y, z, xx, yy, zz, sample)) tracing = false;
-				if(!(xx == lastX && yy == lastY && zz == lastZ || xx == targetX && yy == targetY && zz == targetZ)) {
-					net.minecraft.world.chunk.Chunk live = ExplosionTerrainAccess.chunk(access, xx >> 4, zz >> 4, deadline);
-					if(live == null) return false;
-					Block source = ExplosionTerrainAccess.pressureSource(originals, xx, yy, zz, live.getBlock(xx & 15, yy, zz & 15));
-					float protection = source.getExplosionResistance(null), r = sample.resistance((yy & 15) << 8 | (zz & 15) << 4 | (xx & 15));
-					if(!sample.air((yy & 15) << 8 | (zz & 15) << 4 | (xx & 15))) energy -= sample.liquid((yy & 15) << 8 | (zz & 15) << 4 | (xx & 15)) ? 2D : 1D + Math.max(0F, r);
-					lastX = xx; lastY = yy; lastZ = zz;
-					if(protection < 0F || protection >= ExplosionNukeGeneric.LIQUID_RESISTANCE_THRESHOLD || r < 0F || r >= ExplosionNukeGeneric.LIQUID_RESISTANCE_THRESHOLD || energy <= 0D) { shielded++; finishCandidate(); return true; }
-				}
-				sightStep++;
-				if(tracing && sightStep >= 8 && sightStep <= 256 && (sightStep & sightStep - 1) == 0) {
-					int slot = Integer.numberOfTrailingZeros(sightStep) - 3;
-					trace.step = sightStep; trace.energy = energy; trace.lastX = lastX; trace.lastY = lastY; trace.lastZ = lastZ;
-					if(prefixes[slot] == null) prefixes[slot] = new PressurePrefix(); prefixes[slot].copy(trace);
-				}
-				if(sightStep >= 256) tracing = false;
-			}
-			if(sightStep < sightSteps) return false;
+			// Reuse one bounded thickness/overburden estimate across nearby targets.
+			// Top-down section discovery independently prevents deep caves becoming
+			// exposed just because ordinary stone no longer uses resistance rays.
 			if(ExplosionTerrainAccess.chunk(access, targetX >> 4, targetZ >> 4, deadline) == null) return false;
 			Block target = world.getBlock(targetX, targetY, targetZ);
-			float resistance = target.getExplosionResistance(null);
-			if(NuclearBlockBehavior.pressureTarget(target) && resistance >= 0F && resistance < ExplosionNukeGeneric.LIQUID_RESISTANCE_THRESHOLD && energy > resistance + 1D) { record(targetX, targetY, targetZ, true); selected++; }
+			float threshold = NuclearBlockBehavior.cost(world, target, targetX, targetY, targetZ, x, y, z);
+			if(energy <= threshold || !NuclearBlockBehavior.pressureTarget(target)) { finishCandidate(); return true; }
+			if(!shield.prepare(targetX, targetY, targetZ, energy - threshold, deadline)) return false;
+			if(NuclearBlockBehavior.pressureTarget(target) && energy > threshold + shield.cost) { record(targetX, targetY, targetZ, true); selected++; }
 			else shielded++;
 			finishCandidate(); return true;
 		}
@@ -634,7 +421,7 @@ public class ExplosionNukeRayBatched {
 		NBTTagCompound write() {
 			NBTTagCompound t = new NBTTagCompound();
 			t.setDouble("x", x); t.setDouble("y", y); t.setDouble("z", z); t.setDouble("maximum", maximum); t.setDouble("fivePsi", fivePsi); t.setDouble("factor", factor); t.setDouble("reached", reached);
-			t.setInteger("selectorVersion", 1); t.setInteger("chunk", chunkIndex); t.setBoolean("chunkStarted", chunkStarted); t.setInteger("sectionY", sectionY); t.setInteger("entry", entry); t.setByteArray("blocked", blockedColumns.toByteArray());
+			t.setInteger("selectorVersion", 1); t.setLong("chunk", chunkIndex); t.setBoolean("chunkStarted", chunkStarted); t.setInteger("sectionY", sectionY); t.setInteger("entry", entry); t.setByteArray("blocked", blockedColumns.toByteArray());
 			t.setInteger("legacyColumn", legacyColumn); t.setInteger("legacyY", legacyY); t.setBoolean("complete", complete);
 			t.setLong("inspected", inspected); t.setLong("selected", selected); t.setLong("shielded", shielded);
 			t.setLong("skippedSections", skippedSections); t.setLong("inspectedSections", inspectedSections); t.setLong("skippedChunks", skippedChunks);
@@ -655,7 +442,7 @@ public class ExplosionNukeRayBatched {
 				if(source == Blocks.grass || !source.isAir(world, x, y, z) && !source.getMaterial().isLiquid() && y == live.getHeightValue(x & 15, z & 15) - 1) { section.surface.set(bit); surfaceSelected++; }
 			}
 		}
-		boolean added = !section.completed.get(bit) && !section.pending.get(bit) && !section.deferred.get(bit);
+		boolean added = !section.completed.get(bit) && !section.pending.get(bit);
 		if(added) { section.pending.set(bit); chunk.pending++; pendingBlocks++; }
 		if(tip) {
 			if(section.tips == null) section.tips = new BitSet();
@@ -664,422 +451,23 @@ public class ExplosionNukeRayBatched {
 		}
 		if(added) wake(chunk);
 	}
-	private void merge(ChunkMask chunk, SectionMask section, BitSet hits, BitSet tips) {
-		int previous = section.destruction.cardinality(); section.destruction.or(hits);
-		selectedBlocks += section.destruction.cardinality() - previous;
-		int pending = section.pending.cardinality();
-		section.pending.or(hits); section.pending.andNot(section.completed); section.pending.andNot(section.deferred);
-		int added = section.pending.cardinality() - pending; chunk.pending += added; pendingBlocks += added;
-		if(section.tips == null) section.tips = new BitSet();
-		BitSet late = (BitSet)tips.clone(); late.andNot(section.tips); late.and(section.completed); late.andNot(section.notified);
-		for(int bit = late.nextSetBit(0); bit >= 0; bit = late.nextSetBit(bit + 1)) addEffect(chunk, section, bit);
-		section.tips.or(tips);
-		if(added > 0 || !late.isEmpty()) wake(chunk);
-	}
-
-	/** Legacy API retained for callers outside the governed entity path. */
-	public void collectTip(int count) { collectTip(count, Long.MAX_VALUE, collectionTick + 1); }
-	public void collectTip(int count, long deadline, long tick) {
-		long start = System.nanoTime();
-		try {
-			if(!restore(deadline) || !migrate(deadline) || isAusf3Complete) return;
-			if(!collectionReady(tick, count)) return;
-			if(collectionTick != tick) { collectionTick = tick; raysThisTick = 0; }
-			if(!ranges.isEmpty() || BombConfig.explosionWorkerThreads > 0) collectWorker(count, deadline, tick);
-			else {
-				int previous = gspNum;
-				collectServer(count, deadline, terrain, gspNumMax + 1);
-				completedRays += gspNum - previous;
-				if(gspNum > gspNumMax && ExplosionWorkScheduler.before(deadline)) finishCollection();
-			}
-		} finally { collectionServerNanos += System.nanoTime() - start; }
-	}
-
-	private void collectServer(int count, long deadline, Access access, int end) {
-		Snapshot sampled = null;
-		while(gspNum < end && raysThisTick < count && ExplosionWorkScheduler.before(deadline)) {
-			if(!rayActive) {
-				rayX = Math.sin(gspX) * Math.cos(gspY); rayZ = Math.sin(gspX) * Math.sin(gspY); rayY = Math.cos(gspX);
-				rayStep = 0; rayStrength = strength; hasTip = false; rayActive = true; rayFinishing = rayRecorded = false;
-			}
-			while(!rayFinishing && ExplosionWorkScheduler.before(deadline)) {
-				if(rayStep >= rayLength || rayStep > length) { rayFinishing = true; break; }
-				float x = (float)(posX + rayX * rayStep), y = (float)(posY + rayY * rayStep), z = (float)(posZ + rayZ * rayStep);
-				if(contained && y >= surfaceY) { rayFinishing = true; break; }
-				// Stop on leaving storage, but permit a source outside it to approach it.
-				if((y < 0 && (posY >= 0 || rayY <= 0)) || (y >= 256 && (posY < 256 || rayY >= 0))) { rayFinishing = true; break; }
-				int ix = (int)Math.floor(x), iy = (int)Math.floor(y), iz = (int)Math.floor(z);
-				traversalOperations++;
-				// Null sections contain only vanilla air. Do not trust isEmpty(): custom air
-				// blocks can have resistance. Keep the world border's air behavior as well.
-				if(iy >= 0 && iy < 256 && ix >= -30000000 && iz >= -30000000 && ix < 30000000 && iz < 30000000) {
-					if(sampled == null || !sampled.contains(ix, iy, iz)) {
-						sampled = ExplosionTerrainAccess.snapshot(access, ix >> 4, iy >> 4, iz >> 4, deadline);
-						if(sampled == null) return;
-					}
-					if(sampled.isZeroAir()) {
-						rayStep = endOfEmptySection(ix >> 4, iy >> 4, iz >> 4);
-						// The old post-sample length check stops after length - 1.
-						if(rayStep >= rayLength || rayStep >= Math.max(1, length)) rayFinishing = true;
-						continue;
-					}
-				}
-				double fac = (100 - (double)rayStep / rayLength * 100) * 0.07D;
-				boolean stored = sampled != null && sampled.contains(ix, iy, iz);
-				int bit = (iy & 15) << 8 | (iz & 15) << 4 | (ix & 15);
-				boolean liquid = stored && sampled.liquid(bit);
-				if(!liquid) rayStrength -= Math.pow(stored ? sampled.resistance(bit) : masqueradeResistance(Blocks.air), 7.5D - fac);
-				// Resistance callbacks are indivisible. Commit their sample before yielding.
-				if(rayStrength > 0 && stored && !sampled.vanillaAir(bit) && !liquid) {
-					tipX = x; tipY = y; tipZ = z; hasTip = true;
-					addRayChunk(ChunkCoordIntPair.chunkXZ2Int(ix >> 4, iz >> 4));
-				}
-				if(rayStrength <= 0 || rayStep + 1 >= length || rayStep == rayLength - 1) rayFinishing = true;
-				rayStep++;
-			}
-			if(!rayFinishing || !ExplosionWorkScheduler.before(deadline)) return;
-			if(hasTip && !rayRecorded) {
-				if(!buildActive) beginBuild(tipX, tipY, tipZ, 0, false, 0L, false);
-				if(!buildMask(deadline, access)) return;
-			}
-			rayRecorded = true;
-			// Advance only after the entire reconstruction is represented by masks.
-			while(!rayChunkKeys.isEmpty() && ExplosionWorkScheduler.before(deadline)) {
-				rayChunks.remove(rayChunkKeys.remove(rayChunkKeys.size() - 1));
-			}
-			if(!rayChunkKeys.isEmpty() || !ExplosionWorkScheduler.before(deadline)) return;
-			rayActive = rayFinishing = rayRecorded = hasTip = false;
-			completedDirections[ExplosionRayWorker.directionCell(rayY, gspY)]++;
-			generateGspUp(); raysThisTick++;
-		}
-	}
-
-	private void finishCollection() {
-		// Collection completion releases the resistance dependency; pending masks
-		// and terminal callbacks still own the terrain/fallout completion boundary.
-		isAusf3Complete = true; collectionFinishedAt = System.nanoTime();
-		beginCleanup();
-		workers.remove(this); waitReason = "mask application"; logStatus("collection complete");
-	}
-
-	private void collectWorker(int count, long deadline, long tick) {
-		if(lifecycle == null || lifecycle.cancelled) {
-			lifecycle = new ExplosionRayWorker.Lifecycle(originals.id, terrain.worldLifecycleId); workers.add(this);
-		}
-		int slots = Math.max(1, Math.min(ExplosionRayWorker.MAX_JOB_BATCHES, BombConfig.explosionWorkerThreads));
-		if(allocating == null && gspNum <= gspNumMax && ranges.size() < slots && ExplosionWorkScheduler.before(deadline)) {
-			allocating = new RayRange(captureState(), Math.min(gspNumMax + 1, gspNum + ExplosionRayWorker.MAX_BATCH_RAYS));
-			allocating.qualified.addAll(rayChunkKeys);
-			ranges.add(allocating);
-			rayChunks = new LongHashMap(); rayChunkKeys = new ArrayList<Long>();
-			rayActive = rayFinishing = rayRecorded = hasTip = buildActive = false;
-		}
-		// Reserving directions is resumable and preserves the exact serial spiral
-		// recurrence, including floating-point longitude rounding at range boundaries.
-		while(allocating != null && gspNum < allocating.end && ExplosionWorkScheduler.before(deadline)) generateGspUp();
-		if(allocating != null && gspNum == allocating.end) { allocating.sealed = true; allocating = null; }
-		int attempts = ranges.size();
-		while(attempts-- > 0 && !ranges.isEmpty() && ExplosionWorkScheduler.before(deadline)) {
-			if(rangeCursor >= ranges.size()) rangeCursor = 0;
-			RayRange range = ranges.get(rangeCursor++);
-			if(!range.sealed) continue;
-			if(range.batch != null) adopt(range, deadline);
-			if(range.batch != null) continue;
-			if(range.state.gspNum >= range.end) {
-				terrain.snapshotCaptures += range.access.snapshotCaptures; terrain.snapshotReuses += range.access.snapshotReuses;
-				range.access.cancel(); ranges.remove(--rangeCursor); continue;
-			}
-			int reserved = reservedRays();
-			if(!range.access.ready(tick) || raysThisTick + reserved >= count || !ExplosionWorkScheduler.before(deadline)) continue;
-			if(range.fallback || BombConfig.explosionWorkerThreads == 0) { collectFallback(range, count - reserved, deadline); continue; }
-			if(!ExplosionRayWorker.available(range.state.active || range.state.building)) { range.access.defer(); waitReason = "worker queue"; continue; }
-			Snapshot required = null;
-			if(range.pending) {
-				required = ExplosionTerrainAccess.snapshot(range.access, range.x, range.y, range.z, deadline);
-				if(required == null) { waitReason = "snapshot capture or terrain: " + range.access.status(); continue; }
-				remember(range, required);
-				prepareCorridor(range, deadline);
-			} else if(!range.state.active && posY >= 0 && posY < 256 && posX >= -30000000 && posX < 30000000 && posZ >= -30000000 && posZ < 30000000) {
-				// Avoid submitting an empty batch just to discover the source section.
-				required = ExplosionTerrainAccess.snapshot(range.access, posX >> 4, posY >> 4, posZ >> 4, deadline);
-				if(required == null) { waitReason = "source snapshot"; continue; }
-			}
-			Snapshot[] inputs = ExplosionTerrainAccess.workerSnapshots(range.access, required, range.workingSet, deadline);
-			if(!ExplosionWorkScheduler.before(deadline)) continue;
-			ExplosionRayWorker.State state = range.state.copy();
-			// Outstanding batches reserve from the same ray allowance as fallback;
-			// parallelism must not multiply the caller's per-tick completed-ray cap.
-			state.rayLimit = Math.min(count - raysThisTick - reserved, range.end - state.gspNum);
-			BitSet[] covered = new BitSet[inputs.length];
-			for(int i = 0; i < inputs.length; i++) {
-				Snapshot input = inputs[i];
-				ChunkMask chunk = (ChunkMask)chunks.getValueByKey(ChunkCoordIntPair.chunkXZ2Int(input.chunkX, input.chunkZ));
-				SectionMask section = chunk == null ? null : chunk.sections[input.sectionY];
-				covered[i] = section == null ? new BitSet() : (BitSet)section.destruction.clone();
-			}
-			range.batch = ExplosionRayWorker.submit(state, inputs, covered, qualifiedKeys(range), lifecycle, range.scratch);
-			if(range.batch == null) { range.access.defer(); waitReason = "worker queue"; }
-			else { submittedBatches++; waitReason = "worker calculation"; }
-		}
-		if(gspNum > gspNumMax && ranges.isEmpty() && ExplosionWorkScheduler.before(deadline)) finishCollection();
-	}
-
-	/** Prepare a short geometric continuation in already-loaded terrain. This
-	 * amortizes section handoffs without speculative chunk loading, unbounded
-	 * capture queues or world reads from workers. Resistance still decides reach. */
-	private void prepareCorridor(RayRange range, long deadline) {
-		ExplosionRayWorker.State s = range.state;
-		boolean build = s.building;
-		int step = build ? s.buildStep : s.step;
-		int limit = build ? (int)Math.ceil(s.buildLength) : Math.min(s.rayLength, Math.max(1, s.length));
-		double dx = build ? s.bx : s.dx, dy = build ? s.by : s.dy, dz = build ? s.bz : s.dz;
-		for(int sections = 0; sections < 4 && step < limit && ExplosionWorkScheduler.before(deadline); sections++) {
-			int x = corridorCoordinate(posX, dx, step, build), y = corridorCoordinate(posY, dy, step, build), z = corridorCoordinate(posZ, dz, step, build);
-			if(y < 0 || y >= 256 || x < -30000000 || x >= 30000000 || z < -30000000 || z >= 30000000 || !build && s.contained && y >= s.surfaceY) return;
-			if(ExplosionTerrainAccess.loaded(world, x >> 4, z >> 4) == null) return;
-			Snapshot snapshot = ExplosionTerrainAccess.snapshot(range.access, x >> 4, y >> 4, z >> 4, deadline);
-			if(snapshot == null) return;
-			remember(range, snapshot);
-			int low = step + 1, high = limit;
-			while(low < high) {
-				int middle = low + (high - low) / 2;
-				if(snapshot.contains(corridorCoordinate(posX, dx, middle, build), corridorCoordinate(posY, dy, middle, build), corridorCoordinate(posZ, dz, middle, build))) low = middle + 1;
-				else high = middle;
-			}
-			step = low;
-		}
-	}
-	private static int corridorCoordinate(int origin, double direction, int step, boolean build) {
-		double value = origin + direction * step;
-		return (int)Math.floor(build ? value : (double)(float)value);
-	}
-
-	private long[] qualifiedKeys(RayRange range) {
-		long[] keys = new long[range.qualified.size()];
-		for(int i = 0; i < keys.length; i++) keys[i] = range.qualified.get(i);
-		return keys;
-	}
-
-	private void adopt(RayRange range, long deadline) {
-		ExplosionRayWorker.Batch batch = range.batch;
-		int batchInputStep = range.state.step, batchInputBuildStep = range.state.buildStep;
-		ExplosionRayWorker.Result result = batch.result;
-		if(result == null && batch.failure == null) return;
-		if(batch.failure != null) {
-			workerFailures++; rejectedBatches++;
-			MainRegistry.logger.error("Explosion terrain worker failed; retaining range checkpoint for bounded server fallback", batch.failure);
-			batch.cancel(); range.batch = null; activateFallback(range, "worker failure", true); return;
-		}
-		boolean valid = !lifecycle.cancelled && !batch.cancelled && result.jobId == lifecycle.jobId && result.lifecycleId == lifecycle.id && result.worldLifecycleId == terrain.worldLifecycleId;
-		boolean invalidSnapshot = false;
-		if(valid) for(ExplosionRayWorker.Mask mask : result.masks) {
-			// Cached inputs not actually read cannot invalidate useful work.
-			if(!mask.used) continue;
-			if(mask.snapshot.worldLifecycleId != terrain.worldLifecycleId) { invalidSnapshot = true; break; }
-			if(!ExplosionTerrainAccess.validate(range.access, mask.snapshot, deadline)) { waitReason = "snapshot validation: " + range.access.status(); return; }
-			// Once rejection is certain, loading/validating the remaining sections
-			// only delays retry/fallback and can create another global wait barrier.
-			if(!mask.snapshot.valid) { invalidSnapshot = true; break; }
-		}
-		workerNanos += result.calculationNanos; sectionMisses += result.sectionMisses;
-		if(workerCpuNanos >= 0) workerCpuNanos = result.cpuNanos < 0 ? -1 : workerCpuNanos + result.cpuNanos;
-		traversalOperations += result.traversalOperations; reconstructionOperations += result.reconstructionOperations;
-		reusedSamples += result.reusedSamples; skippedReconstruction += result.skippedReconstruction; attenuationHits += result.attenuationHits;
-		sharedSnapshotHits += result.sharedSnapshotHits;
-		if(!valid || invalidSnapshot) {
-			rejectedBatches++; repeatedOperations += result.operations;
-			batch.dispose(); range.batch = null;
-			if(invalidSnapshot) {
-				snapshotRejections++; range.rejections++;
-				if(range.rejections >= INVALIDATION_RETRIES) activateFallback(range, "repeated snapshot invalidation without committed progress", false);
-			}
-			if(!range.fallback) waitReason = "snapshot retry"; return;
-		}
-		// All input versions are checked before this bounded, indivisible OR/cursor
-		// commit. No world callbacks run here and only the server owns these masks.
-		for(int i = result.masks.size() - 1; i >= 0; i--) {
-			ExplosionRayWorker.Mask mask = result.masks.get(i);
-			Snapshot snapshot = mask.snapshot;
-			if(mask.used) remember(range, snapshot);
-			if(mask.destruction.isEmpty()) continue;
-			ChunkMask chunk = chunkMask(ChunkCoordIntPair.chunkXZ2Int(snapshot.chunkX, snapshot.chunkZ));
-			SectionMask section = chunk.sections[snapshot.sectionY];
-			if(section == null) chunk.sections[snapshot.sectionY] = section = new SectionMask();
-			BitSet surfaceHits = snapshot.surfaceSamples(); surfaceHits.and(mask.destruction); surfaceHits.andNot(section.destruction);
-			section.surface.or(surfaceHits); surfaceSelected += surfaceHits.cardinality();
-			merge(chunk, section, mask.destruction, mask.tips);
-		}
-		range.state = result.state;
-		range.qualified.clear(); range.qualified.addAll(result.qualified);
-		range.pending = result.missing;
-		if(result.missing) { range.x = result.chunkX; range.y = result.sectionY; range.z = result.chunkZ; }
-		completedRays += result.completedRays; raysThisTick += result.completedRays;
-		for(int i = 0; i < completedDirections.length; i++) completedDirections[i] += result.directions[i];
-		acceptedBatches++;
-		if(result.completedRays > 0 || result.state.step != batchInputStep || result.state.buildStep != batchInputBuildStep) range.rejections = 0;
-		batch.dispose(); range.batch = null;
-	}
-
-	private void remember(RayRange range, Snapshot snapshot) {
-		remember(range.workingSet, snapshot); remember(corridor, snapshot);
-	}
-	private static void remember(ArrayList<int[]> workingSet, Snapshot snapshot) {
-		for(int i = 0; i < workingSet.size(); i++) {
-			int[] coord = workingSet.get(i);
-			if(coord[0] == snapshot.chunkX && coord[1] == snapshot.sectionY && coord[2] == snapshot.chunkZ) { workingSet.remove(i); workingSet.add(coord); return; }
-		}
-		if(workingSet.size() == ExplosionRayWorker.MAX_BATCH_SNAPSHOTS) workingSet.remove(0);
-		workingSet.add(new int[] { snapshot.chunkX, snapshot.sectionY, snapshot.chunkZ });
-	}
-
-	private void activateFallback(RayRange range, String reason, boolean failed) {
-		if(range.batch != null) { range.batch.cancel(); range.batch = null; }
-		range.scratch = new ExplosionRayWorker.Scratch();
-		// A changing section must not demote thousands of unrelated future rays.
-		// Finish this ray against live terrain, then resume parallel calculation.
-		// An actual worker exception still keeps the failed range off that path.
-		range.fallbackEnd = failed ? range.end : Math.min(range.end, range.state.gspNum + 1);
-		waitReason = "bounded server fallback";
-		if(!range.fallback) {
-			range.fallback = true; fallbackActivations++;
-			long tick = ExplosionWorkScheduler.currentTick();
-			if(fallbackActivations == 1 || lastDiagnosticTick == Long.MIN_VALUE || tick - lastDiagnosticTick >= 200) {
-				logStatus("range fallback: " + reason); lastDiagnosticTick = tick;
-			}
-		}
-		range.pending = false;
-	}
-
-	private void collectFallback(RayRange range, int count, long deadline) {
-		// Reuse the canonical bounded server algorithm, with only this range's
-		// calculation cursor swapped in. Already committed masks remain shared.
-		ExplosionRayWorker.State allocator = captureState();
-		LongHashMap savedChunks = rayChunks; ArrayList<Long> savedKeys = rayChunkKeys;
-		int previous = range.state.gspNum;
-		applyState(range.state); rayChunks = new LongHashMap(); rayChunkKeys = new ArrayList<Long>();
-		for(long key : range.qualified) addRayChunk(key);
-		try { collectServer(count, deadline, range.access, range.fallback ? range.fallbackEnd : range.end); }
-		finally {
-			range.state = captureState(); range.qualified.clear(); range.qualified.addAll(rayChunkKeys);
-			completedRays += gspNum - previous;
-			applyState(allocator); rayChunks = savedChunks; rayChunkKeys = savedKeys;
-		}
-		if(range.state.gspNum >= range.fallbackEnd && range.fallbackEnd < range.end) {
-			range.fallback = false; range.rejections = 0;
-			waitReason = "worker resume after fallback ray";
-		} else waitReason = "bounded server fallback: " + range.access.status();
-	}
-
-	private ExplosionRayWorker.State captureState() {
-		ExplosionRayWorker.State state = new ExplosionRayWorker.State();
-		state.posX = posX; state.posY = posY; state.posZ = posZ; state.length = length; state.rayLength = rayLength;
-		state.initialStrength = strength; state.gspNum = gspNum; state.gspNumMax = gspNumMax; state.gx = gspX; state.gy = gspY;
-		state.active = rayActive; state.recorded = rayRecorded; state.directionOrder = directionOrder;
-		state.surfaceY = surfaceY; state.contained = contained; state.step = rayStep; state.strength = rayStrength;
-		state.dx = rayX; state.dy = rayY; state.dz = rayZ; state.finishing = rayFinishing; state.hasTip = hasTip;
-		state.tx = tipX; state.ty = tipY; state.tz = tipZ; state.airResistance = masqueradeResistance(Blocks.air);
-		state.building = buildActive; state.buildStep = buildStep; state.buildLength = buildLength;
-		state.bx = buildX; state.by = buildY; state.bz = buildZ; state.tipX = buildTipX; state.tipY = buildTipY; state.tipZ = buildTipZ;
-		return state;
-	}
-
-	private void applyState(ExplosionRayWorker.State state) {
-		gspNum = state.gspNum; gspX = state.gx; gspY = state.gy;
-		rayActive = state.active; rayRecorded = state.recorded; rayX = state.dx; rayY = state.dy; rayZ = state.dz;
-		rayStep = state.step; rayStrength = state.strength; rayFinishing = state.finishing;
-		hasTip = state.hasTip; tipX = state.tx; tipY = state.ty; tipZ = state.tz;
-		buildStep = state.buildStep; buildActive = state.building; buildLength = state.buildLength;
-		buildX = state.bx; buildY = state.by; buildZ = state.bz;
-		buildTipX = state.tipX; buildTipY = state.tipY; buildTipZ = state.tipZ;
-		buildRestricted = buildInChunk = false;
-	}
-
-	public void cancelWorkers() {
-		if(lifecycle != null) lifecycle.cancelled = true;
-		for(RayRange range : ranges) {
-			if(range.batch != null) { range.batch.cancel(); range.batch = null; }
-			range.scratch = new ExplosionRayWorker.Scratch();
-			range.access.cancel();
-		}
-		terrain.cancel(); removalTerrain.cancel(); if(pressure != null) pressure.cancel(); workers.remove(this);
-	}
-	public void dispose() { cancelWorkers(); originals.close(); }
+	/** Compatibility entry points now enumerate geometry, regardless of weapon size. */
+	public void collectTip(int count) { collectTip(count, Long.MAX_VALUE, ExplosionWorkScheduler.currentTick()); }
+	public void collectTip(int count, long deadline, long tick) { if(restore(deadline) && craterCapacity()) crater.advance(deadline); }
+	public void cancelWorkers() { terrain.cancel(); removalTerrain.cancel(); crater.shield.cancel(); if(pressure != null) pressure.cancel(); }
+	public void dispose() { cancelWorkers(); active.remove(this); originals.close(); chunks = new LongHashMap(); firstChunk = lastChunk = cleanupCursor = null; ordering.clear(); }
 	public static void unloadWorkers(World world) {
-		for(ExplosionNukeRayBatched engine : workers.toArray(new ExplosionNukeRayBatched[0])) if(engine.world == world) engine.cancelWorkers();
+		for(ExplosionNukeRayBatched job : active.toArray(new ExplosionNukeRayBatched[0])) if(job.world == world) { job.cancelWorkers(); active.remove(job); }
 	}
-	public static void unloadChunkWorkers(World world, int x, int z) {
-		for(ExplosionNukeRayBatched engine : workers.toArray(new ExplosionNukeRayBatched[0])) {
-			if(engine.world == world && engine.posX >> 4 == x && engine.posZ >> 4 == z) engine.cancelWorkers();
-		}
-	}
+	/** Compatibility hook: synchronous phases hold no worker-owned chunk inputs. */
+	public static void unloadChunkWorkers(World world, int x, int z) { }
 	public static void shutdownWorkers() {
-		for(ExplosionNukeRayBatched engine : workers.toArray(new ExplosionNukeRayBatched[0])) engine.cancelWorkers();
-		ExplosionRayWorker.shutdown();
+		// FMLServerStopping precedes the final world save. Keep committed masks
+		// and retained cover serializable; only transient calculation is canceled.
+		for(ExplosionNukeRayBatched job : active.toArray(new ExplosionNukeRayBatched[0])) job.cancelWorkers();
 	}
-	public static void startWorkers() { ExplosionRayWorker.startServer(); }
-
-	/** Binary search integer sample indices, not voxel/DDA boundaries. Float rounding
-	 * and the original integer steps are unchanged; zero-resistance air has no effect. */
-	private int endOfEmptySection(int chunkX, int sectionY, int chunkZ) {
-		int low = rayStep + 1, high = Math.min(rayLength, Math.max(1, length));
-		while(low < high) {
-			int middle = low + (high - low) / 2;
-			float x = (float)(posX + rayX * middle), y = (float)(posY + rayY * middle), z = (float)(posZ + rayZ * middle);
-			if((int)Math.floor(x) >> 4 == chunkX && (int)Math.floor(y) >> 4 == sectionY && (int)Math.floor(z) >> 4 == chunkZ && (!contained || y < surfaceY)) low = middle + 1;
-			else high = middle;
-		}
-		return low;
-	}
-
-	private void beginBuild(float x, float y, float z, int step, boolean restricted, long chunk, boolean inChunk) {
-		// Preserve float subtraction before promotion, exactly as old Vec3 construction.
-		double dx = x - posX, dy = y - posY, dz = z - posZ;
-		// Vec3.lengthVector uses MathHelper's float-rounded square root in 1.7.10.
-		buildLength = MathHelper.sqrt_double(dx * dx + dy * dy + dz * dz);
-		buildX = dx / buildLength; buildY = dy / buildLength; buildZ = dz / buildLength;
-		buildTipX = (int)Math.floor(x); buildTipY = (int)Math.floor(y); buildTipZ = (int)Math.floor(z);
-		buildStep = step; buildRestricted = restricted; buildChunk = chunk; buildInChunk = inChunk; buildActive = true;
-	}
-	private boolean buildMask(long deadline) { return buildMask(deadline, terrain); }
-	private boolean buildMask(long deadline, Access access) {
-		long sampledKey = 0L;
-		boolean sampled = false, eligible = false;
-		int entryStep = 0;
-		while(buildStep < buildLength && ExplosionWorkScheduler.before(deadline)) {
-			reconstructionOperations++;
-			int x = (int)Math.floor(posX + buildX * buildStep), y = (int)Math.floor(posY + buildY * buildStep), z = (int)Math.floor(posZ + buildZ * buildStep);
-			long key = ChunkCoordIntPair.chunkXZ2Int(x >> 4, z >> 4);
-			if(buildRestricted) {
-				// Old-save conversion alone must honor per-chunk reconstruction cursors.
-				if(key != buildChunk) {
-					if(buildInChunk) { buildStep = (int)Math.ceil(buildLength); break; }
-					buildStep++; continue;
-				}
-				buildInChunk = true;
-			} else {
-				if(!sampled || sampledKey != key) {
-					sampledKey = key; sampled = true; eligible = rayChunks.containsItem(key); entryStep = enter(key);
-				}
-				// A positive collection sample is not itself the old destruction set.
-				if(!eligible || buildStep < entryStep) { buildStep++; continue; }
-			}
-			if(y >= 0 && y < 256) {
-				Snapshot snapshot = ExplosionTerrainAccess.snapshot(access, x >> 4, y >> 4, z >> 4, deadline);
-				if(snapshot == null) return false;
-				int bit = (y & 15) << 8 | (z & 15) << 4 | (x & 15);
-				if(!snapshot.air(bit) && !snapshot.liquid(bit)) {
-					record(x, y, z, x == buildTipX && y == buildTipY && z == buildTipZ);
-				}
-			}
-			buildStep++;
-		}
-		if(buildStep < buildLength) return false;
-		// Include the last positive sample, also for source-only hits and builds
-		// restored mid-reconstruction from an existing save.
-		if(!buildRestricted || ChunkCoordIntPair.chunkXZ2Int(buildTipX >> 4, buildTipZ >> 4) == buildChunk) record(buildTipX, buildTipY, buildTipZ, true);
-		buildActive = false;
-		return true;
-	}
+	static void clearJobs() { for(ExplosionNukeRayBatched job : active.toArray(new ExplosionNukeRayBatched[0])) job.dispose(); }
+	public static void startWorkers() { }
 
 	public void processChunk() { processChunk(Long.MAX_VALUE); }
 	public void processChunk(long deadline) {
@@ -1088,35 +476,13 @@ public class ExplosionNukeRayBatched {
 		finally { removalServerNanos += System.nanoTime() - start; }
 	}
 	private void applyMasks(long deadline) {
-		if(!restore(deadline) || !migrate(deadline) || !ExplosionWorkScheduler.before(deadline)) return;
+		if(!restore(deadline) || !ExplosionWorkScheduler.before(deadline)) return;
 		long tick = ExplosionWorkScheduler.currentTick();
 		if(excavationTick != tick) { excavationTick = tick; excavationAttempts = 0; }
-		// Deferred entries keep their own pending ownership. Only proven-local
-		// notifications can leave early; unaudited callbacks wait for all selectors.
+		// Completed masks retire independently of still-active effect jobs.
 		while(cleanupCursor != null && ExplosionWorkScheduler.before(deadline)) {
-			ChunkMask done = cleanupCursor;
-			while(cleanupSection < 16 && ExplosionWorkScheduler.before(deadline)) {
-				SectionMask section = done.sections[cleanupSection];
-				if(section == null) { cleanupSection++; cleanupBit = 0; continue; }
-				if(selectorsComplete() && !section.deferred.isEmpty()) {
-					int count = section.deferred.cardinality(); section.pending.or(section.deferred); section.deferred.clear();
-					done.deferred -= count; deferredBlocks -= count; wake(done);
-				}
-				int bit = section.deferredEffects.nextSetBit(cleanupBit);
-				if(bit < 0) { cleanupSection++; cleanupBit = 0; continue; }
-				int x = ((int)done.key << 4) + (bit & 15), y = (cleanupSection << 4) + (bit >> 8), z = ((int)(done.key >> 32) << 4) + (bit >> 4 & 15);
-				if(callbacksReady(x, y, z)) {
-					section.deferredEffects.clear(bit); section.effects.set(bit); done.deferredEffects--; deferredEffects--; wake(done);
-				}
-				if(!ExplosionWorkScheduler.before(deadline)) return;
-				cleanupBit = bit + 1;
-			}
-			if(cleanupSection < 16) return;
-			cleanupCursor = done.next; cleanupSection = cleanupBit = 0;
-			if(raysComplete() && done.pending + done.effects == 0) {
-				releaseOriginals(done); removeChunk(done);
-				if(removalActive && removalKey == done.key) removalActive = false;
-			}
+			ChunkMask done = cleanupCursor; cleanupCursor = done.next;
+			if(done.pending + done.effects == 0) { releaseOriginals(done); removeChunk(done); }
 		}
 		if(firstChunk == null) { if(selectorsComplete()) { originals.clear(); excavationWait = "complete"; } return; }
 		while(excavationReady(tick) && ExplosionWorkScheduler.before(deadline)) {
@@ -1149,12 +515,6 @@ public class ExplosionNukeRayBatched {
 					int x = ((int)chunk.key << 4) + (bit & 15), y = (sectionAt(removalSection) << 4) + (bit >> 8), z = ((int)(chunk.key >> 32) << 4) + ((bit >> 4) & 15);
 					boolean tip = section.tips != null && section.tips.get(bit);
 					if(section.completed.get(bit)) {
-						// A previously promoted notification can lose its local proof after
-						// an intervening block change. Reclassify, never run it speculatively.
-						if(!callbacksReady(x, y, z)) {
-							if(!ExplosionWorkScheduler.before(deadline)) return;
-							section.effects.clear(bit); section.deferredEffects.set(bit); chunk.deferredEffects++; deferredEffects++; removalBit++; continue;
-						}
 						if(!ExplosionTerrainAccess.neighbors(removalTerrain, x, z, deadline)) { block(chunk, tick); break; }
 						if(!ExplosionWorkScheduler.before(deadline)) return;
 						// A late tip upgrades the effect, never repeats the removal. Preserve
@@ -1166,23 +526,23 @@ public class ExplosionNukeRayBatched {
 					}
 					Block block = world.getBlock(x, y, z);
 					if(!ExplosionWorkScheduler.before(deadline)) return;
-					boolean change = !block.getMaterial().isLiquid() && !world.isAirBlock(x, y, z);
+					boolean change = !block.getMaterial().isLiquid() && !world.isAirBlock(x, y, z)
+							&& !Float.isInfinite(NuclearBlockBehavior.cost(world, block, x, y, z, posX, posY, posZ));
 					if(!ExplosionWorkScheduler.before(deadline)) return;
 					if(change) {
-						boolean terminalReady = tip && callbacksReady(x, y, z);
+						boolean terminalReady = tip;
 						if(getClass() == ExplosionNukeRayBatched.class && ExplosionTerrainAccess.canRemoveSection(world, live, sectionAt(removalSection))
 								&& safeProgressiveBlock(block) && (!tip || !selectorsComplete())) {
 							if(applySectionColumn(chunk, section, live, bit, deadline)) { removalBit = bit + 1; continue; }
 							if(!ExplosionWorkScheduler.before(deadline)) return;
 						}
 						if(!clearAttachments(x, y, z, deadline)) { block(chunk, tick); break; }
+						block = world.getBlock(x, y, z);
+						if(block.getMaterial().isLiquid() || world.isAirBlock(x, y, z) || Float.isInfinite(NuclearBlockBehavior.cost(world, block, x, y, z, posX, posY, posZ))) {
+							section.pending.clear(bit); section.completed.set(bit); section.notified.set(bit); chunk.pending--; pendingBlocks--; removalBit = bit + 1; continue;
+						}
 						if(!selectorsComplete()) {
-							// Unknown breakBlock/TE callbacks can mutate arbitrarily far away,
-							// including uncaptured sections. Defer only that cell; do not run
-							// such callbacks and then pretend a local snapshot covered them.
-							if(!safeProgressiveBlock(block) || block.hasTileEntity(world.getBlockMetadata(x, y, z)) || world.getTileEntity(x, y, z) != null || getClass() != ExplosionNukeRayBatched.class) { excavationWait = "special callbacks await calculations"; deferBlock(chunk, section, bit); removalBit++; continue; }
-							// Memory can be freed by another calculation before ours ends.
-							// Retry this cursor next tick, without rescanning deferred callbacks.
+							// Retry this cursor when bounded history memory becomes available.
 							if(!remember(x, y, z, block)) { excavationWait = "original terrain memory ceiling"; block(chunk, tick); break; }
 						}
 						if(localLeafCallback(block) && !NuclearDropSuppression.prepareLeaves(world, x, y, z, block instanceof net.minecraft.block.BlockLog ? 4 : 1)) { excavationWait = "leaf attribution ceiling"; block(chunk, tick); break; }
@@ -1205,6 +565,7 @@ public class ExplosionNukeRayBatched {
 						}
 						if(block instanceof net.minecraft.block.BlockLeaves) NuclearDropSuppression.removed(world, x, y, z);
 						destroyedBlocks++; normalRemovals++; removedBands[band(y)]++; surfaceRemoved(section, bit);
+						materialReleased |= NuclearBlockBehavior.ordinaryTerrain(block) || NuclearBlockBehavior.constructionBarrier(block);
 						if(terminalReady) section.notified.set(bit);
 						if(firstRemovalAt == 0) { firstRemovalAt = System.nanoTime(); logStatus("first successful block removal"); }
 						removalFailureReported = false;
@@ -1219,9 +580,9 @@ public class ExplosionNukeRayBatched {
 				}
 				if(removalSection == 16) {
 					removalActive = false; chunksAdvanced++;
-					if(chunk.pending - chunk.deferred + chunk.effects - chunk.deferredEffects == 0) {
+					if(chunk.pending + chunk.effects == 0) {
 						dequeue(chunk);
-						if(raysComplete() && chunk.pending + chunk.effects == 0) { releaseOriginals(chunk); if(cleanupCursor == chunk) { cleanupCursor = chunk.next; cleanupSection = cleanupBit = 0; } removeChunk(chunk); }
+						if(chunk.pending + chunk.effects == 0) { releaseOriginals(chunk); if(cleanupCursor == chunk) cleanupCursor = chunk.next; removeChunk(chunk); }
 					} else {
 						// Late insertion before the cursor remains ready in the next pass.
 						removalSection = removalBit = 0;
@@ -1234,7 +595,6 @@ public class ExplosionNukeRayBatched {
 				removalActive = false;
 			}
 		}
-		if(queuedChunks == 0 && (deferredBlocks != 0 || deferredEffects != 0)) excavationWait = "deferred callbacks await calculations";
 	}
 	private boolean remember(int x, int y, int z, Block block) {
 		long start = System.nanoTime();
@@ -1248,6 +608,7 @@ public class ExplosionNukeRayBatched {
 	}
 	private boolean applySectionColumn(ChunkMask chunk, SectionMask section, net.minecraft.world.chunk.Chunk live, int first, long deadline) {
 		int count = 0;
+		columnMaterial.clear();
 		for(int bit = first; bit < 4096 && ExplosionWorkScheduler.before(deadline); bit += 256) {
 			if(!section.pending.get(bit) || selectorsComplete() && section.tips != null && section.tips.get(bit)) continue;
 			int x = (live.xPosition << 4) + (bit & 15), y = (sectionAt(removalSection) << 4) + (bit >> 8), z = (live.zPosition << 4) + (bit >> 4 & 15);
@@ -1255,17 +616,30 @@ public class ExplosionNukeRayBatched {
 			// Positive opacity makes the highest native removal schedule the same
 			// skylight gap work as every lower removal. Zero-opacity cells fall back.
 			if(!safeProgressiveBlock(block) || localLeafCallback(block) || block.getClass() == com.hbm.blocks.generic.BlockOutgas.class || block.getMaterial().isLiquid() || world.isAirBlock(x, y, z)
+					|| Float.isInfinite(NuclearBlockBehavior.cost(world, block, x, y, z, posX, posY, posZ))
 					|| block.hasTileEntity(live.getBlockMetadata(bit & 15, y, bit >> 4 & 15)) || world.getTileEntity(x, y, z) != null
 					|| block.getLightOpacity(world, x, y, z) <= 0) continue;
 			if(!clearAttachments(x, y, z, deadline)) break;
 			if(!selectorsComplete() && !remember(x, y, z, block)) break;
-			columnBits[count++] = bit;
+			columnSources[count] = block; columnMetadata[count] = live.getBlockMetadata(bit & 15, y, bit >> 4 & 15); columnBits[count++] = bit;
+			if(NuclearBlockBehavior.ordinaryTerrain(block) || NuclearBlockBehavior.constructionBarrier(block)) columnMaterial.set(bit);
 		}
 		if(count < 2 || columnBits[0] != first || !ExplosionWorkScheduler.before(deadline)) return false;
+		// Attachment notifications can call arbitrary mod code. Recheck every
+		// certified cell after gathering, before any counted storage writes.
+		for(int i = 0; i < count; i++) {
+			int bit = columnBits[i], y = (sectionAt(removalSection) << 4) + (bit >> 8);
+			int x = (live.xPosition << 4) + (bit & 15), z = (live.zPosition << 4) + (bit >> 4 & 15);
+			Block current = live.getBlock(bit & 15, y, bit >> 4 & 15);
+			if(!ExplosionWorkScheduler.before(deadline) || current != columnSources[i] || live.getBlockMetadata(bit & 15, y, bit >> 4 & 15) != columnMetadata[i]
+					|| current.hasTileEntity(columnMetadata[i]) || world.getTileEntity(x, y, z) != null || current.getLightOpacity(world, x, y, z) <= 0
+					|| Float.isInfinite(NuclearBlockBehavior.cost(world, current, x, y, z, posX, posY, posZ))) return false;
+		}
 		columnChanged.clear();
 		// At most sixteen cells form one indivisible column transaction. Finish
 		// its lighting/sync even if a native callback overruns; start no next batch.
 		ExplosionTerrainAccess.removeSectionColumn(world, live, sectionAt(removalSection), columnBits, count, columnChanged);
+		materialReleased |= columnChanged.intersects(columnMaterial);
 		for(int bit = columnChanged.nextSetBit(0); bit >= 0; bit = columnChanged.nextSetBit(bit + 1)) {
 			section.pending.clear(bit); section.completed.set(bit); chunk.pending--; pendingBlocks--;
 			destroyedBlocks++; fastRemovals++; removedBands[band((sectionAt(removalSection) << 4) + (bit >> 8))]++; surfaceRemoved(section, bit);
@@ -1285,312 +659,298 @@ public class ExplosionNukeRayBatched {
 	}
 
 	protected void handleTip(int x, int y, int z) { world.setBlock(x, y, z, Blocks.air, 0, 3); }
-	public static float masqueradeResistance(Block block) {
+	/** External compatibility helper only; geometric terrain never calls it. */
+	@Deprecated public static float masqueradeResistance(Block block) {
 		if(block == Blocks.sandstone) return Blocks.stone.getExplosionResistance(null);
-		if(block == Blocks.obsidian) return Blocks.stone.getExplosionResistance(null) * 3;
+		if(block == Blocks.obsidian) return Blocks.stone.getExplosionResistance(null) * 3F;
 		return block.getExplosionResistance(null);
 	}
-
+	private static int[] spiral(long index) {
+		int ring = (int)Math.ceil((Math.sqrt(index + 1D) - 1D) / 2D), dx = 0, dz = 0;
+		if(ring > 0) {
+			long d = (2L * ring + 1) * (2L * ring + 1) - 1 - index;
+			int side = (int)(d / (2L * ring)), offset = (int)(d % (2L * ring));
+			if(side == 0) { dx = ring - offset; dz = -ring; }
+			else if(side == 1) { dx = -ring; dz = -ring + offset; }
+			else if(side == 2) { dx = -ring + offset; dz = ring; }
+			else { dx = ring; dz = ring - offset; }
+		}
+		return new int[] {dx, dz};
+	}
+	private static boolean finite(double n) { return !Double.isNaN(n) && !Double.isInfinite(n); }
+	private final class CraterWork {
+		final double radius, radiusSquared, depth, upper, centerY;
+		final int extent;
+		long chunkIndex;
+		int column, scanY = -1, bottom;
+		boolean columnStarted, complete;
+		final Shielding shield = new Shielding(terrain, posX + .5D, posY + .5D, posZ + .5D);
+		CraterWork(double radius, double depth, double upper, double centerY) {
+			this.radius = radius; radiusSquared = radius * radius; this.depth = depth; this.upper = upper; this.centerY = centerY;
+			extent = (int)Math.ceil(radius / 16D) + 1;
+			complete = !finite(radius) || !finite(depth) || !finite(upper) || !finite(centerY) || radius <= 0D || depth <= 0D || centerY + upper < .5D || centerY - depth > 255.5D;
+		}
+		void advance(long deadline) {
+			while(!complete && craterCapacity() && ExplosionWorkScheduler.before(deadline)) {
+				if(chunkIndex >= (2L * extent + 1) * (2L * extent + 1)) {
+					complete = isAusf3Complete = true; shield.cancel(); beginCleanup(); return;
+				}
+				int[] offset = spiral(chunkIndex);
+				int cx = (posX >> 4) + offset[0], cz = (posZ >> 4) + offset[1];
+				double nearX = Math.max(0D, Math.max((cx << 4) + .5D - (posX + .5D), posX + .5D - ((cx << 4) + 15.5D)));
+				double nearZ = Math.max(0D, Math.max((cz << 4) + .5D - (posZ + .5D), posZ + .5D - ((cz << 4) + 15.5D)));
+				if(cx < -1875000 || cx >= 1875000 || cz < -1875000 || cz >= 1875000 || nearX * nearX + nearZ * nearZ > radiusSquared) { nextChunk(); continue; }
+				net.minecraft.world.chunk.Chunk live = ExplosionTerrainAccess.chunk(terrain, cx, cz, deadline);
+				if(live == null) return;
+				while(column < 256 && craterCapacity() && ExplosionWorkScheduler.before(deadline)) {
+					int x = (cx << 4) + (column & 15), z = (cz << 4) + (column >> 4);
+					double dx = x - (double)posX, dz = z - (double)posZ, radial = (dx * dx + dz * dz) / radiusSquared;
+					if(radial > 1D) { nextColumn(); continue; }
+					if(!columnStarted) {
+						double height = Math.sqrt(1D - radial);
+						bottom = Math.min(256, Math.max(0, (int)Math.ceil(centerY - depth * height - .5D)));
+						scanY = Math.min(255, Math.min(live.getTopFilledSegment() + 15, (int)Math.floor(centerY + upper * height - .5D)));
+						columnStarted = true;
+					}
+					while(scanY >= bottom && craterCapacity() && ExplosionWorkScheduler.before(deadline)) {
+						int y = scanY, sy = y >> 4;
+						net.minecraft.world.chunk.storage.ExtendedBlockStorage storage = live.getBlockStorageArray()[sy];
+						if(storage == null || storage.getClass() == net.minecraft.world.chunk.storage.ExtendedBlockStorage.class && storage.isEmpty()) { scanY = (sy << 4) - 1; continue; }
+						Block b = live.getBlock(x & 15, y, z & 15);
+						if(b == Blocks.air || b.getMaterial().isLiquid() || b.isAir(world, x, y, z)) { scanY--; continue; }
+						float cost = NuclearBlockBehavior.cost(world, b, x, y, z, posX, posY, posZ);
+						if(!Float.isInfinite(cost)) {
+							// The volume is authoritative for ordinary terrain: no crater rays,
+							// resistance attenuation, random omissions or endpoint reconstruction.
+							boolean ordinary = NuclearBlockBehavior.ordinaryTerrain(b) || !NuclearBlockBehavior.constructionBarrier(b) && NuclearBlockBehavior.weak(b);
+							double vertical = (y + .5D - centerY) / (y + .5D < centerY ? depth : Math.max(.5D, upper));
+							double zone = radial + vertical * vertical;
+							boolean destroy = ordinary || zone <= .36D;
+							if(!destroy) {
+								// One local thickness estimate per four-block cell, only for barriers
+								// whose survival can change at the crater edge. The core ignores it.
+								double available = 24D + 160D * Math.max(0D, 1D - zone) - cost;
+								if(available > 0D) {
+									if(!shield.prepare(x, y, z, available, deadline)) return;
+									destroy = available > shield.cost;
+								}
+							}
+							if(destroy) record(x, y, z, false);
+						}
+						scanY--;
+					}
+					if(scanY >= bottom) return;
+					nextColumn();
+				}
+				if(column < 256) return;
+				nextChunk();
+			}
+		}
+		void nextColumn() { column++; columnStarted = false; scanY = -1; }
+		void nextChunk() { chunkIndex++; column = 0; columnStarted = false; scanY = -1; }
+		boolean validColumnCursor() {
+			if(!columnStarted) return true;
+			if(column >= 256) return false;
+			int[] offset = spiral(chunkIndex);
+			double dx = (((posX >> 4) + offset[0]) * 16D + (column & 15)) - posX;
+			double dz = (((posZ >> 4) + offset[1]) * 16D + (column >> 4)) - posZ;
+			double radial = (dx * dx + dz * dz) / radiusSquared;
+			if(!finite(radial) || radial > 1D) return false;
+			double height = Math.sqrt(1D - radial);
+			int expectedBottom = Math.min(256, Math.max(0, (int)Math.ceil(centerY - depth * height - .5D)));
+			int maximum = Math.min(255, (int)Math.floor(centerY + upper * height - .5D));
+			return bottom == expectedBottom && scanY >= bottom && scanY <= maximum;
+		}
+		NBTTagCompound write() {
+			NBTTagCompound t = new NBTTagCompound();
+			t.setDouble("radius", radius); t.setDouble("depth", depth); t.setDouble("upper", upper); t.setDouble("centerY", centerY);
+			t.setLong("chunk", chunkIndex); t.setInteger("column", column); t.setInteger("y", scanY); t.setInteger("bottom", bottom);
+			t.setBoolean("columnStarted", columnStarted); t.setBoolean("complete", complete); return t;
+		}
+	}
+	/** Bounded local shielding approximation, not a crater selector. A four-by-one-by-four
+	 * cell shares one approach through at most 64 blocks / 128 half-block samples.
+	 * Ordinary solids accumulate overburden; structural costs retain context.
+	 * Costs saturate at 4096: no decision here can penetrate that much cover.
+	 * Remote barriers beyond the local window are deliberately not surveyed.
+	 * The 256 direct-mapped entries expire on world changes and each server tick.
+	 * Inputs are immutable section summaries; all captures and decisions run on
+	 * the owning server thread. No worker receives a World or Chunk reference. */
+	private final class Shielding {
+		final Access access;
+		final double sx, sy, sz;
+		final ShieldCell[] cells = new ShieldCell[256];
+		int gx, gy, gz, step, steps, lastX, lastY, lastZ;
+		double dx, dy, dz, span, sum, cost;
+		long revision = Long.MIN_VALUE, tick = Long.MIN_VALUE;
+		long traversal, reused;
+		boolean running;
+		Shielding(Access access, double sx, double sy, double sz) { this.access = access; this.sx = sx; this.sy = sy; this.sz = sz; }
+		void cancel() { java.util.Arrays.fill(cells, null); running = false; }
+		boolean prepare(int x, int y, int z, double limit, long deadline) {
+			long now = ExplosionTerrainAccess.revision(world), currentTick = ExplosionWorkScheduler.currentTick();
+			if(revision != now || tick != currentTick) {
+				// Keep an unfinished traversal across ticks; only actual terrain changes
+				// invalidate its partial sum. Disposable finished entries expire each tick.
+				java.util.Arrays.fill(cells, null); if(revision != now) running = false;
+				revision = now; tick = currentTick;
+			}
+			int cx = x >> 2, cy = y, cz = z >> 2, slot = (cx * 73428767 ^ cy * 912931 ^ cz) & 255;
+			ShieldCell saved = cells[slot];
+			boolean matching = saved != null && saved.x == cx && saved.y == cy && saved.z == cz;
+			if(matching && (saved.exact || saved.cost >= limit)) { reused++; cost = saved.cost; return true; }
+			if(!running || gx != cx || gy != cy || gz != cz) {
+				gx = cx; gy = cy; gz = cz; dx = sx - (cx * 4D + 2D); dy = sy - (cy + .5D); dz = sz - (cz * 4D + 2D);
+				span = Math.sqrt(dx * dx + dy * dy + dz * dz);
+				steps = Math.min(128, (int)Math.ceil(span * 2D)); step = 1; sum = 0D; lastX = Integer.MIN_VALUE; running = true;
+				if(matching) { step = saved.step; sum = saved.cost; lastX = saved.lastX; lastY = saved.lastY; lastZ = saved.lastZ; }
+			}
+			while(step < steps && sum < limit && ExplosionWorkScheduler.before(deadline)) {
+				double f = step * .5D / Math.max(.5D, span);
+				int xx = MathHelper.floor_double(gx * 4D + 2D + dx * f), yy = MathHelper.floor_double(gy + .5D + dy * f), zz = MathHelper.floor_double(gz * 4D + 2D + dz * f);
+				if(yy < 0 || yy >= 256 || xx < -30000000 || xx >= 30000000 || zz < -30000000 || zz >= 30000000 || xx == lastX && yy == lastY && zz == lastZ) { step++; continue; }
+				Snapshot sample = ExplosionTerrainAccess.snapshot(access, xx >> 4, yy >> 4, zz >> 4, deadline);
+				if(sample == null) return false;
+				traversal++;
+				int bit = (yy & 15) << 8 | (zz & 15) << 4 | (xx & 15);
+				if(!sample.air(bit)) {
+					float resistance = sample.resistance(bit);
+					if(resistance < 0F) {
+						if(ExplosionTerrainAccess.chunk(access, xx >> 4, zz >> 4, deadline) == null) return false;
+						Block b = world.getBlock(xx, yy, zz);
+						resistance = NuclearBlockBehavior.cost(world, b, xx, yy, zz, sx, sy, sz);
+					}
+					sum += resistance;
+				}
+				lastX = xx; lastY = yy; lastZ = zz; step++;
+			}
+			if(step < steps && sum < limit) return false;
+			cost = Math.min(4096D, sum); cells[slot] = new ShieldCell(cx, cy, cz, cost, step, step >= steps, lastX, lastY, lastZ); running = false; return true;
+		}
+	}
+	private static final class ShieldCell {
+		final int x, y, z; final double cost;
+		final int step, lastX, lastY, lastZ; final boolean exact;
+		ShieldCell(int x, int y, int z, double cost, int step, boolean exact, int lastX, int lastY, int lastZ) {
+			this.x = x; this.y = y; this.z = z; this.cost = cost; this.step = step; this.exact = exact;
+			this.lastX = lastX; this.lastY = lastY; this.lastZ = lastZ;
+		}
+	}
 	public void readFromNBT(NBTTagCompound tag) {
-		cancelWorkers(); terrain.read(tag);
-		originals.clear(); pendingBlocks = pendingEffects = deferredBlocks = deferredEffects = 0; queuedChunks = 0; nextDistance = 0; excavationTick = Long.MIN_VALUE; excavationAttempts = 0;
-		ranges.clear(); corridor.clear(); allocating = null; rangeCursor = 0;
-		savedDiagnostics = tag.hasKey("selectedBlocks"); selectedBlocks = tag.getLong("selectedBlocks"); destroyedBlocks = tag.getLong("destroyedBlocks"); rejectedBatches = tag.getLong("rejectedBatches");
-		chunks = new LongHashMap(); firstChunk = lastChunk = cleanupCursor = null; ordering.clear();
-		rayChunks = new LongHashMap(); rayChunkKeys = new ArrayList<Long>();
-		directionOrder = tag.hasKey("directionOrder") ? tag.getInteger("directionOrder") : tag.getBoolean("balancedDirections") ? 1 : 0;
-		pressure = tag.hasKey("pressureWork") ? new PressureWork(tag.getCompoundTag("pressureWork")) : null;
-		gspNum = tag.getInteger("gspNum"); gspX = tag.getDouble("gspX"); gspY = tag.getDouble("gspY");
-		if(tag.hasKey("contained")) contained = tag.getBoolean("contained");
-		if(tag.hasKey("surfaceY")) surfaceY = tag.getInteger("surfaceY");
-		rayLength = tag.hasKey("rayLength") ? tag.getInteger("rayLength") : strength;
-		rayActive = tag.getBoolean("rayActive"); rayFinishing = tag.getBoolean("rayFinishing");
-		rayX = tag.getDouble("rayX"); rayY = tag.getDouble("rayY"); rayZ = tag.getDouble("rayZ");
-		rayStep = tag.getInteger("rayStep"); rayStrength = tag.getFloat("rayStrength");
-		collectionTick = Long.MIN_VALUE; raysThisTick = 0; isAusf3Complete = false;
-		restoring = legacy = null; restorePhase = restoreIndex = restoreSection = 0;
-		legacyPhase = legacyIndex = legacyPoint = 0; legacyChunkStarted = false;
-		buildActive = removalActive = rayRecorded = hasTip = false;
-		if(tag.getInteger("workVersion") < WORK_VERSION) {
-			legacy = tag;
-			if(tag.hasKey("lastPos")) {
-				NBTTagCompound tip = tag.getCompoundTag("lastPos");
-				tipX = tip.getFloat("x"); tipY = tip.getFloat("y"); tipZ = tip.getFloat("z"); hasTip = true;
-			}
-		} else {
-			restoring = tag;
-			rayRecorded = tag.getBoolean("rayRecorded");
-			hasTip = tag.getBoolean("hasTip"); tipX = tag.getFloat("tipX"); tipY = tag.getFloat("tipY"); tipZ = tag.getFloat("tipZ");
-			buildActive = tag.getBoolean("buildActive"); buildRestricted = tag.getBoolean("buildRestricted"); buildInChunk = tag.getBoolean("buildInChunk");
-			buildChunk = tag.getLong("buildChunk"); buildStep = tag.getInteger("buildStep"); buildLength = tag.getDouble("buildLength");
-			buildX = tag.getDouble("buildX"); buildY = tag.getDouble("buildY"); buildZ = tag.getDouble("buildZ");
-			buildTipX = tag.getInteger("buildTipX"); buildTipY = tag.getInteger("buildTipY"); buildTipZ = tag.getInteger("buildTipZ");
-			removalActive = tag.getBoolean("balancedSections") && tag.getBoolean("removalActive"); removalKey = tag.getLong("removalKey");
-			removalSection = tag.getInteger("removalSection"); removalBit = tag.getInteger("removalBit");
-			if(tag.hasKey("legacy")) {
-				legacy = tag.getCompoundTag("legacy"); legacyPhase = tag.getInteger("legacyPhase"); legacyIndex = tag.getInteger("legacyIndex");
-				legacyPoint = tag.getInteger("legacyPoint"); legacyChunkStarted = tag.getBoolean("legacyChunkStarted");
-			}
-		}
-		if(Double.isNaN(gspY) || Double.isInfinite(gspY)) {
-			gspY = 0D;
-			// Old saves can be paused on the invalid last ray, including a queued
-			// request for the unrelated origin. Retry that ray at the real source.
-			rayActive = rayFinishing = rayRecorded = hasTip = buildActive = false;
-			terrain.read(new NBTTagCompound());
-			logStatus("repaired non-finite legacy polar ray checkpoint");
-		}
-		NBTTagList savedRanges = tag.getTagList("rayRanges", 10);
-		for(int i = 0; i < savedRanges.tagCount(); i++) {
-			NBTTagCompound item = savedRanges.getCompoundTagAt(i);
-			RayRange range = new RayRange(readState(item), item.getInteger("end"));
-			range.sealed = item.getBoolean("sealed"); range.fallback = item.getBoolean("fallback"); range.rejections = item.getInteger("rejections");
-			range.fallbackEnd = !range.fallback ? range.end : item.hasKey("fallbackEnd") ? Math.max(range.state.gspNum, Math.min(range.end, item.getInteger("fallbackEnd"))) : Math.min(range.end, range.state.gspNum + 1);
-			int[] keys = item.getIntArray("qualified");
-			for(int k = 0; k + 1 < keys.length; k += 2) range.qualified.add(ChunkCoordIntPair.chunkXZ2Int(keys[k], keys[k + 1]));
-			ranges.add(range); if(!range.sealed) allocating = range;
-		}
-		completedRays = tag.hasKey("completedRays") ? tag.getLong("completedRays") : Math.max(0, gspNum - 1);
-		submittedBatches = tag.getLong("submittedBatches"); acceptedBatches = tag.getLong("acceptedBatches"); snapshotRejections = tag.getLong("snapshotRejections");
-		workerFailures = tag.getLong("workerFailures"); repeatedOperations = tag.getLong("repeatedOperations"); workerNanos = tag.getLong("workerNanos");
-		sectionMisses = tag.getLong("sectionMisses"); fallbackActivations = tag.getLong("fallbackActivations");
-		traversalOperations = tag.getLong("traversalOperations"); reconstructionOperations = tag.getLong("reconstructionOperations");
-		reusedSamples = tag.getLong("reusedSamples"); skippedReconstruction = tag.getLong("skippedReconstruction"); attenuationHits = tag.getLong("attenuationHits"); workerCpuNanos = tag.getLong("workerCpuNanos");
-		sharedSnapshotHits = tag.getLong("sharedSnapshotHits");
-		collectionServerNanos = tag.getLong("collectionServerNanos"); removalServerNanos = tag.getLong("removalServerNanos");
+		cancelWorkers(); originals.clear(); chunks = new LongHashMap(); firstChunk = lastChunk = cleanupCursor = null; ordering.clear();
+		pendingBlocks = pendingEffects = 0L; queuedChunks = maskChunks = nextDistance = 0;
+		removalActive = false; excavationTick = Long.MIN_VALUE;
+		terrain.read(tag); pressure = tag.hasKey("pressureWork") ? new PressureWork(tag.getCompoundTag("pressureWork")) : null;
+		savedDiagnostics = tag.hasKey("selectedBlocks"); selectedBlocks = tag.getLong("selectedBlocks"); destroyedBlocks = tag.getLong("destroyedBlocks");
+		materialReleased = tag.hasKey("materialReleased") ? tag.getBoolean("materialReleased") : destroyedBlocks > 0;
 		fastRemovals = tag.getLong("fastRemovals"); normalRemovals = tag.getLong("normalRemovals");
-		sectionsAdvanced = tag.getLong("sectionsAdvanced"); chunksAdvanced = tag.getLong("chunksAdvanced"); preservationNanos = tag.getLong("preservationNanos"); diagnosticRemoved = destroyedBlocks;
-		for(int i = 0; i < 3; i++) removedBands[i] = tag.getLong("removedBand" + i);
-		for(int i = 0; i < completedDirections.length; i++) completedDirections[i] = tag.getLong("directionCell" + i);
-		memoryWaits = tag.getLong("memoryWaits"); surfaceCallbackNanos = tag.getLong("surfaceCallbackNanos");
-		surfaceSelected = tag.getLong("surfaceSelected"); surfaceRemoved = tag.getLong("surfaceRemoved");
-		terrain.snapshotCaptures = tag.getLong("snapshotCaptures"); terrain.snapshotReuses = tag.getLong("snapshotReuses");
-		long now = System.nanoTime(); startedAt = now - tag.getLong("elapsedNanos");
-		collectionStartedAt = startedAt + tag.getLong("collectionOffsetNanos");
-		collectionFinishedAt = tag.getBoolean("collectionTimed") ? startedAt + tag.getLong("collectionElapsedNanos") : 0;
-		firstRemovalAt = tag.getBoolean("firstRemovalTimed") ? startedAt + tag.getLong("firstRemovalElapsedNanos") : 0;
-		firstSurfaceRemovalAt = tag.getBoolean("firstSurfaceTimed") ? startedAt + tag.getLong("firstSurfaceElapsedNanos") : 0;
+		startedAt = System.nanoTime() - Math.max(0L, tag.getLong("elapsedNanos"));
+		if(tag.getInteger("workVersion") == WORK_VERSION && tag.hasKey("crater")) {
+			NBTTagCompound t = tag.getCompoundTag("crater");
+			double radius = t.getDouble("radius"), depth = t.getDouble("depth"), upper = t.getDouble("upper"), center = t.getDouble("centerY");
+			// Reject malformed cursors/dimensions instead of restarting a large crater.
+			boolean valid = t.hasKey("chunk") && t.hasKey("column") && t.hasKey("y") && t.hasKey("bottom") && t.hasKey("columnStarted") && t.hasKey("complete")
+					&& finite(radius) && finite(depth) && finite(upper) && finite(center) && radius >= 0D && radius <= Math.max(1, length)
+					&& depth >= 0D && depth <= Math.max(1, length) && upper >= 0D && upper <= Math.max(1, length) && Math.abs(center) <= 30000000D;
+			if(valid) {
+				CraterWork loaded = new CraterWork(radius, depth, upper, center);
+				loaded.chunkIndex = t.getLong("chunk"); loaded.column = t.getInteger("column"); loaded.scanY = t.getInteger("y"); loaded.bottom = t.getInteger("bottom");
+				loaded.columnStarted = t.getBoolean("columnStarted");
+				long limit = (2L * loaded.extent + 1) * (2L * loaded.extent + 1);
+				valid = loaded.chunkIndex >= 0 && loaded.chunkIndex <= limit && loaded.column >= 0 && loaded.column <= 256 && loaded.scanY >= -1 && loaded.scanY <= 255 && loaded.bottom >= 0 && loaded.bottom <= 256 && loaded.validColumnCursor();
+				if(valid) { loaded.complete |= t.getBoolean("complete") || loaded.chunkIndex == limit; crater = loaded; }
+			}
+			if(!valid) { crater.complete = true; logStatus("invalid crater checkpoint; retaining committed terrain work only"); }
+		} else {
+			// Ray ordinals/endpoints have no geometric cursor equivalent. Preserve
+			// materialized masks/remaining positions, retire unfinished rays, and do
+			// not restart completed terrain or reconstruct rays in old saves.
+			crater.complete = true;
+			logStatus("legacy checkpoint: applying committed work; unfinished rays retired");
+		}
+		isAusf3Complete = crater.complete;
+		restoring = tag; restorePhase = restoreIndex = restoreSection = 0;
 	}
-
-	private NBTTagCompound writeState(ExplosionRayWorker.State s) {
-		NBTTagCompound tag = new NBTTagCompound();
-		tag.setInteger("gspNum", s.gspNum); tag.setDouble("gx", s.gx); tag.setDouble("gy", s.gy);
-		tag.setBoolean("active", s.active); tag.setBoolean("finishing", s.finishing); tag.setBoolean("recorded", s.recorded); tag.setBoolean("hasTip", s.hasTip);
-		tag.setInteger("step", s.step); tag.setFloat("strength", s.strength); tag.setDouble("dx", s.dx); tag.setDouble("dy", s.dy); tag.setDouble("dz", s.dz);
-		tag.setFloat("tx", s.tx); tag.setFloat("ty", s.ty); tag.setFloat("tz", s.tz);
-		tag.setBoolean("building", s.building); tag.setInteger("buildStep", s.buildStep); tag.setDouble("buildLength", s.buildLength);
-		tag.setDouble("bx", s.bx); tag.setDouble("by", s.by); tag.setDouble("bz", s.bz);
-		tag.setInteger("tipX", s.tipX); tag.setInteger("tipY", s.tipY); tag.setInteger("tipZ", s.tipZ);
-		return tag;
-	}
-	private ExplosionRayWorker.State readState(NBTTagCompound tag) {
-		ExplosionRayWorker.State s = captureState();
-		s.gspNum = tag.getInteger("gspNum"); s.gx = tag.getDouble("gx"); s.gy = tag.getDouble("gy");
-		s.active = tag.getBoolean("active"); s.finishing = tag.getBoolean("finishing"); s.recorded = tag.getBoolean("recorded"); s.hasTip = tag.getBoolean("hasTip");
-		s.step = tag.getInteger("step"); s.strength = tag.getFloat("strength"); s.dx = tag.getDouble("dx"); s.dy = tag.getDouble("dy"); s.dz = tag.getDouble("dz");
-		s.tx = tag.getFloat("tx"); s.ty = tag.getFloat("ty"); s.tz = tag.getFloat("tz");
-		s.building = tag.getBoolean("building"); s.buildStep = tag.getInteger("buildStep"); s.buildLength = tag.getDouble("buildLength");
-		s.bx = tag.getDouble("bx"); s.by = tag.getDouble("by"); s.bz = tag.getDouble("bz");
-		s.tipX = tag.getInteger("tipX"); s.tipY = tag.getInteger("tipY"); s.tipZ = tag.getInteger("tipZ");
-		return s;
-	}
-
 	private boolean restore(long deadline) {
-		if(restoring != null && !originals.restore(restoring, deadline)) { waitReason = "restoring required original terrain"; return false; }
+		if(restoring == null) return true;
+		if(!originals.restore(restoring, deadline)) { excavationWait = "restoring shielding history"; return false; }
 		while(restoring != null && ExplosionWorkScheduler.before(deadline)) {
 			if(restorePhase == 0) {
 				NBTTagList savedChunks = restoring.getTagList("chunks", 10);
-				if(restoreIndex == savedChunks.tagCount()) { restorePhase++; restoreIndex = 0; continue; }
+				if(restoreIndex >= savedChunks.tagCount()) { restorePhase++; restoreIndex = 0; continue; }
 				NBTTagCompound item = savedChunks.getCompoundTagAt(restoreIndex);
 				NBTTagList sections = item.getTagList("sections", 10);
-				if(restoreSection == sections.tagCount()) { restoreIndex++; restoreSection = 0; continue; }
+				if(restoreSection >= sections.tagCount()) { restoreIndex++; restoreSection = 0; continue; }
 				NBTTagCompound data = sections.getCompoundTagAt(restoreSection++);
-				int sectionY = data.getInteger("y");
-				if(sectionY < 0 || sectionY >= 16) continue;
+				int sy = data.getInteger("y"), cx = item.getInteger("x"), cz = item.getInteger("z");
+				if(sy < 0 || sy >= 16 || cx < -1875000 || cx >= 1875000 || cz < -1875000 || cz >= 1875000) continue;
 				SectionMask section = new SectionMask();
-				section.destruction.or(BitSet.valueOf(data.getByteArray("destruction")));
-				section.surface.or(BitSet.valueOf(data.getByteArray("surface"))); section.surface.and(section.destruction);
-				if(section.destruction.length() > 4096) section.destruction.clear(4096, section.destruction.length());
+				section.destruction.or(bits(data, "destruction"));
 				if(section.destruction.isEmpty()) continue;
-				if(!savedDiagnostics) selectedBlocks += section.destruction.cardinality();
-				boolean progressive = restoring.getBoolean("progressive");
-				section.pending.or(progressive ? BitSet.valueOf(data.getByteArray("pending")) : section.destruction);
+				ChunkMask chunk = chunkMask(ChunkCoordIntPair.chunkXZ2Int(cx, cz));
+				if(chunk.sections[sy] != null) continue;
+				section.surface.or(bits(data, "surface")); section.surface.and(section.destruction);
+				section.pending.or(restoring.getBoolean("progressive") ? bits(data, "pending") : section.destruction);
 				section.pending.and(section.destruction);
-				if(progressive) { section.completed.or(BitSet.valueOf(data.getByteArray("completed"))); section.completed.and(section.destruction); section.notified.or(BitSet.valueOf(data.getByteArray("notified"))); section.notified.and(section.completed); }
-				section.pending.andNot(section.completed);
-				// Re-audit saved deferrals once through the bounded application path.
-				// Eligibility may have expanded since this checkpoint was written;
-				// genuine special callbacks will defer again without executing them.
-				if(data.hasKey("tips")) {
-					section.tips = BitSet.valueOf(data.getByteArray("tips")); section.tips.and(section.destruction);
-				}
-				ChunkMask chunk = chunkMask(readCoord(item)); chunk.sections[sectionY] = section;
-				chunk.cursorSection = restoring.getBoolean("balancedSections") ? item.getInteger("cursorSection") : 0;
-				chunk.cursorBit = !restoring.getBoolean("balancedSections") ? 0 : item.hasKey("cursorBit") ? item.getInteger("cursorBit") : removalActive && removalKey == chunk.key ? removalBit : 0;
-				int effects = 0;
-				if(section.tips != null || data.hasKey("effects")) {
-					BitSet late = section.tips == null ? new BitSet() : (BitSet)section.tips.clone();
-					late.or(BitSet.valueOf(data.getByteArray("effects"))); late.and(section.completed); late.andNot(section.notified); effects = late.cardinality();
-					if(restoring.getBoolean("complete") && (pressure == null || pressure.complete)) section.effects.or(late);
-					else { section.deferredEffects.or(late); chunk.deferredEffects += effects; deferredEffects += effects; }
-				}
-				int deferred = section.deferred.cardinality(), pending = section.pending.cardinality() + deferred;
-				chunk.deferred += deferred; deferredBlocks += deferred;
-				chunk.pending += pending; pendingBlocks += pending; chunk.effects += effects; pendingEffects += effects;
-				if(chunk.pending + chunk.effects > 0) enqueue(chunk);
-			} else if(restorePhase == 1) {
-				int[] keys = restoring.getIntArray("rayChunks");
-				if(restoreIndex < keys.length / 2) { addRayChunk(ChunkCoordIntPair.chunkXZ2Int(keys[restoreIndex * 2], keys[restoreIndex * 2 + 1])); restoreIndex++; }
-				else restorePhase++;
+				section.completed.or(bits(data, "completed")); section.completed.and(section.destruction); section.pending.andNot(section.completed);
+				section.notified.or(bits(data, "notified")); section.notified.and(section.completed);
+				section.tips = bits(data, "tips"); section.tips.and(section.destruction);
+				section.effects.or(bits(data, "effects")); section.effects.or(section.tips); section.effects.and(section.completed); section.effects.andNot(section.notified);
+				chunk.sections[sy] = section;
+				// Resume pending bits directly. The small application cursor is derived
+				// from them rather than trusting an old or malformed section ordinal.
+				chunk.pending += section.pending.cardinality(); pendingBlocks += section.pending.cardinality();
+				chunk.effects += section.effects.cardinality(); pendingEffects += section.effects.cardinality();
+				if(!savedDiagnostics) selectedBlocks += section.destruction.cardinality();
+				enqueue(chunk);
+			} else if(restorePhase <= 2) {
+				// Pre-mask saves can retain explicit remaining positions. Endpoint-only
+				// chunks are intentionally retired rather than converted back to rays.
+				NBTTagCompound source = restorePhase == 1 ? restoring : restoring.getCompoundTag("legacy");
+				NBTTagList remaining = source.getTagList("remaining", 10);
+				if(restoreIndex >= remaining.tagCount()) { restorePhase++; restoreIndex = 0; continue; }
+				NBTTagCompound p = remaining.getCompoundTagAt(restoreIndex++);
+				int x = p.getInteger("x"), y = p.getInteger("y"), z = p.getInteger("z");
+				if(x >= -30000000 && x < 30000000 && z >= -30000000 && z < 30000000) record(x, y, z, false);
 			} else {
-				isAusf3Complete = legacy == null && restoring.getBoolean("complete"); restoring = null; removalActive = false;
-				if(isAusf3Complete) beginCleanup();
+				restoring = null; beginCleanup();
 			}
 		}
 		return restoring == null;
 	}
-
-	/** Budgeted old-save boundary. Completed removals are never re-expanded from endpoints. */
-	private boolean migrate(long deadline) {
-		while(legacy != null && ExplosionWorkScheduler.before(deadline)) {
-			if(legacyPhase < 2) {
-				NBTTagList positions = legacy.getTagList(legacyPhase == 0 ? "remaining" : "tips", 10);
-				if(legacyIndex == positions.tagCount()) { legacyPhase++; legacyIndex = 0; continue; }
-				NBTTagCompound pos = positions.getCompoundTagAt(legacyIndex++);
-				int x = pos.getInteger("x"), y = pos.getInteger("y"), z = pos.getInteger("z");
-				if(legacyPhase == 0) record(x, y, z, false);
-				else if(y >= 0 && y < 256) {
-					ChunkMask chunk = (ChunkMask)chunks.getValueByKey(ChunkCoordIntPair.chunkXZ2Int(x >> 4, z >> 4));
-					SectionMask section = chunk == null ? null : chunk.sections[y >> 4];
-					int bit = (y & 15) << 8 | (z & 15) << 4 | (x & 15);
-					if(section != null && section.destruction.get(bit)) record(x, y, z, true);
-				}
-			} else if(legacyPhase == 2) {
-				NBTTagList savedChunks = legacy.getTagList("chunks", 10);
-				if(legacyIndex == savedChunks.tagCount()) { legacyPhase++; legacyIndex = 0; continue; }
-				NBTTagCompound item = savedChunks.getCompoundTagAt(legacyIndex);
-				long key = readCoord(item);
-				boolean current = legacy.hasKey("removalChunk") && readCoord(legacy.getCompoundTag("removalChunk")) == key;
-				NBTTagList points = item.getTagList("points", 10);
-				if(!legacyChunkStarted) {
-					legacyPoint = current ? (legacy.getBoolean("reconstructed") ? points.tagCount() : legacy.getInteger("removalRay")) : 0;
-					legacyChunkStarted = true;
-				}
-				if(legacyPoint >= points.tagCount()) { legacyIndex++; legacyPoint = 0; legacyChunkStarted = false; continue; }
-				if(!buildActive) {
-					NBTTagCompound tip = points.getCompoundTagAt(legacyPoint);
-					boolean partial = current && legacyPoint == legacy.getInteger("removalRay");
-					int step = partial && legacy.hasKey("removalStep") ? legacy.getInteger("removalStep") : -1;
-					beginBuild(tip.getFloat("x"), tip.getFloat("y"), tip.getFloat("z"), step < 0 ? enter(key) : step, true, key, partial && step >= 0 && legacy.getBoolean("removalInChunk"));
-				}
-				if(!buildMask(deadline)) return false;
-				legacyPoint++;
-			} else if(legacyPhase == 3) {
-				NBTTagList keys = legacy.getTagList("rayChunks", 10);
-				if(legacyIndex < keys.tagCount()) addRayChunk(readCoord(keys.getCompoundTagAt(legacyIndex++)));
-				else legacyPhase++;
-			} else {
-				isAusf3Complete = legacy.getBoolean("complete") && !rayActive;
-				if(isAusf3Complete) beginCleanup();
-				// The current old chunk contains only remaining positions and unfinished rays.
-				if(legacy.hasKey("removalChunk")) {
-					removalKey = readCoord(legacy.getCompoundTag("removalChunk"));
-					removalActive = chunks.containsItem(removalKey); removalSection = removalBit = 0;
-				}
-				legacy = null;
-			}
-		}
-		return legacy == null;
+	private static BitSet bits(NBTTagCompound t, String key) {
+		byte[] data = t.getByteArray(key);
+		return BitSet.valueOf(data.length <= 512 ? data : java.util.Arrays.copyOf(data, 512));
 	}
-
 	public void writeToNBT(NBTTagCompound tag) {
 		if(restoring != null) {
+			// No mutations run until restore finishes, so forwarding the untouched
+			// checkpoint is lossless even if the owner unloads during restoration.
 			for(Object key : restoring.func_150296_c()) tag.setTag((String)key, restoring.getTag((String)key).copy());
 			return;
 		}
-		tag.setInteger("workVersion", WORK_VERSION);
-		tag.setInteger("directionOrder", directionOrder); tag.setBoolean("balancedDirections", directionOrder != 0);
-		for(int i = 0; i < 3; i++) tag.setLong("removedBand" + i, removedBands[i]);
-		for(int i = 0; i < completedDirections.length; i++) tag.setLong("directionCell" + i, completedDirections[i]);
-		tag.setLong("memoryWaits", memoryWaits); tag.setLong("surfaceCallbackNanos", surfaceCallbackNanos);
-		tag.setLong("surfaceSelected", surfaceSelected); tag.setLong("surfaceRemoved", surfaceRemoved);
-		tag.setBoolean("firstSurfaceTimed", firstSurfaceRemovalAt != 0); tag.setLong("firstSurfaceElapsedNanos", firstSurfaceRemovalAt == 0 ? 0 : firstSurfaceRemovalAt - startedAt);
-		if(pressure != null) tag.setTag("pressureWork", pressure.write());
+		tag.setInteger("workVersion", WORK_VERSION); tag.setTag("crater", crater.write()); tag.setBoolean("complete", crater.complete);
 		tag.setBoolean("progressive", true); tag.setBoolean("balancedSections", true);
-		originals.write(tag);
-		tag.setLong("selectedBlocks", selectedBlocks); tag.setLong("destroyedBlocks", destroyedBlocks); tag.setLong("rejectedBatches", rejectedBatches);
-		tag.setLong("completedRays", completedRays); tag.setLong("submittedBatches", submittedBatches); tag.setLong("acceptedBatches", acceptedBatches);
-		tag.setLong("snapshotRejections", snapshotRejections); tag.setLong("workerFailures", workerFailures); tag.setLong("repeatedOperations", repeatedOperations);
-		tag.setLong("workerNanos", workerNanos); tag.setLong("sectionMisses", sectionMisses); tag.setLong("fallbackActivations", fallbackActivations);
-		tag.setLong("traversalOperations", traversalOperations); tag.setLong("reconstructionOperations", reconstructionOperations);
-		tag.setLong("reusedSamples", reusedSamples); tag.setLong("skippedReconstruction", skippedReconstruction); tag.setLong("attenuationHits", attenuationHits); tag.setLong("workerCpuNanos", workerCpuNanos);
-		tag.setLong("sharedSnapshotHits", sharedSnapshotHits);
-		tag.setLong("collectionServerNanos", collectionServerNanos); tag.setLong("removalServerNanos", removalServerNanos);
-		tag.setLong("fastRemovals", fastRemovals); tag.setLong("normalRemovals", normalRemovals); tag.setLong("sectionsAdvanced", sectionsAdvanced); tag.setLong("chunksAdvanced", chunksAdvanced); tag.setLong("preservationNanos", preservationNanos);
-		tag.setLong("elapsedNanos", System.nanoTime() - startedAt); tag.setBoolean("collectionTimed", collectionFinishedAt != 0);
-		tag.setLong("collectionOffsetNanos", collectionStartedAt - startedAt);
-		tag.setLong("collectionElapsedNanos", collectionFinishedAt == 0 ? 0 : collectionFinishedAt - startedAt);
-		tag.setBoolean("firstRemovalTimed", firstRemovalAt != 0); tag.setLong("firstRemovalElapsedNanos", firstRemovalAt == 0 ? 0 : firstRemovalAt - startedAt);
-		long captures = terrain.snapshotCaptures, reuse = terrain.snapshotReuses;
-		NBTTagList savedRanges = new NBTTagList();
-		for(RayRange range : ranges) {
-			// Save only committed checkpoints. In-flight results can be discarded and
-			// recomputed after reload without duplicating ownership or losing masks.
-			NBTTagCompound item = writeState(range.state);
-			item.setInteger("end", range.end); item.setBoolean("sealed", range.sealed); item.setBoolean("fallback", range.fallback); item.setInteger("rejections", range.rejections);
-			item.setInteger("fallbackEnd", range.fallbackEnd);
-			int[] qualified = new int[range.qualified.size() * 2];
-			for(int i = 0; i < range.qualified.size(); i++) { long key = range.qualified.get(i); qualified[i * 2] = (int)key; qualified[i * 2 + 1] = (int)(key >> 32); }
-			item.setIntArray("qualified", qualified); savedRanges.appendTag(item);
-			captures += range.access.snapshotCaptures; reuse += range.access.snapshotReuses;
-		}
-		tag.setTag("rayRanges", savedRanges); tag.setLong("snapshotCaptures", captures); tag.setLong("snapshotReuses", reuse);
-		terrain.write(tag);
-		tag.setInteger("gspNum", gspNum); tag.setDouble("gspX", gspX); tag.setDouble("gspY", gspY);
-		tag.setBoolean("complete", isAusf3Complete); tag.setBoolean("contained", contained); tag.setInteger("surfaceY", surfaceY);
-		tag.setInteger("rayLength", rayLength);
-		tag.setBoolean("rayActive", rayActive); tag.setBoolean("rayFinishing", rayFinishing);
-		tag.setBoolean("rayRecorded", rayRecorded);
-		tag.setDouble("rayX", rayX); tag.setDouble("rayY", rayY); tag.setDouble("rayZ", rayZ);
-		tag.setInteger("rayStep", rayStep); tag.setFloat("rayStrength", rayStrength);
-		tag.setBoolean("hasTip", hasTip); tag.setFloat("tipX", tipX); tag.setFloat("tipY", tipY); tag.setFloat("tipZ", tipZ);
-		int[] keys = new int[rayChunkKeys.size() * 2];
-		for(int i = 0; i < rayChunkKeys.size(); i++) { long key = rayChunkKeys.get(i); keys[i * 2] = (int)key; keys[i * 2 + 1] = (int)(key >> 32); }
-		tag.setIntArray("rayChunks", keys);
-		tag.setBoolean("buildActive", buildActive); tag.setBoolean("buildRestricted", buildRestricted); tag.setBoolean("buildInChunk", buildInChunk);
-		tag.setLong("buildChunk", buildChunk); tag.setInteger("buildStep", buildStep); tag.setDouble("buildLength", buildLength);
-		tag.setDouble("buildX", buildX); tag.setDouble("buildY", buildY); tag.setDouble("buildZ", buildZ);
-		tag.setInteger("buildTipX", buildTipX); tag.setInteger("buildTipY", buildTipY); tag.setInteger("buildTipZ", buildTipZ);
-		tag.setBoolean("removalActive", removalActive); tag.setLong("removalKey", removalKey);
-		tag.setInteger("removalSection", removalSection); tag.setInteger("removalBit", removalBit);
+		tag.setLong("selectedBlocks", selectedBlocks); tag.setLong("destroyedBlocks", destroyedBlocks);
+		tag.setBoolean("materialReleased", materialReleased);
+		tag.setLong("fastRemovals", fastRemovals); tag.setLong("normalRemovals", normalRemovals); tag.setLong("elapsedNanos", System.nanoTime() - startedAt);
+		terrain.write(tag); originals.write(tag);
+		if(pressure != null) tag.setTag("pressureWork", pressure.write());
 		NBTTagList savedChunks = new NBTTagList();
 		for(ChunkMask chunk = firstChunk; chunk != null; chunk = chunk.next) {
 			NBTTagCompound item = new NBTTagCompound(); item.setInteger("x", (int)chunk.key); item.setInteger("z", (int)(chunk.key >> 32));
-			item.setInteger("cursorSection", chunk.cursorSection); item.setInteger("cursorBit", chunk.cursorBit);
 			NBTTagList sections = new NBTTagList();
-			for(int y = 0; y < 16; y++) {
-				SectionMask section = chunk.sections[y];
-				if(section == null || section.destruction.isEmpty()) continue;
-				NBTTagCompound data = new NBTTagCompound(); data.setInteger("y", y);
-				data.setByteArray("destruction", section.destruction.toByteArray());
-				data.setByteArray("surface", section.surface.toByteArray());
-				// Keep the v3 pending union for older progressive saves/readers; the
-				// additional classification prevents rescans in this implementation.
-				BitSet pending = (BitSet)section.pending.clone(); pending.or(section.deferred);
-				BitSet effects = (BitSet)section.effects.clone(); effects.or(section.deferredEffects); data.setByteArray("effects", effects.toByteArray());
-				data.setByteArray("pending", pending.toByteArray()); data.setByteArray("deferred", section.deferred.toByteArray()); data.setByteArray("completed", section.completed.toByteArray()); data.setByteArray("notified", section.notified.toByteArray());
-				if(section.tips != null && !section.tips.isEmpty()) data.setByteArray("tips", section.tips.toByteArray());
-				sections.appendTag(data);
+			for(int sy = 0; sy < 16; sy++) {
+				SectionMask section = chunk.sections[sy]; if(section == null || section.destruction.isEmpty()) continue;
+				NBTTagCompound data = new NBTTagCompound(); data.setInteger("y", sy);
+				data.setByteArray("destruction", section.destruction.toByteArray()); data.setByteArray("surface", section.surface.toByteArray());
+				data.setByteArray("pending", section.pending.toByteArray());
+				data.setByteArray("effects", section.effects.toByteArray());
+				data.setByteArray("completed", section.completed.toByteArray()); data.setByteArray("notified", section.notified.toByteArray());
+				if(section.tips != null) data.setByteArray("tips", section.tips.toByteArray()); sections.appendTag(data);
 			}
 			item.setTag("sections", sections); savedChunks.appendTag(item);
 		}
 		tag.setTag("chunks", savedChunks);
-		if(legacy != null) {
-			// Keep old input only until migration completes, with its exact cursor and
-			// already-produced masks. Re-saving before any update is lossless too.
-			tag.setTag("legacy", legacy.copy()); tag.setInteger("legacyPhase", legacyPhase); tag.setInteger("legacyIndex", legacyIndex);
-			tag.setInteger("legacyPoint", legacyPoint); tag.setBoolean("legacyChunkStarted", legacyChunkStarted);
-		}
 	}
-	private static long readCoord(NBTTagCompound tag) { return ChunkCoordIntPair.chunkXZ2Int(tag.getInteger("x"), tag.getInteger("z")); }
 }

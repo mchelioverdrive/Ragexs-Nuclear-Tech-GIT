@@ -95,7 +95,7 @@ public final class ExplosionWorkScheduler {
 
 	public static void clear() {
 		for(Job job : registered) job.suspend();
-		ExplosionNukeRayBatched.shutdownWorkers();
+		ExplosionNukeRayBatched.clearJobs();
 		ExplosionTerrainAccess.clear();
 		queue.clear(); registered.clear(); tick = 0; lastRun = Long.MIN_VALUE;
 	}
