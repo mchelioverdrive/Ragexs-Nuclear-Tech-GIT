@@ -38,6 +38,13 @@ final class NuclearBlockBehavior {
 				|| name.contains("vault_door") || name.contains("airlock") || name.contains("seal_door")
 				|| name.contains("brick_slab") || name.contains("brick_double_slab"));
 	}
+	static boolean ordinaryExcavation(World world, Block b, int x, int y, int z) {
+		if(ordinaryTerrain(b) || !constructionBarrier(b) && weak(b)) return true;
+		// Stone/sandstone slab variants inherit ordinary terrain selection. Other
+		// masonry and RNT metadata slabs retain their structural shielding rules.
+		if(b == Blocks.stone_slab || b == Blocks.double_stone_slab) return (world.getBlockMetadata(x, y, z) & 7) <= 1;
+		return b == Blocks.sandstone_stairs;
+	}
 	static boolean weak(Block b) {
 		Material m = b.getMaterial();
 		return m == Material.wood || m == Material.glass || m == Material.leaves || m == Material.plants

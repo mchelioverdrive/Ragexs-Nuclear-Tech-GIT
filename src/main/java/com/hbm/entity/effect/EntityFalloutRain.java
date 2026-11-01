@@ -53,6 +53,8 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 	private LongHashMap collapsePending = new LongHashMap();
 	private int collapseHead, collapseCount;
 	private long blockedWorkTick = Long.MIN_VALUE;
+	private int cleanupX, cleanupZ;
+	private double cleanupRadius, cleanupDepth, cleanupUpper, cleanupCenterY;
 	private ExplosionTerrainAccess.Access terrain;
 	private ExplosionTerrainAccess.Access terrain() {
 		if(terrain == null) terrain = new ExplosionTerrainAccess.Access(worldObj);
@@ -108,6 +110,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 	}
 
 	private void finishFallout() {
+		com.hbm.explosion.ExplosionNukeRayBatched.falloutFinished(worldObj, getUniqueID());
 		clearChunkLoader(); setDead();
 		if(BombConfig.rain > 0 && getScale() > 150) {
 			WorldInfo info = worldObj.getWorldInfo();
@@ -115,6 +118,40 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 			info.setRainTime(BombConfig.rain); info.setThunderTime(BombConfig.rain);
 			AuxSavedData.setThunder(worldObj, BombConfig.rain);
 		}
+	}
+
+	/** Gather progress proves only completed inner rings; queued columns and
+	 * pending collapses must also settle before crater components are examined. */
+	public boolean isChunkSettled(int cx, int cz) {
+		if(restoring != null) return false;
+		double dx = Math.max(0D, Math.max(cx * 16D - posX, posX - (cx * 16D + 16D)));
+		double dz = Math.max(0D, Math.max(cz * 16D - posZ, posZ - (cz * 16D + 16D)));
+		if(dx * dx + dz * dz > (double)getScale() * getScale()) return true;
+		int ring = Math.max(Math.abs(cx - (int)Math.floor(posX / 16D)), Math.abs(cz - (int)Math.floor(posZ / 16D)));
+		// Include neighboring columns: their conversions/queued falls can still
+		// alter the boundary of a component in this chunk.
+		if(!gatherComplete && (legacyGather || ring + 1 >= gatherRing)) return false;
+		for(int x = cx - 1; x <= cx + 1; x++) for(int z = cz - 1; z <= cz + 1; z++) {
+			long coord = ChunkCoordIntPair.chunkXZ2Int(x, z);
+			if(activeChunk && chunkCursor == coord || chunksToProcess.contains(coord) || outerChunksToProcess.contains(coord)) return false;
+		}
+		for(int i = 0; i < collapseCount; i++) {
+			long position = collapsePositions[(collapseHead + i) % MAX_PENDING_COLLAPSES];
+			if(Math.abs(((int)(position >> 38) >> 4) - cx) <= 1 && Math.abs(((int)(position << 26 >> 38) >> 4) - cz) <= 1) return false;
+		}
+		return true;
+	}
+
+	public void setCraterCleanup(int x, int z, double radius, double depth, double upper, double centerY) {
+		cleanupX = x; cleanupZ = z; cleanupRadius = radius; cleanupDepth = depth; cleanupUpper = upper; cleanupCenterY = centerY;
+	}
+	private boolean insideCraterCleanup(int x, int y, int z) {
+		if(cleanupRadius <= 0D) return false;
+		double dx = x - (double)cleanupX, dz = z - (double)cleanupZ;
+		double radial = (dx * dx + dz * dz) / (cleanupRadius * cleanupRadius);
+		if(radial > 1D) return false;
+		double height = Math.sqrt(1D - radial);
+		return y >= Math.ceil(cleanupCenterY - cleanupDepth * height - .5D) && y <= Math.floor(cleanupCenterY + cleanupUpper * height - .5D);
 	}
 
 	private void processFallout(long deadline, long tick) {
@@ -364,6 +401,9 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 
 			if(
 				y > 0 &&
+					// The crater's bounded component pass owns these blocks. Air below
+					// alone cannot distinguish a remnant from a supported overhang.
+					!insideCraterCleanup(x, y, z) &&
 					dist < 30 &&
 					hardness >= 0 &&
 					hardness <= 8F
@@ -440,6 +480,8 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 	@Override
 	protected void readEntityFromNBT(NBTTagCompound tag) {
 		terrain().read(tag);
+		NBTTagCompound cleanup = tag.getCompoundTag("craterCleanup");
+		setCraterCleanup(cleanup.getInteger("x"), cleanup.getInteger("z"), cleanup.getDouble("radius"), cleanup.getDouble("depth"), cleanup.getDouble("upper"), cleanup.getDouble("centerY"));
 		setScale(tag.getInteger("scale"));
 		salted = tag.getBoolean("salt"); sourceMultiplier = tag.hasKey("sourceMultiplier") ? tag.getDouble("sourceMultiplier") : 1D;
 		gatherComplete = tag.hasKey("gatherComplete") ? tag.getBoolean("gatherComplete") : tag.getIntArray("chunks").length > 0 || tag.getIntArray("outerChunks").length > 0;
@@ -484,6 +526,12 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 	@Override
 	protected void writeEntityToNBT(NBTTagCompound tag) {
 		terrain().write(tag);
+		if(cleanupRadius > 0D) {
+			NBTTagCompound cleanup = new NBTTagCompound();
+			cleanup.setInteger("x", cleanupX); cleanup.setInteger("z", cleanupZ); cleanup.setDouble("radius", cleanupRadius);
+			cleanup.setDouble("depth", cleanupDepth); cleanup.setDouble("upper", cleanupUpper); cleanup.setDouble("centerY", cleanupCenterY);
+			tag.setTag("craterCleanup", cleanup);
+		}
 		tag.setInteger("workVersion", 4); tag.setInteger("scale", getScale());
 		tag.setBoolean("salt", salted); tag.setDouble("sourceMultiplier", sourceMultiplier);
 		// No effects run during restore. Save the complete original queues with the

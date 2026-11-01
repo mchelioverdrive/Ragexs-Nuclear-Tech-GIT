@@ -854,6 +854,8 @@ public final class ExplosionTerrainAccess {
 	}
 	private static void invalidate(Chunk chunk) {
 		if(chunk.worldObj.isRemote) return;
+		ExplosionNukeRayBatched.terrainChanged(chunk.worldObj, chunk.xPosition << 4, 0, chunk.zPosition << 4,
+				(chunk.xPosition << 4) + 15, 255, (chunk.zPosition << 4) + 15);
 		Observer observer = observers.get(chunk.worldObj); if(observer != null) observer.revision++;
 		for(PressureSection section : pressureSections) if(section.history.world == chunk.worldObj && section.x == chunk.xPosition && section.z == chunk.zPosition) section.dirty.set(0, 4096);
 		boolean known = airColumns.containsKey(new Key(chunk.worldObj, chunk.xPosition, -2, chunk.zPosition));
@@ -920,6 +922,7 @@ public final class ExplosionTerrainAccess {
 		}
 		public void markBlockForUpdate(int x, int y, int z) {
 			revision++;
+			ExplosionNukeRayBatched.terrainChanged(world, x, y, z, x, y, z);
 			for(PressureSection section : pressureSections) if(section.history.world == world && section.x == x >> 4 && section.y == y >> 4 && section.z == z >> 4) section.dirty(x, y, z);
 			forgetAir(world, x >> 4, z >> 4, y >> 4, y >> 4);
 			if(snapshots.isEmpty()) return;
@@ -936,6 +939,7 @@ public final class ExplosionTerrainAccess {
 		public void markBlockForRenderUpdate(int x, int y, int z) { markBlockForUpdate(x, y, z); }
 		public void markBlockRangeForRenderUpdate(int x, int y, int z, int x2, int y2, int z2) {
 			revision++;
+			ExplosionNukeRayBatched.terrainRenderChanged(world, x, y, z, x2, y2, z2);
 			for(PressureSection section : pressureSections) if(section.history.world == world && section.x >= x >> 4 && section.x <= x2 >> 4 && section.y >= y >> 4 && section.y <= y2 >> 4 && section.z >= z >> 4 && section.z <= z2 >> 4) section.dirty.set(0, 4096);
 			int minX = x >> 4, maxX = x2 >> 4, minZ = z >> 4, maxZ = z2 >> 4, minY = Math.max(0, y >> 4), maxY = Math.min(15, y2 >> 4);
 			if(minX > maxX || minY > maxY || minZ > maxZ) return;

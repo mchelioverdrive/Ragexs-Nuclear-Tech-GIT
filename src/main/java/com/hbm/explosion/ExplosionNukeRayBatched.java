@@ -35,6 +35,7 @@ public class ExplosionNukeRayBatched {
 	private final ExplosionTerrainAccess.History originals;
 	private CraterWork crater;
 	private PressureWork pressure;
+	private final CraterRemnantCleanup remnants = new CraterRemnantCleanup(this);
 	// Compatibility field: it now reports geometric enumeration completion.
 	public boolean isAusf3Complete;
 	private long pendingBlocks, pendingEffects;
@@ -121,7 +122,22 @@ public class ExplosionNukeRayBatched {
 				buried ? effects.cavityRadius : effects.craterDepth * .5D, buried ? posY + .5D : surfaceY);
 		isAusf3Complete = crater.complete;
 	}
-	public boolean hasPendingWork() { return restoring != null || !crater.complete || pressure != null && !pressure.complete || firstChunk != null || originals.bytes() != 0; }
+	public boolean hasPendingWork() { return restoring != null || !crater.complete || pressure != null && !pressure.complete || firstChunk != null || originals.bytes() != 0 || remnants.pending(); }
+	public void awaitFalloutCleanup() { remnants.awaitFallout(); }
+	public void bindFalloutCleanup(java.util.UUID id) { remnants.bindFallout(id); }
+	public void configureFalloutCleanup(com.hbm.entity.effect.EntityFalloutRain rain) {
+		if(remnants.pending()) rain.setCraterCleanup(posX, posZ, crater.radius, crater.depth, crater.upper, crater.centerY);
+	}
+	public void noFalloutCleanup() { remnants.noFallout(); }
+	public static void falloutFinished(World world, java.util.UUID id) {
+		for(ExplosionNukeRayBatched job : active) if(job.world == world) job.remnants.finishedFallout(id);
+	}
+	static void terrainChanged(World world, int x, int y, int z, int x2, int y2, int z2) {
+		for(ExplosionNukeRayBatched job : active) if(job.world == world) job.remnants.changed(x, y, z, x2, y2, z2);
+	}
+	static void terrainRenderChanged(World world, int x, int y, int z, int x2, int y2, int z2) {
+		for(ExplosionNukeRayBatched job : active) if(job.world == world) job.remnants.renderChanged(x, y, z, x2, y2, z2);
+	}
 	public boolean craterFinished() { return restoring == null && crater.complete && pendingBlocks == 0 && pendingEffects == 0; }
 	public boolean hasMaterialRelease() { return materialReleased; }
 	private boolean selectionCapacity() { return pendingBlocks + pendingEffects < MAX_PENDING_BLOCKS && maskChunks < MAX_MASK_CHUNKS; }
@@ -134,6 +150,7 @@ public class ExplosionNukeRayBatched {
 	public boolean canWork(long tick, int count) {
 		if(lastDiagnosticTick == Long.MIN_VALUE || tick - lastDiagnosticTick >= 200) { logStatus("geometric excavation"); lastDiagnosticTick = tick; }
 		return restoring != null || cleanupCursor != null || excavationReady(tick) || selectorsComplete() && originals.releasePending()
+				|| selectorsComplete() && firstChunk == null && remnants.ready(tick)
 				|| craterCapacity() && !crater.complete && terrain.ready(tick) || selectionCapacity() && pressure != null && pressure.ready(tick);
 	}
 	/** Each resumable phase receives a bounded opportunity within the shared scheduler slice. */
@@ -146,6 +163,7 @@ public class ExplosionNukeRayBatched {
 		if(selectorsComplete() && ExplosionWorkScheduler.before(deadline)) originals.releaseUnowned(chunks, deadline);
 		else if(ExplosionWorkScheduler.before(deadline)) originals.releaseUnowned(chunks, (cx, cz) -> needsOriginals(cx, cz), deadline);
 		if(selectorsComplete() && firstChunk == null) originals.clear();
+		if(selectorsComplete() && firstChunk == null && remnants.ready(tick) && ExplosionWorkScheduler.before(deadline)) remnants.advance(deadline, tick);
 		excavationFirst = !excavationFirst;
 	}
 	private boolean excavationReady(long tick) { return queuedChunks > 0 && (removalActive || excavationTick != tick || excavationAttempts < queuedChunks); }
@@ -245,37 +263,77 @@ public class ExplosionNukeRayBatched {
 
 	private boolean clearAttachments(int x, int y, int z, long deadline) {
 		long start = System.nanoTime();
-		try { return clearAttachments(x, y, z, deadline, 0); }
+		try { return clearAttachments(x, y, z, deadline, 0, false); }
 		finally { surfaceCallbackNanos += System.nanoTime() - start; }
 	}
-	private boolean clearAttachments(int x, int y, int z, long deadline, int depth) {
-		if(!ExplosionTerrainAccess.neighbors(removalTerrain, x, z, deadline)) return false;
+	private boolean clearAttachments(int x, int y, int z, long deadline, int depth, boolean remnant) {
+		if(!ExplosionWorkScheduler.before(deadline)) return false;
+		if(remnant) {
+			if(!remnants.valid()) return false;
+			for(int cx = (x - 1) >> 4; cx <= (x + 1) >> 4; cx++) for(int cz = (z - 1) >> 4; cz <= (z + 1) >> 4; cz++)
+				if(ExplosionTerrainAccess.loaded(world, cx, cz) == null) return false;
+		} else if(!ExplosionTerrainAccess.neighbors(removalTerrain, x, z, deadline)) return false;
 		if(!NuclearDropSuppression.prepareGravity(world, x, y, z)) return false;
 		for(net.minecraftforge.common.util.ForgeDirection dir : net.minecraftforge.common.util.ForgeDirection.VALID_DIRECTIONS) {
 			int xx = x + dir.offsetX, yy = y + dir.offsetY, zz = z + dir.offsetZ;
 			if(yy < 0 || yy > 255 || !NuclearBlockBehavior.attachedTo(world, xx, yy, zz, x, y, z)) continue;
+			if(remnant && !insideCrater(xx, yy, zz)) return false;
 			if(!ExplosionWorkScheduler.before(deadline) || depth >= 256) return false;
 			Block child = world.getBlock(xx, yy, zz);
+			int childMeta = remnant ? world.getBlockMetadata(xx, yy, zz) : 0;
 			float resistance = NuclearBlockBehavior.cost(world, child, xx, yy, zz, posX, posY, posZ);
 			if(Float.isInfinite(resistance)) continue;
 
-			if(!clearAttachments(xx, yy, zz, deadline, depth + 1)) return false;
+			if(!clearAttachments(xx, yy, zz, deadline, depth + 1, remnant)) return false;
+			if(remnant && (!remnants.valid() || world.getBlock(xx, yy, zz) != child || world.getBlockMetadata(xx, yy, zz) != childMeta
+					|| Float.isInfinite(NuclearBlockBehavior.cost(world, child, xx, yy, zz, posX, posY, posZ)))) return false;
 			if(!selectorsComplete() && !remember(xx, yy, zz, child)) return false;
 			if(!ExplosionWorkScheduler.before(deadline)) return false;
 			// Preserve and remove the attachment before its support. Its ordinary
 			// scheduled support check later sees air and cannot manufacture drops.
-			try(NuclearDropSuppression.Scope scope = NuclearDropSuppression.enter(world)) {
-				NuclearDropSuppression.clearInventory(world, xx, yy, zz);
-				world.setBlock(xx, yy, zz, Blocks.air, 0, 2);
-			}
-			if(!world.isAirBlock(xx, yy, zz)) return false;
-			// Geometry and pressure both skip live air. No extra completed mask is
-			// needed for an attachment; any existing pending bit will retire as air.
-			destroyedBlocks++; normalRemovals++; removedBands[band(yy)]++;
-			materialReleased |= NuclearBlockBehavior.ordinaryTerrain(child) || NuclearBlockBehavior.constructionBarrier(child);
-			try(NuclearDropSuppression.Scope scope = NuclearDropSuppression.enter(world)) { world.notifyBlockChange(xx, yy, zz, child); }
+			long previousChange = remnant ? remnants.changingAt(xx, yy, zz) : Long.MIN_VALUE;
+			try {
+				try(NuclearDropSuppression.Scope scope = NuclearDropSuppression.enter(world)) {
+					NuclearDropSuppression.clearInventory(world, xx, yy, zz);
+					world.setBlock(xx, yy, zz, Blocks.air, 0, 2);
+				}
+				if(!world.isAirBlock(xx, yy, zz)) return false;
+				if(remnant) remnants.removed(xx, yy, zz);
+				// Geometry and pressure both skip live air. No extra completed mask is
+				// needed for an attachment; any existing pending bit will retire as air.
+				destroyedBlocks++; normalRemovals++; removedBands[band(yy)]++;
+				materialReleased |= NuclearBlockBehavior.ordinaryTerrain(child) || NuclearBlockBehavior.constructionBarrier(child);
+				try(NuclearDropSuppression.Scope scope = NuclearDropSuppression.enter(world)) { world.notifyBlockChange(xx, yy, zz, child); }
+			} finally { if(remnant) remnants.finishChange(previousChange); }
 		}
 		return ExplosionWorkScheduler.before(deadline);
+	}
+	boolean insideCrater(int x, int y, int z) {
+		if(y < 0 || y > 255 || crater.radiusSquared <= 0D) return false;
+		double dx = x - (double)posX, dz = z - (double)posZ, radial = (dx * dx + dz * dz) / crater.radiusSquared;
+		if(radial > 1D) return false;
+		double height = Math.sqrt(1D - radial);
+		return y >= Math.ceil(crater.centerY - crater.depth * height - .5D)
+				&& y <= Math.floor(crater.centerY + crater.upper * height - .5D);
+	}
+	boolean removeRemnant(int x, int y, int z, Block expected, int meta, long deadline) {
+		Block live = world.getBlock(x, y, z);
+		if(live == Blocks.air) return true; // An attachment callback already removed it.
+		if(live != expected || world.getBlockMetadata(x, y, z) != meta || !insideCrater(x, y, z)
+				|| Float.isInfinite(NuclearBlockBehavior.cost(world, live, x, y, z, posX, posY, posZ))) return false;
+		if(!clearAttachments(x, y, z, deadline, 0, true) || !remnants.valid() || !NuclearDropSuppression.prepareMutation(world, x, y, z)
+				|| !ExplosionWorkScheduler.before(deadline)) return false;
+		live = world.getBlock(x, y, z);
+		if(live != expected || world.getBlockMetadata(x, y, z) != meta
+				|| Float.isInfinite(NuclearBlockBehavior.cost(world, live, x, y, z, posX, posY, posZ))) return false;
+		try(NuclearDropSuppression.Scope scope = NuclearDropSuppression.enter(world)) {
+			NuclearDropSuppression.clearInventory(world, x, y, z);
+			world.setBlock(x, y, z, Blocks.air, 0, 3);
+		}
+		if(!world.isAirBlock(x, y, z)) return false;
+		NuclearDropSuppression.removed(world, x, y, z);
+		destroyedBlocks++; normalRemovals++;
+		return true;
 	}
 
 	/** The entity front supplies reach; this is selection into the SAME masks,
@@ -455,12 +513,14 @@ public class ExplosionNukeRayBatched {
 	public void collectTip(int count) { collectTip(count, Long.MAX_VALUE, ExplosionWorkScheduler.currentTick()); }
 	public void collectTip(int count, long deadline, long tick) { if(restore(deadline) && craterCapacity()) crater.advance(deadline); }
 	public void cancelWorkers() { terrain.cancel(); removalTerrain.cancel(); crater.shield.cancel(); if(pressure != null) pressure.cancel(); }
-	public void dispose() { cancelWorkers(); active.remove(this); originals.close(); chunks = new LongHashMap(); firstChunk = lastChunk = cleanupCursor = null; ordering.clear(); }
+	public void dispose() { cancelWorkers(); active.remove(this); remnants.close(); originals.close(); chunks = new LongHashMap(); firstChunk = lastChunk = cleanupCursor = null; ordering.clear(); }
 	public static void unloadWorkers(World world) {
 		for(ExplosionNukeRayBatched job : active.toArray(new ExplosionNukeRayBatched[0])) if(job.world == world) { job.cancelWorkers(); active.remove(job); }
 	}
 	/** Compatibility hook: synchronous phases hold no worker-owned chunk inputs. */
-	public static void unloadChunkWorkers(World world, int x, int z) { }
+	public static void unloadChunkWorkers(World world, int x, int z) {
+		for(ExplosionNukeRayBatched job : active) if(job.world == world) job.remnants.unloaded(x, z);
+	}
 	public static void shutdownWorkers() {
 		// FMLServerStopping precedes the final world save. Keep committed masks
 		// and retained cover serializable; only transient calculation is canceled.
@@ -716,13 +776,14 @@ public class ExplosionNukeRayBatched {
 						int y = scanY, sy = y >> 4;
 						net.minecraft.world.chunk.storage.ExtendedBlockStorage storage = live.getBlockStorageArray()[sy];
 						if(storage == null || storage.getClass() == net.minecraft.world.chunk.storage.ExtendedBlockStorage.class && storage.isEmpty()) { scanY = (sy << 4) - 1; continue; }
+						remnants.affect(cx, sy, cz);
 						Block b = live.getBlock(x & 15, y, z & 15);
 						if(b == Blocks.air || b.getMaterial().isLiquid() || b.isAir(world, x, y, z)) { scanY--; continue; }
 						float cost = NuclearBlockBehavior.cost(world, b, x, y, z, posX, posY, posZ);
 						if(!Float.isInfinite(cost)) {
 							// The volume is authoritative for ordinary terrain: no crater rays,
 							// resistance attenuation, random omissions or endpoint reconstruction.
-							boolean ordinary = NuclearBlockBehavior.ordinaryTerrain(b) || !NuclearBlockBehavior.constructionBarrier(b) && NuclearBlockBehavior.weak(b);
+							boolean ordinary = NuclearBlockBehavior.ordinaryExcavation(world, b, x, y, z);
 							double vertical = (y + .5D - centerY) / (y + .5D < centerY ? depth : Math.max(.5D, upper));
 							double zone = radial + vertical * vertical;
 							boolean destroy = ordinary || zone <= .36D;
@@ -840,6 +901,9 @@ public class ExplosionNukeRayBatched {
 		cancelWorkers(); originals.clear(); chunks = new LongHashMap(); firstChunk = lastChunk = cleanupCursor = null; ordering.clear();
 		pendingBlocks = pendingEffects = 0L; queuedChunks = maskChunks = nextDistance = 0;
 		removalActive = false; excavationTick = Long.MIN_VALUE;
+		// Additive checkpoint: pre-cleanup saves keep their excavation cursors and
+		// never rescan completed terrain to invent missing affected-section data.
+		if(tag.hasKey("remnants")) remnants.read(tag.getCompoundTag("remnants")); else remnants.close();
 		terrain.read(tag); pressure = tag.hasKey("pressureWork") ? new PressureWork(tag.getCompoundTag("pressureWork")) : null;
 		savedDiagnostics = tag.hasKey("selectedBlocks"); selectedBlocks = tag.getLong("selectedBlocks"); destroyedBlocks = tag.getLong("destroyedBlocks");
 		materialReleased = tag.hasKey("materialReleased") ? tag.getBoolean("materialReleased") : destroyedBlocks > 0;
@@ -860,12 +924,13 @@ public class ExplosionNukeRayBatched {
 				valid = loaded.chunkIndex >= 0 && loaded.chunkIndex <= limit && loaded.column >= 0 && loaded.column <= 256 && loaded.scanY >= -1 && loaded.scanY <= 255 && loaded.bottom >= 0 && loaded.bottom <= 256 && loaded.validColumnCursor();
 				if(valid) { loaded.complete |= t.getBoolean("complete") || loaded.chunkIndex == limit; crater = loaded; }
 			}
-			if(!valid) { crater.complete = true; logStatus("invalid crater checkpoint; retaining committed terrain work only"); }
+			if(!valid) { crater.complete = true; remnants.close(); logStatus("invalid crater checkpoint; retaining committed terrain work only"); }
 		} else {
 			// Ray ordinals/endpoints have no geometric cursor equivalent. Preserve
 			// materialized masks/remaining positions, retire unfinished rays, and do
 			// not restart completed terrain or reconstruct rays in old saves.
 			crater.complete = true;
+			remnants.close();
 			logStatus("legacy checkpoint: applying committed work; unfinished rays retired");
 		}
 		isAusf3Complete = crater.complete;
@@ -873,6 +938,7 @@ public class ExplosionNukeRayBatched {
 	}
 	private boolean restore(long deadline) {
 		if(restoring == null) return true;
+		if(!remnants.restore(deadline)) return false;
 		if(!originals.restore(restoring, deadline)) { excavationWait = "restoring shielding history"; return false; }
 		while(restoring != null && ExplosionWorkScheduler.before(deadline)) {
 			if(restorePhase == 0) {
@@ -925,14 +991,16 @@ public class ExplosionNukeRayBatched {
 	public void writeToNBT(NBTTagCompound tag) {
 		if(restoring != null) {
 			// No mutations run until restore finishes, so forwarding the untouched
-			// checkpoint is lossless even if the owner unloads during restoration.
+			// terrain checkpoint is lossless. Fallout can finish independently.
 			for(Object key : restoring.func_150296_c()) tag.setTag((String)key, restoring.getTag((String)key).copy());
+			tag.setTag("remnants", remnants.write());
 			return;
 		}
 		tag.setInteger("workVersion", WORK_VERSION); tag.setTag("crater", crater.write()); tag.setBoolean("complete", crater.complete);
 		tag.setBoolean("progressive", true); tag.setBoolean("balancedSections", true);
 		tag.setLong("selectedBlocks", selectedBlocks); tag.setLong("destroyedBlocks", destroyedBlocks);
 		tag.setBoolean("materialReleased", materialReleased);
+		tag.setTag("remnants", remnants.write());
 		tag.setLong("fastRemovals", fastRemovals); tag.setLong("normalRemovals", normalRemovals); tag.setLong("elapsedNanos", System.nanoTime() - startedAt);
 		terrain.write(tag); originals.write(tag);
 		if(pressure != null) tag.setTag("pressureWork", pressure.write());

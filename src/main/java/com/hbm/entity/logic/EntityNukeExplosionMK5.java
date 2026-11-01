@@ -119,6 +119,7 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 			if(explosion == null) {
 				explosion = new ExplosionNukeRayBatched(worldObj, (int)Math.floor(posX), (int)Math.floor(posY), (int)Math.floor(posZ), strength, speed, length);
 				explosion.configureCrater(spec, effects, posY - spec.burstHeight);
+				explosion.awaitFalloutCleanup();
 				explosion.includeInitializationDelay(System.nanoTime() - detonationStartedAt);
 				if(pendingExplosionData != null) { explosion.readFromNBT(pendingExplosionData); pendingExplosionData = null; }
 				explosion.logStatus("initialized type=" + spec.burstType + " yieldKt=" + spec.yieldKt);
@@ -512,9 +513,12 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 			rain.setPosition(spec.burstType == BurstType.SUBSURFACE ? spec.breachX + 0.5D : posX, spec.burstType == BurstType.SUBSURFACE ? spec.breachY + 0.5D : posY, spec.burstType == BurstType.SUBSURFACE ? spec.breachZ + 0.5D : posZ); rain.setSalted(salted);
 			rain.setSourceMultiplier(effects.falloutSourceStrength / Math.max(0.001D, spec.yieldKt * spec.fissionFraction));
 			rain.setScale((int)((length * 2.5D + falloutAdd) * BombConfig.falloutRange / 100D * rain.getSourceMultiplier()));
+			if(explosion != null) explosion.configureFalloutCleanup(rain);
 			falloutSpawned = worldObj.spawnEntityInWorld(rain);
 			if(!falloutSpawned) { rain.setDead(); return false; }
+			if(explosion != null) explosion.bindFalloutCleanup(rain.getUniqueID());
 		}
+		if(explosion != null && explosion.craterFinished() && !falloutSpawned) explosion.noFalloutCleanup();
 		return true;
 	}
 

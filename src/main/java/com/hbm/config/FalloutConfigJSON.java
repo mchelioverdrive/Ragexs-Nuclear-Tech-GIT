@@ -12,9 +12,12 @@ import com.hbm.main.MainRegistry;
 import com.hbm.util.Compat;
 import com.hbm.util.Tuple.Triplet;
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockSlab;
+import net.minecraft.block.BlockStairs;
 import net.minecraft.block.material.Material;
 import net.minecraft.init.Blocks;
 import net.minecraft.world.World;
+import net.minecraft.util.AxisAlignedBB;
 
 import java.io.File;
 import java.io.FileReader;
@@ -326,6 +329,10 @@ public class FalloutConfigJSON {
 				if(originalBlock == ModBlocks.sellafield_bedrock && conversion.block != ModBlocks.sellafield_bedrock) return false;
 				if(y == 0 && conversion.block != ModBlocks.sellafield_bedrock) return false;
 
+				conversion = preserveShape(world, x, y, z, b, meta, conversion);
+				// A matched preservation/no-op still consumes this ordered rule and its
+				// depth behavior; falling through would scorch it by material later.
+				if(conversion.block == b && conversion.meta == meta) return true;
 				try(com.hbm.explosion.NuclearDropSuppression.Scope scope = com.hbm.explosion.NuclearDropSuppression.enter(world)) {
 					if(conversion.block != b) com.hbm.explosion.NuclearDropSuppression.clearInventory(world, x, y, z);
 					world.setBlock(x, y, z, conversion.block, conversion.meta, 3);
@@ -334,6 +341,31 @@ public class FalloutConfigJSON {
 			}
 
 			return false;
+		}
+
+		private static MetaBlock preserveShape(World world, int x, int y, int z, Block source, int meta, MetaBlock outcome) {
+			if(source instanceof BlockSlab) {
+				// BlockSlab's opacity distinguishes double slabs from either half height.
+				if(source.isOpaqueCube()) return outcome;
+				if(outcome.block instanceof BlockSlab && source.getClass() == outcome.block.getClass() && !outcome.block.isOpaqueCube())
+					return new MetaBlock(outcome.block, (outcome.meta & 7) | (meta & 8));
+				return new MetaBlock(source, meta);
+			}
+			if(source instanceof BlockStairs) {
+				if(outcome.block instanceof BlockStairs && source.getClass() == outcome.block.getClass())
+					return new MetaBlock(outcome.block, meta);
+				return new MetaBlock(source, meta);
+			}
+			// Read live bounds: partial geometry can depend on metadata, neighbors or
+			// a tile entity. Never memoize this decision by block ID or material.
+			source.setBlockBoundsBasedOnState(world, x, y, z);
+			AxisAlignedBB box = source.getCollisionBoundingBoxFromPool(world, x, y, z);
+			boolean full = box != null && box.minX == x && box.minY == y && box.minZ == z
+					&& box.maxX == x + 1D && box.maxY == y + 1D && box.maxZ == z + 1D
+					&& source.renderAsNormalBlock();
+			if(full || box == null && outcome.block == Blocks.air) return outcome;
+			// Unknown partial shapes have no audited compatible scorched variant.
+			return new MetaBlock(source, meta);
 		}
 
 		private MetaBlock chooseRandomOutcome(Triplet<Block, Integer, Integer>[] blocks) {
