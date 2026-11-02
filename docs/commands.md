@@ -31,6 +31,8 @@ Lists RNT achievement IDs or unlocks one for an online player. Requires operator
 
 Use the full internal ID shown by `list`, such as `achievement.arcWelder` or `achievement.hempDiscovery`, rather than the translated title. `unlock` awards any missing parent achievements first, then the requested achievement through the normal player statistics system. An achievement the player already has is reported as a successful no-op. Only online players can be targeted.
 
+`achievement.rabiesDeath` is **DID YOU ALSO EAT A KID** ("Die from rabies."), with the Rabies Virus Syringe icon and no prerequisite. Normal gameplay awards it only for an uncanceled player death caused by rabies disease damage, after revival handling; infection or Fatal status alone does not qualify. It is included in `list`, `unlock` and achievement ID completion.
+
 ### `/ntmreload`
 
 Reloads serializable JSON recipes and item pools.

@@ -203,6 +203,7 @@ public class MainRegistry {
 	//public static Achievement achFiend2;
 	public static Achievement achRadPoison;
 	public static Achievement achRadDeath;
+	public static Achievement achRabiesDeath;
 	public static Achievement achStratum;
 	//public static Achievement achOmega12;
 	//public static Achievement achSomeWounds;
@@ -758,6 +759,7 @@ public class MainRegistry {
 
 		achRadPoison = new Achievement("achievement.radPoison", "radPoison", -2, 6, ModItems.geiger_counter, null).initIndependentStat().registerStat();
 		achRadDeath = new Achievement("achievement.radDeath", "radDeath", 0, 6, Items.skull, achRadPoison).initIndependentStat().registerStat().setSpecial();
+		achRabiesDeath = new Achievement("achievement.rabiesDeath", "rabiesDeath", 2, 6, ModItems.syringe_rabies, null).initIndependentStat().registerStat();
 
 		//achSomeWounds = new Achievement("achievement.someWounds", "someWounds", -2, 10, ModItems.injector_knife, null).initIndependentStat().registerStat();
 
@@ -839,6 +841,7 @@ public class MainRegistry {
 				//horizonsBonus,
 				achRadPoison,
 				achRadDeath,
+				achRabiesDeath,
 				//achWitchtaunter,
 				achNo9,
 				achInferno,

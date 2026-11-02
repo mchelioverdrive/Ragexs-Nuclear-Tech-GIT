@@ -58,6 +58,7 @@ import com.hbm.hazard.type.HazardTypeNeutron;
 import com.hbm.interfaces.IBomb;
 import com.hbm.handler.HbmKeybinds.EnumKeybind;
 import com.hbm.handler.atmosphere.ChunkAtmosphereManager;
+import com.hbm.handler.disease.Rabies;
 import com.hbm.handler.pollution.PollutionHandler;
 import com.hbm.handler.pollution.PollutionHandler.PollutionType;
 import com.hbm.items.IEquipReceiver;
@@ -547,6 +548,9 @@ public class ModEventHandler {
 	public void onEntityDeathLast(LivingDeathEvent event) {
 
 		EntityLivingBase entity = event.entityLiving;
+		// Run after revival/cancellation, before respawn clears the disease record. Only the lethal source counts.
+		if(!event.isCanceled() && !entity.worldObj.isRemote && entity instanceof EntityPlayer && event.source == Rabies.DISEASE_DAMAGE)
+			AchievementHandler.award((EntityPlayer) entity, MainRegistry.achRabiesDeath);
 
 		if(EntityDamageUtil.wasAttackedByV1(event.source)) {
 

@@ -1399,6 +1399,7 @@ public class ModItems {
 	public static Item syringe_empty;
 	public static Item syringe_antidote;
 	public static Item syringe_hrig;
+	public static Item syringe_rabies;
 	public static Item syringe_poison;
 	public static Item syringe_awesome;
 	public static Item syringe_metal_empty;
@@ -4450,6 +4451,7 @@ public class ModItems {
 		syringe_empty = new Item().setUnlocalizedName("syringe_empty").setFull3D().setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":syringe_empty");
 		syringe_antidote = new ItemSyringe().setUnlocalizedName("syringe_antidote").setFull3D().setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":syringe_antidote");
 		syringe_hrig = new ItemHRIG().setUnlocalizedName("syringe_hrig").setFull3D().setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":syringe_antidote");
+		syringe_rabies = new ItemSyringeRabies().setUnlocalizedName("syringe_rabies").setFull3D().setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":syringe_poison");
 		syringe_poison = new ItemSyringe().setUnlocalizedName("syringe_poison").setFull3D().setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":syringe_poison");
 		//syringe_awesome = new ItemSyringe().setUnlocalizedName("syringe_awesome").setFull3D().setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":syringe_awesome");
 		syringe_metal_empty = new Item().setUnlocalizedName("syringe_metal_empty").setFull3D().setCreativeTab(MainRegistry.consumableTab).setTextureName(RefStrings.MODID + ":syringe_metal_empty");
@@ -9661,6 +9663,7 @@ public class ModItems {
 		GameRegistry.registerItem(syringe_empty, syringe_empty.getUnlocalizedName());
 		GameRegistry.registerItem(syringe_antidote, syringe_antidote.getUnlocalizedName());
 		GameRegistry.registerItem(syringe_hrig, syringe_hrig.getUnlocalizedName());
+		GameRegistry.registerItem(syringe_rabies, syringe_rabies.getUnlocalizedName());
 		GameRegistry.registerItem(syringe_poison, syringe_poison.getUnlocalizedName());
 		//GameRegistry.registerItem(syringe_awesome, syringe_awesome.getUnlocalizedName());
 		GameRegistry.registerItem(syringe_metal_empty, syringe_metal_empty.getUnlocalizedName());
