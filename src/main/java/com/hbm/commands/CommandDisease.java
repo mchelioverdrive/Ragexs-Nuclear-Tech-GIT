@@ -43,7 +43,8 @@ public final class CommandDisease extends CommandBase {
 		else Rabies.refreshFatalCommitment(host, infection, now);
 		sender.addChatMessage(new ChatComponentText("rabies: " + infection.stage + ", presentation=" + infection.presentation
 				+ ", active=" + pathogen.enabled() + ", infectious=" + (pathogen.enabled() && pathogen.infectious(infection))
-				+ ", infectedAt=" + infection.infectedAt + ", elapsedTicks=" + Math.max(0L, now - infection.infectedAt)
+				+ ", infectedAt=" + (infection.hasInfectionTime() ? Long.toString(infection.infectedAt) : "unknown")
+				+ ", elapsedTicks=" + (infection.hasInfectionTime() ? Long.toString(Math.max(0L, now - infection.infectedAt)) : "unknown")
 				+ ", treatmentEligible=" + (host instanceof EntityPlayer && Rabies.treatmentEligible(infection, now))
 				+ ", remainingTreatmentTicks=" + Rabies.treatmentTicksRemaining(infection, now)
 				+ ", fatalCommitted=" + Rabies.fatalCommitted(infection)

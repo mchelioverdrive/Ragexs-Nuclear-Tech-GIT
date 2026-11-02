@@ -23,6 +23,8 @@ public final class Rabies implements Pathogen {
 	public static final String ID = "rabies";
 	public static final long TREATMENT_TICKS = 24000L;
 	private static final String FATAL_COMMITTED = "fatalCommitted";
+	private static final String PLAYER_TIMELINE_FIXED = "playerTreatmentWindow";
+	private static final String[] DEADLINES = { "sheddingAt", "clinicalAt", "neurologicalAt", "terminalAt", "fatalAt" };
 	public static final DamageSource DISEASE_DAMAGE = new DamageSource("rabies").setDamageBypassesArmor().setDamageIsAbsolute();
 	// Infection != infectiousness != visible illness. Terminal disease remains infectious until death.
 	public enum Stage { INCUBATING, SHEDDING, CLINICAL, NEUROLOGICAL, TERMINAL, FATAL }
@@ -84,27 +86,76 @@ public final class Rabies implements Pathogen {
 		timeline.setLong("neurologicalAt", neurological);
 		timeline.setLong("terminalAt", terminal);
 		timeline.setLong("fatalAt", terminal + RabiesConfig.terminalTicks);
+		if(host instanceof EntityPlayer) {
+			adjustPlayerTimeline(timeline, now);
+			timeline.setBoolean(PLAYER_TIMELINE_FIXED, true);
+		}
 		return new Infection(ID, source, sourceHost, now, Stage.INCUBATING.name(),
 				host.getRNG().nextDouble() < RabiesConfig.furiousChance ? "furious" : "paralytic", timeline);
 	}
 
 	@Override public void progress(EntityLivingBase host, Infection infection, long now) {
-		NBTTagCompound time = infection.details;
+		// Repair old player records before interpreting deadlines or their saved monotonic stage.
+		refreshFatalCommitment(host, infection, now);
+		if(host instanceof EntityPlayer && !hasTimeline(infection.details)) return;
+		Stage stage = stageAt(infection.details, now);
+		// Persisted monotonic stage also prevents an administrator's clock rollback from reversing illness.
+		if(stage.ordinal() > stage(infection).ordinal()) infection.stage = stage.name();
+	}
+
+	private static Stage stageAt(NBTTagCompound time, long now) {
 		Stage stage = now >= time.getLong("fatalAt") ? Stage.FATAL
 				: now >= time.getLong("terminalAt") ? Stage.TERMINAL
 				: now >= time.getLong("neurologicalAt") ? Stage.NEUROLOGICAL
 				: now >= time.getLong("clinicalAt") ? Stage.CLINICAL
 				: now >= time.getLong("sheddingAt") ? Stage.SHEDDING : Stage.INCUBATING;
-		// Persisted monotonic stage also prevents an administrator's clock rollback from reversing illness.
-		if(stage.ordinal() > stage(infection).ordinal()) infection.stage = stage.name();
-		refreshFatalCommitment(host, infection, now);
+		return stage;
 	}
 
-	/** Missing legacy flags derive from the original infection time and monotonic stage. */
+	/** Shift the clinical and later deadlines equally, preserving every downstream duration. */
+	private static void adjustPlayerTimeline(NBTTagCompound time, long infectedAt) {
+		// Missing legacy fields use configuration fallbacks. Keep later deadlines ordered if a
+		// reconstructed predecessor passes them; a partial record must not bypass the player window.
+		long[] durations = { RabiesConfig.incubationTicks, RabiesConfig.infectiousTicks,
+				RabiesConfig.clinicalTicks / 2, RabiesConfig.clinicalTicks - RabiesConfig.clinicalTicks / 2,
+				RabiesConfig.terminalTicks };
+		long previous = infectedAt;
+		for(int i = 0; i < DEADLINES.length; i++) {
+			long minimum = previous + (i == 1 ? 0L : 1L);
+			if(!time.hasKey(DEADLINES[i], 99) || time.getLong(DEADLINES[i]) < minimum)
+				time.setLong(DEADLINES[i], previous + durations[i]);
+			previous = time.getLong(DEADLINES[i]);
+		}
+		long shift = Math.max(0L, infectedAt + TREATMENT_TICKS - time.getLong("clinicalAt"));
+		if(shift > 0L) {
+			for(int i = 1; i < DEADLINES.length; i++)
+				time.setLong(DEADLINES[i], time.getLong(DEADLINES[i]) + shift);
+		}
+	}
+
+	private static boolean hasTimeline(NBTTagCompound time) {
+		for(String deadline : DEADLINES) if(!time.hasKey(deadline, 99)) return false;
+		return true;
+	}
+
+	/** One-time save repair never changes infectedAt or reopens an expired treatment window. */
+	private static void repairPlayerTimeline(EntityLivingBase host, Infection infection, long now) {
+		if(infection.details.getBoolean(PLAYER_TIMELINE_FIXED) || !infection.hasInfectionTime()) return;
+		adjustPlayerTimeline(infection.details, infection.infectedAt);
+		if(treatmentTicksRemaining(infection, now) > 0L) {
+			if(fatalCommitted(infection)) host.removePotionEffect(HbmPotion.fatal.id);
+			infection.details.setBoolean(FATAL_COMMITTED, false);
+			infection.stage = stageAt(infection.details, now).name();
+		}
+		infection.details.setBoolean(PLAYER_TIMELINE_FIXED, true);
+	}
+
+	/** The saved record owns commitment; clinical stage and visible potions do not decide eligibility. */
 	public static void refreshFatalCommitment(EntityLivingBase host, Infection infection, long now) {
-		if(host.worldObj.isRemote) return;
-		if(host instanceof EntityPlayer && (treatmentTicksRemaining(infection, now) == 0L
-				|| stage(infection).ordinal() >= Stage.CLINICAL.ordinal()))
+		if(host.worldObj.isRemote || !(host instanceof EntityPlayer) || !host.isEntityAlive()) return;
+		repairPlayerTimeline(host, infection, now);
+		// Unknown legacy times cannot establish that a treatment deadline has been reached.
+		if(infection.hasInfectionTime() && !treatmentEligible(infection, now))
 			infection.details.setBoolean(FATAL_COMMITTED, true);
 	}
 
@@ -113,13 +164,13 @@ public final class Rabies implements Pathogen {
 	}
 
 	public static long treatmentTicksRemaining(Infection infection, long now) {
+		if(!infection.hasInfectionTime()) return 0L;
 		return Math.max(0L, TREATMENT_TICKS - Math.max(0L, now - infection.infectedAt));
 	}
 
 	/** Call progress with DiseaseManager.now before querying eligibility. */
 	public static boolean treatmentEligible(Infection infection, long now) {
-		return !fatalCommitted(infection) && treatmentTicksRemaining(infection, now) > 0L
-				&& (stage(infection) == Stage.INCUBATING || stage(infection) == Stage.SHEDDING);
+		return !fatalCommitted(infection) && treatmentTicksRemaining(infection, now) > 0L;
 	}
 
 	/** Server-only treatment; the record, not a potion or dose, owns eligibility and cleanup. */
@@ -129,6 +180,7 @@ public final class Rabies implements Pathogen {
 		if(infection == null) return "hrig.uninfected";
 		long now = DiseaseManager.now(player);
 		DiseaseManager.pathogen(ID).progress(player, infection, now);
+		if(!infection.hasInfectionTime()) return "hrig.unknown_time";
 		if(!treatmentEligible(infection, now)) {
 			restoreFatalEffect(player, infection);
 			return "hrig.too_late";
@@ -177,6 +229,8 @@ public final class Rabies implements Pathogen {
 	}
 
 	@Override public void update(EntityLivingBase host, Infection infection, long now) {
+		// Incomplete, undatable legacy records must not turn absent NBT deadlines into tick-zero death.
+		if(host instanceof EntityPlayer && !hasTimeline(infection.details)) return;
 		Stage stage = stage(infection);
 		if(stage.ordinal() >= Stage.CLINICAL.ordinal()) {
 			// Vanilla potion transport synchronizes symptoms only. Clearing potions never clears the record.

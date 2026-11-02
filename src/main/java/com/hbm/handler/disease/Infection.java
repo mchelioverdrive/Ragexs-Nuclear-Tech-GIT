@@ -4,6 +4,7 @@ import net.minecraft.nbt.NBTTagCompound;
 
 /** One canonical record per pathogen/host. Disease-specific timeline data stays in details. */
 public final class Infection {
+	private static final long UNKNOWN_TIME = -1L;
 	public final String pathogen, source, sourceHost;
 	public final long infectedAt;
 	public String stage, presentation;
@@ -20,12 +21,15 @@ public final class Infection {
 		this.details = details;
 	}
 
+	/** An absent legacy timestamp must survive saving without becoming a tick-zero infection. */
+	public boolean hasInfectionTime() { return infectedAt >= 0L; }
+
 	public NBTTagCompound save() {
 		NBTTagCompound tag = new NBTTagCompound();
 		tag.setString("pathogen", pathogen);
 		tag.setString("source", source);
 		tag.setString("sourceHost", sourceHost);
-		tag.setLong("infectedAt", infectedAt);
+		if(hasInfectionTime()) tag.setLong("infectedAt", infectedAt);
 		tag.setString("stage", stage);
 		tag.setString("presentation", presentation);
 		tag.setTag("details", details.copy());
@@ -34,7 +38,8 @@ public final class Infection {
 
 	public static Infection load(NBTTagCompound tag) {
 		return new Infection(tag.getString("pathogen"), tag.getString("source"), tag.getString("sourceHost"),
-				tag.getLong("infectedAt"), tag.getString("stage"), tag.getString("presentation"),
+				tag.hasKey("infectedAt", 99) ? tag.getLong("infectedAt") : UNKNOWN_TIME,
+				tag.getString("stage"), tag.getString("presentation"),
 				(NBTTagCompound) tag.getCompoundTag("details").copy());
 	}
 }

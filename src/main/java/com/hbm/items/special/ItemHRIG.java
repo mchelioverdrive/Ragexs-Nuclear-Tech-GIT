@@ -59,6 +59,6 @@ public final class ItemHRIG extends ItemSyringe {
 
 	@Override
 	public void addInformation(ItemStack stack, EntityPlayer player, List lines, boolean advanced) {
-		for(int i = 1; i <= 10; i++) lines.add(StatCollector.translateToLocal("item.syringe_hrig.desc." + i));
+		for(int i = 1; i <= 2; i++) lines.add(StatCollector.translateToLocal("item.syringe_hrig.desc." + i));
 	}
 }
