@@ -41,6 +41,7 @@ The main config is generated from these source categories:
 | `17_dims` | Dimension IDs, celestial body enable flags, and space-related generation values. |
 | `18_pollution` | Pollution behavior where applicable. |
 | `19_weapons` | Weapon balance and behavior settings. |
+| `20_rabies` | Rabies enable flag, infected bat entries, per-bite transmission, compressed disease timing and modded mammal allowlist. |
 | `528` | 528-mode progression/balance controls. |
 | `LESS BULLSHIT MODE` | Easier progression recipe and safety controls; forced off while 528 mode is enabled. |
 
@@ -55,6 +56,34 @@ The main config is generated from these source categories:
 | `1.43_serverSafety` | `false` | Enables automated entity culling behavior described by the config comment. |
 | `1.99_enableExpensiveMode` | `false` | Enables expensive-mode balance. |
 | `6.XX_enableChunkLoading` | `true` | Allows procedural explosions to keep the central chunk loaded. |
+
+### Rabies
+
+`20_rabies.enabled` defaults to `true`. Set it to `false` to disable reservoir seeding, disease behavior and transmission. Records remain saved; their timelines catch up if enabled again. Bats first encountered while disabled are marked checked and are not later rerolled.
+
+`batchance=0.08` means an eight percent chance that a bat already has rabies when it first enters the simulation, including existing bats first encountered after installing this feature. It is rolled once and saved, never on every chunk load. These entries represent existing infections entering the area, not virus evolution or an assertion about rabies' historical origin. All established infections start in silent incubation.
+
+`dogchance=0.08` means an eight percent establishment probability **per qualifying infectious bat bite against a wolf**, wild or tamed. It is independent of `batchance`. Separate `batToPlayer`, `batToOtherMammal`, `wolfToPlayer`, `wolfToWolf`, `wolfToOtherMammal`, `otherMammalToPlayer` and `otherMammalToMammal` settings also default to `0.08`. These are gameplay defaults, not measured biological prevalence or transmission rates. All probabilities accept the inclusive range `[0, 1]`; out-of-range/nonfinite values reset to their defaults. A failed establishment roll leaves the host susceptible. Infection of a new species neither boosts these probabilities nor makes that species a reservoir or proves sustained transmission.
+
+Default susceptible hosts are players (except invulnerable/creative players), bats, wolves, cows, mooshrooms, pigs, sheep, living horses/donkeys/mules, ocelots/cats and villagers. Vanilla animal classes are matched exactly to avoid accidentally admitting robotic mod subclasses. `mammalAllowlist` adds exact `EntityList` registry names for modded mammals; the administrator supplies that biological classification. It does not add reservoir seeding. Undead, arthropods, chickens, aquatic mobs and golems remain excluded. Other unlisted mobs are not susceptible. Modded host behavior requires the normal `EntityLiving` task/navigation system; a custom movement implementation may need its own integration.
+
+Transmission requires an infectious host's close-range bite that causes a confirmed wound after cancellation, shields, armor, resistance and absorption. Transmission probability is independent of damage magnitude. Native vanilla wolf melee counts as a bite; ordinary attacks by players or other mammals, projectiles, kicks, thorns and contact do not. Infectious bats can bite at close range, and furious bats can make short local pursuits using their existing flight movement. Furious ground mammals receive a removable bite task. Paralytic mammals receive no forced aggression. Normal wolf bites can transmit in the silent shedding phase as well as clinical illness. No proximity, breathing, water, intact-skin, carcass, scratch or unloaded contact transmission is simulated.
+
+All durations use Minecraft ticks: **20 ticks = one second at 20 TPS; 24,000 ticks = one Minecraft day**. These deliberately compress real disease times; they are not a biological prediction. New infections snapshot the configured timeline, so later configuration changes do not rewrite existing infections.
+
+| Setting | Default | Meaning |
+| --- | ---: | --- |
+| `incubationTicks` | `48000` | Silent, noninfectious incubation (two Minecraft days). |
+| `presymptomaticInfectiousTicks` | `1200` | Silent infectious saliva shedding before visible signs. Shedding continues through clinical and terminal illness. |
+| `clinicalTicks` | `2400` | Behavioral illness, followed halfway through by neurological impairment. |
+| `terminalTicks` | `1200` | Terminal decline with paralysis and disease damage; lethal disease damage at the deadline. |
+| `furiousChance` | `0.5` | One-time gameplay selection of furious versus paralytic presentation. |
+
+Scheduled progression and symptoms update once per second per loaded host; disease AI and bites also refresh the stage before using it. Bat behavior is bounded to five-tick updates and two-second bite cooldowns. Disease pursuit and sight checks require their native chunk footprints to be loaded already. Presentation and stage are persisted separately from pathogen identity. Shared overworld total ticks advance infection while a chunk is unloaded or a player is logged out, and across dimension travel; no bites or contacts occur while unloaded. Unloading beyond the fatal deadline causes terminal consequences on the next loaded progression update. Time does not advance while the server is stopped, and `/time set` and sleeping do not skip disease time. Death/respawn clears player infections as an explicit gameplay rule, without granting immunity. Dimension cloning preserves them.
+
+Milk, antidote syringes, healing and potion clearing can relieve symptoms temporarily but do not remove infection. The existing medical items provide no suitable rabies preventive vaccination or post-exposure prophylaxis, so neither is implemented or repurposed as a clinical cure. Admins can inspect or remove rabies with [`/ntmdisease`](commands.md#ntmdisease-inspectclear-playerentityid). No exact diagnosis is automatically disclosed after a bite. Removing infection restores vanilla tasks; brief disease potion symptoms expire naturally without clearing unrelated effects. Normal protection hooks can also prevent lethal disease damage.
+
+The biological model follows [Merck Veterinary Manual](https://www.merckvetmanual.com/nervous-system/rabies/rabies-in-animals) on furious/paralytic presentations and fatal progression, and [CDC veterinary guidance](https://www.cdc.gov/rabies/hcp/veterinarians/index.html) on mammal bites and presymptomatic saliva shedding. The shared shedding schedule across all hosts, deterministic fatal deadline, presentation split and bite behavior are gameplay abstractions; species-specific shedding timing is not established by applying dog/cat/ferret observations to bats. [CDC prevention guidance](https://www.cdc.gov/rabies/hcp/prevention-recommendations/post-exposure-prophylaxis.html) distinguishes prevention after exposure from treatment of clinical disease; this mod currently lacks those medical interventions.
 
 ### World generation caution
 

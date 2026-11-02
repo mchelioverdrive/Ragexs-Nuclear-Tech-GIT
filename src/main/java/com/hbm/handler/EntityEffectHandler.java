@@ -63,6 +63,7 @@ import net.minecraft.world.biome.BiomeGenBase;
 public class EntityEffectHandler {
 
 	public static void onUpdate(EntityLivingBase entity) {
+		com.hbm.handler.disease.DiseaseManager.tick(entity);
 		if(entity instanceof EntityPlayer && ((EntityPlayer) entity).capabilities.isCreativeMode) {
 			HbmLivingProps.clearRadiation(entity);
 			if(HbmPotion.radiation != null)

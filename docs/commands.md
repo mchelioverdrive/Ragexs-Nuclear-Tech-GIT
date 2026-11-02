@@ -6,6 +6,12 @@ This reference was verified against `src/main/java/com/hbm/commands` and the ser
 
 These commands are registered during server startup.
 
+### `/ntmdisease inspect|clear <player|entityId>`
+
+Requires operator permission level 2. `inspect` reports the authoritative rabies stage, presentation, infection source, infection time and saved stage deadlines to the administrator. It does not expose diagnoses to bite victims automatically. `clear` removes the rabies record and its disease AI; short potion symptoms expire naturally. This is an administrative override, not vaccination or medical treatment.
+
+Player names target online players; numeric entity IDs target loaded living entities in the sender's dimension (the overworld for the server console). The command does not load chunks. See [rabies configuration](configuration.md#rabies) for host rules, timing and persistence.
+
 ### `/rntachievement list|unlock`
 
 Lists RNT achievement IDs or unlocks one for an online player. Requires operator permission level 2; the server console can use it.

@@ -1067,6 +1067,9 @@ public class MainRegistry {
 		ModEventHandler commonHandler = new ModEventHandler();
 		FMLCommonHandler.instance().bus().register(commonHandler);
 		MinecraftForge.EVENT_BUS.register(commonHandler);
+		com.hbm.handler.disease.DiseaseEvents diseaseEvents = new com.hbm.handler.disease.DiseaseEvents();
+		MinecraftForge.EVENT_BUS.register(diseaseEvents);
+		FMLCommonHandler.instance().bus().register(diseaseEvents);
 		MinecraftForge.EVENT_BUS.register(new com.hbm.explosion.FalloutCollapseManager());
 		MinecraftForge.EVENT_BUS.register(new com.hbm.explosion.ExplosionTerrainAccess());
 		MinecraftForge.TERRAIN_GEN_BUS.register(commonHandler);
@@ -1109,6 +1112,7 @@ public class MainRegistry {
 
 	@EventHandler
 	public void serverStopped(cpw.mods.fml.common.event.FMLServerStoppedEvent event) {
+		com.hbm.handler.disease.DiseaseEvents.clear();
 		com.hbm.explosion.ExplosionWorkScheduler.clear();
 		com.hbm.explosion.FalloutCollapseManager.clear();
 		com.hbm.entity.logic.EntityExplosionChunkloading.releaseAllTickets();
@@ -1125,6 +1129,7 @@ public class MainRegistry {
 		event.registerServerCommand(new CommandMachineStats());
 		event.registerServerCommand(new CommandSatellites());
 		event.registerServerCommand(new CommandRadiation());
+		event.registerServerCommand(new CommandDisease());
 		event.registerServerCommand(new CommandStations());
 		event.registerServerCommand(new CommandEnableNukes());
 		event.registerServerCommand(new CommandEnableRedstoneGroundNukes());
@@ -1158,6 +1163,7 @@ public class MainRegistry {
 		ToolConfig.loadFromConfig(config);
 		WeaponConfig.loadFromConfig(config);
 		MobConfig.loadFromConfig(config);
+		RabiesConfig.loadFromConfig(config);
 		StructureConfig.loadFromConfig(config);
 		SpaceConfig.loadFromConfig(config);
 

@@ -385,6 +385,8 @@ public class ModEventHandler {
 
 	@SubscribeEvent
 	public void onEntityConstructing(EntityEvent.EntityConstructing event) {
+		if(event.entity instanceof EntityLivingBase)
+			com.hbm.handler.disease.DiseaseHost.get((EntityLivingBase) event.entity);
 
 		if (event.entity instanceof EntityLivingBase) {
 			if (event.entity.getExtendedProperties("HbmProps") == null) {
@@ -1748,6 +1750,7 @@ public class ModEventHandler {
 
 	@SubscribeEvent
 	public void onPlayerClone(net.minecraftforge.event.entity.player.PlayerEvent.Clone event) {
+		com.hbm.handler.disease.DiseaseManager.clonePlayer(event.original, event.entityPlayer, event.wasDeath);
 
 		NBTTagCompound data = new NBTTagCompound();
 		HbmPlayerProps.getData(event.original).saveNBTData(data);
