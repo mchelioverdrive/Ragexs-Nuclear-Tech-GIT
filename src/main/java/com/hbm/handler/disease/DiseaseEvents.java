@@ -21,6 +21,7 @@ import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.CombatEntry;
 import net.minecraft.util.CombatTracker;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.player.PlayerUseItemEvent;
 
 public final class DiseaseEvents {
@@ -67,6 +68,8 @@ public final class DiseaseEvents {
 
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public void onHurt(LivingHurtEvent event) {
+		if(!event.entityLiving.worldObj.isRemote && event.ammount > 0F && event.source.getEntity() instanceof EntityLivingBase)
+			RabiesBehavior.attackedBy(event.entityLiving, (EntityLivingBase) event.source.getEntity());
 		if(event.entityLiving.worldObj.isRemote || event.ammount <= 0F || event.source.isProjectile()
 				|| event.source.getEntity() != event.source.getSourceOfDamage()) return;
 		if(!(event.source.getEntity() instanceof EntityLivingBase)) return;
@@ -78,6 +81,17 @@ public final class DiseaseEvents {
 		// Damage attribution alone is not contact: native attack methods can be invoked at arbitrary range.
 		if(!BiteDamageSource.hasContact(source, event.entityLiving)) return;
 		BITES.add(new PendingBite(event, source));
+	}
+
+	@SubscribeEvent(priority = EventPriority.HIGHEST)
+	public void onAttack(LivingAttackEvent event) {
+		if(event.entityLiving.worldObj.isRemote || event.source instanceof BiteDamageSource
+				|| event.source.isProjectile() || !"mob".equals(event.source.getDamageType())
+				|| event.source.getEntity() != event.source.getSourceOfDamage()
+				|| !(event.source.getEntity() instanceof EntityWolf)) return;
+		// The AI scheduler can take three ticks to preempt an already-running vanilla attack task.
+		// Furious wolves use only explicit disease bites; quiet stages retain native wolf bites.
+		if(RabiesBehavior.suppressNativeBite((EntityLivingBase) event.source.getEntity())) event.setCanceled(true);
 	}
 
 	@SubscribeEvent

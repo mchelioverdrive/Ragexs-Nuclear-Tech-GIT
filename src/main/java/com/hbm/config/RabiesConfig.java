@@ -19,6 +19,8 @@ public final class RabiesConfig {
 	public static double groundDetectionDistance = 32D, groundPursuitDistance = 48D;
 	public static double batDetectionDistance = 6D, batPursuitDistance = 10D, targetSwitchChance = 0.5D;
 	public static int lostSightTicks = 60, targetSwitchCooldownTicks = 40;
+	public static double stareDistance = 20D;
+	public static int stareMinTicks = 40, stareMaxTicks = 60;
 	public static boolean playerWaterContactPenalty = true, animalWaterAvoidance = true;
 	public static int incubationTicks = 48000, infectiousTicks = 1200, clinicalTicks = 2400, terminalTicks = 1200;
 	public static final Set<String> mammalAllowlist = new HashSet<String>();
@@ -54,6 +56,13 @@ public final class RabiesConfig {
 		targetSwitchChance = probability(config, "targetSwitchChance", 0.5D, "Chance to seek another nearby visible, reachable host after a confirmed wound; no extra transmission roll.");
 		lostSightTicks = boundedTicks(config, "lostSightTicks", 60, 200, "Maximum pursuit of the last observed location after losing sight.");
 		targetSwitchCooldownTicks = boundedTicks(config, "targetSwitchCooldownTicks", 40, 1200, "Cooldown for target changes and post-wound switching attempts; prevents flickering.");
+		stareDistance = distance(config, "stareDistance", 20D, 64D, "Gameplay choice: stare before pursuing a newly acquired visible target within this distance; acquisition ranges still apply.");
+		stareMinTicks = boundedTicks(config, "stareMinTicks", 40, 1200, "Gameplay choice: minimum initial stare duration, not a biological claim.");
+		stareMaxTicks = boundedTicks(config, "stareMaxTicks", 60, 1200, "Gameplay choice: maximum initial stare duration; raised to the minimum if smaller.");
+		if(stareMaxTicks < stareMinTicks) {
+			stareMaxTicks = stareMinTicks;
+			config.get(CATEGORY, "stareMaxTicks", 60).set(stareMaxTicks);
+		}
 		playerWaterContactPenalty = CommonConfig.createConfigBool(config, CATEGORY, "playerWaterContactPenalty",
 				"Gameplay choice: short Weakness I and Slowness I during symptomatic water contact, including paralytic illness. Not a claim about universal hydrophobia; rain does not count.", true);
 		animalWaterAvoidance = CommonConfig.createConfigBool(config, CATEGORY, "animalWaterAvoidance",
