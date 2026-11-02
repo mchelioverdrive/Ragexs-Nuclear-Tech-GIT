@@ -44,7 +44,7 @@ public final class DiseaseManager {
 			Pathogen pathogen = pathogen(infection.pathogen);
 			if(pathogen == null) continue; // Preserve records for unavailable future integrations.
 			if(!pathogen.enabled() || !pathogen.supports(host)) {
-				pathogen.removeEffects(host);
+				// onHostTick already releases inactive behavior; keep persistent status reconciliation there.
 				continue;
 			}
 			pathogen.progress(host, infection, now);

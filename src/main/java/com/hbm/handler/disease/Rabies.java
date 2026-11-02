@@ -1,6 +1,9 @@
 package com.hbm.handler.disease;
 
+import java.util.ArrayList;
+
 import com.hbm.config.RabiesConfig;
+import com.hbm.potion.HbmPotion;
 
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityLivingBase;
@@ -9,6 +12,7 @@ import net.minecraft.entity.EnumCreatureAttribute;
 import net.minecraft.entity.monster.EntityGolem;
 import net.minecraft.entity.passive.*;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
@@ -17,6 +21,8 @@ import net.minecraft.util.DamageSource;
 /** Viral mammal infection; timing, presentation frequency and per-bite risks are gameplay abstractions. */
 public final class Rabies implements Pathogen {
 	public static final String ID = "rabies";
+	public static final long TREATMENT_TICKS = 24000L;
+	private static final String FATAL_COMMITTED = "fatalCommitted";
 	public static final DamageSource DISEASE_DAMAGE = new DamageSource("rabies").setDamageBypassesArmor().setDamageIsAbsolute();
 	// Infection != infectiousness != visible illness. Terminal disease remains infectious until death.
 	public enum Stage { INCUBATING, SHEDDING, CLINICAL, NEUROLOGICAL, TERMINAL, FATAL }
@@ -31,12 +37,16 @@ public final class Rabies implements Pathogen {
 		// Check markers include encounters while disabled; clearing disease never rerolls entry infection.
 		Infection infection = data.infections.get(ID);
 		if(infection == null) return;
+		// Commitment is saved even while disease behavior is disabled or the player is invulnerable.
+		refreshFatalCommitment(host, infection, DiseaseManager.now(host));
 		if(!enabled() || !supports(host)) {
-			removeEffects(host);
+			releaseBehavior(host);
+			restoreFatalEffect(host, infection);
 			return;
 		}
 		// Prepare before vanilla AI, not up to one symptom interval plus a scheduler interval later.
 		progress(host, infection, DiseaseManager.now(host));
+		restoreFatalEffect(host, infection);
 		if(host instanceof EntityPlayer && symptomatic(infection) && RabiesConfig.playerWaterContactPenalty
 				&& host.isInWater() && host.ticksExisted % 10 == 0) {
 			// Optional gameplay penalty, not universal animal/human hydrophobia. Native water contact excludes rain.
@@ -64,6 +74,7 @@ public final class Rabies implements Pathogen {
 
 	@Override public Infection establish(EntityLivingBase host, String source, String sourceHost, long now) {
 		NBTTagCompound timeline = new NBTTagCompound();
+		if(host instanceof EntityPlayer) timeline.setBoolean(FATAL_COMMITTED, false);
 		long shedding = now + RabiesConfig.incubationTicks;
 		long clinical = shedding + RabiesConfig.infectiousTicks;
 		long neurological = clinical + RabiesConfig.clinicalTicks / 2;
@@ -86,6 +97,53 @@ public final class Rabies implements Pathogen {
 				: now >= time.getLong("sheddingAt") ? Stage.SHEDDING : Stage.INCUBATING;
 		// Persisted monotonic stage also prevents an administrator's clock rollback from reversing illness.
 		if(stage.ordinal() > stage(infection).ordinal()) infection.stage = stage.name();
+		refreshFatalCommitment(host, infection, now);
+	}
+
+	/** Missing legacy flags derive from the original infection time and monotonic stage. */
+	public static void refreshFatalCommitment(EntityLivingBase host, Infection infection, long now) {
+		if(host.worldObj.isRemote) return;
+		if(host instanceof EntityPlayer && (treatmentTicksRemaining(infection, now) == 0L
+				|| stage(infection).ordinal() >= Stage.CLINICAL.ordinal()))
+			infection.details.setBoolean(FATAL_COMMITTED, true);
+	}
+
+	public static boolean fatalCommitted(Infection infection) {
+		return infection.details.getBoolean(FATAL_COMMITTED);
+	}
+
+	public static long treatmentTicksRemaining(Infection infection, long now) {
+		return Math.max(0L, TREATMENT_TICKS - Math.max(0L, now - infection.infectedAt));
+	}
+
+	/** Call progress with DiseaseManager.now before querying eligibility. */
+	public static boolean treatmentEligible(Infection infection, long now) {
+		return !fatalCommitted(infection) && treatmentTicksRemaining(infection, now) > 0L
+				&& (stage(infection) == Stage.INCUBATING || stage(infection) == Stage.SHEDDING);
+	}
+
+	/** Server-only treatment; the record, not a potion or dose, owns eligibility and cleanup. */
+	public static String treat(EntityPlayer player) {
+		if(player.worldObj.isRemote || !player.isEntityAlive()) return "hrig.unavailable";
+		Infection infection = DiseaseHost.get(player).infections.get(ID);
+		if(infection == null) return "hrig.uninfected";
+		long now = DiseaseManager.now(player);
+		DiseaseManager.pathogen(ID).progress(player, infection, now);
+		if(!treatmentEligible(infection, now)) {
+			restoreFatalEffect(player, infection);
+			return "hrig.too_late";
+		}
+		return DiseaseManager.remove(player, ID) ? "hrig.success" : "hrig.uninfected";
+	}
+
+	private static void restoreFatalEffect(EntityLivingBase host, Infection infection) {
+		if(!(host instanceof EntityPlayer) || !fatalCommitted(infection)) return;
+		PotionEffect current = host.getActivePotionEffect(HbmPotion.fatal);
+		if(current == null || current.getDuration() < 100) {
+			PotionEffect effect = new PotionEffect(HbmPotion.fatal.id, 200, 0);
+			effect.setCurativeItems(new ArrayList<ItemStack>());
+			host.addPotionEffect(effect);
+		}
 	}
 
 	public static Stage stage(Infection infection) {
@@ -136,6 +194,13 @@ public final class Rabies implements Pathogen {
 	}
 
 	@Override public void removeEffects(EntityLivingBase host) {
+		Infection infection = DiseaseHost.get(host).infections.get(ID);
+		if(host instanceof EntityPlayer && infection != null && fatalCommitted(infection))
+			host.removePotionEffect(HbmPotion.fatal.id);
+		releaseBehavior(host);
+	}
+
+	private static void releaseBehavior(EntityLivingBase host) {
 		Object behavior = DiseaseHost.get(host).behaviors.remove(ID);
 		if(behavior instanceof RabiesBehavior && host instanceof EntityLiving) {
 			((RabiesBehavior) behavior).release();

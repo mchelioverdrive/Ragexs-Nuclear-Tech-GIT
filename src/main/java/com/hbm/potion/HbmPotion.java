@@ -41,6 +41,7 @@ public class HbmPotion extends Potion {
 	public static HbmPotion stability;
 	public static HbmPotion potionsickness;
 	public static HbmPotion death;
+	public static HbmPotion fatal;
 
 	public static HbmPotion run;
 
@@ -71,6 +72,8 @@ public class HbmPotion extends Potion {
 		nitan = registerPotion(PotionConfig.nitanID, false, 8388736, "potion.hbm_nitan", 3, 1);
 		flashbang = registerPotion(PotionConfig.flashbangID, false, 0xD0D0D0, "potion.hbm_flashbang", 15, 1);
 		slippery = registerPotion(PotionConfig.slipperyID, false, 0xD0D0D0, "potion.hbm_slippery", 15, 0);
+		// Presentation only: authoritative rabies progression owns all disease damage and death.
+		fatal = registerPotion(PotionConfig.fatalID, true, 0x6B1010, "potion.hbm_fatal", 4, 1);
 
 	}
 

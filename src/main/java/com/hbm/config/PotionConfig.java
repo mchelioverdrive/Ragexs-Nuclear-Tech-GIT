@@ -26,6 +26,7 @@ public class PotionConfig {
 
 	public static int potionSickness = 2;
 	public static int slipperyID = 77;
+	public static int fatalID = 78;
 
 	public static void loadFromConfig(Configuration config) {
 
@@ -46,6 +47,7 @@ public class PotionConfig {
 		flashbangID = CommonConfig.createConfigInt(config, CATEGORY_POTION, "8.12_flashbangID", "What potion ID the flashbang effect will have", 75);
 		runID = CommonConfig.createConfigInt(config, CATEGORY_POTION, "8.13_runID", "What potion ID the run effect will have", 76);
 		slipperyID = CommonConfig.createConfigInt(config, CATEGORY_POTION, "8.14_slipperyID", "What potion ID the slippery effect will have", 77);
+		fatalID = CommonConfig.createConfigInt(config, CATEGORY_POTION, "8.15_fatalID", "What potion ID the Fatal rabies commitment status will have (no independent death timer)", 78);
 
 
 
