@@ -41,17 +41,16 @@ public final class DiseaseEvents {
 		// Vanilla wolf mob melee is a bite. Other hosts require our explicit marker, never generic melee inference.
 		if(!(event.source instanceof BiteDamageSource)
 				&& !(source.getClass() == EntityWolf.class && "mob".equals(event.source.getDamageType()))) return;
-		// Damage attribution alone is not contact: native attack methods can be invoked at arbitrary range.
-		double reachSquared = Math.min(9D, Math.max(1D, source.width * source.width * 4D + event.entityLiving.width));
-		if(source.getDistanceSq(event.entityLiving.posX, event.entityLiving.boundingBox.minY, event.entityLiving.posZ) > reachSquared) return;
 		if(DiseaseHost.get(source).infections.isEmpty()) return;
+		// Damage attribution alone is not contact: native attack methods can be invoked at arbitrary range.
+		if(!BiteDamageSource.hasContact(source, event.entityLiving)) return;
 		BITES.add(new PendingBite(event, source));
 	}
 
 	@SubscribeEvent
 	public void onServerTick(TickEvent.ServerTickEvent event) {
 		if(event.phase != TickEvent.Phase.END) return;
-		// Bat motion must be applied after EntityBat.updateAITasks, which overwrites task-based steering.
+		// Contact and neurological impairment run after native flight, once per loaded bat tick.
 		for(EntityBat bat : BATS) {
 			if(loaded(bat) && bat.isEntityAlive()) RabiesBehavior.updateBat(bat);
 		}

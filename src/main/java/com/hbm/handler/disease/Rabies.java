@@ -25,13 +25,21 @@ public final class Rabies implements Pathogen {
 	@Override public boolean enabled() { return RabiesConfig.enabled; }
 
 	@Override public void onHostTick(EntityLivingBase host, DiseaseHost data) {
-		if(!(host instanceof EntityBat)) return;
-		if(data.introductionsChecked.add(ID) && enabled() && supports(host)
+		if(host instanceof EntityBat && data.introductionsChecked.add(ID) && enabled() && supports(host)
 				&& host.getRNG().nextDouble() < RabiesConfig.batchance)
 			DiseaseManager.infect(host, this, "reservoir_entry", "Bat");
 		// Check markers include encounters while disabled; clearing disease never rerolls entry infection.
-		if(enabled() && data.infections.containsKey(ID) && (host.ticksExisted + host.getEntityId()) % 5 == 0)
-			DiseaseEvents.queueBat((EntityBat) host);
+		Infection infection = data.infections.get(ID);
+		if(infection == null) return;
+		if(!enabled() || !supports(host)) {
+			removeEffects(host);
+			return;
+		}
+		// Prepare before vanilla AI, not up to one symptom interval plus a scheduler interval later.
+		progress(host, infection, DiseaseManager.now(host));
+		if(host instanceof EntityLiving && (stage(infection).ordinal() >= Stage.CLINICAL.ordinal()
+				|| host instanceof EntityBat && infectious(infection)))
+			RabiesBehavior.updateHost((EntityLiving) host, infection);
 	}
 
 	@Override public boolean supports(EntityLivingBase host) {
@@ -98,12 +106,6 @@ public final class Rabies implements Pathogen {
 			if(host instanceof EntityPlayer && stage.ordinal() >= Stage.NEUROLOGICAL.ordinal())
 				host.addPotionEffect(new PotionEffect(Potion.confusion.id, 100, 0));
 		}
-		if(host instanceof EntityLiving && stage.ordinal() >= Stage.CLINICAL.ordinal()
-				&& !(host instanceof EntityBat) && !DiseaseHost.get(host).behaviors.containsKey(ID)) {
-			RabiesBehavior behavior = new RabiesBehavior((EntityLiving) host);
-			DiseaseHost.get(host).behaviors.put(ID, behavior);
-			((EntityLiving) host).tasks.addTask(0, behavior);
-		}
 		if(stage == Stage.TERMINAL) {
 			long duration = Math.max(1L, infection.details.getLong("fatalAt") - infection.details.getLong("terminalAt"));
 			host.attackEntityFrom(DISEASE_DAMAGE, (float) (host.getMaxHealth() * Math.min(0.5D, 10D / duration)));
@@ -113,9 +115,15 @@ public final class Rabies implements Pathogen {
 
 	@Override public void removeEffects(EntityLivingBase host) {
 		Object behavior = DiseaseHost.get(host).behaviors.remove(ID);
-		if(behavior instanceof RabiesBehavior && host instanceof EntityLiving)
+		if(behavior instanceof RabiesBehavior && host instanceof EntityLiving) {
+			((RabiesBehavior) behavior).release();
 			((EntityLiving) host).tasks.removeTask((RabiesBehavior) behavior);
+		} else RabiesBehavior.restoreSitting(host, DiseaseHost.get(host).infections.get(ID));
 		// Our short symptom effects expire naturally; never remove another system's same-ID potion effects.
+	}
+
+	public static String behaviorStatus(EntityLivingBase host, Infection infection) {
+		return RabiesBehavior.describe(host, infection);
 	}
 
 	@Override public double biteProbability(EntityLivingBase source, EntityLivingBase target) {

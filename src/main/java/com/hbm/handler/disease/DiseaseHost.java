@@ -33,6 +33,8 @@ public final class DiseaseHost implements IExtendedEntityProperties {
 	@Override public void init(Entity entity, World world) { }
 
 	@Override public void saveNBTData(NBTTagCompound nbt) {
+		Object rabiesBehavior = behaviors.get(Rabies.ID);
+		if(rabiesBehavior instanceof RabiesBehavior) ((RabiesBehavior) rabiesBehavior).saveState();
 		NBTTagCompound data = new NBTTagCompound();
 		data.setInteger("version", 1);
 		NBTTagList introductions = new NBTTagList();

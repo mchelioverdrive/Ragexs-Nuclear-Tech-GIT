@@ -44,5 +44,6 @@ public final class CommandDisease extends CommandBase {
 				+ ", infectedAt=" + infection.infectedAt + ", elapsedTicks=" + Math.max(0L, now - infection.infectedAt)
 				+ ", source=" + infection.source + " (" + infection.sourceHost + ")"
 				+ ", timeline=" + infection.details));
+		sender.addChatMessage(new ChatComponentText("behavior: " + Rabies.behaviorStatus(host, infection)));
 	}
 }

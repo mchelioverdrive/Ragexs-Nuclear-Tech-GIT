@@ -10,6 +10,8 @@ These commands are registered during server startup.
 
 Requires operator permission level 2. `inspect` reports the authoritative rabies stage, presentation, infection source, infection time and saved stage deadlines to the administrator. It does not expose diagnoses to bite victims automatically. `clear` removes the rabies record and its disease AI; short potion symptoms expire naturally. This is an administrative override, not vaccination or medical treatment.
 
+`inspect` also reports disease behavior status and the target entity ID, or `target=none`. Status distinguishes silent incubation/shedding, paralytic illness, absent or blocked behavior execution, missing eligible targets, bite reach/cooldown, unavailable navigation chunks and navigation failure. Players receive symptoms without autonomous movement or attacks. A ridden, saddled horse retains rider control; modded mammals with custom AI may require an integration. Inspection does not start pursuit or load chunks.
+
 Player names target online players; numeric entity IDs target loaded living entities in the sender's dimension (the overworld for the server console). The command does not load chunks. See [rabies configuration](configuration.md#rabies) for host rules, timing and persistence.
 
 ### `/rntachievement list|unlock`
