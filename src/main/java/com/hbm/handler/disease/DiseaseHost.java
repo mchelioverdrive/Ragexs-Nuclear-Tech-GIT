@@ -20,6 +20,7 @@ public final class DiseaseHost implements IExtendedEntityProperties {
 	public final Map<String, Infection> infections = new LinkedHashMap<String, Infection>();
 	final Map<String, EntityAIBase> behaviors = new LinkedHashMap<String, EntityAIBase>();
 	public final Set<String> introductionsChecked = new HashSet<String>();
+	long nextSwallowingMessage; // Transient symptom feedback; never part of infection/save data.
 
 	public static DiseaseHost get(EntityLivingBase host) {
 		DiseaseHost data = (DiseaseHost) host.getExtendedProperties(KEY);

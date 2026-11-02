@@ -16,6 +16,10 @@ public final class RabiesConfig {
 	public static double wolfToPlayer = 0.08D, wolfToWolf = 0.08D, wolfToMammal = 0.08D;
 	public static double mammalToPlayer = 0.08D, mammalToMammal = 0.08D;
 	public static double furiousChance = 0.5D;
+	public static double groundDetectionDistance = 32D, groundPursuitDistance = 48D;
+	public static double batDetectionDistance = 6D, batPursuitDistance = 10D, targetSwitchChance = 0.5D;
+	public static int lostSightTicks = 60, targetSwitchCooldownTicks = 40;
+	public static boolean playerWaterContactPenalty = true, animalWaterAvoidance = true;
 	public static int incubationTicks = 48000, infectiousTicks = 1200, clinicalTicks = 2400, terminalTicks = 1200;
 	public static final Set<String> mammalAllowlist = new HashSet<String>();
 
@@ -35,15 +39,55 @@ public final class RabiesConfig {
 		mammalToPlayer = probability(config, "otherMammalToPlayer", 0.08D, "Per explicit disease bite from another supported mammal against a player. Ordinary kicks and player attacks are not bites.");
 		mammalToMammal = probability(config, "otherMammalToMammal", 0.08D, "Per explicit disease bite between other supported host pairs. Does not confer reservoir status.");
 		furiousChance = probability(config, "furiousChance", 0.5D, "Presentation selected once per established infection; otherwise paralytic. Gameplay split, not biological frequency.");
+		groundDetectionDistance = distance(config, "groundDetectionDistance", 32D, 64D, "Initial visible ground-host detection, in blocks.");
+		groundPursuitDistance = distance(config, "groundPursuitDistance", 48D, 64D, "Ground target retention and native navigation search range, in blocks; at least detection distance.");
+		if(groundPursuitDistance < groundDetectionDistance) {
+			groundPursuitDistance = groundDetectionDistance;
+			config.get(CATEGORY, "groundPursuitDistance", 48D).set(groundPursuitDistance);
+		}
+		batDetectionDistance = distance(config, "batDetectionDistance", 6D, 12D, "Initial visible bat-host detection, in blocks; native flight is retained.");
+		batPursuitDistance = distance(config, "batPursuitDistance", 10D, 16D, "Bat target retention, in blocks; at least bat detection distance.");
+		if(batPursuitDistance < batDetectionDistance) {
+			batPursuitDistance = batDetectionDistance;
+			config.get(CATEGORY, "batPursuitDistance", 10D).set(batPursuitDistance);
+		}
+		targetSwitchChance = probability(config, "targetSwitchChance", 0.5D, "Chance to seek another nearby visible, reachable host after a confirmed wound; no extra transmission roll.");
+		lostSightTicks = boundedTicks(config, "lostSightTicks", 60, 200, "Maximum pursuit of the last observed location after losing sight.");
+		targetSwitchCooldownTicks = boundedTicks(config, "targetSwitchCooldownTicks", 40, 1200, "Cooldown for target changes and post-wound switching attempts; prevents flickering.");
+		playerWaterContactPenalty = CommonConfig.createConfigBool(config, CATEGORY, "playerWaterContactPenalty",
+				"Gameplay choice: short Weakness I and Slowness I during symptomatic water contact, including paralytic illness. Not a claim about universal hydrophobia; rain does not count.", true);
+		animalWaterAvoidance = CommonConfig.createConfigBool(config, CATEGORY, "animalWaterAvoidance",
+				"Gameplay choice: symptomatic animals prefer dry routes/destinations but retain swimming and escape. WHO: fear of water is not a typical clinical sign in dogs.", true);
 		// Real incubation often lasts weeks/months: deliberately compress time for gameplay.
 		incubationTicks = duration(config, "incubationTicks", 48000, "Silent, noninfectious incubation.", 1);
 		infectiousTicks = duration(config, "presymptomaticInfectiousTicks", 1200, "Silent saliva shedding before symptoms; shedding continues throughout clinical and terminal illness. Same-host timing is a cross-species gameplay abstraction.", 0);
-		clinicalTicks = duration(config, "clinicalTicks", 2400, "First half: behavioral signs; second half: neurological impairment.", 2);
+		clinicalTicks = duration(config, "clinicalTicks", 2400, "First half: behavioral signs; second half: neurological impairment. clinicalTicks=24 allows only 1.2 seconds total at 20 TPS, with impairment after 0.6 seconds.", 2);
 		terminalTicks = duration(config, "terminalTicks", 1200, "Terminal paralysis/illness, followed by fatal disease damage.", 1);
 		Property hosts = config.get(CATEGORY, "mammalAllowlist", new String[0]);
 		hosts.comment = "Additional exact EntityList registry names of living mammals from other mods. Operator asserts mammalian biology; no class-wide EntityLivingBase rule. Does not seed reservoir infections. Undead, arthropods, chickens, aquatic mobs and golems remain excluded.";
 		mammalAllowlist.clear();
 		mammalAllowlist.addAll(Arrays.asList(hosts.getStringList()));
+	}
+
+	private static double distance(Configuration config, String key, double fallback, double max, String scope) {
+		Property property = config.get(CATEGORY, key, fallback);
+		property.comment = scope + " Gameplay distance, not a biological measurement. Range [1, " + max + "]; invalid values reset to default. No chunk loading.";
+		property.setMinValue(1D).setMaxValue(max);
+		double value = property.getDouble(fallback);
+		if(Double.isNaN(value) || Double.isInfinite(value) || value < 1D || value > max) {
+			value = fallback;
+			property.set(value);
+		}
+		return value;
+	}
+
+	private static int boundedTicks(Configuration config, String key, int fallback, int max, String scope) {
+		Property property = config.get(CATEGORY, key, fallback);
+		property.comment = scope + " Minecraft ticks (20 ticks/second at 20 TPS); range [1, " + max + "].";
+		property.setMinValue(1).setMaxValue(max);
+		int value = property.getInt(fallback);
+		if(value < 1 || value > max) { value = fallback; property.set(value); }
+		return value;
 	}
 
 	private static double probability(Configuration config, String key, double fallback, String scope) {

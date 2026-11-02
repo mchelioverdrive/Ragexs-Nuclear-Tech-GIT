@@ -37,6 +37,13 @@ public final class Rabies implements Pathogen {
 		}
 		// Prepare before vanilla AI, not up to one symptom interval plus a scheduler interval later.
 		progress(host, infection, DiseaseManager.now(host));
+		if(host instanceof EntityPlayer && symptomatic(infection) && RabiesConfig.playerWaterContactPenalty
+				&& host.isInWater() && host.ticksExisted % 10 == 0) {
+			// Optional gameplay penalty, not universal animal/human hydrophobia. Native water contact excludes rain.
+			// Vanilla combine preserves stronger effects and longer same-strength effects; never remove them.
+			host.addPotionEffect(new PotionEffect(Potion.weakness.id, 30, 0));
+			host.addPotionEffect(new PotionEffect(Potion.moveSlowdown.id, 30, 0));
+		}
 		if(host instanceof EntityLiving && (stage(infection).ordinal() >= Stage.CLINICAL.ordinal()
 				|| host instanceof EntityBat && infectious(infection)))
 			RabiesBehavior.updateHost((EntityLiving) host, infection);
@@ -94,6 +101,21 @@ public final class Rabies implements Pathogen {
 	public static boolean furious(Infection infection) {
 		Stage stage = stage(infection);
 		return "furious".equals(infection.presentation) && (stage == Stage.CLINICAL || stage == Stage.NEUROLOGICAL);
+	}
+
+	public static boolean symptomatic(Infection infection) {
+		Stage stage = stage(infection);
+		return stage == Stage.CLINICAL || stage == Stage.NEUROLOGICAL || stage == Stage.TERMINAL;
+	}
+
+	static boolean swallowingSpasms(EntityPlayer player) {
+		Infection infection = DiseaseHost.get(player).infections.get(ID);
+		Pathogen rabies = DiseaseManager.pathogen(ID);
+		if(infection == null || !rabies.enabled() || !rabies.supports(player) || !player.isEntityAlive()) return false;
+		rabies.progress(player, infection, DiseaseManager.now(player));
+		// CDC Yellow Book: human hydrophobia involves stimulus-triggered swallowing spasms.
+		// This simplified restriction represents furious illness, not every paralytic presentation.
+		return "furious".equals(infection.presentation) && symptomatic(infection);
 	}
 
 	@Override public void update(EntityLivingBase host, Infection infection, long now) {

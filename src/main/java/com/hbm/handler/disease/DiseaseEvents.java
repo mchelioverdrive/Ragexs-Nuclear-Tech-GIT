@@ -14,9 +14,14 @@ import cpw.mods.fml.relauncher.ReflectionHelper;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.passive.EntityBat;
 import net.minecraft.entity.passive.EntityWolf;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.Items;
+import net.minecraft.item.ItemStack;
+import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.CombatEntry;
 import net.minecraft.util.CombatTracker;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.minecraftforge.event.entity.player.PlayerUseItemEvent;
 
 public final class DiseaseEvents {
 	// Forge 1.7.10 has no post-armor LivingDamageEvent. Read native confirmed wounds instead of
@@ -30,6 +35,34 @@ public final class DiseaseEvents {
 	public static void clear() {
 		BITES.clear();
 		BATS.clear();
+	}
+
+	private boolean blockedWater(EntityPlayer player, ItemStack item) {
+		if(player.worldObj.isRemote || item == null || item.getItem() != Items.potionitem
+				|| item.getItemDamage() != 0 || !Rabies.swallowingSpasms(player)) return false;
+		DiseaseHost data = DiseaseHost.get(player);
+		long now = DiseaseManager.now(player);
+		if(now >= data.nextSwallowingMessage) {
+			player.addChatMessage(new ChatComponentText("A swallowing spasm prevents you from drinking the water."));
+			data.nextSwallowingMessage = now + 100;
+		}
+		return true;
+	}
+
+	@SubscribeEvent(priority = EventPriority.LOWEST)
+	public void onDrinkStart(PlayerUseItemEvent.Start event) {
+		if(blockedWater(event.entityPlayer, event.item)) event.setCanceled(true);
+	}
+
+	@SubscribeEvent(priority = EventPriority.LOWEST)
+	public void onPlayerTick(TickEvent.PlayerTickEvent event) {
+		if(event.phase != TickEvent.Phase.START || !event.player.isUsingItem()
+				|| !blockedWater(event.player, event.player.getCurrentEquippedItem())) return;
+		// FML pre-player-tick runs before EntityPlayer's item-use block. Cancelling UseItem.Tick in
+		// 1.7.10 instead returns -1 and calls onItemUseFinish; MP even sends a completion packet when
+		// use was cleared there. Clear here, before that block, with no item mutation/completion packet.
+		// getItemInUse is client-only in 1.7.10: vanilla itself compares use against the equipped stack.
+		event.player.clearItemInUse();
 	}
 
 	@SubscribeEvent(priority = EventPriority.LOWEST)
@@ -56,7 +89,10 @@ public final class DiseaseEvents {
 		}
 		BATS.clear();
 		for(PendingBite bite : BITES) {
-			if(bite.wounded()) DiseaseManager.bitten(bite.source, bite.event.entityLiving);
+			if(bite.wounded()) {
+				DiseaseManager.bitten(bite.source, bite.event.entityLiving);
+				RabiesBehavior.confirmedBite(bite.source, bite.event.entityLiving);
+			}
 		}
 		BITES.clear(); // No retained entities, unload callbacks, forced chunk loads, or off-thread world mutations.
 	}
