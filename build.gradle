@@ -137,29 +137,6 @@ task prepareCoremodMappings(dependsOn: 'genSrgs') {
 
 runClient.dependsOn prepareDevMods, prepareCoremodMappings
 
-// ForgeGradle launches from jar.archivePath, which reobf overwrites in place.
-// Keep lazy class/resource loads independent of builds made while the game runs.
-[runClient, runServer, debugClient, debugServer].each { launchTask ->
-	def runtimeJar = null
-	def cleanup = tasks.create("${launchTask.name}Cleanup") {
-		doLast {
-			if (runtimeJar != null) Files.deleteIfExists(runtimeJar)
-		}
-	}
-	launchTask.finalizedBy cleanup
-	launchTask.doFirst {
-		File modJar = tasks.jar.archivePath
-		def launchClasspath = launchTask.classpath.files
-		if (!launchClasspath.contains(modJar)) {
-			throw new GradleException("${launchTask.name} is missing the development mod JAR: ${modJar}")
-		}
-		runtimeJar = Files.createTempFile("rnt-${launchTask.name}-", '.jar')
-		runtimeJar.toFile().deleteOnExit()
-		Files.copy(modJar.toPath(), runtimeJar, StandardCopyOption.REPLACE_EXISTING)
-		launchTask.classpath = files(launchClasspath.collect { it == modJar ? runtimeJar.toFile() : it })
-	}
-}
-
 // A little hack to fix codechicken's crazy maven structure (at least in 1.7.10)
 eclipse.classpath.file.whenMerged { cp ->
 	// Find all codechicken source jars
