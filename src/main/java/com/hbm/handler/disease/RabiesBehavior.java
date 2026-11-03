@@ -72,7 +72,7 @@ final class RabiesBehavior extends EntityAIBase {
 		for(Object entry : host.tasks.taskEntries) {
 			EntityAIBase action = ((EntityAITaskEntry) entry).action;
 			// Vanilla's baby follow task writes navigation without declaring a movement mutex.
-			if(action instanceof EntityAIFollowParent) {
+			if(action instanceof EntityAIFollowParent && (action.getMutexBits() & 1) == 0) {
 				changedMutexes.put(action, action.getMutexBits());
 				action.setMutexBits(action.getMutexBits() | 1);
 			}
@@ -87,7 +87,7 @@ final class RabiesBehavior extends EntityAIBase {
 		return infection;
 	}
 
-	private static boolean controlsMovement(Infection infection) {
+	static boolean controlsMovement(Infection infection) {
 		return Rabies.furious(infection) || Rabies.stage(infection).ordinal() >= Rabies.Stage.NEUROLOGICAL.ordinal();
 	}
 
@@ -556,6 +556,10 @@ final class RabiesBehavior extends EntityAIBase {
 
 	private void prepareFlight(boolean furious) {
 		EntityBat bat = (EntityBat) host;
+		if(RabiesAvoidance.active(host)) {
+			releaseFlight(); // Victim flight owns the destination during quiet-stage escape.
+			return;
+		}
 		if(!furious) {
 			Infection infection = infection();
 			if(infection != null && Rabies.symptomatic(infection) && RabiesConfig.animalWaterAvoidance) {
@@ -692,7 +696,11 @@ final class RabiesBehavior extends EntityAIBase {
 	}
 
 	private void setBatDestination(ChunkCoordinates destination) {
-		try { BAT_DESTINATION.set(host, destination); }
+		setBatDestination((EntityBat) host, destination);
+	}
+
+	static void setBatDestination(EntityBat bat, ChunkCoordinates destination) {
+		try { BAT_DESTINATION.set(bat, destination); }
 		catch(IllegalAccessException ex) { throw new IllegalStateException("Cannot direct native bat flight", ex); }
 	}
 
@@ -717,6 +725,11 @@ final class RabiesBehavior extends EntityAIBase {
 			try { infection.details.setBoolean(SAVED_SIT, SIT_COMMAND.getBoolean(((EntityTameable) host).func_70907_r())); }
 			catch(IllegalAccessException ex) { throw new IllegalStateException("Cannot preserve sitting command", ex); }
 		}
+	}
+
+	static boolean sittingCommand(EntityTameable host) {
+		try { return SIT_COMMAND.getBoolean(host.func_70907_r()); }
+		catch(IllegalAccessException ex) { throw new IllegalStateException("Cannot preserve sitting command", ex); }
 	}
 
 	void release() {

@@ -33,12 +33,14 @@ public final class Rabies implements Pathogen {
 	@Override public boolean enabled() { return RabiesConfig.enabled; }
 
 	@Override public void onHostTick(EntityLivingBase host, DiseaseHost data) {
+		data.restoreSittingCommand(host);
 		if(host instanceof EntityBat && data.introductionsChecked.add(ID) && enabled() && supports(host)
 				&& host.getRNG().nextDouble() < RabiesConfig.batchance)
 			DiseaseManager.infect(host, this, "reservoir_entry", "Bat");
 		// Check markers include encounters while disabled; clearing disease never rerolls entry infection.
 		Infection infection = data.infections.get(ID);
 		reconcileIndicator(host, infection);
+		if(host instanceof EntityLiving) RabiesAvoidance.updateHost((EntityLiving) host);
 		if(infection == null) return;
 		// Commitment is saved even while disease behavior is disabled or the player is invulnerable.
 		refreshFatalCommitment(host, infection, DiseaseManager.now(host));
@@ -60,6 +62,7 @@ public final class Rabies implements Pathogen {
 		if(host instanceof EntityLiving && (stage(infection).ordinal() >= Stage.CLINICAL.ordinal()
 				|| host instanceof EntityBat && infectious(infection)))
 			RabiesBehavior.updateHost((EntityLiving) host, infection);
+		if(host instanceof EntityBat) RabiesAvoidance.applyFlight((EntityLiving) host);
 	}
 
 	@Override public boolean supports(EntityLivingBase host) {

@@ -79,6 +79,12 @@ Target searches are local and staggered every 20 loaded ticks. Animals favor nea
 
 Repeated bite attempts retain the 40-tick cooldown even if the victim is already infected. After a confirmed wounding bite, `targetSwitchChance` may request another local host; failed or fully protected attacks do not trigger it. An arriving host within three blocks can also draw aggression if substantially closer. Switching checks sight and reachability, retains the current target when no suitable alternative exists, and uses `targetSwitchCooldownTicks` to prevent flicker. Recent-target memory holds only three temporary entity IDs for 100 ticks. Switching never adds a transmission roll; the existing confirmed-wound path remains the sole transmission owner.
 
+Supported animals can recognize a nearby **visible CLINICAL or NEUROLOGICAL animal** within `avoidanceDetectionDistance=12` blocks. `recognitionChance=0.7` gives a 70 percent gameplay chance once per animal/threat encounter. Recognition starts avoidance; failure leaves ordinary movement in place until a qualifying bite or a distinct later encounter. Silent incubation and shedding are not recognizable. Players and villagers receive no avoidance movement and are not visual animal threats. No threat is detected through walls or unloaded terrain.
+
+A confirmed infectious animal bite first completes the existing transmission attempt, then triggers escape for `biteEscapeTicks=160` (eight seconds at 20 TPS), even when establishment fails or the attacker was silently shedding. Each further bite refreshes that duration and identifies its actual attacker. A newly infected victim can continue escaping during incubation and silent shedding; escape never removes infection. Furious disease aggression and neurological/terminal impairment take precedence over the victim response. Villager behavior, bite damage, transmission chances and saved infection timelines are unchanged.
+
+Avoidance and escape choose local destinations 6–12 blocks away, favoring paths that increase separation. Ground animals use native navigation and movement; bats use their existing flight controller. Swimming and obstacle handling remain available. Escape interrupts ordinary wandering, following, mating and temptation while respecting rider control; commanded sitting survives saves. Recognized encounters end beyond the detection radius plus four blocks, or after 60 ticks without sight, preventing rapid movement switching at the boundary. Bite escape lasts its configured duration while the attacker remains alive and loaded; only its last observed location guides movement when hidden. Failed routes retry after 20 ticks; successful movement decisions are spaced 40 ticks apart, with at most two ground path requests per decision. Searches are staggered every 20 ticks and check at most 16 new candidates plus eight remembered encounters. Recognition decisions persist while the threat remains visible in the encounter area; 100 ticks of absence ends that memory. A full memory defers additional decisions instead of evicting nearby threats and rerolling them. Encounter decisions, threats and escape timers are temporary and are not saved in infection data.
+
 | Behavior setting | Default | Meaning |
 | --- | ---: | --- |
 | `groundDetectionDistance` | `32` | Visible ground-host acquisition radius, in blocks; range 1–64. |
@@ -91,6 +97,9 @@ Repeated bite attempts retain the 40-tick cooldown even if the victim is already
 | `stareDistance` | `20` | Gameplay distance for an initial visible-target stare, in blocks; range 1–64, subject to acquisition range. |
 | `stareMinTicks` | `40` | Minimum initial stare duration; range 1–1200 ticks. |
 | `stareMaxTicks` | `60` | Maximum initial stare duration; range 1–1200 ticks, raised to the minimum if smaller. |
+| `avoidanceDetectionDistance` | `12` | Gameplay radius for recognizing visible clinical/neurological animals, in blocks; range 1–32. |
+| `recognitionChance` | `0.7` | Gameplay recognition chance per animal/threat encounter; range 0–1, independent of transmission. |
+| `biteEscapeTicks` | `160` | Gameplay escape duration after a confirmed infectious animal bite; range 1–1200 ticks, refreshed by another bite. |
 | `playerWaterContactPenalty` | `true` | Optional gameplay penalty during symptomatic water contact in either presentation. |
 | `animalWaterAvoidance` | `true` | Optional symptomatic preference for dry routes/destinations, including bat air destinations. |
 

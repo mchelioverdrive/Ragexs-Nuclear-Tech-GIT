@@ -75,17 +75,22 @@ public final class DiseaseManager {
 	public static void bitten(EntityLivingBase source, EntityLivingBase target) {
 		if(source.worldObj.isRemote || !target.isEntityAlive()) return;
 		long now = now(source);
+		boolean rabiesBite = false;
 		for(Infection infection : DiseaseHost.get(source).infections.values()) {
 			// Gameplay rule: villagers remain susceptible and aggressive, but never transmit rabies.
 			if(source instanceof EntityVillager && Rabies.ID.equals(infection.pathogen)) continue;
 			Pathogen pathogen = pathogen(infection.pathogen);
 			if(pathogen == null || !pathogen.enabled() || !pathogen.supports(source) || !pathogen.supports(target)) continue;
 			pathogen.progress(source, infection, now);
-			if(!pathogen.infectious(infection) || DiseaseHost.get(target).infections.containsKey(pathogen.id())) continue;
+			if(!pathogen.infectious(infection)) continue;
+			if(Rabies.ID.equals(infection.pathogen)) rabiesBite = true;
+			if(DiseaseHost.get(target).infections.containsKey(pathogen.id())) continue;
 			double probability = pathogen.biteProbability(source, target);
 			// Exactly one establishment roll per confirmed wounding bite, never per contact tick or damage point.
 			if(target.getRNG().nextDouble() < probability)
 				infect(target, pathogen, "bite:" + source.getUniqueID(), net.minecraft.entity.EntityList.getEntityString(source));
 		}
+		// Wound confirmation owns this call. Finish transmission first, including its sole establishment roll.
+		if(rabiesBite) RabiesAvoidance.bitten(target, source);
 	}
 }

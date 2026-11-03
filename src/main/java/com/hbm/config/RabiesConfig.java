@@ -21,6 +21,8 @@ public final class RabiesConfig {
 	public static int lostSightTicks = 60, targetSwitchCooldownTicks = 40;
 	public static double stareDistance = 20D;
 	public static int stareMinTicks = 40, stareMaxTicks = 60;
+	public static double avoidanceDetectionDistance = 12D, recognitionChance = 0.7D;
+	public static int biteEscapeTicks = 160;
 	public static boolean playerWaterContactPenalty = true, animalWaterAvoidance = true;
 	public static int incubationTicks = 48000, infectiousTicks = 1200, clinicalTicks = 2400, terminalTicks = 1200;
 	public static int earlySymptomDelayTicks = 1200;
@@ -42,6 +44,12 @@ public final class RabiesConfig {
 		mammalToPlayer = probability(config, "otherMammalToPlayer", 0.08D, "Per explicit disease bite from another supported mammal against a player. Ordinary kicks and player attacks are not bites.");
 		mammalToMammal = probability(config, "otherMammalToMammal", 0.08D, "Per explicit disease bite between other supported host pairs. Does not confer reservoir status.");
 		furiousChance = probability(config, "furiousChance", 0.5D, "Presentation selected once per established infection; otherwise paralytic. Gameplay split, not biological frequency.");
+		avoidanceDetectionDistance = distance(config, "avoidanceDetectionDistance", 12D, 32D,
+				"Gameplay radius for animals to notice a nearby visible clinically or neurologically ill animal. Silent infections are not recognized; excludes players and villagers.");
+		recognitionChance = probability(config, "recognitionChance", 0.7D,
+				"Gameplay chance to recognize visible illness once per animal/threat encounter. Failure retains ordinary behavior until bitten or a distinct later encounter; does not change transmission.");
+		biteEscapeTicks = boundedTicks(config, "biteEscapeTicks", 160, 1200,
+				"Gameplay escape duration after a confirmed infectious animal bite, even if establishment fails or the attacker has no visible symptoms. Another bite refreshes it; furious aggression and neurological impairment take precedence.");
 		groundDetectionDistance = distance(config, "groundDetectionDistance", 32D, 64D, "Initial visible ground-host detection, in blocks.");
 		groundPursuitDistance = distance(config, "groundPursuitDistance", 48D, 64D, "Ground target retention and native navigation search range, in blocks; at least detection distance.");
 		if(groundPursuitDistance < groundDetectionDistance) {
