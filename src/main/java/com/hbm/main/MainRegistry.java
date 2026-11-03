@@ -401,6 +401,7 @@ public class MainRegistry {
 		//ChestGenHooks.addItem(ChestGenHooks.BONUS_CHEST, new WeightedRandomChestContent(new ItemStack(ModItems.no9), 1, 1, 7));
 
 		EntityMappings.writeMappings();
+		com.hbm.world.sandworm.WormContent.register();
 		//CompatNER.init();
 
 
@@ -929,6 +930,7 @@ public class MainRegistry {
 		IMCHandler.registerHandler("centrifuge", new IMCCentrifuge());
 
 		PlanetGen.init();
+		com.hbm.world.sandworm.WormWorldProvider.register();
 
 		if (Loader.isModLoaded("NotEnoughItems")){
 			if (Loader.instance().getIndexedModList().get("NotEnoughItems").getVersion().contains("GTNH")) {
@@ -1076,6 +1078,9 @@ public class MainRegistry {
 		MinecraftForge.EVENT_BUS.register(new com.hbm.explosion.FalloutCollapseManager());
 		MinecraftForge.EVENT_BUS.register(new com.hbm.explosion.ExplosionTerrainAccess());
 		MinecraftForge.EVENT_BUS.register(new com.hbm.entity.mob.witherstorm.WitherStormEvents());
+		com.hbm.world.sandworm.WormEvents wormEvents = new com.hbm.world.sandworm.WormEvents();
+		MinecraftForge.EVENT_BUS.register(wormEvents);
+		FMLCommonHandler.instance().bus().register(wormEvents);
 		MinecraftForge.TERRAIN_GEN_BUS.register(commonHandler);
 		MinecraftForge.ORE_GEN_BUS.register(commonHandler);
 
@@ -1140,6 +1145,7 @@ public class MainRegistry {
 		event.registerServerCommand(new CommandBedrockDrop());
 		event.registerServerCommand(new CommandRNTAchievement());
 		event.registerServerCommand(new com.hbm.commands.CommandWitherStorm());
+		event.registerServerCommand(new com.hbm.commands.CommandSandworm());
 		MinecraftForge.EVENT_BUS.register(new NukeScheduler());
 		FMLCommonHandler.instance().bus().register(new NukeScheduler());
 	}
@@ -1169,6 +1175,7 @@ public class MainRegistry {
 		WeaponConfig.loadFromConfig(config);
 		MobConfig.loadFromConfig(config);
 		com.hbm.config.WitherStormConfig.loadFromConfig(config);
+		com.hbm.config.SandwormConfig.loadFromConfig(config);
 		RabiesConfig.loadFromConfig(config);
 		StructureConfig.loadFromConfig(config);
 		SpaceConfig.loadFromConfig(config);

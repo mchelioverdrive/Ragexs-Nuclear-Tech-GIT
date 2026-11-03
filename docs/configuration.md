@@ -326,6 +326,28 @@ Physical size, damage and reach increase with mass but remain capped. Maximum bo
 
 The implementation uses [The Engender Mod's Wither Storm sources](https://github.com/Mrbt0907/The-Engender-Mod/tree/main/src/main/java/net/minecraft/AgeOfMinecraft/entity/tier6) as a behavior reference. RNT supplies original code, model geometry, procedural texture and synthesized sounds; no Engender code, assets or libraries are distributed or required. Friendly ownership, armies, leveling, split-storm replication and permanent chunk loading are excluded.
 
+## Sandworm
+
+Startup category `12_mobs.sandworm` in `hbm.cfg` isolates the encounter from all existing RNT bosses, fluids, dimensions and packets. Natural spawning is disabled by default; `/rntsandworm spawn` remains available to operators.
+
+| Settings | Defaults | Behavior |
+| --- | --- | --- |
+| `dimensionID` | -38 | Must be unused. A conflict fails startup with a diagnostic instead of replacing another provider. Keep this ID for the lifetime of a save; the ledger rejects changing it. Interior terrain uses its own `DIM_RNT_Sandworm` folder. |
+| `naturalSpawning`, `naturalSpawnInterval` | false, 24000 ticks | One bounded overworld desert attempt near a non-Creative player; loaded terrain only. |
+| `maxActiveEncounters` | 8 | Saved unloaded and generating encounters count too; maximum 64. |
+| `movementSpeed`, `targetRange`, `mouthRadius`, `swallowCreativePlayers` | 0.7, 128, 6, false | Server-controlled movement, attraction and mouth swallowing. Eleven connected native multipart components share one entity registration. No segment entities or chunk tickets. |
+| `returnSwallowCooldownTicks` | 200 | Saved grace after returning or respawning, giving players time to move away from the original mouth. |
+| `brainHealth`, `brainDamage`, `brainAttackTicks` | 200, 10, 100 | Stationary Brain, radial bursts of 12–20 energy shots. Allied living Sparks within ten horizontal/five vertical blocks restore its shield. |
+| `sparkWaveTicks`, `sparkWaveMin`, `sparkWaveMax`, `maxSparksPerBrain` | 600, 3, 6, 24 | Initial and periodic Brain waves; inclusive wave size and local population cap. A saved encounter-wide cap of `maxSparksPerBrain + room count` also includes unloaded Sparks, preventing wandering waves from accumulating indefinitely. |
+| `heartHealth`, `heartInvulnerabilityTicks` | 200, 100 | Wounds accelerate pumping and trigger temporary invulnerability and blood defense. |
+| `sparkHealth`, `sparkDamage`, `sparkHealing`, `sparkEffectTicks`, `sparkBlindnessTicks` | 20, 10, 20, 20, 100 | Orange damage, green allied healing, blue knockback and purple blindness are server-owned. |
+| `tickHealth`, `tickDamage`, `tickHealthGrowth`, `bloodGrowthTicks` | 40, 10, 0.2, 20 | Five growth increments add a fraction of base max health and heal fully; model and hitbox scale together. Health respects Forge's native 1024 limit. |
+| `dungeonRows`, `dungeonBlocksPerTick`, `dungeonChunksPerTick` | 7, 512, 2 | Three rooms across, 21×10×21 per room. Rows and door/rotation data persist per encounter. Global generation/cleanup coordinate budget and construction chunk-load budget are shared across encounters. |
+| `bloodDamage`, `acidDamage`, `gasDamage` | 10 each | Contact damage once per second; blood and acid slow players. Tumors release temporary acid and fully grown Ticks leave temporary blood when mobGriefing permits. |
+| `cleanupDelayTicks`, `abandonedTicks` | 12000, 1728000 | Delayed bounded cleanup and empty encounter expiration. Saved offline occupants prevent both expiration and deletion. Persistence is always enabled for safe reconnects/restarts. |
+
+The implementation uses [ModularBosses 1.8](https://github.com/gummby8/ModularBosses/tree/1.8) as a gameplay reference. All distributed Java, model geometry, textures, room schematics and synthesized heartbeat sounds are original RNT implementations; no ModularBosses code, models or resources are included and the mod is not a dependency. Bundled classic Alpha schematics use registry-name palettes, validated fixed dimensions, saved rotations and reciprocal door masks. A finite spanning tree connects every room and both organ chambers. Construction resumes from its saved cursor without rebuilding finished rooms. Return records and organ deaths are server-owned overworld saved data; only exterior pose and visual combat state are synchronized to clients.
+
 ## Recommended server workflow
 
 1. Start a new server once to generate all configs.

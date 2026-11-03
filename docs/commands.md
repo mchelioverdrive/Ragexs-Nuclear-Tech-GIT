@@ -286,6 +286,28 @@ For survival summoning, make a soul sand T, replace its upper center with an RNT
 
 Growth comes from consumed terrain (three mass per block), item stack counts, falling blocks and living victims killed during consumption. Default phases are Command Block below 12,500, Destroyer at 12,500, Devourer above 50,000 and ThunderStorm above 250,000. The central head transforms at 12,500, the first side at the midpoint of the transformation and Devourer thresholds (31,250 by default), and the remaining side above 50,000. Only transformed heads use tractor beams, after their transformation animation finishes. Body volume, necks, head proportions, tentacles and client debris develop with mass. ThunderStorm refreshes ordinary rain/thunder for ten seconds while active in a dimension with a sky. Growth, transformed heads, attack timers, component UUIDs and terrain cursors survive saving; older saves derive head progress from their existing mass. Raising growth preserves completed head transformations, while lowering it explicitly recalculates heads from the configured thresholds. The boss uses loaded terrain only and may stop at unloaded boundaries. See [Wither Storm configuration](configuration.md#wither-storm).
 
+### `/rntsandworm`
+
+Operator level 2 controls the Sandworm and individual interior monsters:
+
+```text
+/rntsandworm spawn
+/rntsandworm spawn worm [x y z]
+/rntsandworm spawn brain [x y z]
+/rntsandworm spawn heart [x y z]
+/rntsandworm spawn tick [x y z]
+/rntsandworm spawn orange|blue|green|purple [x y z]
+/rntsandworm list
+/rntsandworm inspect <UUID>
+/rntsandworm remove <UUID>
+```
+
+Coordinates must already be loaded. Bare `spawn` summons an exterior worm twelve blocks above the sender; individual monsters spawn at the sender's elevation. Manual spawning does not require natural spawning. Stand in front of the mouth after dungeon construction finishes to enter; Creative players are excluded by default. Craft two Worm Bait from rotten flesh and a slimeball, then right-click to throw it or drop it to attract an existing worm.
+
+Each worm owns a separate connected interior. Fight through Ticks and four Spark variants to defeat both stationary organs. Nearby allied Sparks shield the Brain; green Sparks heal only allied interior monsters. The Heart briefly resists further wounds and sprays blood while pumping rapidly. Successful Tick bites and blood contact grow it up to five stages. Blood, acid, tumors and gas are dangerous; saliva is a flowing visual environmental fluid. The glowing floor at the entrance unlocks when both organs die and returns each player to their own original dimension and safe landing coordinates. Exterior worms retire on completion, including when reloaded later.
+
+`list` and `inspect` include unloaded encounters and generation progress. `remove` cancels an encounter and opens its exit without loading the exterior. Offline occupants retain their dungeon and return records. Death returns a participant safely to the original dimension, with a saved ten-second grace period before swallowing is possible again. The same exterior can then swallow them again while the encounter remains active. Disconnected players resume in the saved interior. Empty abandoned encounters eventually expire; completed/canceled interiors are cleared in bounded batches only after no saved occupant remains inside. Ownership records remain until the exterior acknowledges retirement, then are removed after cleanup; saved registered exteriors cannot recreate a missing encounter. See [Sandworm configuration](configuration.md#sandworm).
+
 ## Permissions notes
 
 Most server command classes do not override Forge's default permission behavior. `/rntwitherstorm` and `/rntachievement` explicitly require permission level 2, and `/hbmbedrockdrop` explicitly requires permission level 4. Server owners should additionally restrict command access with their server management tooling, especially for radiation, stations, satellites, recipe reloads, chunk diagnostics, and nuclear toggles.

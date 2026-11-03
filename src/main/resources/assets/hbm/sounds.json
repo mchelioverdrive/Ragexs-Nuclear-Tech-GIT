@@ -356,6 +356,8 @@
 		  }
 		]
 	  },
+	  "sandworm.heart_up": {"category": "hostile", "sounds": ["sandworm/heart_up"]},
+	  "sandworm.heart_down": {"category": "hostile", "sounds": ["sandworm/heart_down"]},
 	  "alarm.mama": {
 		"category": "record",
 		"sounds": [

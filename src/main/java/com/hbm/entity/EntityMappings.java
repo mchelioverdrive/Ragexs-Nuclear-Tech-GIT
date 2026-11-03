@@ -278,6 +278,12 @@ public class EntityMappings {
 		EntityRegistry.registerModEntity(com.hbm.entity.mob.witherstorm.EntityWitherStorm.class, "wither_storm", id++, MainRegistry.instance, 256, 3, true);
 		EntityRegistry.registerModEntity(com.hbm.entity.mob.witherstorm.EntityWitherStormPart.class, "wither_storm_part", id++, MainRegistry.instance, 256, 3, false);
 		EntityRegistry.registerModEntity(com.hbm.entity.mob.witherstorm.EntityWitherStormSkull.class, "wither_storm_skull", id++, MainRegistry.instance, 128, 3, true);
+		EntityRegistry.registerModEntity(com.hbm.entity.mob.sandworm.EntitySandworm.class, "sandworm", id++, MainRegistry.instance, 256, 5, false);
+		EntityRegistry.registerModEntity(com.hbm.entity.mob.sandworm.EntityBrain.class, "worm_brain", id++, MainRegistry.instance, 96, 3, false);
+		EntityRegistry.registerModEntity(com.hbm.entity.mob.sandworm.EntityHeart.class, "worm_heart", id++, MainRegistry.instance, 96, 3, false);
+		EntityRegistry.registerModEntity(com.hbm.entity.mob.sandworm.EntitySpark.class, "worm_spark", id++, MainRegistry.instance, 96, 3, true);
+		EntityRegistry.registerModEntity(com.hbm.entity.mob.sandworm.EntityTick.class, "worm_tick", id++, MainRegistry.instance, 96, 3, true);
+		EntityRegistry.registerModEntity(com.hbm.entity.mob.sandworm.EntityWormProjectile.class, "worm_projectile", id++, MainRegistry.instance, 96, 2, true);
 
 		for(Quartet<Class<? extends Entity>, String, Integer, Integer> entry : mobMappings) {
 			EntityRegistry.registerGlobalEntityID(entry.getW(), entry.getX(), EntityRegistry.findGlobalUniqueEntityId(), entry.getY(), entry.getZ());

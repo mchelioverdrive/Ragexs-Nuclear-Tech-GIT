@@ -857,6 +857,7 @@ public class ClientProxy extends ServerProxy {
 		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.mob.witherstorm.EntityWitherStorm.class, new com.hbm.render.entity.mob.RenderWitherStorm());
 		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.mob.witherstorm.EntityWitherStormPart.class, new com.hbm.render.entity.mob.RenderWitherStormPart());
 		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.mob.witherstorm.EntityWitherStormSkull.class, new com.hbm.render.entity.projectile.RenderWitherStormSkull());
+		com.hbm.render.entity.mob.WormRenderers.register();
 		RenderingRegistry.registerEntityRenderingHandler(EntityBOTPrimeBody.class, new RenderWormBody());
 		//RenderingRegistry.registerEntityRenderingHandler(EntityDuck.class, new RenderDuck(new ModelChicken(), 0.3F));
 		//RenderingRegistry.registerEntityRenderingHandler(EntityQuackos.class, new RenderQuacc(new ModelChicken(), 7.5F));
