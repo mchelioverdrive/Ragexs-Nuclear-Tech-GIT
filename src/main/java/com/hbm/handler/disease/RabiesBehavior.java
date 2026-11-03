@@ -49,7 +49,7 @@ final class RabiesBehavior extends EntityAIBase {
 	private int nextSearch, nextPath, lastExecution = -1;
 	private int lastSeen, nextSwitch, pathFailures, nextRoam, roamUntil, progressAt;
 	// Encounter/attention timers are transient and never enter infection NBT. Bite cooldown is independent.
-	private int stareUntil, pauseUntil, nextHesitation, roamPauseUntil;
+	private int approachUntil, stareUntil, roamPauseUntil;
 	private double attentionX, attentionY, attentionZ;
 	private double seenX, seenY, seenZ, progressX, progressZ, roamHeading;
 	private boolean switchRequested, waterControlled, savedAvoidsWater, waterFlight;
@@ -100,7 +100,7 @@ final class RabiesBehavior extends EntityAIBase {
 				&& Rabies.stage(infection).ordinal() < Rabies.Stage.TERMINAL.ordinal();
 		if(furious || contactOnly) selectTarget(furious ? detectionRange() : 1D, furious);
 		else if(target != null) clearTarget();
-		if(furious && target != null && !staring()) prepareHesitation(infection);
+		if(furious && target != null) updateApproach();
 
 		if(controlsMovement(infection) && host instanceof EntityTameable) {
 			EntityTameable tameable = (EntityTameable) host;
@@ -116,7 +116,10 @@ final class RabiesBehavior extends EntityAIBase {
 			horse.setEatingHaystack(false);
 			horse.setRearing(false);
 		}
-		if(host instanceof EntityBat) prepareFlight(furious);
+		if(host instanceof EntityBat) {
+			prepareFlight(furious);
+			if(furious && target != null) adjustFlightSpeed(pursuitSpeed(infection));
+		}
 	}
 
 	@Override public boolean shouldExecute() {
@@ -145,24 +148,21 @@ final class RabiesBehavior extends EntityAIBase {
 			roam(false);
 			return;
 		}
+		updateApproach();
 		if(staring()) {
 			lookAtTarget();
-			status = "staring; pursuit and bites paused";
+			status = "initial stare within approach; pursuit paused";
 			return;
 		}
-		if(host.ticksExisted < pauseUntil) {
-			lookAtAttention();
-			status = "pursuing; brief hesitation";
-			tryBite(target, DiseaseManager.now(host));
-			return;
-		}
+		// Update an existing path immediately at the phase boundary, not at its next refresh.
+		host.getNavigator().setSpeed(pursuitSpeed(infection));
 		if(!navigationChunksLoaded()) {
 			stopMovement();
 			status = "unavailable chunks; navigation paused";
 		} else if(host.ticksExisted >= nextPath) {
 			PathEntity path = pathTo(seenX, seenY, seenZ, false);
 			controlling = true;
-			boolean moved = path != null && host.getNavigator().setPath(path, 1D);
+			boolean moved = path != null && host.getNavigator().setPath(path, pursuitSpeed(infection));
 			nextPath = host.ticksExisted + (moved ? 20 : Math.min(80, 20 * ++pathFailures));
 			status = moved ? "pursuing last observed location" : "failed navigation; retry delayed";
 			if(moved) pathFailures = 0;
@@ -181,7 +181,11 @@ final class RabiesBehavior extends EntityAIBase {
 		tryBite(target, DiseaseManager.now(host));
 	}
 
-	@Override public void resetTask() { stopMovement(); releaseLook(); }
+	@Override public void resetTask() {
+		stopMovement();
+		if(!(host instanceof EntityBat)) host.getNavigator().setSpeed(1D);
+		releaseLook(); // Scheduler interruptions do not create a new encounter.
+	}
 
 	private void updateNativeAttacks(boolean furious) {
 		if(!(host instanceof EntityWolf) || furious == nativeAttacksSuspended) return;
@@ -214,9 +218,10 @@ final class RabiesBehavior extends EntityAIBase {
 
 	private void clearTarget() {
 		stopMovement();
+		if(!(host instanceof EntityBat)) host.getNavigator().setSpeed(1D);
 		releaseLook();
 		target = null;
-		stareUntil = pauseUntil = roamPauseUntil = 0;
+		approachUntil = stareUntil = roamPauseUntil = 0;
 		nextRoam = host.ticksExisted;
 		switchRequested = false;
 		pathFailures = 0;
@@ -324,14 +329,24 @@ final class RabiesBehavior extends EntityAIBase {
 				if(path == null) { remember(candidate); continue; }
 			}
 			if(target != null) remember(target);
-			clearTarget();
+			// A target switch belongs to this encounter: retain its approach deadline/sprint phase.
+			stopMovement();
+			releaseLook();
+			releaseFlight();
+			pathFailures = 0;
+			roamPauseUntil = 0;
 			target = candidate;
 			roamDestination = null;
 			observeTarget();
-			if(furious && host.getDistanceSqToEntity(candidate) <= RabiesConfig.stareDistance * RabiesConfig.stareDistance) {
-				// Sight was checked above. A single deadline per acquisition, never per path or bite.
-				stareUntil = host.ticksExisted + RabiesConfig.stareMinTicks
-						+ host.getRNG().nextInt(RabiesConfig.stareMaxTicks - RabiesConfig.stareMinTicks + 1);
+			if(furious && !switching) {
+				approachUntil = host.ticksExisted + RabiesConfig.creepMinTicks
+						+ host.getRNG().nextInt(RabiesConfig.creepMaxTicks - RabiesConfig.creepMinTicks + 1);
+				if(host.getDistanceSqToEntity(candidate) <= RabiesConfig.stareDistance * RabiesConfig.stareDistance)
+					stareUntil = Math.min(approachUntil, host.ticksExisted + RabiesConfig.stareMinTicks
+							+ host.getRNG().nextInt(RabiesConfig.stareMaxTicks - RabiesConfig.stareMinTicks + 1));
+			}
+			if(furious) updateApproach(); // Contact bypasses both stare and creeping, including acquisition.
+			if(staring() && !(host instanceof EntityBat)) {
 				controlling = true;
 				stopMovement();
 			}
@@ -339,10 +354,9 @@ final class RabiesBehavior extends EntityAIBase {
 			progressX = host.posX; progressZ = host.posZ; progressAt = pursuitAt + 100;
 			nextSwitch = host.ticksExisted + RabiesConfig.targetSwitchCooldownTicks;
 			nextPath = pursuitAt;
-			nextHesitation = pursuitAt + decisionTicks();
 			if(path != null && !staring()) {
 				controlling = true;
-				host.getNavigator().setPath(path, 1D);
+				host.getNavigator().setPath(path, pursuitSpeed(infection()));
 				nextPath += 20;
 			}
 			return;
@@ -350,6 +364,24 @@ final class RabiesBehavior extends EntityAIBase {
 	}
 
 	private boolean staring() { return target != null && host.ticksExisted < stareUntil; }
+
+	private boolean creeping() { return target != null && host.ticksExisted < approachUntil; }
+
+	private void updateApproach() {
+		if(approachUntil != 0 && (!creeping() || BiteDamageSource.hasContact(host, target))) beginSprint();
+	}
+
+	private void beginSprint() {
+		if(staring()) nextPath = Math.min(nextPath, host.ticksExisted);
+		approachUntil = stareUntil = 0;
+		// Keep bounded path retry deadlines; an existing path changes speed on the very next AI tick.
+	}
+
+	private double pursuitSpeed(Infection infection) {
+		double multiplier = creeping() ? RabiesConfig.creepMovementMultiplier : RabiesConfig.sprintMovementMultiplier;
+		// Do not counteract neurological slowing or flight loss with the clinical sprint boost.
+		return infection != null && Rabies.stage(infection) == Rabies.Stage.CLINICAL ? multiplier : Math.min(1D, multiplier);
+	}
 
 	private void lookAtTarget() {
 		host.getLookHelper().setLookPosition(seenX, seenY + target.getEyeHeight(), seenZ, 30F, 30F);
@@ -373,19 +405,6 @@ final class RabiesBehavior extends EntityAIBase {
 		host.getLookHelper().setLookPosition(attentionX, attentionY, attentionZ, 30F, 30F);
 	}
 
-	private void prepareHesitation(Infection infection) {
-		if(host.ticksExisted < nextHesitation) return;
-		nextHesitation = host.ticksExisted + decisionTicks();
-		boolean impaired = Rabies.stage(infection) == Rabies.Stage.NEUROLOGICAL;
-		if(host.isInWater() || host.getRNG().nextDouble() >= (impaired ? 0.6D : 0.3D)) return;
-		int duration = impaired ? 8 + host.getRNG().nextInt(9) : 4 + host.getRNG().nextInt(7);
-		pauseUntil = host.ticksExisted + duration;
-		chooseAttention();
-		if(!(host instanceof EntityBat)) { controlling = true; stopMovement(); }
-		nextPath = Math.max(nextPath, pauseUntil);
-		progressAt += duration; // Brief disease pauses must not count as failed pursuit progress.
-	}
-
 	/** Native wolf attacks must not bypass the encounter delay or the disease's bite cooldown. */
 	static boolean suppressNativeBite(EntityLivingBase source) {
 		Object installed = DiseaseHost.get(source).behaviors.get(Rabies.ID);
@@ -398,11 +417,11 @@ final class RabiesBehavior extends EntityAIBase {
 		Object installed = DiseaseHost.get(victim).behaviors.get(Rabies.ID);
 		if(!(installed instanceof RabiesBehavior)) return;
 		RabiesBehavior behavior = (RabiesBehavior) installed;
-		if(behavior.target != attacker || !behavior.validTarget(attacker)) return;
-		behavior.stareUntil = behavior.pauseUntil = 0;
+		Infection infection = behavior.infection();
+		if(infection == null || !Rabies.furious(infection) || behavior.target != attacker || !behavior.validTarget(attacker)) return;
+		behavior.beginSprint();
 		behavior.nextPath = victim.ticksExisted;
 		behavior.progressAt = victim.ticksExisted + 100;
-		behavior.nextHesitation = victim.ticksExisted + behavior.decisionTicks();
 	}
 
 	static void confirmedBite(EntityLivingBase source, EntityLivingBase victim) {
@@ -573,11 +592,6 @@ final class RabiesBehavior extends EntityAIBase {
 		waterFlight = false;
 		bat.setIsBatHanging(false);
 		if(target != null) {
-			if(staring() || host.ticksExisted < pauseUntil) {
-				releaseFlight(); // Native flight continues; never suspend a bat in midair.
-				status = staring() ? "staring; native flight retained; bites paused" : "pursuing; brief native flight hesitation";
-				return;
-			}
 			double dx = seenX - bat.posX, dz = seenZ - bat.posZ;
 			double distance = Math.sqrt(dx * dx + dz * dz);
 			// Native flight discards destinations within two blocks: aim through close visible targets.
@@ -663,19 +677,22 @@ final class RabiesBehavior extends EntityAIBase {
 	}
 
 	private void tryBite(EntityLivingBase victim, long now) {
-		if(staring() || now < nextBite || !validTarget(victim) || !BiteDamageSource.hasContact(host, victim)) return;
+		if(now < nextBite || !validTarget(victim) || !BiteDamageSource.hasContact(host, victim)) return;
 		nextBite = now + 40;
 		float damage = host instanceof EntityWolf ? (((EntityWolf) host).isTamed() ? 4F : 2F) : 1F;
 		victim.attackEntityFrom(new BiteDamageSource(host), damage);
 		// The common post-armor event path owns transmission; never roll again here.
 	}
 
-	/** Post-vanilla contact/impairment only; flight consumes the destination prepared before AI. */
+	/** Post-vanilla contact/impairment; native flight consumes the approach steering prepared before AI. */
 	private void tickBat() {
 		lastExecution = host.ticksExisted;
 		Infection infection = infection();
 		if(infection == null) return;
 		EntityBat bat = (EntityBat) host;
+		if(Rabies.furious(infection) && target != null) {
+			updateApproach();
+		}
 		if(Rabies.stage(infection).ordinal() >= Rabies.Stage.NEUROLOGICAL.ordinal() && host.ticksExisted % 5 == 0) {
 			bat.setIsBatHanging(false);
 			bat.motionX *= 0.4D;
@@ -684,8 +701,8 @@ final class RabiesBehavior extends EntityAIBase {
 		}
 		if(Rabies.furious(infection) && target != null) bat.setIsBatHanging(false);
 		if(Rabies.furious(infection)) {
-			if(target != null && host.ticksExisted >= pauseUntil) lookAtTarget();
-			else if(host.ticksExisted < pauseUntil || host.ticksExisted < roamPauseUntil) lookAtAttention();
+			if(target != null) lookAtTarget();
+			else if(host.ticksExisted < roamPauseUntil) lookAtAttention();
 			// Bats write body yaw during native flight; apply attention afterward without changing velocity.
 			host.getLookHelper().onUpdateLook();
 		}
@@ -697,6 +714,24 @@ final class RabiesBehavior extends EntityAIBase {
 
 	private void setBatDestination(ChunkCoordinates destination) {
 		setBatDestination((EntityBat) host, destination);
+	}
+
+	private void adjustFlightSpeed(double multiplier) {
+		if(!flightDirected || multiplier == 1D) return;
+		try {
+			ChunkCoordinates destination = (ChunkCoordinates) BAT_DESTINATION.get(host);
+			if(destination == null || !safeFlight(destination)) return;
+			// Native bats approach +/-0.5 horizontal velocity with a 0.1 gain before moving.
+			// Compensate for that update's retained input so its desired speed is scaled this tick,
+			// before movement/drag, rather than multiplying accumulated velocity every tick.
+			// Vertical lift, collision handling and the neurological damping below remain native.
+			double gain = 0.10000000149011612D;
+			double correction = 0.5D * gain / (1D - gain) * (multiplier - 1D);
+			host.motionX += Math.signum(destination.posX + 0.5D - host.posX) * correction;
+			host.motionZ += Math.signum(destination.posZ + 0.5D - host.posZ) * correction;
+		} catch(IllegalAccessException ex) {
+			throw new IllegalStateException("Cannot adjust native bat flight speed", ex);
+		}
 	}
 
 	static void setBatDestination(EntityBat bat, ChunkCoordinates destination) {
@@ -784,14 +819,17 @@ final class RabiesBehavior extends EntityAIBase {
 		if(behavior.lastExecution < 0 || host.ticksExisted - behavior.lastExecution > 3)
 			return presentation + "missing behavior execution (task blocked or custom AI)" + target;
 		if(stage.ordinal() >= Rabies.Stage.NEUROLOGICAL.ordinal()) presentation += "impaired; ";
-		if(behavior.staring()) return presentation + "staring; remainingStareTicks="
+		String approach = behavior.target == null || !Rabies.furious(infection) ? "" : behavior.creeping()
+				? "creeping; remainingApproachTicks=" + (behavior.approachUntil - host.ticksExisted) + "; "
+				: "sprinting; ";
+		if(behavior.staring()) return presentation + approach + "staring; remainingStareTicks="
 				+ (behavior.stareUntil - host.ticksExisted) + target;
 		if(behavior.target != null && behavior.validTarget(behavior.target) && BiteDamageSource.hasContact(host, behavior.target))
-			return presentation + "pursuing; in bite reach; cooldownTicks=" + Math.max(0L, behavior.nextBite - DiseaseManager.now(host)) + target;
+			return presentation + approach + "in bite reach; cooldownTicks=" + Math.max(0L, behavior.nextBite - DiseaseManager.now(host)) + target;
 		if(behavior.target != null && (!behavior.targetChunksLoaded(behavior.target)
 				|| !(host instanceof EntityBat) && !behavior.navigationChunksLoaded()))
-			return presentation + "unavailable chunks or unsupported navigation range" + target;
-		return presentation + behavior.status + "; detectionBlocks=" + behavior.detectionRange()
+			return presentation + approach + "unavailable chunks or unsupported navigation range" + target;
+		return presentation + approach + behavior.status + "; detectionBlocks=" + behavior.detectionRange()
 				+ "; pursuitBlocks=" + behavior.pursuitRange()
 				+ (behavior.target == null ? "" : "; unseenTicks=" + (host.ticksExisted - behavior.lastSeen)) + target;
 	}

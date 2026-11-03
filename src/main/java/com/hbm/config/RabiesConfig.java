@@ -21,6 +21,8 @@ public final class RabiesConfig {
 	public static int lostSightTicks = 60, targetSwitchCooldownTicks = 40;
 	public static double stareDistance = 20D;
 	public static int stareMinTicks = 40, stareMaxTicks = 60;
+	public static int creepMinTicks = 60, creepMaxTicks = 200;
+	public static double creepMovementMultiplier = 0.5D, sprintMovementMultiplier = 1.5D;
 	public static double avoidanceDetectionDistance = 12D, recognitionChance = 0.7D;
 	public static int biteEscapeTicks = 160;
 	public static boolean playerWaterContactPenalty = true, animalWaterAvoidance = true;
@@ -65,13 +67,23 @@ public final class RabiesConfig {
 		targetSwitchChance = probability(config, "targetSwitchChance", 0.5D, "Chance to seek another nearby visible, reachable host after a confirmed wound; no extra transmission roll.");
 		lostSightTicks = boundedTicks(config, "lostSightTicks", 60, 200, "Maximum pursuit of the last observed location after losing sight.");
 		targetSwitchCooldownTicks = boundedTicks(config, "targetSwitchCooldownTicks", 40, 1200, "Cooldown for target changes and post-wound switching attempts; prevents flickering.");
-		stareDistance = distance(config, "stareDistance", 20D, 64D, "Gameplay choice: stare before pursuing a newly acquired visible target within this distance; acquisition ranges still apply.");
-		stareMinTicks = boundedTicks(config, "stareMinTicks", 40, 1200, "Gameplay choice: minimum initial stare duration, not a biological claim.");
-		stareMaxTicks = boundedTicks(config, "stareMaxTicks", 60, 1200, "Gameplay choice: maximum initial stare duration; raised to the minimum if smaller.");
+		stareDistance = distance(config, "stareDistance", 20D, 64D, "Gameplay choice: initial stare within the creep period for a new visible encounter; acquisition ranges still apply.");
+		stareMinTicks = boundedTicks(config, "stareMinTicks", 40, 1200, "Minimum initial stare, included in (never added to) the creep duration. Bite reach or retaliation ends the approach immediately.");
+		stareMaxTicks = boundedTicks(config, "stareMaxTicks", 60, 1200, "Maximum initial stare, capped by the encounter's creep deadline; raised to the stare minimum if smaller.");
 		if(stareMaxTicks < stareMinTicks) {
 			stareMaxTicks = stareMinTicks;
 			config.get(CATEGORY, "stareMaxTicks", 60).set(stareMaxTicks);
 		}
+		creepMinTicks = boundedTicks(config, "creepMinTicks", 60, 1200, "Minimum furious approach duration, including the initial stare; chosen once per encounter, not per target switch or bite.");
+		creepMaxTicks = boundedTicks(config, "creepMaxTicks", 200, 1200, "Maximum furious approach duration; raised to the creep minimum if smaller. Sight memory and navigation retries retain the deadline.");
+		if(creepMaxTicks < creepMinTicks) {
+			creepMaxTicks = creepMinTicks;
+			config.get(CATEGORY, "creepMaxTicks", 200).set(creepMaxTicks);
+		}
+		creepMovementMultiplier = movementMultiplier(config, "creepMovementMultiplier", 0.5D,
+				"Approach movement relative to normal navigation/native horizontal bat flight; initial ground stare remains stationary.");
+		sprintMovementMultiplier = movementMultiplier(config, "sprintMovementMultiplier", 1.5D,
+				"Furious CLINICAL pursuit movement relative to normal navigation/native horizontal bat flight. Neurological pursuit is capped at normal speed before existing impairment; terminal paralysis is unchanged.");
 		playerWaterContactPenalty = CommonConfig.createConfigBool(config, CATEGORY, "playerWaterContactPenalty",
 				"Gameplay choice: short Weakness I and Slowness I during symptomatic water contact, including paralytic illness. Not a claim about universal hydrophobia; rain does not count.", true);
 		animalWaterAvoidance = CommonConfig.createConfigBool(config, CATEGORY, "animalWaterAvoidance",
@@ -87,6 +99,17 @@ public final class RabiesConfig {
 		hosts.comment = "Additional exact EntityList registry names of living mammals from other mods. Operator asserts mammalian biology; no class-wide EntityLivingBase rule. Does not seed reservoir infections. Undead, arthropods, chickens, aquatic mobs and golems remain excluded.";
 		mammalAllowlist.clear();
 		mammalAllowlist.addAll(Arrays.asList(hosts.getStringList()));
+	}
+
+	private static double movementMultiplier(Configuration config, String key, double fallback, String scope) {
+		Property property = config.get(CATEGORY, key, fallback);
+		property.comment = scope + " Must be finite and positive; invalid values reset to default. Does not change base movement attributes or remove potion effects.";
+		double value = property.getDouble(fallback);
+		if(Double.isNaN(value) || Double.isInfinite(value) || value <= 0D) {
+			value = fallback;
+			property.set(value);
+		}
+		return value;
 	}
 
 	private static double distance(Configuration config, String key, double fallback, double max, String scope) {
