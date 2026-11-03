@@ -274,6 +274,11 @@ public class EntityMappings {
 			EntityRegistry.registerModEntity(entry.getW(), entry.getX(), id++, MainRegistry.instance, entry.getY(), 1, entry.getZ());
 		}
 
+		// Append IDs so existing tracked entity mappings remain stable.
+		EntityRegistry.registerModEntity(com.hbm.entity.mob.witherstorm.EntityWitherStorm.class, "wither_storm", id++, MainRegistry.instance, 256, 3, true);
+		EntityRegistry.registerModEntity(com.hbm.entity.mob.witherstorm.EntityWitherStormPart.class, "wither_storm_part", id++, MainRegistry.instance, 256, 3, false);
+		EntityRegistry.registerModEntity(com.hbm.entity.mob.witherstorm.EntityWitherStormSkull.class, "wither_storm_skull", id++, MainRegistry.instance, 128, 3, true);
+
 		for(Quartet<Class<? extends Entity>, String, Integer, Integer> entry : mobMappings) {
 			EntityRegistry.registerGlobalEntityID(entry.getW(), entry.getX(), EntityRegistry.findGlobalUniqueEntityId(), entry.getY(), entry.getZ());
 		}

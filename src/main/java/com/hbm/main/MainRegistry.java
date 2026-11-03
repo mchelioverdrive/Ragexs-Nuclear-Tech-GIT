@@ -1075,6 +1075,7 @@ public class MainRegistry {
 		FMLCommonHandler.instance().bus().register(diseaseEvents);
 		MinecraftForge.EVENT_BUS.register(new com.hbm.explosion.FalloutCollapseManager());
 		MinecraftForge.EVENT_BUS.register(new com.hbm.explosion.ExplosionTerrainAccess());
+		MinecraftForge.EVENT_BUS.register(new com.hbm.entity.mob.witherstorm.WitherStormEvents());
 		MinecraftForge.TERRAIN_GEN_BUS.register(commonHandler);
 		MinecraftForge.ORE_GEN_BUS.register(commonHandler);
 
@@ -1138,6 +1139,7 @@ public class MainRegistry {
 		event.registerServerCommand(new CommandEnableRedstoneGroundNukes());
 		event.registerServerCommand(new CommandBedrockDrop());
 		event.registerServerCommand(new CommandRNTAchievement());
+		event.registerServerCommand(new com.hbm.commands.CommandWitherStorm());
 		MinecraftForge.EVENT_BUS.register(new NukeScheduler());
 		FMLCommonHandler.instance().bus().register(new NukeScheduler());
 	}
@@ -1166,6 +1168,7 @@ public class MainRegistry {
 		ToolConfig.loadFromConfig(config);
 		WeaponConfig.loadFromConfig(config);
 		MobConfig.loadFromConfig(config);
+		com.hbm.config.WitherStormConfig.loadFromConfig(config);
 		RabiesConfig.loadFromConfig(config);
 		StructureConfig.loadFromConfig(config);
 		SpaceConfig.loadFromConfig(config);

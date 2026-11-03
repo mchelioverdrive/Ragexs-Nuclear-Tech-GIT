@@ -1,4 +1,13 @@
 {
+	"entity.witherStorm.ambient": {"category": "hostile", "sounds": ["entity/witherstorm/ambient"]},
+	"entity.witherStorm.hum": {"category": "hostile", "sounds": ["entity/witherstorm/hum"]},
+	"entity.witherStorm.grow": {"category": "hostile", "sounds": ["entity/witherstorm/grow"]},
+	"entity.witherStorm.transform": {"category": "hostile", "sounds": ["entity/witherstorm/transform"]},
+	"entity.witherStorm.roar": {"category": "hostile", "sounds": ["entity/witherstorm/roar"]},
+	"entity.witherStorm.shoot": {"category": "hostile", "sounds": ["entity/witherstorm/shoot"]},
+	"entity.witherStorm.tentacle": {"category": "hostile", "sounds": ["entity/witherstorm/tentacle"]},
+	"entity.witherStorm.hurt": {"category": "hostile", "sounds": ["entity/witherstorm/hurt"]},
+	"entity.witherStorm.death": {"category": "hostile", "sounds": ["entity/witherstorm/death"]},
 	"misc.nullChopper": {"category": "player", "sounds": [{"name": "misc/null", "stream": false}]},
 	"misc.nullCrashing": {"category": "player", "sounds": [{"name": "misc/null", "stream": false}]},
 	"misc.nullMine": {"category": "player", "sounds": [{"name": "misc/null", "stream": false}]},
@@ -236,7 +245,7 @@
 	"weapon.nuclearExplosion": {"category": "player", "sounds": [{"name": "weapon/nuclearExplosion", "stream": true}]},
 	"weapon.explosionLargeNear": {"category": "player", "sounds": [{"name": "weapon/explosionLargeNear", "stream": false}]},
 	"weapon.explosionLargeFar": {"category": "player", "sounds": [{"name": "weapon/explosionLargeFar", "stream": false}]},
-	"weapon.gun_m61a1_snd": {category": "player", "sounds": [{"name": "weapon/gun_m61a1_snd", "stream": false}]},
+	"weapon.gun_m61a1_snd": {"category": "player", "sounds": [{"name": "weapon/gun_m61a1_snd", "stream": false}]},
 	
 	"weapon.dFlash": {"category": "player", "sounds": [{"name": "weapon/dFlash", "stream": false}]},
 	"weapon.explosionSmallNear": {"category": "player", "sounds": ["weapon/explosionSmallNear1", "weapon/explosionSmallNear2", "weapon/explosionSmallNear3"]},

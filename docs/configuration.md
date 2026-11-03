@@ -301,6 +301,31 @@ minecraft:diamond 0 1 2
 
 The command edits the runtime list; persistence depends on implementation details not fully documented in the current code.
 
+## Wither Storm
+
+The `12_mobs.witherstorm` category in `config/hbm.cfg` controls the hostile boss. Settings load at startup; clients receive phase, growth and physical scale through entity tracking. The boss has no natural spawning and never requests chunk tickets. Commands and the survival ritual share the same saved encounter limit.
+
+| Setting | Default | Meaning |
+| --- | --- | --- |
+| `transformGrowth` / `devourerGrowth` / `thunderStormGrowth` | 12500 / 50000 / 250000 | Consumed mass thresholds, strictly ordered. Transformation is inclusive; later thresholds are exclusive. |
+| `maxEncounters` | 1 | Global limit including unloaded saved bosses; zero disables new encounters. Use `/rntwitherstorm list` and `remove UUID` to retire an unloaded encounter. |
+| `survivalSummoning` | true | Allow the euphemium/soul sand/skull/nether star ritual described in the [command guide](commands.md#rntwitherstorm). |
+| `terrainDestruction` | true | Consumption and skull terrain damage also require `mobGriefing`. Neither attack uses nuclear crater or fallout systems. |
+| `blocksPerTick` | 16 | Coordinates examined per encounter per server tick, including rejected/air coordinates and queued skull impacts. Hard limit 256; zero disables terrain processing. |
+| `maxConsumptionRadius` | 32 | Growth-scaled sweep radius cap, configurable from 4 to 48 blocks. The resumable sweep does not continually rescan an exhausted stationary volume. |
+| `consumeTileEntities` | false | Explicitly allow destroying machines/containers and their contents. |
+| `protectedBlocks` | chest, ender chest, enchanting table | Registry-name blacklist. |
+| `consumeProtectedBlocks` | false | Explicitly override blacklist and block-level `canEntityDestroy` vetoes. Negative hardness, bedrock, command blocks and portal infrastructure always remain protected. |
+| `skullAttackTicks` | 80 | Per-head base cooldown; phase divides it by 1–4, with a ten-tick minimum and a small random stagger. |
+| `skullExplosionStrength` | 2 | Ordinary area attack strength (0–8), increased by phase. Terrain damage shares the normal processing budget and protections. |
+| `entityQueryBudget` | 512 | Entries examined per 20-tick cached search (64–4096); at most 64 candidates retained. Flight targets players and hostile mobs; nearby other living entities can be consumed. |
+| `debrisPerTick` | 4 | Maximum consumed-block visual records per encounter per tick (0–16), batched every five ticks. No physical debris is spawned on the server. |
+| `maxClientDebris` | 128 | Client-local active particle cap across all encounters (0–512). Particle quality and distance can reduce effects further. |
+
+Physical size, damage and reach increase with mass but remain capped. Maximum boss health respects Forge 1.7.10's native 1024 health attribute limit. Heads and tentacles forward damage into that single root health pool. All targeting, pulling, consumption, damage and terrain mutation run on the server thread. Visual debris expires within 50 client ticks. Skulls have a 160-world-tick lifetime and a hard cap of 24 per encounter; root-owned expiry also removes skulls suspended by vanilla's chunk-boundary tick rules. Flight and skull launches retain a loaded-chunk margin instead of requesting terrain. Runtime entity IDs are not persisted as ownership; components save parent/encounter UUIDs and resolve them without loading chunks.
+
+The implementation uses [The Engender Mod's Wither Storm sources](https://github.com/Mrbt0907/The-Engender-Mod/tree/main/src/main/java/net/minecraft/AgeOfMinecraft/entity/tier6) as a behavior reference. RNT supplies original code, model geometry, procedural texture and synthesized sounds; no Engender code, assets or libraries are distributed or required. Friendly ownership, armies, leveling, split-storm replication and permanent chunk loading are excluded.
+
 ## Recommended server workflow
 
 1. Start a new server once to generate all configs.

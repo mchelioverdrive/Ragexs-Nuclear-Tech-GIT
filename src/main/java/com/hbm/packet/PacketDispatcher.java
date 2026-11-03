@@ -95,6 +95,7 @@ public class PacketDispatcher {
 		wrapper.registerMessage(GuiLayerPacket.Handler.class, GuiLayerPacket.class, i++, Side.SERVER);
 		wrapper.registerMessage(MoltenSelectionPacket.Handler.class, MoltenSelectionPacket.class, i++, Side.SERVER);
 		wrapper.registerMessage(RabiesVisualPacket.Handler.class, RabiesVisualPacket.class, i++, Side.CLIENT);
+		wrapper.registerMessage(WitherStormDebrisPacket.Handler.class, WitherStormDebrisPacket.class, i++, Side.CLIENT);
 	}
 	
 }
