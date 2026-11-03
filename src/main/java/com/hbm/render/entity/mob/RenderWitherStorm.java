@@ -1,7 +1,6 @@
 package com.hbm.render.entity.mob;
 
 import com.hbm.entity.mob.witherstorm.EntityWitherStorm;
-import com.hbm.entity.mob.witherstorm.WitherStormPhase;
 import com.hbm.render.model.ModelWitherStorm;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -19,6 +18,7 @@ import org.lwjgl.opengl.GL11;
 @SideOnly(Side.CLIENT)
 public final class RenderWitherStorm extends Render {
     public static final ResourceLocation SKIN = new ResourceLocation("hbm", "textures/entity/wither_storm.png");
+    public static final ResourceLocation WITHER = new ResourceLocation("textures/entity/wither/wither.png");
     private final ModelWitherStorm model = new ModelWitherStorm();
     private final RenderBlocks blocks = new RenderBlocks();
     private long lastParticles = Long.MIN_VALUE;
@@ -34,29 +34,28 @@ public final class RenderWitherStorm extends Render {
         // Match the root's local() attachment coordinates and the heads' -Z front.
         GL11.glTranslated(x, y, z); GL11.glRotatef(-(boss.prevRotationYaw + MathHelper.wrapAngleTo180_float(boss.rotationYaw - boss.prevRotationYaw) * partial), 0, 1, 0);
         float scale = boss.renderScale(partial); GL11.glScalef(scale, scale, scale);
+        GL11.glEnable(GL11.GL_NORMALIZE);
         bindTexture(SKIN);
-        float age = boss.ticksExisted + partial;
-        boolean evolved = boss.getPhase() != WitherStormPhase.COMMAND_BLOCK;
-        float emergence = evolved ? Math.min(1F, 1F - (boss.transitionTicks() - partial) / 80F) : 0F;
-        if(evolved) {
-            GL11.glPushMatrix(); float grow = 0.15F + emergence * 0.85F; GL11.glScalef(grow, grow, grow);
-            model.storm(age, distance < 96D * 96D); GL11.glPopMatrix();
-        }
-        if(!evolved || emergence < 1F) model.command(age);
+        float development = boss.development();
+        model.storm(development, distance < 96D * 96D);
+        if(development < 0.55F) { bindTexture(WITHER); model.command(); }
         if(boss.hasCore()) {
             GL11.glPushMatrix();
-            GL11.glTranslatef(0, evolved ? 4.5F : 1.4F, evolved ? -4.1F : -0.2F);
-            GL11.glRotatef(age * 0.8F, 0, 1, 0);
-            float core = evolved ? 1.6F : 0.9F; GL11.glScalef(core, core, core);
+            // Front of the growing mass: the core stays embedded and readable, never orbiting.
+            GL11.glTranslatef(0, 1.35F + development * 2.8F, -0.18F - development * 8.5F);
+            float core = 0.65F + development * 1.6F; GL11.glScalef(core, core, core);
             bindTexture(TextureMap.locationBlocksTexture);
             blocks.renderBlockAsItem(Blocks.command_block, 0, 1F);
+            bindTexture(development < 0.22F ? WITHER : SKIN);
+            GL11.glScalef(1.4F, 1.4F, 1.4F); GL11.glTranslatef(0, -1.25F, 0.18F);
+            model.coreFrame();
             GL11.glPopMatrix();
         }
         GL11.glPopMatrix(); GL11.glPopAttrib();
         long tick = boss.worldObj.getTotalWorldTime();
         if(tick != lastParticles && distance < 96D * 96D && mc.gameSettings.particleSetting != 2) {
             lastParticles = tick;
-            int count = mc.gameSettings.particleSetting == 0 ? 3 : 1;
+            int count = mc.gameSettings.particleSetting == 0 ? 1 + (int)(boss.development() * 8F) : 1 + (int)(boss.development() * 2F);
             for(int i = 0; i < count; i++) boss.worldObj.spawnParticle("largesmoke", boss.posX + (boss.worldObj.rand.nextDouble() - 0.5D) * boss.width,
                 boss.posY + boss.worldObj.rand.nextDouble() * boss.height, boss.posZ + (boss.worldObj.rand.nextDouble() - 0.5D) * boss.width, 0, 0.04D, 0);
         }

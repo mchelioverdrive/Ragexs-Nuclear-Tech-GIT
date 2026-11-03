@@ -39,7 +39,7 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
     public boolean registered;
     private int searchOffset, roarTimer = 200;
     private int lastGrowthSoundMass;
-    private float visualScale = 0.35F, previousVisualScale = 0.35F;
+    private float visualScale = 0.9F, previousVisualScale = 0.9F;
     private boolean restoring;
     private double roamX, roamZ;
     private int roamTicks;
@@ -57,8 +57,11 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
         dataWatcher.addObject(22, Byte.valueOf((byte)1)); // command core intact
         dataWatcher.addObject(23, Integer.valueOf(0)); // transition ticks remaining
         for(int i = 0; i < 3; i++) dataWatcher.addObject(24 + i, Integer.valueOf(0));
-        dataWatcher.addObject(27, Float.valueOf(0.35F)); // server-configured growth scale
+        dataWatcher.addObject(27, Float.valueOf(0.9F)); // server-configured growth scale
         dataWatcher.addObject(28, Byte.valueOf((byte)0)); // active tractor beams, one bit per head
+        dataWatcher.addObject(29, Byte.valueOf((byte)0)); // transformed heads; central head is slot 1
+        dataWatcher.addObject(30, Float.valueOf(0F)); // server-configured anatomical development
+        dataWatcher.addObject(31, Byte.valueOf((byte)0)); // heads undergoing the current transition
     }
     @Override protected void applyEntityAttributes() {
         super.applyEntityAttributes();
@@ -77,7 +80,20 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
     public boolean hasCore() { return dataWatcher.getWatchableObjectByte(22) != 0; }
     public int transitionTicks() { return dataWatcher.getWatchableObjectInt(23); }
     public int headTarget(int head) { return dataWatcher.getWatchableObjectInt(24 + head); }
-    public boolean beamActive(int head) { return isEntityAlive() && (dataWatcher.getWatchableObjectByte(28) & (1 << head)) != 0; }
+    public boolean headTransformed(int head) { return (dataWatcher.getWatchableObjectByte(29) & (1 << head)) != 0; }
+    public float development() { return dataWatcher.getWatchableObjectFloat(30); }
+    public float headDevelopment(int head, float partial) {
+        if(!headTransformed(head)) return 0F;
+        return (dataWatcher.getWatchableObjectByte(31) & (1 << head)) == 0 ? 1F
+            : Math.max(0F, Math.min(1F, 1F - (transitionTicks() - partial) / 80F));
+    }
+    public float headSize(int head) { return headTransformed(head) ? 1.15F + development() * 0.65F : (head == 1 ? 1F : 0.75F); }
+    public boolean beamActive(int head) { return isEntityAlive() && headTransformed(head) && (dataWatcher.getWatchableObjectByte(28) & (1 << head)) != 0; }
+    private int headsForGrowth(int mass) {
+        // Existing phase thresholds also provide three distinct head milestones.
+        int firstSide = WitherStormConfig.transform + Math.max(1, (WitherStormConfig.devourer - WitherStormConfig.transform) / 2);
+        return (mass >= WitherStormConfig.transform ? 2 : 0) | (mass >= firstSide ? 1 : 0) | (mass > WitherStormConfig.devourer ? 4 : 0);
+    }
     public float getStormScale() {
         return dataWatcher.getWatchableObjectFloat(27);
     }
@@ -87,17 +103,26 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
     public void setGrowth(int mass) {
         if(worldObj.isRemote) return;
         WitherStormPhase before = getPhase(), after = WitherStormPhase.forGrowth(Math.max(0, mass));
+        int oldHeads = dataWatcher.getWatchableObjectByte(29), heads = headsForGrowth(mass);
+        // Retain saved transformations if configuration thresholds changed after saving.
+        if(mass >= getGrowth()) heads |= oldHeads;
         float oldMax = getMaxHealth(), health = getHealth();
         dataWatcher.updateObject(20, Math.max(0, Math.min(1000000000, mass)));
         dataWatcher.updateObject(21, (byte)after.ordinal());
-        dataWatcher.updateObject(27, after == WitherStormPhase.COMMAND_BLOCK ? 0.35F + 0.65F * Math.min(1F, (float)getGrowth() / WitherStormConfig.transform)
+        dataWatcher.updateObject(29, (byte)heads);
+        float development = mass < WitherStormConfig.transform ? 0.22F * Math.max(0, mass) / WitherStormConfig.transform
+            : mass <= WitherStormConfig.devourer ? 0.22F + 0.33F * (mass - WitherStormConfig.transform) / (WitherStormConfig.devourer - WitherStormConfig.transform)
+            : 0.55F + 0.45F * Math.min(1F, (float)(mass - WitherStormConfig.devourer) / (WitherStormConfig.thunder - WitherStormConfig.devourer));
+        dataWatcher.updateObject(30, development);
+        dataWatcher.updateObject(27, after == WitherStormPhase.COMMAND_BLOCK ? 0.9F + 0.1F * Math.min(1F, (float)getGrowth() / WitherStormConfig.transform)
             : (float)Math.min(2.8D, 1D + Math.log1p((double)getGrowth() / 12500D) * 0.3D));
         // Vanilla 1.7.10 clamps maxHealth at 1024. Keep the boss inside that contract.
         float max = Math.min(1024F, 300F + (float)Math.sqrt(getGrowth()) * 1.1F);
         getEntityAttribute(SharedMonsterAttributes.maxHealth).setBaseValue(max);
         setHealth(Math.min(max, health + Math.max(0F, max - oldMax)));
-        if(before != after && !restoring) {
+        if((before != after || oldHeads != heads) && !restoring) {
             dataWatcher.updateObject(23, 80);
+            dataWatcher.updateObject(31, (byte)(heads & ~oldHeads));
             playSound("hbm:entity.witherStorm.transform", 2F, 1F);
         }
     }
@@ -138,8 +163,8 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
             }
         }
         float s = getStormScale();
-        float wantedWidth = getPhase() == WitherStormPhase.COMMAND_BLOCK ? 2F : 8F * s;
-        float wantedHeight = getPhase() == WitherStormPhase.COMMAND_BLOCK ? 4F : 12F * s;
+        float wantedWidth = (2F + development() * 21F) * s;
+        float wantedHeight = (3.5F + development() * 10.5F) * s;
         if(width != wantedWidth || height != wantedHeight) {
             // 1.7.10 setSize moves a growing entity toward its old box corner.
             // Keep growth and reload sizing centered on the saved flight position.
@@ -177,7 +202,7 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
         return d;
     }
     private void fly() {
-        double margin = Math.max(34D, 13 * getStormScale() + 3);
+        double margin = Math.max(34D, 19 * getStormScale() + 3);
         EntityLivingBase target = null;
         for(EntityLivingBase candidate : targets) if(validTarget(candidate)
             && (target == null || getDistanceSqToEntity(candidate) < getDistanceSqToEntity(target))) target = candidate;
@@ -230,7 +255,7 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
                 Entity found = WitherStormEncounters.get(worldObj).find(partIds[i], worldObj);
                 if(found instanceof EntityWitherStormPart) parts[i] = (EntityWitherStormPart)found;
                 else {
-                    if(ticksExisted < 40 || (partIds[i] != null && !worldObj.getChunkProvider().chunkExists(partChunksX[i], partChunksZ[i]))) continue;
+                    if(partIds[i] != null && (ticksExisted < 40 || !worldObj.getChunkProvider().chunkExists(partChunksX[i], partChunksZ[i]))) continue;
                     EntityWitherStormPart part = new EntityWitherStormPart(worldObj);
                     part.attach(this, i, partIds[i]);
                     Vec3 position = partPosition(i); part.setPosition(position.xCoord, position.yCoord, position.zCoord);
@@ -245,16 +270,18 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
     }
     public Vec3 partPosition(int slot) {
         float s = getStormScale();
-        if(slot < 3) return local((slot - 1) * (getPhase() == WitherStormPhase.COMMAND_BLOCK ? 1.7D : 6D) * s,
-            (slot == 1 ? 2D : 4D) * s, -(getPhase() == WitherStormPhase.COMMAND_BLOCK ? 0.8D : 5D) * s);
+        float d = development();
+        if(slot < 3) return local((slot - 1) * (0.85D + 9D * d) * s,
+            ((slot == 1 ? 2.1D : 1.8D) + d * (slot == 1 ? 3D : 5D)) * s, -(0.05D + 9D * d) * s);
         double angle = (slot - 3) * Math.PI * 2D / 7D;
         double wave = Math.sin((worldObj.getTotalWorldTime() + slot * 19) * 0.04D);
-        double length = slot >= 8 ? 11D : 8D;
-        return local(Math.cos(angle) * (length + wave) * s, (slot >= 8 ? -3D : -5D) * s, Math.sin(angle) * length * s);
+        double length = (slot >= 8 ? 7D : 5D) + d * 11D;
+        return local(Math.cos(angle) * (length + wave) * s, (slot >= 8 ? -2D : -4D - d * 6D) * s, Math.sin(angle) * length * s);
     }
     public Vec3 tentacleRoot(int slot) {
         double angle = (slot - 3) * Math.PI * 2D / 7D;
-        return local(Math.cos(angle) * 2 * getStormScale(), 5 * getStormScale(), Math.sin(angle) * 2 * getStormScale());
+        return local(Math.cos(angle) * (1D + development() * 5D) * getStormScale(),
+            (2D + development() * 3D) * getStormScale(), Math.sin(angle) * (1D + development() * 4D) * getStormScale());
     }
     public Vec3 mouth(int head) {
         if(parts[head] != null && !parts[head].isDead) return parts[head].mouth(1F);
@@ -278,8 +305,8 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
         for(int h = 0; h < 3; h++) {
             EntityLivingBase target = targets[h];
             EntityWitherStormPart part = parts[h];
-            if(!validTarget(target) || part == null || part.isDead || !part.ready()) continue;
-            Vec3 m = mouth(h), end = WitherStormMath.targetPoint(target, 1F);
+            if(!headTransformed(h) || headDevelopment(h, 0) < 1F || !validTarget(target) || part == null || part.isDead || !part.ready()) continue;
+            Vec3 m = part.eye(1F), end = WitherStormMath.targetPoint(target, 1F);
             double dx = end.xCoord - m.xCoord, dy = end.yCoord - m.yCoord, dz = end.zCoord - m.zCoord;
             double length = Math.sqrt(dx * dx + dy * dy + dz * dz);
             Vec3 forward = WitherStormMath.headOffset(0, 0, -1, part.rotationYaw, part.rotationPitch);
@@ -351,6 +378,8 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
         n.setInteger("Growth", getGrowth()); n.setString("Phase", getPhase().name()); n.setBoolean("Core", hasCore()); n.setBoolean("Registered", registered);
         n.setInteger("Transition", transitionTicks()); n.setInteger("RoarTimer", roarTimer);
         n.setInteger("GrowthSoundMass", lastGrowthSoundMass);
+        n.setByte("TransformedHeads", dataWatcher.getWatchableObjectByte(29));
+        n.setByte("TransformingHeads", dataWatcher.getWatchableObjectByte(31));
         WitherStormMath.uuid(n, "Encounter", getUniqueID());
         for(int i = 0; i < 10; i++) { WitherStormMath.uuid(n, "Part" + i, partIds[i]); n.setInteger("PartX" + i, partChunksX[i]); n.setInteger("PartZ" + i, partChunksZ[i]); }
         for(int i = 0; i < 3; i++) { WitherStormMath.uuid(n, "Target" + i, targetIds[i]); n.setInteger("Attack" + i, attacks[i]); }
@@ -359,6 +388,9 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
     @Override public void readEntityFromNBT(NBTTagCompound n) {
         super.readEntityFromNBT(n);
         float savedHealth = getHealth(); restoring = true; setGrowth(n.getInteger("Growth")); restoring = false; setHealth(savedHealth);
+        // Legacy saves derive their head state from mass; existing identity and growth remain intact.
+        if(n.hasKey("TransformedHeads")) dataWatcher.updateObject(29, (byte)((n.getByte("TransformedHeads") | headsForGrowth(getGrowth())) & 7));
+        dataWatcher.updateObject(31, (byte)(n.getByte("TransformingHeads") & dataWatcher.getWatchableObjectByte(29)));
         registered = n.getBoolean("Registered"); dataWatcher.updateObject(22, (byte)(!n.hasKey("Core") || n.getBoolean("Core") ? 1 : 0));
         lastGrowthSoundMass = n.getInteger("GrowthSoundMass");
         dataWatcher.updateObject(23, Math.max(0, Math.min(80, n.getInteger("Transition")))); roarTimer = Math.max(40, Math.min(500, n.getInteger("RoarTimer")));

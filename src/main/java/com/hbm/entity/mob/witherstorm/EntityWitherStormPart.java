@@ -32,15 +32,10 @@ public class EntityWitherStormPart extends Entity {
         parent = boss; parentId = boss.getUniqueID();
         if(id != null) entityUniqueID = id;
         dataWatcher.updateObject(20, boss.getEntityId()); dataWatcher.updateObject(21, (byte)slot);
+        dataWatcher.updateObject(22, boss.getStormScale());
     }
     public EntityWitherStorm parent() {
         if(worldObj.isRemote) {
-            if(interpolationTicks > 0) {
-                double steps = interpolationTicks--;
-                setPosition(posX + (nextX - posX) / steps, posY + (nextY - posY) / steps, posZ + (nextZ - posZ) / steps);
-                rotationYaw += MathHelper.wrapAngleTo180_float(nextYaw - rotationYaw) / steps;
-                rotationPitch += (nextPitch - rotationPitch) / steps;
-            }
             Entity e = worldObj.getEntityByID(dataWatcher.getWatchableObjectInt(20));
             return e instanceof EntityWitherStorm && !e.isDead ? (EntityWitherStorm)e : null;
         }
@@ -52,6 +47,13 @@ public class EntityWitherStormPart extends Entity {
     @Override public void onUpdate() {
         super.onUpdate();
         if(worldObj.isRemote) {
+            // Interpolation advances once per tick, never from rendering/parent queries.
+            if(interpolationTicks > 0) {
+                double steps = interpolationTicks--;
+                setPosition(posX + (nextX - posX) / steps, posY + (nextY - posY) / steps, posZ + (nextZ - posZ) / steps);
+                rotationYaw += MathHelper.wrapAngleTo180_float(nextYaw - rotationYaw) / steps;
+                rotationPitch += (nextPitch - rotationPitch) / steps;
+            }
             // Client ray selection needs the same growing hitboxes as the server.
             updateBounds(parent());
             return;
@@ -89,6 +91,14 @@ public class EntityWitherStormPart extends Entity {
                 double horizontal = Math.sqrt(dx * dx + dz * dz);
                 yaw = horizontal < 0.001D ? rotationYaw : (float)(Math.atan2(dx, -dz) * 180D / Math.PI);
                 pitch = (float)(Math.atan2(dy, horizontal) * 180D / Math.PI);
+                if(boss.headTransformed(slot())) {
+                    // Aim from the elevated eye, not the jaw pivot. The forward eye offset
+                    // cancels; the perpendicular offset requires this angular correction.
+                    double eyeHeight = WitherStormMath.EYE_Y * WitherStormMath.HEAD_SCALE * scale() * boss.headSize(slot())
+                        * (0.45D + 0.55D * boss.headDevelopment(slot(), 0));
+                    double range = Math.sqrt(horizontal * horizontal + dy * dy);
+                    pitch -= (float)(Math.asin(Math.min(0.95D, eyeHeight / Math.max(0.01D, range))) * 180D / Math.PI);
+                }
             }
             rotationYaw += MathHelper.wrapAngleTo180_float(yaw - rotationYaw) * 0.12F;
             rotationPitch += (pitch - rotationPitch) * 0.12F;
@@ -108,7 +118,17 @@ public class EntityWitherStormPart extends Entity {
     public float headYaw(float partial) { return prevRotationYaw + MathHelper.wrapAngleTo180_float(rotationYaw - prevRotationYaw) * partial; }
     public float headPitch(float partial) { return prevRotationPitch + (rotationPitch - prevRotationPitch) * partial; }
     public Vec3 mouth(float partial) {
-        Vec3 offset = WitherStormMath.headOffset(0, 0, -1.5D * scale(), headYaw(partial), headPitch(partial));
+        EntityWitherStorm boss = parent();
+        double size = boss == null ? scale() : scale() * boss.headSize(slot());
+        Vec3 offset = WitherStormMath.headOffset(0, 0, -(boss != null && boss.headTransformed(slot()) ? 1.65D : 0.51D) * size, headYaw(partial), headPitch(partial));
+        return Vec3.createVectorHelper(lastTickPosX + (posX - lastTickPosX) * partial + offset.xCoord,
+            lastTickPosY + (posY - lastTickPosY) * partial + scale() * 0.6D + offset.yCoord,
+            lastTickPosZ + (posZ - lastTickPosZ) * partial + offset.zCoord);
+    }
+    public Vec3 eye(float partial) {
+        EntityWitherStorm boss = parent();
+        double size = scale() * WitherStormMath.HEAD_SCALE * (boss == null ? 1F : boss.headSize(slot()));
+        Vec3 offset = WitherStormMath.headOffset(0, WitherStormMath.EYE_Y * size, WitherStormMath.EYE_Z * size, headYaw(partial), headPitch(partial));
         return Vec3.createVectorHelper(lastTickPosX + (posX - lastTickPosX) * partial + offset.xCoord,
             lastTickPosY + (posY - lastTickPosY) * partial + scale() * 0.6D + offset.yCoord,
             lastTickPosZ + (posZ - lastTickPosZ) * partial + offset.zCoord);
@@ -116,7 +136,9 @@ public class EntityWitherStormPart extends Entity {
     private void updateBounds(EntityWitherStorm boss) {
         if(slot() < 3) {
             double x = posX, y = posY, z = posZ;
-            setSize(2.5F * scale(), 2.5F * scale()); setPosition(x, y, z);
+            float size = boss == null ? 1F : boss.headSize(slot());
+            float extent = boss != null && boss.headTransformed(slot()) ? 2.7F : 1F;
+            setSize(extent * size * scale(), extent * size * scale()); setPosition(x, y, z);
         } else if(boss != null) {
             Vec3 root = boss.tentacleRoot(slot()); double padding = (slot() >= 8 ? 1.4D : 0.7D) * scale();
             boundingBox.setBounds(Math.min(posX, root.xCoord) - padding, Math.min(posY, root.yCoord) - padding, Math.min(posZ, root.zCoord) - padding,

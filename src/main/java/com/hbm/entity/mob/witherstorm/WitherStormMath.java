@@ -17,6 +17,9 @@ import net.minecraft.world.chunk.Chunk;
 import net.minecraftforge.common.util.FakePlayer;
 
 public final class WitherStormMath {
+    // Shared skull anatomy in model-space blocks; no client model dependency on servers.
+    public static final double EYE_Y = 1.02D, EYE_Z = -0.947D;
+    public static final float HEAD_SCALE = 1.5F;
     private WitherStormMath() { }
     public static boolean loaded(World world, double x, double z) {
         return world.getChunkProvider().chunkExists(MathHelper.floor_double(x) >> 4, MathHelper.floor_double(z) >> 4);

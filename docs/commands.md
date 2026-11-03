@@ -271,6 +271,7 @@ Only use this command when debugging hangs or crashes. `crash` intentionally exi
 Operator level 2 controls the hostile Wither Storm encounter. No natural spawn is registered.
 
 ```text
+/rntwitherstorm spawn [x y z]
 /rntwitherstorm spawn command [x y z]
 /rntwitherstorm spawn storm [x y z]
 /rntwitherstorm list
@@ -279,11 +280,11 @@ Operator level 2 controls the hostile Wither Storm encounter. No natural spawn i
 /rntwitherstorm remove <entityID|UUID>
 ```
 
-`command` starts the Command Block Wither; `storm` starts Destroyer at the configured transformation threshold. Coordinates must already be loaded; omitted coordinates use the sender's position plus eight blocks vertically. Inspection and growth edits require a loaded boss in the sender's dimension. `list` includes saved unloaded encounters across dimensions. `remove UUID` retires an unloaded encounter without loading its chunks; its boss, projectiles and parts disappear when next loaded. Numeric IDs are local to the current runtime and dimension; UUIDs survive restarts.
+Omitting the form or choosing `command` starts the Command Block Wither with three ordinary Wither heads and an embedded command block. `storm` starts Destroyer at the configured transformation threshold, beginning the central head's transformation. Coordinates must already be loaded; omitted coordinates use the sender's position plus eight blocks vertically. Inspection reports each head's transformation state. Inspection and growth edits require a loaded boss in the sender's dimension. `list` includes saved unloaded encounters across dimensions. `remove UUID` retires an unloaded encounter without loading its chunks; its boss, projectiles and parts disappear when next loaded. Numeric IDs are local to the current runtime and dimension; UUIDs survive restarts.
 
 For survival summoning, make a soul sand T, replace its upper center with an RNT **euphemium block**, and place three wither skeleton skulls across the top. Sneak-right-click the euphemium block with a nether star. Successful summoning consumes the structure and one star (Creative retains the star). This method and the global encounter limit are configurable; it does not change vanilla Wither summoning. The core remains visible in every form. Damage to heads passes to the boss; tentacles pass half damage to the same health pool.
 
-Growth comes from consumed terrain (three mass per block), item stack counts, falling blocks and living victims killed during consumption. Default phases are Command Block below 12,500, Destroyer at 12,500, Devourer above 50,000 and ThunderStorm above 250,000. ThunderStorm refreshes ordinary rain/thunder for ten seconds while active in a dimension with a sky. Growth, attack timers, component UUIDs and terrain cursors survive saving. The boss uses loaded terrain only and may stop at unloaded boundaries. See [Wither Storm configuration](configuration.md#wither-storm).
+Growth comes from consumed terrain (three mass per block), item stack counts, falling blocks and living victims killed during consumption. Default phases are Command Block below 12,500, Destroyer at 12,500, Devourer above 50,000 and ThunderStorm above 250,000. The central head transforms at 12,500, the first side at the midpoint of the transformation and Devourer thresholds (31,250 by default), and the remaining side above 50,000. Only transformed heads use tractor beams, after their transformation animation finishes. Body volume, necks, head proportions, tentacles and client debris develop with mass. ThunderStorm refreshes ordinary rain/thunder for ten seconds while active in a dimension with a sky. Growth, transformed heads, attack timers, component UUIDs and terrain cursors survive saving; older saves derive head progress from their existing mass. Raising growth preserves completed head transformations, while lowering it explicitly recalculates heads from the configured thresholds. The boss uses loaded terrain only and may stop at unloaded boundaries. See [Wither Storm configuration](configuration.md#wither-storm).
 
 ## Permissions notes
 

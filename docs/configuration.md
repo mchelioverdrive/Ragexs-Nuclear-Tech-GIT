@@ -303,11 +303,11 @@ The command edits the runtime list; persistence depends on implementation detail
 
 ## Wither Storm
 
-The `12_mobs.witherstorm` category in `config/hbm.cfg` controls the hostile boss. Settings load at startup; clients receive phase, growth and physical scale through entity tracking. The boss has no natural spawning and never requests chunk tickets. Commands and the survival ritual share the same saved encounter limit.
+The `12_mobs.witherstorm` category in `config/hbm.cfg` controls the hostile boss. Settings load at startup; clients receive phase, growth, physical scale, anatomical development and transformed head states through entity tracking. The boss has no natural spawning and never requests chunk tickets. Commands and the survival ritual share the same saved encounter limit and begin with ordinary Wither anatomy unless a later form is explicitly requested.
 
 | Setting | Default | Meaning |
 | --- | --- | --- |
-| `transformGrowth` / `devourerGrowth` / `thunderStormGrowth` | 12500 / 50000 / 250000 | Consumed mass thresholds, strictly ordered. Transformation is inclusive; later thresholds are exclusive. |
+| `transformGrowth` / `devourerGrowth` / `thunderStormGrowth` | 12500 / 50000 / 250000 | Consumed mass thresholds, strictly ordered. Central head transforms at `transformGrowth`; first side at `transformGrowth + max(1, (devourerGrowth - transformGrowth) / 2)` using integer division; remaining side above `devourerGrowth`. ThunderStorm remains exclusive. These thresholds also drive body proportions. |
 | `maxEncounters` | 1 | Global limit including unloaded saved bosses; zero disables new encounters. Use `/rntwitherstorm list` and `remove UUID` to retire an unloaded encounter. |
 | `survivalSummoning` | true | Allow the euphemium/soul sand/skull/nether star ritual described in the [command guide](commands.md#rntwitherstorm). |
 | `terrainDestruction` | true | Consumption and skull terrain damage also require `mobGriefing`. Neither attack uses nuclear crater or fallout systems. |
@@ -320,7 +320,7 @@ The `12_mobs.witherstorm` category in `config/hbm.cfg` controls the hostile boss
 | `skullExplosionStrength` | 2 | Ordinary area attack strength (0–8), increased by phase. Terrain damage shares the normal processing budget and protections. |
 | `entityQueryBudget` | 512 | Entries examined per 20-tick cached search (64–4096); at most 64 candidates retained. Flight targets players and hostile mobs; nearby other living entities can be consumed. |
 | `debrisPerTick` | 4 | Maximum consumed-block visual records per encounter per tick (0–16), batched every five ticks. No physical debris is spawned on the server. |
-| `maxClientDebris` | 128 | Client-local active particle cap across all encounters (0–512). Particle quality and distance can reduce effects further. |
+| `maxClientDebris` | 128 | Client-local active 3D block debris cap across all encounters (0–512). Growth, particle quality and distance control visual density independently of actual consumption. Six metadata-aware faces share the vanilla terrain-atlas particle batch; unsupported block models use textured cube fragments. |
 
 Physical size, damage and reach increase with mass but remain capped. Maximum boss health respects Forge 1.7.10's native 1024 health attribute limit. Heads and tentacles forward damage into that single root health pool. All targeting, pulling, consumption, damage and terrain mutation run on the server thread. Visual debris expires within 50 client ticks. Skulls have a 160-world-tick lifetime and a hard cap of 24 per encounter; root-owned expiry also removes skulls suspended by vanilla's chunk-boundary tick rules. Flight and skull launches retain a loaded-chunk margin instead of requesting terrain. Runtime entity IDs are not persisted as ownership; components save parent/encounter UUIDs and resolve them without loading chunks.
 
