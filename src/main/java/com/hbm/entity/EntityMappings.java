@@ -284,6 +284,8 @@ public class EntityMappings {
 		EntityRegistry.registerModEntity(com.hbm.entity.mob.sandworm.EntitySpark.class, "worm_spark", id++, MainRegistry.instance, 96, 3, true);
 		EntityRegistry.registerModEntity(com.hbm.entity.mob.sandworm.EntityTick.class, "worm_tick", id++, MainRegistry.instance, 96, 3, true);
 		EntityRegistry.registerModEntity(com.hbm.entity.mob.sandworm.EntityWormProjectile.class, "worm_projectile", id++, MainRegistry.instance, 96, 2, true);
+		EntityRegistry.registerModEntity(com.hbm.entity.mob.colossus.EntityPrismarineColossus.class, "prismarine_colossus", id++, MainRegistry.instance, 256, 3, true);
+		EntityRegistry.registerModEntity(com.hbm.entity.mob.colossus.EntityColossusPart.class, "colossus_part", id++, MainRegistry.instance, 256, 3, false);
 
 		for(Quartet<Class<? extends Entity>, String, Integer, Integer> entry : mobMappings) {
 			EntityRegistry.registerGlobalEntityID(entry.getW(), entry.getX(), EntityRegistry.findGlobalUniqueEntityId(), entry.getY(), entry.getZ());

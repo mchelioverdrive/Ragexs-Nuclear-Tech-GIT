@@ -855,6 +855,13 @@ public class ClientProxy extends ServerProxy {
 		//RenderingRegistry.registerEntityRenderingHandler(EntityMaskMan.class, new RenderMaskMan());
 		RenderingRegistry.registerEntityRenderingHandler(EntityBOTPrimeHead.class, new RenderWormHead());
 		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.mob.witherstorm.EntityWitherStorm.class, new com.hbm.render.entity.mob.RenderWitherStorm());
+		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.mob.colossus.EntityPrismarineColossus.class, new com.hbm.render.entity.mob.RenderPrismarineColossus());
+		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.mob.colossus.EntityColossusPart.class, new net.minecraft.client.renderer.entity.Render() {
+			@Override protected net.minecraft.util.ResourceLocation getEntityTexture(net.minecraft.entity.Entity e) { return null; }
+			@Override public void doRender(net.minecraft.entity.Entity e, double x, double y, double z, float yaw, float partial) { }
+		});
+		FMLCommonHandler.instance().bus().register(new com.hbm.render.entity.mob.ColossusClient());
+		net.minecraftforge.client.MinecraftForgeClient.registerItemRenderer(com.hbm.entity.mob.colossus.ColossusContent.gauntlet, new com.hbm.render.item.ItemRenderPrismarineGauntlet());
 		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.mob.witherstorm.EntityWitherStormPart.class, new com.hbm.render.entity.mob.RenderWitherStormPart());
 		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.mob.witherstorm.EntityWitherStormSkull.class, new com.hbm.render.entity.projectile.RenderWitherStormSkull());
 		com.hbm.render.entity.mob.WormRenderers.register();

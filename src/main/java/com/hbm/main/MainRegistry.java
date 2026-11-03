@@ -402,6 +402,7 @@ public class MainRegistry {
 
 		EntityMappings.writeMappings();
 		com.hbm.world.sandworm.WormContent.register();
+		com.hbm.entity.mob.colossus.ColossusContent.register();
 		//CompatNER.init();
 
 
@@ -1078,6 +1079,9 @@ public class MainRegistry {
 		MinecraftForge.EVENT_BUS.register(new com.hbm.explosion.FalloutCollapseManager());
 		MinecraftForge.EVENT_BUS.register(new com.hbm.explosion.ExplosionTerrainAccess());
 		MinecraftForge.EVENT_BUS.register(new com.hbm.entity.mob.witherstorm.WitherStormEvents());
+		com.hbm.entity.mob.colossus.ColossusEvents colossusEvents = new com.hbm.entity.mob.colossus.ColossusEvents();
+		MinecraftForge.EVENT_BUS.register(colossusEvents);
+		FMLCommonHandler.instance().bus().register(colossusEvents);
 		com.hbm.world.sandworm.WormEvents wormEvents = new com.hbm.world.sandworm.WormEvents();
 		MinecraftForge.EVENT_BUS.register(wormEvents);
 		FMLCommonHandler.instance().bus().register(wormEvents);
@@ -1145,6 +1149,7 @@ public class MainRegistry {
 		event.registerServerCommand(new CommandBedrockDrop());
 		event.registerServerCommand(new CommandRNTAchievement());
 		event.registerServerCommand(new com.hbm.commands.CommandWitherStorm());
+		event.registerServerCommand(new com.hbm.commands.CommandColossus());
 		event.registerServerCommand(new com.hbm.commands.CommandSandworm());
 		MinecraftForge.EVENT_BUS.register(new NukeScheduler());
 		FMLCommonHandler.instance().bus().register(new NukeScheduler());
@@ -1175,6 +1180,7 @@ public class MainRegistry {
 		WeaponConfig.loadFromConfig(config);
 		MobConfig.loadFromConfig(config);
 		com.hbm.config.WitherStormConfig.loadFromConfig(config);
+		com.hbm.config.ColossusConfig.loadFromConfig(config);
 		com.hbm.config.SandwormConfig.loadFromConfig(config);
 		RabiesConfig.loadFromConfig(config);
 		StructureConfig.loadFromConfig(config);

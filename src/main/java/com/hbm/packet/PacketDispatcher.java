@@ -97,6 +97,8 @@ public class PacketDispatcher {
 		wrapper.registerMessage(RabiesVisualPacket.Handler.class, RabiesVisualPacket.class, i++, Side.CLIENT);
 		wrapper.registerMessage(WitherStormDebrisPacket.Handler.class, WitherStormDebrisPacket.class, i++, Side.CLIENT);
 		wrapper.registerMessage(SandwormPosePacket.Handler.class, SandwormPosePacket.class, i++, Side.CLIENT);
+		wrapper.registerMessage(ColossusAttachmentPacket.Handler.class, ColossusAttachmentPacket.class, i++, Side.CLIENT);
+		wrapper.registerMessage(ColossusControlPacket.Handler.class, ColossusControlPacket.class, i++, Side.SERVER);
 	}
 	
 }
