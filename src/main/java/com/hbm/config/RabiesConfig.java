@@ -23,6 +23,7 @@ public final class RabiesConfig {
 	public static int stareMinTicks = 40, stareMaxTicks = 60;
 	public static boolean playerWaterContactPenalty = true, animalWaterAvoidance = true;
 	public static int incubationTicks = 48000, infectiousTicks = 1200, clinicalTicks = 2400, terminalTicks = 1200;
+	public static int earlySymptomDelayTicks = 1200;
 	public static final Set<String> mammalAllowlist = new HashSet<String>();
 
 	public static void loadFromConfig(Configuration config) {
@@ -68,8 +69,10 @@ public final class RabiesConfig {
 		animalWaterAvoidance = CommonConfig.createConfigBool(config, CATEGORY, "animalWaterAvoidance",
 				"Gameplay choice: symptomatic animals prefer dry routes/destinations but retain swimming and escape. WHO: fear of water is not a typical clinical sign in dogs.", true);
 		// Real incubation often lasts weeks/months: deliberately compress time for gameplay.
-		incubationTicks = duration(config, "incubationTicks", 48000, "Silent, noninfectious incubation.", 1);
-		infectiousTicks = duration(config, "presymptomaticInfectiousTicks", 1200, "Silent saliva shedding before symptoms; shedding continues throughout clinical and terminal illness. Same-host timing is a cross-species gameplay abstraction.", 0);
+		earlySymptomDelayTicks = boundedTicks(config, "earlySymptomDelayTicks", 1200, 23999,
+				"Player-only delay from the original infection time to Weakness I and Slowness I. Independent of clinical deadlines and the full 24000-tick HRIG window.");
+		incubationTicks = duration(config, "incubationTicks", 48000, "Noninfectious incubation; silent in animals, with separate early player symptoms.", 1);
+		infectiousTicks = duration(config, "presymptomaticInfectiousTicks", 1200, "Saliva shedding before clinical illness; silent in animals, with separate early player symptoms. Shedding continues throughout clinical and terminal illness. Same-host timing is a cross-species gameplay abstraction.", 0);
 		clinicalTicks = duration(config, "clinicalTicks", 2400, "First half: behavioral signs; second half: neurological impairment. clinicalTicks=24 allows only 1.2 seconds total at 20 TPS, with impairment after 0.6 seconds.", 2);
 		terminalTicks = duration(config, "terminalTicks", 1200, "Terminal paralysis/illness, followed by fatal disease damage.", 1);
 		Property hosts = config.get(CATEGORY, "mammalAllowlist", new String[0]);

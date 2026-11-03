@@ -38,6 +38,7 @@ public final class Rabies implements Pathogen {
 			DiseaseManager.infect(host, this, "reservoir_entry", "Bat");
 		// Check markers include encounters while disabled; clearing disease never rerolls entry infection.
 		Infection infection = data.infections.get(ID);
+		reconcileIndicator(host, infection);
 		if(infection == null) return;
 		// Commitment is saved even while disease behavior is disabled or the player is invulnerable.
 		refreshFatalCommitment(host, infection, DiseaseManager.now(host));
@@ -175,17 +176,40 @@ public final class Rabies implements Pathogen {
 
 	/** Server-only treatment; the record, not a potion or dose, owns eligibility and cleanup. */
 	public static String treat(EntityPlayer player) {
-		if(player.worldObj.isRemote || !player.isEntityAlive()) return "hrig.unavailable";
-		Infection infection = DiseaseHost.get(player).infections.get(ID);
+		return treat((EntityLivingBase) player);
+	}
+
+	public static String treat(EntityLivingBase host) {
+		if(host.worldObj.isRemote || !host.isEntityAlive()
+				|| !(host instanceof EntityPlayer || host instanceof EntityVillager)) return "hrig.unavailable";
+		Infection infection = DiseaseHost.get(host).infections.get(ID);
 		if(infection == null) return "hrig.uninfected";
-		long now = DiseaseManager.now(player);
-		DiseaseManager.pathogen(ID).progress(player, infection, now);
+		long now = DiseaseManager.now(host);
+		DiseaseManager.pathogen(ID).progress(host, infection, now);
 		if(!infection.hasInfectionTime()) return "hrig.unknown_time";
 		if(!treatmentEligible(infection, now)) {
-			restoreFatalEffect(player, infection);
+			restoreFatalEffect(host, infection);
 			return "hrig.too_late";
 		}
-		return DiseaseManager.remove(player, ID) ? "hrig.success" : "hrig.uninfected";
+		return DiseaseManager.remove(host, ID) ? "hrig.success" : "hrig.uninfected";
+	}
+
+	/** Presentation follows the record, including disabled disease and invulnerable players. */
+	private static void reconcileIndicator(EntityLivingBase host, Infection infection) {
+		if(!(host instanceof EntityPlayer)) return;
+		if(infection == null) {
+			// Applying a potion manually never establishes infection.
+			host.removePotionEffect(HbmPotion.rabies.id);
+			return;
+		}
+		PotionEffect current = host.getActivePotionEffect(HbmPotion.rabies);
+		if(current != null && !current.getCurativeItems().isEmpty())
+			current.setCurativeItems(new ArrayList<ItemStack>());
+		if(current == null || current.getDuration() < 100) {
+			PotionEffect effect = new PotionEffect(HbmPotion.rabies.id, 200, 0);
+			effect.setCurativeItems(new ArrayList<ItemStack>());
+			host.addPotionEffect(effect);
+		}
 	}
 
 	private static void restoreFatalEffect(EntityLivingBase host, Infection infection) {
@@ -232,6 +256,13 @@ public final class Rabies implements Pathogen {
 		// Incomplete, undatable legacy records must not turn absent NBT deadlines into tick-zero death.
 		if(host instanceof EntityPlayer && !hasTimeline(infection.details)) return;
 		Stage stage = stage(infection);
+		if(host instanceof EntityPlayer && stage.ordinal() < Stage.CLINICAL.ordinal()
+				&& infection.hasInfectionTime() && now - infection.infectedAt >= RabiesConfig.earlySymptomDelayTicks) {
+			// Early symptoms neither advance the saved stage nor change HRIG eligibility.
+			// Vanilla combine retains stronger and longer same-strength effects from other sources.
+			host.addPotionEffect(new PotionEffect(Potion.weakness.id, 40, 0));
+			host.addPotionEffect(new PotionEffect(Potion.moveSlowdown.id, 40, 0));
+		}
 		if(stage.ordinal() >= Stage.CLINICAL.ordinal()) {
 			// Vanilla potion transport synchronizes symptoms only. Clearing potions never clears the record.
 			host.addPotionEffect(new PotionEffect(Potion.weakness.id, 40, stage == Stage.CLINICAL ? 0 : 1));
@@ -248,6 +279,7 @@ public final class Rabies implements Pathogen {
 	}
 
 	@Override public void removeEffects(EntityLivingBase host) {
+		host.removePotionEffect(HbmPotion.rabies.id);
 		Infection infection = DiseaseHost.get(host).infections.get(ID);
 		if(host instanceof EntityPlayer && infection != null && fatalCommitted(infection))
 			host.removePotionEffect(HbmPotion.fatal.id);

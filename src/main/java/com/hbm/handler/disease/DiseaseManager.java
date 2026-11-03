@@ -4,6 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.passive.EntityVillager;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.common.DimensionManager;
@@ -66,6 +67,7 @@ public final class DiseaseManager {
 			DiseaseHost.get(original).saveNBTData(tag);
 			DiseaseHost.get(replacement).loadNBTData(tag);
 		} else {
+			pathogen(Rabies.ID).removeEffects(replacement);
 			DiseaseHost.get(replacement).infections.clear();
 		}
 	}
@@ -74,6 +76,8 @@ public final class DiseaseManager {
 		if(source.worldObj.isRemote || !target.isEntityAlive()) return;
 		long now = now(source);
 		for(Infection infection : DiseaseHost.get(source).infections.values()) {
+			// Gameplay rule: villagers remain susceptible and aggressive, but never transmit rabies.
+			if(source instanceof EntityVillager && Rabies.ID.equals(infection.pathogen)) continue;
 			Pathogen pathogen = pathogen(infection.pathogen);
 			if(pathogen == null || !pathogen.enabled() || !pathogen.supports(source) || !pathogen.supports(target)) continue;
 			pathogen.progress(source, infection, now);

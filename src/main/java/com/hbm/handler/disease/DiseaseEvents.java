@@ -5,7 +5,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+
+import com.hbm.potion.HbmPotion;
+import com.hbm.items.ModItems;
+import com.hbm.items.special.ItemHRIG;
+import com.hbm.util.InventoryUtil;
 
 import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
@@ -13,6 +19,8 @@ import cpw.mods.fml.common.gameevent.TickEvent;
 import cpw.mods.fml.relauncher.ReflectionHelper;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.passive.EntityBat;
+import net.minecraft.entity.passive.EntityAnimal;
+import net.minecraft.entity.passive.EntityVillager;
 import net.minecraft.entity.passive.EntityWolf;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Items;
@@ -21,21 +29,86 @@ import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.CombatEntry;
 import net.minecraft.util.CombatTracker;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.player.PlayerUseItemEvent;
+import net.minecraftforge.event.entity.player.AttackEntityEvent;
+import net.minecraftforge.event.entity.player.EntityInteractEvent;
 
 public final class DiseaseEvents {
 	// Forge 1.7.10 has no post-armor LivingDamageEvent. Read native confirmed wounds instead of
 	// reimplementing special armor or treating the pre-armor LivingHurtEvent as proof of broken skin.
 	private static final Field COMBAT_ENTRIES = ReflectionHelper.findField(CombatTracker.class, "combatEntries", "field_94556_a");
 	private static final List<PendingBite> BITES = new ArrayList<PendingBite>();
+	private static final Map<EntityPlayer, PendingSample> SAMPLES = new IdentityHashMap<EntityPlayer, PendingSample>();
 	private static final Set<EntityBat> BATS = Collections.newSetFromMap(new IdentityHashMap<EntityBat, Boolean>());
 
 	public static void queueBat(EntityBat bat) { BATS.add(bat); }
 
 	public static void clear() {
 		BITES.clear();
+		SAMPLES.clear();
 		BATS.clear();
+	}
+
+	@SubscribeEvent(priority = EventPriority.LOWEST)
+	public void onDeath(LivingDeathEvent event) {
+		// Native death clears combat history before Item.hitEntity runs. Retain only this attack's wound.
+		if(!event.entityLiving.worldObj.isRemote && event.source.getEntity() instanceof EntityPlayer) {
+			PendingSample sample = SAMPLES.get((EntityPlayer) event.source.getEntity());
+			if(sample != null && sample.attack.target == event.entityLiving && sample.damage != null
+					&& sample.damage.event.source == event.source)
+				sample.confirmed = sample.damage.confirmedDamage();
+		}
+		if(!event.entityLiving.worldObj.isRemote && event.entityLiving instanceof EntityPlayer)
+			event.entityLiving.removePotionEffect(HbmPotion.rabies.id);
+	}
+
+	@SubscribeEvent(priority = EventPriority.LOWEST)
+	public void onInteract(EntityInteractEvent event) {
+		ItemStack held = event.entityPlayer.getCurrentEquippedItem();
+		if(!(event.target instanceof EntityVillager) || held == null || held.getItem() != ModItems.syringe_hrig) return;
+		// EntityPlayer dispatches this before villager trading and item interaction. Own this use once.
+		// Let client-side vanilla/item dispatch return success, avoiding a second self-use packet.
+		if(!event.entityPlayer.worldObj.isRemote) {
+			event.setCanceled(true);
+			((ItemHRIG) held.getItem()).treatVillager(held, (EntityVillager) event.target, event.entityPlayer);
+		}
+	}
+
+	@SubscribeEvent(priority = EventPriority.LOWEST)
+	public void onPlayerAttack(AttackEntityEvent event) {
+		if(event.entityPlayer.worldObj.isRemote) return;
+		SAMPLES.remove(event.entityPlayer);
+		ItemStack held = event.entityPlayer.getCurrentEquippedItem();
+		if(held == null || held.stackSize <= 0 || held.getItem() != ModItems.syringe_empty
+				|| !(event.target instanceof EntityAnimal || event.target instanceof EntityBat)
+				|| !DiseaseHost.get((EntityLivingBase) event.target).infections.containsKey(Rabies.ID)) return;
+		SAMPLES.put(event.entityPlayer, new PendingSample(event, held));
+	}
+
+	/** Native item-hit callback follows the complete melee/protection path; hurt events alone cannot collect. */
+	public static void collectRabiesSample(ItemStack stack, EntityLivingBase animal, EntityPlayer player) {
+		if(player.worldObj.isRemote) return;
+		PendingSample sample = SAMPLES.remove(player); // One callback can consume this attack, even if called again.
+		if(sample == null || sample.attack.isCanceled() || sample.attack.target != animal || sample.stack != stack
+				|| player.getCurrentEquippedItem() != stack || stack.getItem() != ModItems.syringe_empty
+				|| stack.stackSize <= 0 || sample.damage == null || sample.damage.event.isCanceled()
+				|| sample.damage.event.ammount <= 0F
+				|| sample.confirmed == null && sample.damage.confirmedDamage() == null) return;
+		ItemStack filled = new ItemStack(ModItems.syringe_rabies);
+		if(!player.capabilities.isCreativeMode && stack.stackSize == 1) {
+			// Keep the native hit callback's stack alive: vanilla destroys the held item if it reaches zero.
+			stack.func_150996_a(ModItems.syringe_rabies);
+			stack.setItemDamage(0);
+			stack.setTagCompound(null);
+		} else {
+			if(!player.capabilities.isCreativeMode) stack.stackSize--;
+			// Vanilla InventoryPlayer silently discards overflow in Creative. Keep the sample as a drop.
+			ItemStack remainder = InventoryUtil.tryAddItemToInventory(player.inventory.mainInventory, filled);
+			if(remainder != null) player.dropPlayerItemWithRandomChoice(remainder, false);
+		}
+		player.inventory.markDirty();
 	}
 
 	private boolean blockedWater(EntityPlayer player, ItemStack item) {
@@ -74,6 +147,13 @@ public final class DiseaseEvents {
 				|| event.source.getEntity() != event.source.getSourceOfDamage()) return;
 		if(!(event.source.getEntity() instanceof EntityLivingBase)) return;
 		EntityLivingBase source = (EntityLivingBase) event.source.getEntity();
+		if(source instanceof EntityPlayer && "player".equals(event.source.getDamageType())) {
+			PendingSample sample = SAMPLES.get((EntityPlayer) source);
+			if(sample != null && !sample.attack.isCanceled() && sample.attack.target == event.entityLiving
+					&& sample.stack == ((EntityPlayer) source).getCurrentEquippedItem() && sample.damage == null
+					&& DiseaseHost.get(event.entityLiving).infections.containsKey(Rabies.ID))
+				sample.damage = new PendingBite(event, source);
+		}
 		// Vanilla wolf mob melee is a bite. Other hosts require our explicit marker, never generic melee inference.
 		if(!(event.source instanceof BiteDamageSource)
 				&& !(source.getClass() == EntityWolf.class && "mob".equals(event.source.getDamageType()))) return;
@@ -109,6 +189,7 @@ public final class DiseaseEvents {
 			}
 		}
 		BITES.clear(); // No retained entities, unload callbacks, forced chunk loads, or off-thread world mutations.
+		SAMPLES.clear();
 	}
 
 	private static boolean loaded(EntityLivingBase host) {
@@ -136,13 +217,30 @@ public final class DiseaseEvents {
 		boolean wounded() {
 			if(event.isCanceled() || event.ammount <= 0F || !event.entityLiving.isEntityAlive()
 					|| !loaded(source) || !loaded(event.entityLiving)) return false;
+			return confirmedDamage() != null;
+		}
+
+		CombatEntry confirmedDamage() {
+			if(event.isCanceled() || event.ammount <= 0F) return null;
 			List<CombatEntry> entries = entries(event.entityLiving);
 			for(int i = entries.size() - 1; i >= 0; i--) {
 				CombatEntry entry = entries.get(i);
 				if(entry == previous) break;
-				if(entry.getDamageSrc() == event.source && entry.func_94563_c() > 0F) return true;
+				if(entry.getDamageSrc() == event.source && entry.func_94563_c() > 0F) return entry;
 			}
-			return false;
+			return null;
+		}
+	}
+
+	private static final class PendingSample {
+		final AttackEntityEvent attack;
+		final ItemStack stack;
+		PendingBite damage;
+		CombatEntry confirmed;
+
+		PendingSample(AttackEntityEvent attack, ItemStack stack) {
+			this.attack = attack;
+			this.stack = stack;
 		}
 	}
 }
