@@ -71,6 +71,10 @@ For an IDE workspace:
 
 Launch the development client with `./gradlew runClient` or, on Windows, `gradlew.bat runClient`.
 
+Development client/server launches (including debug tasks) use a private temporary copy of the mod
+JAR, removed when the launch ends. Building or reobfuscating the release JAR while a development
+game is running therefore does not replace its classes or resources. Restart the game to load changes.
+
 ### Development mods
 
 External mods used only while developing can be placed in `devmods/` instead of being copied to
