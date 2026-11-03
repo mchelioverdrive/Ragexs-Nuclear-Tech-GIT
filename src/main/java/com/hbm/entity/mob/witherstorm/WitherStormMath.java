@@ -11,8 +11,10 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.MathHelper;
+import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
+import net.minecraftforge.common.util.FakePlayer;
 
 public final class WitherStormMath {
     private WitherStormMath() { }
@@ -26,28 +28,59 @@ public final class WitherStormMath {
             if(!world.getChunkProvider().chunkExists(cx, cz)) return false;
         return true;
     }
-    public static boolean edible(Entity e, World world) {
+    private static boolean safe(Entity e, World world) {
         if(e == null || e.isDead || e.worldObj != world || e instanceof EntityWitherStorm || e instanceof EntityWitherStormPart || e instanceof EntityWitherStormSkull) return false;
+        if(!Double.isFinite(e.posX) || !Double.isFinite(e.posY) || !Double.isFinite(e.posZ)
+            || !Float.isFinite(e.height) || !Float.isFinite(e.width) || e.height <= 0 || e.width <= 0 || e.boundingBox == null) return false;
         if(!loaded(world, e.posX, e.posZ)) return false;
+        // 1.7.10 has no native spectator mode. Exclude nonphysical/backported
+        // spectators and fake players, without excluding ordinary Creative flight.
+        if(e.noClip || e instanceof FakePlayer) return false;
+        Entity mount = e.ridingEntity;
+        for(int i = 0; mount != null; i++, mount = mount.ridingEntity) {
+            if(i >= 16 || mount instanceof EntityWitherStorm || mount instanceof EntityWitherStormPart || mount instanceof EntityWitherStormSkull) return false;
+        }
         if(e instanceof EntityPlayer) {
             EntityPlayer p = (EntityPlayer)e;
-            if(p.capabilities.disableDamage || p.capabilities.isCreativeMode || !p.isEntityAlive()) return false;
-            if(p instanceof EntityPlayerMP && ((EntityPlayerMP)p).playerNetServerHandler.netManager.isChannelOpen() == false) return false;
+            if(p instanceof EntityPlayerMP && (((EntityPlayerMP)p).playerNetServerHandler == null
+                || !((EntityPlayerMP)p).playerNetServerHandler.netManager.isChannelOpen())) return false;
         }
+        return world.getEntityByID(e.getEntityId()) == e;
+    }
+    public static boolean targetable(Entity e, World world) {
+        return e instanceof EntityLivingBase && safe(e, world) && ((EntityLivingBase)e).isEntityAlive();
+    }
+    public static boolean edible(Entity e, World world) {
+        if(!safe(e, world)) return false;
+        if(e instanceof EntityPlayer && (((EntityPlayer)e).capabilities.disableDamage || ((EntityPlayer)e).capabilities.isCreativeMode)) return false;
         return e instanceof EntityLivingBase ? ((EntityLivingBase)e).isEntityAlive() : e instanceof EntityItem || e instanceof EntityFallingBlock;
+    }
+    public static Vec3 targetPoint(Entity e, float partial) {
+        return Vec3.createVectorHelper(e.lastTickPosX + (e.posX - e.lastTickPosX) * partial,
+            e.lastTickPosY + (e.posY - e.lastTickPosY) * partial + e.height * 0.5D,
+            e.lastTickPosZ + (e.posZ - e.lastTickPosZ) * partial);
+    }
+    /** RNT anatomy faces local -Z with +Y up: the renderer applies R_y(-yaw) R_x(pitch). */
+    public static Vec3 headOffset(double x, double y, double z, float yaw, float pitch) {
+        double a = yaw * Math.PI / 180D, b = pitch * Math.PI / 180D;
+        double py = y * Math.cos(b) - z * Math.sin(b), pz = y * Math.sin(b) + z * Math.cos(b);
+        return Vec3.createVectorHelper(x * Math.cos(a) - pz * Math.sin(a), py, x * Math.sin(a) + pz * Math.cos(a));
     }
     public static double finite(double n) { return Double.isNaN(n) || Double.isInfinite(n) ? 0D : n; }
     public static double limit(double n, double max) { return Math.max(-max, Math.min(max, finite(n))); }
     public static void pull(Entity e, double x, double y, double z, double acceleration) {
+        if(e.worldObj.isRemote || !edible(e, e.worldObj)) return;
         double dx = x - e.posX, dy = y - (e.posY + e.height * 0.5D), dz = z - e.posZ;
         double length = Math.sqrt(dx * dx + dy * dy + dz * dz);
         if(length < 0.001D || !Double.isFinite(length)) return;
-        e.motionX = limit(e.motionX * 0.94D + dx / length * acceleration, 0.8D);
+        acceleration = Math.max(0D, limit(acceleration, 0.12D)) * Math.min(1D, length / 2D);
+        double damping = length < 2D ? 0.65D : 0.94D;
+        e.motionX = limit(e.motionX * damping + dx / length * acceleration, 0.8D);
         // Native living/item ticks apply gravity after this callback. Compensate
         // while lifting, otherwise early-phase beams cannot raise grounded mobs.
         double gravity = dy > 0.1D ? (e instanceof EntityLivingBase ? 0.08D : 0.04D) : 0D;
-        e.motionY = limit(e.motionY * 0.94D + dy / length * acceleration + gravity, 0.8D);
-        e.motionZ = limit(e.motionZ * 0.94D + dz / length * acceleration, 0.8D);
+        e.motionY = limit(e.motionY * damping + dy / length * acceleration + gravity, 0.8D);
+        e.motionZ = limit(e.motionZ * damping + dz / length * acceleration, 0.8D);
         e.fallDistance = 0;
         e.velocityChanged = true;
     }
@@ -73,7 +106,7 @@ public final class WitherStormMath {
                 for(int j = 0; j < entries.size(); j++) {
                     if(++inspected > WitherStormConfig.queryBudget) return;
                     Entity e = (Entity)entries.get((j + Math.floorMod(offset, Math.max(1, entries.size()))) % entries.size());
-                    if(edible(e, center.worldObj) && center.getDistanceSqToEntity(e) <= radius * radius) {
+                    if((targetable(e, center.worldObj) || edible(e, center.worldObj)) && center.getDistanceSqToEntity(e) <= radius * radius) {
                         result.add(e);
                         if(result.size() == 64) return;
                     }

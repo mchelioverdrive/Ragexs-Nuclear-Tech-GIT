@@ -3,6 +3,7 @@ package com.hbm.render.model;
 import net.minecraft.client.model.ModelBase;
 import net.minecraft.client.model.ModelRenderer;
 
+/** Original RNT geometry: +Y is up, the brow/jaw/front face point along -Z. */
 public final class ModelWitherStormHead extends ModelBase {
     private final ModelRenderer shell, brow, jaw, teeth;
     public ModelWitherStormHead() {

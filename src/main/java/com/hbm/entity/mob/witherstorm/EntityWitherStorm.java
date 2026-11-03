@@ -41,6 +41,8 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
     private int lastGrowthSoundMass;
     private float visualScale = 0.35F, previousVisualScale = 0.35F;
     private boolean restoring;
+    private double roamX, roamZ;
+    private int roamTicks;
 
     public EntityWitherStorm(World world) {
         super(world);
@@ -56,6 +58,7 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
         dataWatcher.addObject(23, Integer.valueOf(0)); // transition ticks remaining
         for(int i = 0; i < 3; i++) dataWatcher.addObject(24 + i, Integer.valueOf(0));
         dataWatcher.addObject(27, Float.valueOf(0.35F)); // server-configured growth scale
+        dataWatcher.addObject(28, Byte.valueOf((byte)0)); // active tractor beams, one bit per head
     }
     @Override protected void applyEntityAttributes() {
         super.applyEntityAttributes();
@@ -74,6 +77,7 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
     public boolean hasCore() { return dataWatcher.getWatchableObjectByte(22) != 0; }
     public int transitionTicks() { return dataWatcher.getWatchableObjectInt(23); }
     public int headTarget(int head) { return dataWatcher.getWatchableObjectInt(24 + head); }
+    public boolean beamActive(int head) { return isEntityAlive() && (dataWatcher.getWatchableObjectByte(28) & (1 << head)) != 0; }
     public float getStormScale() {
         return dataWatcher.getWatchableObjectFloat(27);
     }
@@ -113,10 +117,10 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
                 chooseTargets();
             }
             for(int i = 0; i < 3; i++) {
-                if(!WitherStormMath.edible(targets[i], worldObj) || getDistanceSqToEntity(targets[i]) > 96D * 96D) { targets[i] = null; dataWatcher.updateObject(24 + i, 0); }
+                if(!validTarget(targets[i])) { targets[i] = null; dataWatcher.updateObject(24 + i, 0); }
             }
-            boolean complete = maintainParts();
-            fly(complete);
+            maintainParts();
+            fly();
             for(int i = 0; i < 3; i++) if(--attacks[i] <= 0) {
                 attacks[i] = Math.max(10, WitherStormConfig.attackTicks / (1 + getPhase().ordinal())) + rand.nextInt(10);
                 EntityLivingBase target = targets[i];
@@ -149,41 +153,75 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
         for(int head = 0; head < 3; head++) {
             EntityLivingBase best = null; double score = Double.MAX_VALUE;
             Vec3 mouth = mouth(head);
+            // Keep a valid lock even when the rolling bounded search misses its chunk.
+            EntityLivingBase current = targets[head];
+            if(validTarget(current) && !assigned(current, head)) { best = current; score = targetScore(current, mouth, head); }
             for(Entity e : nearby) {
-                if(!(e instanceof EntityPlayer) && !(e instanceof IMob)) continue;
-                if(!WitherStormMath.edible(e, worldObj)) continue;
-                double d = e.getDistanceSq(mouth.xCoord, mouth.yCoord, mouth.zCoord);
-                if(e instanceof EntityPlayer) d *= 0.5D;
-                for(int previous = 0; previous < head; previous++) if(e == targets[previous]) d *= 2D;
-                if(targetIds[head] != null && targetIds[head].equals(e.getUniqueID())) d *= 0.9D;
+                if(!validTarget(e) || assigned(e, head)) continue;
+                double d = targetScore(e, mouth, head);
                 if(d < score) { score = d; best = (EntityLivingBase)e; }
             }
             targets[head] = best; targetIds[head] = best == null ? null : best.getUniqueID();
             dataWatcher.updateObject(24 + head, best == null ? 0 : best.getEntityId());
         }
     }
-    private void fly(boolean complete) {
-        EntityLivingBase target = targets[0];
+    private boolean validTarget(Entity e) { return WitherStormMath.targetable(e, worldObj) && getDistanceSqToEntity(e) <= 96D * 96D; }
+    private boolean assigned(Entity e, int head) {
+        for(int i = 0; i < head; i++) if(targets[i] == e) return true;
+        return false;
+    }
+    private double targetScore(Entity e, Vec3 mouth, int head) {
+        double d = e.getDistanceSq(mouth.xCoord, mouth.yCoord, mouth.zCoord);
+        if(e instanceof EntityPlayer) d *= 0.75D;
+        if(targetIds[head] != null && targetIds[head].equals(e.getUniqueID())) d *= 0.6D;
+        return d;
+    }
+    private void fly() {
+        double margin = Math.max(34D, 13 * getStormScale() + 3);
+        EntityLivingBase target = null;
+        for(EntityLivingBase candidate : targets) if(validTarget(candidate)
+            && (target == null || getDistanceSqToEntity(candidate) < getDistanceSqToEntity(target))) target = candidate;
         double tx = target == null ? posX : target.posX, tz = target == null ? posZ : target.posZ;
+        double dx = tx - posX, dz = tz - posZ, distance = Math.sqrt(dx * dx + dz * dz);
+        boolean pursuing = target != null && (distance < 1D || WitherStormMath.areaLoaded(worldObj,
+            posX + dx / distance * Math.min(12D, distance), posZ + dz / distance * Math.min(12D, distance), margin));
+        if(!pursuing) {
+            double rx = roamX - posX, rz = roamZ - posZ;
+            if(--roamTicks <= 0 || rx * rx + rz * rz < 36D || !WitherStormMath.areaLoaded(worldObj, roamX, roamZ, margin)) {
+                roamX = posX; roamZ = posZ; roamTicks = 40;
+                for(int i = 0; i < 8; i++) {
+                    double angle = rand.nextDouble() * Math.PI * 2D, range = 12D + rand.nextDouble() * 16D;
+                    double x = posX + Math.cos(angle) * range, z = posZ + Math.sin(angle) * range;
+                    if(!WitherStormMath.areaLoaded(worldObj, x, z, margin)) continue;
+                    roamX = x; roamZ = z; roamTicks = 160 + rand.nextInt(80); break;
+                }
+            }
+            tx = roamX; tz = roamZ;
+        } else roamTicks = 0;
+        dx = tx - posX; dz = tz - posZ; distance = Math.sqrt(dx * dx + dz * dz);
         double ground = posY - 12;
         if(WitherStormMath.loaded(worldObj, posX, posZ)) {
             Chunk chunk = worldObj.getChunkProvider().provideChunk(MathHelper.floor_double(posX) >> 4, MathHelper.floor_double(posZ) >> 4);
             ground = chunk.getHeightValue(MathHelper.floor_double(posX) & 15, MathHelper.floor_double(posZ) & 15);
         }
-        double ty = Math.min(200, Math.max(ground + (getPhase() == WitherStormPhase.COMMAND_BLOCK ? 7 : 15), target == null ? ground + 15 : target.posY + 12));
-        double dx = tx - posX, dz = tz - posZ, distance = Math.sqrt(dx * dx + dz * dz);
+        if(distance > 1D) {
+            double x = posX + dx / distance * Math.min(6D, distance), z = posZ + dz / distance * Math.min(6D, distance);
+            if(WitherStormMath.loaded(worldObj, x, z)) ground = Math.max(ground, worldObj.getChunkProvider().provideChunk(MathHelper.floor_double(x) >> 4,
+                MathHelper.floor_double(z) >> 4).getHeightValue(MathHelper.floor_double(x) & 15, MathHelper.floor_double(z) & 15));
+        }
+        double clearance = getPhase() == WitherStormPhase.COMMAND_BLOCK ? 7D : 15D;
+        double ty = Math.min(200, Math.max(ground + clearance, pursuing ? Math.min(ground + 24D, target.posY + 12D) : ground + clearance));
         double speed = getPhase() == WitherStormPhase.COMMAND_BLOCK ? 0.22D : 0.32D;
         motionX = WitherStormMath.limit(motionX * 0.92D + (distance > 6 ? dx / distance * 0.025D : 0), speed);
         motionZ = WitherStormMath.limit(motionZ * 0.92D + (distance > 6 ? dz / distance * 0.025D : 0), speed);
         motionY = WitherStormMath.limit(motionY * 0.9D + (ty - posY) * 0.004D, 0.24D);
-        double margin = Math.max(34D, 13 * getStormScale() + 3);
-        if(!complete || !WitherStormMath.areaLoaded(worldObj, posX + motionX, posZ + motionZ, margin)) motionX = motionY = motionZ = 0;
-        if(distance > 2 && target != null) rotationYaw += MathHelper.wrapAngleTo180_float((float)(Math.atan2(dx, -dz) * 180D / Math.PI) - rotationYaw) * 0.04F;
+        // Missing saved attachments still wait for their chunks; they do not own flight.
+        if(!WitherStormMath.areaLoaded(worldObj, posX + motionX, posZ + motionZ, margin)) { motionX = motionZ = 0; roamTicks = 0; }
+        if(distance > 2) rotationYaw += MathHelper.wrapAngleTo180_float((float)(Math.atan2(dx, -dz) * 180D / Math.PI) - rotationYaw) * 0.04F;
         renderYawOffset = rotationYaw; rotationYawHead = rotationYaw;
     }
     /** Every slot has one saved UUID. A known unloaded slot is never replaced. */
-    private boolean maintainParts() {
-        boolean complete = true;
+    private void maintainParts() {
         for(int i = 0; i < 10; i++) {
             boolean active = i < 3 || getPhase() != WitherStormPhase.COMMAND_BLOCK;
             if(!active) { if(parts[i] != null) parts[i].setDead(); parts[i] = null; continue; }
@@ -192,11 +230,11 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
                 Entity found = WitherStormEncounters.get(worldObj).find(partIds[i], worldObj);
                 if(found instanceof EntityWitherStormPart) parts[i] = (EntityWitherStormPart)found;
                 else {
-                    if(ticksExisted < 40 || (partIds[i] != null && !worldObj.getChunkProvider().chunkExists(partChunksX[i], partChunksZ[i]))) { complete = false; continue; }
+                    if(ticksExisted < 40 || (partIds[i] != null && !worldObj.getChunkProvider().chunkExists(partChunksX[i], partChunksZ[i]))) continue;
                     EntityWitherStormPart part = new EntityWitherStormPart(worldObj);
                     part.attach(this, i, partIds[i]);
                     Vec3 position = partPosition(i); part.setPosition(position.xCoord, position.yCoord, position.zCoord);
-                    if(!WitherStormMath.loaded(worldObj, part.posX, part.posZ) || !worldObj.spawnEntityInWorld(part)) { part.setDead(); complete = false; continue; }
+                    if(!WitherStormMath.loaded(worldObj, part.posX, part.posZ) || !worldObj.spawnEntityInWorld(part)) { part.setDead(); continue; }
                     partIds[i] = part.getUniqueID(); parts[i] = part;
                 }
             }
@@ -204,7 +242,6 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
             parts[i].followParent();
             partChunksX[i] = MathHelper.floor_double(parts[i].posX) >> 4; partChunksZ[i] = MathHelper.floor_double(parts[i].posZ) >> 4;
         }
-        return complete;
     }
     public Vec3 partPosition(int slot) {
         float s = getStormScale();
@@ -219,7 +256,11 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
         double angle = (slot - 3) * Math.PI * 2D / 7D;
         return local(Math.cos(angle) * 2 * getStormScale(), 5 * getStormScale(), Math.sin(angle) * 2 * getStormScale());
     }
-    public Vec3 mouth(int head) { Vec3 v = partPosition(head); return Vec3.createVectorHelper(v.xCoord, v.yCoord + getStormScale(), v.zCoord); }
+    public Vec3 mouth(int head) {
+        if(parts[head] != null && !parts[head].isDead) return parts[head].mouth(1F);
+        Vec3 v = partPosition(head), offset = WitherStormMath.headOffset(0, 0, -1.5D * getStormScale(), rotationYaw, 0);
+        return Vec3.createVectorHelper(v.xCoord + offset.xCoord, v.yCoord + 0.6D * getStormScale(), v.zCoord + offset.zCoord);
+    }
     private Vec3 local(double x, double y, double z) {
         double a = rotationYaw * Math.PI / 180D, c = Math.cos(a), s = Math.sin(a);
         return Vec3.createVectorHelper(posX + x * c - z * s, posY + y, posZ + x * s + z * c);
@@ -233,18 +274,31 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
         if(head == 0) playSound("hbm:entity.witherStorm.shoot", 1F, 1F);
     }
     private void interact() {
-        for(int index = 0; index < nearby.size(); index++) {
-            Entity e = nearby.get(index);
+        int active = 0;
+        for(int h = 0; h < 3; h++) {
+            EntityLivingBase target = targets[h];
+            EntityWitherStormPart part = parts[h];
+            if(!validTarget(target) || part == null || part.isDead || !part.ready()) continue;
+            Vec3 m = mouth(h), end = WitherStormMath.targetPoint(target, 1F);
+            double dx = end.xCoord - m.xCoord, dy = end.yCoord - m.yCoord, dz = end.zCoord - m.zCoord;
+            double length = Math.sqrt(dx * dx + dy * dy + dz * dz);
+            Vec3 forward = WitherStormMath.headOffset(0, 0, -1, part.rotationYaw, part.rotationPitch);
+            if(!Double.isFinite(length) || length < 0.1D || length > 48D
+                || (dx * forward.xCoord + dy * forward.yCoord + dz * forward.zCoord) / length < 0.985D) continue;
+            active |= 1 << h;
+            if(WitherStormMath.edible(target, worldObj)) WitherStormMath.pull(target, m.xCoord, m.yCoord, m.zCoord, 0.075D + getPhase().ordinal() * 0.015D);
+        }
+        dataWatcher.updateObject(28, (byte)active);
+        for(int index = -3; index < nearby.size(); index++) {
+            Entity e = index < 0 ? targets[index + 3] : nearby.get(index);
+            if(index >= 0 && (e == targets[0] || e == targets[1] || e == targets[2])) continue;
             if(!WitherStormMath.edible(e, worldObj) || getDistanceSqToEntity(e) > 80D * 80D) continue;
             Vec3 nearest = mouth(0); double best = e.getDistanceSq(nearest.xCoord, nearest.yCoord, nearest.zCoord);
             for(int h = 1; h < 3; h++) { Vec3 m = mouth(h); double d = e.getDistanceSq(m.xCoord, m.yCoord, m.zCoord); if(d < best) { best = d; nearest = m; } }
-            int beam = -1;
-            if(e instanceof EntityItem || e instanceof EntityFallingBlock) beam = 0;
-            else for(int h = 0; h < 3; h++) {
-                EntityLivingBase target = targets[h];
-                if(target != null && (e == target || e.getDistanceSqToEntity(target) < 25D)) { beam = h; break; }
-            }
-            if(beam >= 0 && best < 48D * 48D) WitherStormMath.pull(e, nearest.xCoord, nearest.yCoord, nearest.zCoord, 0.075D + getPhase().ordinal() * 0.015D);
+            // Debris is gathered autonomously; living forces belong only to their
+            // selected active head and are applied exactly once above.
+            if((e instanceof EntityItem || e instanceof EntityFallingBlock) && best < 48D * 48D)
+                WitherStormMath.pull(e, nearest.xCoord, nearest.yCoord, nearest.zCoord, 0.075D + getPhase().ordinal() * 0.015D);
             boolean touching = best < Math.pow(1.6D * getStormScale(), 2) || boundingBox.intersectsWith(e.boundingBox);
             boolean devouring = false;
             if(getPhase().ordinal() >= 2) for(int t = 8; t < 10; t++) if(parts[t] != null && parts[t].getDistanceSqToEntity(e) < 16D * getStormScale() * getStormScale()) { touching = true; devouring = true; }

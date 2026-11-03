@@ -1,6 +1,8 @@
 package com.hbm.entity.mob.witherstorm;
 
 import java.util.UUID;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.entity.Entity;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.AxisAlignedBB;
@@ -14,6 +16,10 @@ public class EntityWitherStormPart extends Entity {
     public UUID parentId;
     public EntityWitherStorm parent;
     private int parentChunkX, parentChunkZ;
+    private long lastFollowTick = Long.MIN_VALUE;
+    private int interpolationTicks;
+    private double nextX, nextY, nextZ;
+    private float nextYaw, nextPitch;
     public EntityWitherStormPart(World world) { super(world); noClip = true; isImmuneToFire = true; ignoreFrustumCheck = true; setSize(2, 2); }
     @Override protected void entityInit() {
         dataWatcher.addObject(20, Integer.valueOf(0));
@@ -29,6 +35,12 @@ public class EntityWitherStormPart extends Entity {
     }
     public EntityWitherStorm parent() {
         if(worldObj.isRemote) {
+            if(interpolationTicks > 0) {
+                double steps = interpolationTicks--;
+                setPosition(posX + (nextX - posX) / steps, posY + (nextY - posY) / steps, posZ + (nextZ - posZ) / steps);
+                rotationYaw += MathHelper.wrapAngleTo180_float(nextYaw - rotationYaw) / steps;
+                rotationPitch += (nextPitch - rotationPitch) / steps;
+            }
             Entity e = worldObj.getEntityByID(dataWatcher.getWatchableObjectInt(20));
             return e instanceof EntityWitherStorm && !e.isDead ? (EntityWitherStorm)e : null;
         }
@@ -59,6 +71,9 @@ public class EntityWitherStormPart extends Entity {
     }
     public void followParent() {
         EntityWitherStorm boss = parent(); if(boss == null) return;
+        long tick = worldObj.getTotalWorldTime();
+        if(worldObj.isRemote || lastFollowTick == tick) return;
+        lastFollowTick = tick;
         dataWatcher.updateObject(20, boss.getEntityId()); dataWatcher.updateObject(22, boss.getStormScale());
         Vec3 position = boss.partPosition(slot());
         if(!WitherStormMath.loaded(worldObj, position.xCoord, position.zCoord)) return;
@@ -68,13 +83,35 @@ public class EntityWitherStormPart extends Entity {
         if(slot() < 3) {
             Entity target = worldObj.getEntityByID(boss.headTarget(slot()));
             float yaw = boss.rotationYaw, pitch = 0;
-            if(WitherStormMath.edible(target, worldObj)) {
-                double dx = target.posX - posX, dz = target.posZ - posZ, dy = target.posY + target.height * 0.5D - (posY + height * 0.5D);
-                yaw = (float)(Math.atan2(-dx, dz) * 180D / Math.PI); pitch = (float)(-Math.atan2(dy, Math.sqrt(dx * dx + dz * dz)) * 180D / Math.PI);
+            if(WitherStormMath.targetable(target, worldObj)) {
+                Vec3 aim = WitherStormMath.targetPoint(target, 1F);
+                double dx = aim.xCoord - posX, dz = aim.zCoord - posZ, dy = aim.yCoord - (posY + scale() * 0.6D);
+                double horizontal = Math.sqrt(dx * dx + dz * dz);
+                yaw = horizontal < 0.001D ? rotationYaw : (float)(Math.atan2(dx, -dz) * 180D / Math.PI);
+                pitch = (float)(Math.atan2(dy, horizontal) * 180D / Math.PI);
             }
             rotationYaw += MathHelper.wrapAngleTo180_float(yaw - rotationYaw) * 0.12F;
             rotationPitch += (pitch - rotationPitch) * 0.12F;
         }
+    }
+    @SideOnly(Side.CLIENT)
+    @Override public void setPositionAndRotation2(double x, double y, double z, float yaw, float pitch, int ticks) {
+        nextX = x; nextY = y; nextZ = z; nextYaw = yaw; nextPitch = pitch;
+        interpolationTicks = Math.max(1, ticks);
+    }
+    public boolean ready() {
+        EntityWitherStorm boss = parent();
+        if(boss == null || isDead) return false;
+        Vec3 expected = boss.partPosition(slot());
+        return WitherStormMath.loaded(worldObj, posX, posZ) && getDistanceSq(expected.xCoord, expected.yCoord, expected.zCoord) < 4D;
+    }
+    public float headYaw(float partial) { return prevRotationYaw + MathHelper.wrapAngleTo180_float(rotationYaw - prevRotationYaw) * partial; }
+    public float headPitch(float partial) { return prevRotationPitch + (rotationPitch - prevRotationPitch) * partial; }
+    public Vec3 mouth(float partial) {
+        Vec3 offset = WitherStormMath.headOffset(0, 0, -1.5D * scale(), headYaw(partial), headPitch(partial));
+        return Vec3.createVectorHelper(lastTickPosX + (posX - lastTickPosX) * partial + offset.xCoord,
+            lastTickPosY + (posY - lastTickPosY) * partial + scale() * 0.6D + offset.yCoord,
+            lastTickPosZ + (posZ - lastTickPosZ) * partial + offset.zCoord);
     }
     private void updateBounds(EntityWitherStorm boss) {
         if(slot() < 3) {

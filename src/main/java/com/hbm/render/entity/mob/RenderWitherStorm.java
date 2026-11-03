@@ -13,6 +13,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.boss.BossStatus;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.MathHelper;
 import org.lwjgl.opengl.GL11;
 
 @SideOnly(Side.CLIENT)
@@ -30,7 +31,8 @@ public final class RenderWitherStorm extends Render {
         BossStatus.setBossStatus(boss, true);
         GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_CURRENT_BIT | GL11.GL_LIGHTING_BIT);
         GL11.glPushMatrix();
-        GL11.glTranslated(x, y, z); GL11.glRotatef(boss.prevRotationYaw + (boss.rotationYaw - boss.prevRotationYaw) * partial, 0, 1, 0);
+        // Match the root's local() attachment coordinates and the heads' -Z front.
+        GL11.glTranslated(x, y, z); GL11.glRotatef(-(boss.prevRotationYaw + MathHelper.wrapAngleTo180_float(boss.rotationYaw - boss.prevRotationYaw) * partial), 0, 1, 0);
         float scale = boss.renderScale(partial); GL11.glScalef(scale, scale, scale);
         bindTexture(SKIN);
         float age = boss.ticksExisted + partial;
