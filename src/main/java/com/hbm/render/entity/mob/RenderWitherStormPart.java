@@ -3,6 +3,7 @@ package com.hbm.render.entity.mob;
 import com.hbm.entity.mob.witherstorm.EntityWitherStorm;
 import com.hbm.entity.mob.witherstorm.EntityWitherStormPart;
 import com.hbm.entity.mob.witherstorm.WitherStormMath;
+import com.hbm.entity.mob.witherstorm.WitherStormPhase;
 import com.hbm.render.model.ModelWitherStormHead;
 import com.hbm.render.model.ModelWitherStormTentacle;
 import cpw.mods.fml.relauncher.Side;
@@ -13,6 +14,7 @@ import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.entity.Render;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.MathHelper;
 import net.minecraft.util.Vec3;
 import org.lwjgl.opengl.GL11;
 
@@ -30,26 +32,29 @@ public final class RenderWitherStormPart extends Render {
         GL11.glPushMatrix(); GL11.glTranslated(x, y, z); bindTexture(RenderWitherStorm.SKIN);
         if(part.slot() < 3) {
             float s = part.scale();
+            neck(boss, part, partial);
             GL11.glPushMatrix(); GL11.glTranslatef(0, s * 0.6F, 0);
             // Same -Z-forward, +Y-up transform as followParent() and mouth().
             GL11.glRotatef(-part.headYaw(partial), 0, 1, 0);
             GL11.glRotatef(part.headPitch(partial), 1, 0, 0);
-            GL11.glScalef(s * 1.5F, s * 1.5F, s * 1.5F);
+            GL11.glScalef(s * ModelWitherStormHead.HEAD_SCALE, s * ModelWitherStormHead.HEAD_SCALE, s * ModelWitherStormHead.HEAD_SCALE);
             boolean beam = boss.beamActive(part.slot());
             head.renderHead(part.ticksExisted + partial, beam);
-            eyes(); GL11.glPopMatrix();
+            eye(); GL11.glPopMatrix();
             Entity target = boss.worldObj.getEntityByID(boss.headTarget(part.slot()));
             if(beam && WitherStormMath.targetable(target, boss.worldObj) && mc.renderViewEntity.getDistanceSqToEntity(part) < 128D * 128D) {
-                Vec3 origin = part.mouth(partial), end = WitherStormMath.targetPoint(target, partial);
+                // Match T(pivot) R_y(-yaw) R_x(pitch) S used by the skull and eye.
+                Vec3 origin = headPoint(part, partial, ModelWitherStormHead.EYE_Y, ModelWitherStormHead.EYE_Z);
+                Vec3 end = WitherStormMath.targetPoint(target, partial);
                 Vec3 forward = WitherStormMath.headOffset(0, 0, -1, part.headYaw(partial), part.headPitch(partial));
-                double dx = end.xCoord - origin.xCoord, dy = end.yCoord - origin.yCoord, dz = end.zCoord - origin.zCoord;
+                double dx = end.xCoord - (part.lastTickPosX + (part.posX - part.lastTickPosX) * partial) - origin.xCoord;
+                double dy = end.yCoord - (part.lastTickPosY + (part.posY - part.lastTickPosY) * partial) - origin.yCoord;
+                double dz = end.zCoord - (part.lastTickPosZ + (part.posZ - part.lastTickPosZ) * partial) - origin.zCoord;
                 // A delayed target/rotation packet must never draw back through the skull.
                 double length = Math.sqrt(dx * dx + dy * dy + dz * dz);
                 if(length > 0.1D && (dx * forward.xCoord + dy * forward.yCoord + dz * forward.zCoord) / length > 0.95D) {
                     GL11.glPushMatrix();
-                    GL11.glTranslated(origin.xCoord - (part.lastTickPosX + (part.posX - part.lastTickPosX) * partial),
-                        origin.yCoord - (part.lastTickPosY + (part.posY - part.lastTickPosY) * partial),
-                        origin.zCoord - (part.lastTickPosZ + (part.posZ - part.lastTickPosZ) * partial));
+                    GL11.glTranslated(origin.xCoord, origin.yCoord, origin.zCoord);
                     beam(dx, dy, dz, s); GL11.glPopMatrix();
                 }
             }
@@ -72,7 +77,43 @@ public final class RenderWitherStormPart extends Render {
         }
         GL11.glPopMatrix(); GL11.glPopAttrib();
     }
-    private void eyes() {
+    /** Offset from the interpolated part position, in the same space as doRender. */
+    private Vec3 headPoint(EntityWitherStormPart part, float partial, double y, double z) {
+        double scale = part.scale() * ModelWitherStormHead.HEAD_SCALE;
+        Vec3 offset = WitherStormMath.headOffset(0, y * scale, z * scale, part.headYaw(partial), part.headPitch(partial));
+        return Vec3.createVectorHelper(offset.xCoord, part.scale() * 0.6F + offset.yCoord, offset.zCoord);
+    }
+    private void neck(EntityWitherStorm boss, EntityWitherStormPart part, float partial) {
+        boolean evolved = boss.getPhase() != WitherStormPhase.COMMAND_BLOCK;
+        float emergence = evolved ? Math.min(1F, 1F - (boss.transitionTicks() - partial) / 80F) : 0F;
+        double bodyScale = boss.renderScale(partial) * (evolved ? 0.15F + emergence * 0.85F : 1F);
+        float bodyYaw = boss.prevRotationYaw + MathHelper.wrapAngleTo180_float(boss.rotationYaw - boss.prevRotationYaw) * partial;
+        // These anchors lie inside the shoulders (or the command-phase spine).
+        Vec3 root = WitherStormMath.headOffset(evolved ? (part.slot() - 1) * 2.5D * bodyScale : 0,
+            (evolved ? 4.5D : 2.5D) * bodyScale, evolved ? -2.75D * bodyScale : 0, bodyYaw, 0);
+        double x = boss.lastTickPosX + (boss.posX - boss.lastTickPosX) * partial + root.xCoord
+            - (part.lastTickPosX + (part.posX - part.lastTickPosX) * partial);
+        double y = boss.lastTickPosY + (boss.posY - boss.lastTickPosY) * partial + root.yCoord
+            - (part.lastTickPosY + (part.posY - part.lastTickPosY) * partial);
+        double z = boss.lastTickPosZ + (boss.posZ - boss.lastTickPosZ) * partial + root.zCoord
+            - (part.lastTickPosZ + (part.posZ - part.lastTickPosZ) * partial);
+        // End inside the shell, rather than at its rear face: yaw/pitch cannot open a seam.
+        Vec3 joint = headPoint(part, partial, ModelWitherStormHead.NECK_Y, 0);
+        double dx = joint.xCoord - x, dy = joint.yCoord - y, dz = joint.zCoord - z;
+        double length = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if(!Double.isFinite(length) || length < 0.001D) return;
+        GL11.glPushMatrix(); GL11.glTranslated(x, y, z);
+        GL11.glRotatef((float)(Math.atan2(dx, dz) * 180D / Math.PI), 0, 1, 0);
+        GL11.glRotatef((float)(Math.atan2(Math.sqrt(dx * dx + dz * dz), dy) * 180D / Math.PI), 1, 0, 0);
+        for(int i = 0; i < 3; i++) {
+            GL11.glPushMatrix(); GL11.glTranslated(0, length * i / 3D, 0);
+            float width = part.scale() * (evolved ? 2.1F - i * 0.35F : 0.45F);
+            GL11.glScalef(width, (float)(length / 3D + part.scale() * 0.1D), width);
+            head.renderNeckSegment(); GL11.glPopMatrix();
+        }
+        GL11.glPopMatrix();
+    }
+    private void eye() {
         GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT | GL11.GL_CURRENT_BIT);
         float lightX = OpenGlHelper.lastBrightnessX, lightY = OpenGlHelper.lastBrightnessY;
         OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240F, 240F);
@@ -80,14 +121,12 @@ public final class RenderWitherStormPart extends Render {
         GL11.glEnable(GL11.GL_DEPTH_TEST); GL11.glEnable(GL11.GL_CULL_FACE);
         GL11.glEnable(GL11.GL_BLEND); GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         GL11.glDepthMask(false);
-        Tessellator t = Tessellator.instance; t.startDrawingQuads(); t.setColorRGBA_F(0.7F, 0.12F, 0.95F, 0.95F);
+        Tessellator t = Tessellator.instance; t.startDrawingQuads(); t.setColorRGBA_F(0.78F, 0.16F, 1F, 1F);
         // Shell front is z=-12/16, below the brow (y=17/16).
-        // Front-facing winding and depth testing hide the two eyes from behind.
-        for(int side = -1; side <= 1; side += 2) {
-            double left = side < 0 ? -0.65D : 0.22D, right = side < 0 ? -0.22D : 0.65D;
-            t.addVertex(left, 0.65D, -0.755D); t.addVertex(left, 0.9D, -0.755D);
-            t.addVertex(right, 0.9D, -0.755D); t.addVertex(right, 0.65D, -0.755D);
-        }
+        // One centered square, with front-facing winding and no texture/emissive duplicate.
+        double half = ModelWitherStormHead.EYE_HALF_SIZE, y = ModelWitherStormHead.EYE_Y, z = ModelWitherStormHead.EYE_Z;
+        t.addVertex(-half, y - half, z); t.addVertex(-half, y + half, z);
+        t.addVertex(half, y + half, z); t.addVertex(half, y - half, z);
         t.draw();
         OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, lightX, lightY);
         GL11.glPopAttrib();
@@ -95,7 +134,7 @@ public final class RenderWitherStormPart extends Render {
     private void beam(double dx, double dy, double dz, float scale) {
         double length = Math.sqrt(dx * dx + dy * dy + dz * dz);
         if(!Double.isFinite(length) || length < 0.1D || length > 48D) return;
-        // Rings are perpendicular to the finite mouth-to-target segment. No Euler
+        // Rings are perpendicular to the finite eye-to-target segment. No Euler
         // rotations or triangle-strip carryover; vertical beams use the same basis.
         double nx = dx / length, ny = dy / length, nz = dz / length;
         double horizontal = Math.sqrt(nx * nx + nz * nz);
@@ -111,7 +150,7 @@ public final class RenderWitherStormPart extends Render {
         for(int ring = 0; ring < 6; ring++) for(int side = 0; side < 12; side++) for(int corner = 0; corner < 4; corner++) {
             double f = (ring + (corner >= 2 ? 1D : 0D)) / 6D;
             double a = (side + (corner == 1 || corner == 2 ? 1D : 0D)) * Math.PI * 2D / 12D;
-            double radius = Math.min(scale * 0.55D, length * 0.15D) * (1D - f);
+            double radius = Math.min(scale * ModelWitherStormHead.HEAD_SCALE * ModelWitherStormHead.EYE_HALF_SIZE, length * 0.15D) * (1D - f);
             double c = Math.cos(a) * radius, s = Math.sin(a) * radius;
             t.setColorRGBA_F(0.6F, 0.1F, 0.95F, (float)(0.24D * (1D - f)));
             // 0 <= f <= 1; at f=1 radius is zero and the vertex is exactly the target.

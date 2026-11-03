@@ -265,3 +265,8 @@
 - Bound terrain coordinate work and skull-impact queues, cache bounded entity searches, preserve debris metadata, protect unbreakable blocks and default-protect tile entities/block vetoes. Honor mobGriefing and separate configuration, cap visual debris, and avoid chunk tickets, forced terrain loading and server debris entities.
 - Register /rntwitherstorm spawning, inspection, growth and removal controls with a saved global encounter limit that includes unloaded bosses. Add a configurable survival ritual using existing euphemium, soul sand, wither skulls and a nether star; document commands, growth thresholds and budgets. Use Engender only as a technical behavior reference, with no copied code/assets or runtime dependency.
 - Repair an existing missing quote in sounds.json so the sound registry, including the new encounter sounds, can parse.
+
+2026-11-03 03:59 — Connect Wither Storm heads and align single eyes with tractor beams
+
+- Extend the evolved body's shoulders and bridge all three heads with overlapping blocky neck segments. Anchor necks inside the interpolated body and rotated skulls so independent head movement retains connected anatomy, including during body emergence and at reduced detail. Preserve head positions, jaw animation and body scale.
+- Replace each head's two glowing eye quads with one centered bright purple square. Start visual tractor beams at the transformed eye center with an eye-sized opening, retaining target endpoints, glow, fading and visibility guards. Keep the existing texture, mouths, teeth, targeting, server-side tractor effects, combat and spawning unchanged.

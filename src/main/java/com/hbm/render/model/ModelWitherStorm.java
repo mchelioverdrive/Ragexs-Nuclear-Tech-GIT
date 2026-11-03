@@ -7,6 +7,7 @@ import net.minecraft.client.model.ModelRenderer;
 public final class ModelWitherStorm extends ModelBase {
     private final ModelRenderer[] body = new ModelRenderer[18];
     private final ModelRenderer[] ribs = new ModelRenderer[7];
+    private final ModelRenderer leftShoulder, rightShoulder;
     public ModelWitherStorm() {
         textureWidth = textureHeight = 64;
         for(int i = 0; i < body.length; i++) {
@@ -15,6 +16,9 @@ public final class ModelWitherStorm extends ModelBase {
         }
         ribs[0] = box(-3, 0, -2, 6, 48, 4);
         for(int i = 1; i < ribs.length; i++) ribs[i] = box(i % 2 == 0 ? 1 : -18, 9 + (i / 2) * 9, -2, 17, 4, 4);
+        // Overlap the crown and each other; the moving necks start inside these masses.
+        leftShoulder = box(-56, 52, -54, 64, 40, 64);
+        rightShoulder = box(-8, 52, -54, 64, 40, 64);
     }
     private ModelRenderer box(float x, float y, float z, int w, int h, int d) {
         ModelRenderer part = new ModelRenderer(this, 0, 0); part.addBox(x, y, z, w, h, d); return part;
@@ -23,6 +27,7 @@ public final class ModelWitherStorm extends ModelBase {
         for(int i = 0; i < ribs.length; i++) { ribs[i].rotateAngleZ = i == 0 ? 0 : (float)Math.sin(age * 0.035F + i) * 0.08F; ribs[i].render(0.0625F); }
     }
     public void storm(float age, boolean detailed) {
+        leftShoulder.render(0.0625F); rightShoulder.render(0.0625F);
         int count = detailed ? body.length : 7;
         for(int i = 0; i < count; i++) {
             // Unequal overlapping masses build a broad crown and a tapered underside.
