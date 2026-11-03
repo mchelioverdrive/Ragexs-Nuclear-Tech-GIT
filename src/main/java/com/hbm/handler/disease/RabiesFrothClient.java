@@ -48,7 +48,7 @@ public final class RabiesFrothClient {
 				|| !(host instanceof EntityAnimal || host instanceof EntityBat)) return;
 		DiseaseHost data = DiseaseHost.get(host);
 		if(!data.rabiesFrothing || host.ticksExisted < data.nextRabiesFroth) return;
-		data.nextRabiesFroth = host.ticksExisted + 10 + host.getRNG().nextInt(11);
+		data.nextRabiesFroth = host.ticksExisted + 5 + host.getRNG().nextInt(6);
 		if(remaining == 0 || mc.renderViewEntity == null || mc.gameSettings.particleSetting == 2
 				|| mc.gameSettings.particleSetting == 1 && host.getRNG().nextInt(3) == 0
 				|| mc.renderViewEntity.getDistanceSqToEntity(host) > 256D) return;
