@@ -12,6 +12,8 @@ import com.hbm.potion.HbmPotion;
 import com.hbm.items.ModItems;
 import com.hbm.items.special.ItemHRIG;
 import com.hbm.util.InventoryUtil;
+import com.hbm.packet.PacketDispatcher;
+import com.hbm.packet.toclient.RabiesVisualPacket;
 
 import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
@@ -23,6 +25,7 @@ import net.minecraft.entity.passive.EntityAnimal;
 import net.minecraft.entity.passive.EntityVillager;
 import net.minecraft.entity.passive.EntityWolf;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ChatComponentText;
@@ -36,6 +39,16 @@ import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.event.entity.player.EntityInteractEvent;
 
 public final class DiseaseEvents {
+	@SubscribeEvent
+	public void onStartTracking(net.minecraftforge.event.entity.player.PlayerEvent.StartTracking event) {
+		if(!(event.entityPlayer instanceof EntityPlayerMP) || !(event.target instanceof EntityLivingBase)) return;
+		EntityLivingBase host = (EntityLivingBase) event.target;
+		Infection infection = DiseaseHost.get(host).infections.get(Rabies.ID);
+		if(infection != null) DiseaseManager.pathogen(Rabies.ID).progress(host, infection, DiseaseManager.now(host));
+		if(Rabies.frothing(host, infection))
+			PacketDispatcher.wrapper.sendTo(new RabiesVisualPacket(host.getEntityId(), true), (EntityPlayerMP) event.entityPlayer);
+	}
+
 	// Forge 1.7.10 has no post-armor LivingDamageEvent. Read native confirmed wounds instead of
 	// reimplementing special armor or treating the pre-armor LivingHurtEvent as proof of broken skin.
 	private static final Field COMBAT_ENTRIES = ReflectionHelper.findField(CombatTracker.class, "combatEntries", "field_94556_a");
@@ -53,6 +66,7 @@ public final class DiseaseEvents {
 
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public void onDeath(LivingDeathEvent event) {
+		if(!event.entityLiving.worldObj.isRemote) Rabies.setFrothing(event.entityLiving, false);
 		// Native death clears combat history before Item.hitEntity runs. Retain only this attack's wound.
 		if(!event.entityLiving.worldObj.isRemote && event.source.getEntity() instanceof EntityPlayer) {
 			PendingSample sample = SAMPLES.get((EntityPlayer) event.source.getEntity());

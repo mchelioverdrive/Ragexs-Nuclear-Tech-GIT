@@ -156,6 +156,7 @@ public class ClientProxy extends ServerProxy {
 	public void registerRenderInfo() {
 
 		registerClientEventHandler(new ModEventHandlerClient());
+		registerClientEventHandler(new com.hbm.handler.disease.RabiesFrothClient());
 		registerClientEventHandler(new ModEventHandlerRenderer());
 		registerClientEventHandler(new EventHandlerParticleEngine());
 		registerClientEventHandler(new NukeCloudClient());

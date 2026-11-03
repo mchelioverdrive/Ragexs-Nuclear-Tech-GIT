@@ -4,6 +4,8 @@ import java.util.ArrayList;
 
 import com.hbm.config.RabiesConfig;
 import com.hbm.potion.HbmPotion;
+import com.hbm.packet.PacketDispatcher;
+import com.hbm.packet.toclient.RabiesVisualPacket;
 
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityLivingBase;
@@ -17,6 +19,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
 import net.minecraft.util.DamageSource;
+import net.minecraft.world.WorldServer;
 
 /** Viral mammal infection; timing, presentation frequency and per-bite risks are gameplay abstractions. */
 public final class Rabies implements Pathogen {
@@ -41,10 +44,11 @@ public final class Rabies implements Pathogen {
 		Infection infection = data.infections.get(ID);
 		reconcileIndicator(host, infection);
 		if(host instanceof EntityLiving) RabiesAvoidance.updateHost((EntityLiving) host);
-		if(infection == null) return;
+		if(infection == null) { setFrothing(host, false); return; }
 		// Commitment is saved even while disease behavior is disabled or the player is invulnerable.
 		refreshFatalCommitment(host, infection, DiseaseManager.now(host));
 		if(!enabled() || !supports(host)) {
+			setFrothing(host, false);
 			releaseBehavior(host);
 			restoreFatalEffect(host, infection);
 			return;
@@ -105,6 +109,22 @@ public final class Rabies implements Pathogen {
 		Stage stage = stageAt(infection.details, now);
 		// Persisted monotonic stage also prevents an administrator's clock rollback from reversing illness.
 		if(stage.ordinal() > stage(infection).ordinal()) infection.stage = stage.name();
+		setFrothing(host, frothing(host, infection));
+	}
+
+	/** Server record owns eligibility for both presentations; players and villagers have no animal effect. */
+	static boolean frothing(EntityLivingBase host, Infection infection) {
+		return infection != null && host.isEntityAlive() && (host instanceof EntityAnimal || host instanceof EntityBat)
+				&& DiseaseManager.pathogen(ID).enabled() && DiseaseManager.pathogen(ID).supports(host) && symptomatic(infection);
+	}
+
+	static void setFrothing(EntityLivingBase host, boolean active) {
+		if(host.worldObj.isRemote) return;
+		DiseaseHost data = DiseaseHost.get(host);
+		if(data.rabiesFrothing == active) return;
+		data.rabiesFrothing = active;
+		((WorldServer) host.worldObj).getEntityTracker().func_151247_a(host,
+				PacketDispatcher.wrapper.getPacketFrom(new RabiesVisualPacket(host.getEntityId(), active)));
 	}
 
 	private static Stage stageAt(NBTTagCompound time, long now) {
@@ -282,6 +302,7 @@ public final class Rabies implements Pathogen {
 	}
 
 	@Override public void removeEffects(EntityLivingBase host) {
+		setFrothing(host, false);
 		host.removePotionEffect(HbmPotion.rabies.id);
 		Infection infection = DiseaseHost.get(host).infections.get(ID);
 		if(host instanceof EntityPlayer && infection != null && fatalCommitted(infection))

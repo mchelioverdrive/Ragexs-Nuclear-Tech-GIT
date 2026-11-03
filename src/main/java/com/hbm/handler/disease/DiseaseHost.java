@@ -24,6 +24,8 @@ public final class DiseaseHost implements IExtendedEntityProperties {
 	private Boolean pendingSittingCommand; // Preserve the owner's command, never the temporary fleeing pose.
 	public final Set<String> introductionsChecked = new HashSet<String>();
 	long nextSwallowingMessage; // Transient symptom feedback; never part of infection/save data.
+	public boolean rabiesFrothing; // Only visual eligibility is synchronized; never saved with infection records.
+	public int nextRabiesFroth; // Client emission deadline, in host ticks; no per-particle packets.
 
 	public static DiseaseHost get(EntityLivingBase host) {
 		DiseaseHost data = (DiseaseHost) host.getExtendedProperties(KEY);
