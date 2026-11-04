@@ -859,6 +859,9 @@ public class ClientProxy extends ServerProxy {
 		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.mob.giantghast.EntityGiantGhast.class, new com.hbm.render.entity.mob.RenderGiantGhast());
 		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.mob.giantghast.EntitySummonedGhast.class, new net.minecraft.client.renderer.entity.RenderGhast());
 		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.mob.giantghast.EntityGiantGhastFireball.class, new com.hbm.render.entity.projectile.RenderGiantGhastFireball());
+		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.mob.magmagolem.EntityGiantMagmaGolem.class, new com.hbm.render.entity.mob.RenderGiantMagmaGolem());
+		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.mob.magmagolem.EntityGolemFireball.class, new net.minecraft.client.renderer.entity.RenderFireball(1.45F));
+		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.mob.magmagolem.EntityGolemMagmaCube.class, new net.minecraft.client.renderer.entity.RenderMagmaCube());
 		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.mob.colossus.EntityColossusPart.class, new net.minecraft.client.renderer.entity.Render() {
 			@Override protected net.minecraft.util.ResourceLocation getEntityTexture(net.minecraft.entity.Entity e) { return null; }
 			@Override public void doRender(net.minecraft.entity.Entity e, double x, double y, double z, float yaw, float partial) { }

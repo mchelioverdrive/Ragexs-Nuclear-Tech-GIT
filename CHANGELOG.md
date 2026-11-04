@@ -328,3 +328,9 @@
 
 - Recreate the charcoal cube, integrated flank heads, inset red eyes, and longer independently swaying tentacles. Shape a stepped roof recess around an irregular red core.
 - Match the multipart bounds to the new heads and walkable roof rim, and align the fireball muzzle with the central mouth. The recessed core remains a melee target from above during the execution phase.
+
+2026-11-04 03:07 — Add the Giant Magma Golem boss fight
+
+- Add a 12-block articulated golem with original stone and emissive magma textures, a boss bar, and three combat phases with telegraphed attacks and capped magma cube waves.
+- Cool and mine each arm independently. Removing both arms exposes the feet to TNT. Once knocked down, the golem can be finished with water from a bucket or the surrounding terrain.
+- Persist encounter progress and add `/rntmagmagolem spawn [x y z]` and server settings. Natural spawning is disabled by default, and boss terrain damage respects `mobGriefing`.
