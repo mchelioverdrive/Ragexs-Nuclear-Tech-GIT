@@ -5544,6 +5544,7 @@ tile.block_dineutronium.name=Block of Dineutronium
 tile.block_dura_steel.name=Reinforced Block of High-Speed Steel
 tile.block_electrical_scrap.name=Block of Electrical Scrap
 tile.block_euphemium.name=Block of Euphemium
+tile.fake_command_block.name=Fake Command Block
 tile.block_euphemium_cluster.name=Euphemium-Etched Schrabidium Cluster
 tile.block_fallout.name=Block of Fallout
 tile.block_fiberglass.name=Roll of Fiberglass

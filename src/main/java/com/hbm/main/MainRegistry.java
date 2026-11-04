@@ -402,6 +402,8 @@ public class MainRegistry {
 
 		EntityMappings.writeMappings();
 		com.hbm.world.sandworm.WormContent.register();
+		ChestGenHooks.addItem(ChestGenHooks.STRONGHOLD_LIBRARY, new WeightedRandomChestContent(new ItemStack(ModBlocks.fake_command_block), 1, 1, 1));
+		ChestGenHooks.addItem(ChestGenHooks.PYRAMID_JUNGLE_CHEST, new WeightedRandomChestContent(new ItemStack(ModBlocks.fake_command_block), 1, 1, 1));
 		com.hbm.entity.mob.colossus.ColossusContent.register();
 		//CompatNER.init();
 
@@ -1078,7 +1080,9 @@ public class MainRegistry {
 		FMLCommonHandler.instance().bus().register(diseaseEvents);
 		MinecraftForge.EVENT_BUS.register(new com.hbm.explosion.FalloutCollapseManager());
 		MinecraftForge.EVENT_BUS.register(new com.hbm.explosion.ExplosionTerrainAccess());
-		MinecraftForge.EVENT_BUS.register(new com.hbm.entity.mob.witherstorm.WitherStormEvents());
+		com.hbm.entity.mob.witherstorm.WitherStormEvents witherStormEvents = new com.hbm.entity.mob.witherstorm.WitherStormEvents();
+		MinecraftForge.EVENT_BUS.register(witherStormEvents);
+		FMLCommonHandler.instance().bus().register(witherStormEvents);
 		com.hbm.entity.mob.colossus.ColossusEvents colossusEvents = new com.hbm.entity.mob.colossus.ColossusEvents();
 		MinecraftForge.EVENT_BUS.register(colossusEvents);
 		FMLCommonHandler.instance().bus().register(colossusEvents);

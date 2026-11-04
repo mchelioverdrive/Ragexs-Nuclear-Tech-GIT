@@ -13,6 +13,9 @@ public final class WitherStormConfig {
     public static int attackTicks = 80, maxEncounters = 1, queryBudget = 512, maxRadius = 32;
     public static float explosionStrength = 2F;
     public static boolean terrain = true, tileEntities = false, protectedBlocks = false, survivalSummon = true;
+    public static boolean challengeMode = false;
+    public static int fearRange = 128, fearEscapeDistance = 160, fearInterval = 10;
+    public static double passiveFleeSpeed = 1.5D, hostileFleeSpeed = 1.7D;
     public static Set<String> blacklist = new HashSet<String>();
 
     public static void loadFromConfig(Configuration config) {
@@ -32,11 +35,22 @@ public final class WitherStormConfig {
         terrain = CommonConfig.createConfigBool(config, c, "terrainDestruction", "Allow consumption and skull terrain damage; also requires mobGriefing.", true);
         tileEntities = CommonConfig.createConfigBool(config, c, "consumeTileEntities", "Explicitly allow tile entity destruction, including stored contents. Default protects machines and containers.", false);
         protectedBlocks = CommonConfig.createConfigBool(config, c, "consumeProtectedBlocks", "Explicitly override block canEntityDestroy vetoes and the blacklist. Never overrides negative hardness, bedrock, portals or command blocks.", false);
-        survivalSummon = CommonConfig.createConfigBool(config, c, "survivalSummoning", "Sneak-right-click a nether star on an RNT euphemium block above a soul sand T with three wither skulls. Consumes the star and structure.", true);
+        survivalSummon = CommonConfig.createConfigBool(config, c, "survivalSummoning", "Allow the Fake Command Block structure and the legacy euphemium ritual.", true);
+        challengeMode = CommonConfig.createConfigBool(config, c, "challengeMode", "Start a one-day countdown to an automatic Overworld Wither Storm. Worlds can override this by command.", false);
+        fearRange = integer(config, c, "fearDetectionRange", "Distance at which mobs notice a Wither Storm.", 128, 8, 256);
+        fearEscapeDistance = integer(config, c, "fearEscapeDistance", "Desired distance from the storm. Mobs plan shorter navigation legs toward this distance.", 160, fearRange, 320);
+        fearInterval = integer(config, c, "fearDetectionInterval", "Ticks between mob threat searches and minimum interval between escape path attempts.", 10, 1, 100);
+        passiveFleeSpeed = speed(config, c, "passiveFleeSpeed", 1.5D);
+        hostileFleeSpeed = speed(config, c, "hostileFleeSpeed", 1.7D);
         blacklist = new HashSet<String>(Arrays.asList(config.get(c, "protectedBlocks", new String[] {"minecraft:chest", "minecraft:ender_chest", "minecraft:enchanting_table"}, "Registry names protected from all Wither Storm terrain processing.").getStringList()));
     }
 
     private static int integer(Configuration c, String category, String key, String comment, int value, int min, int max) {
         return Math.max(min, Math.min(max, CommonConfig.createConfigInt(c, category, key, comment, value)));
+    }
+
+    private static double speed(Configuration config, String category, String key, double fallback) {
+        double value = CommonConfig.createConfigDouble(config, category, key, "Movement speed multiplier while fleeing a Wither Storm.", fallback);
+        return Double.isFinite(value) ? Math.max(1D, Math.min(4D, value)) : fallback;
     }
 }

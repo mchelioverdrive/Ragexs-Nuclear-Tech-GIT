@@ -271,6 +271,7 @@ public class ModBlocks {
 	public static Block block_solinium;
 	public static Block block_schrabidium_fuel;
 	public static Block block_euphemium;
+	public static Block fake_command_block;
 	public static Block block_schrabidium_cluster;
 	public static Block block_euphemium_cluster;
 	public static Block block_dineutronium;
@@ -1638,6 +1639,9 @@ public class ModBlocks {
 		block_solinium = new BlockHazard().makeBeaconable().setDisplayEffect(ExtDisplayEffect.SCHRAB).setBlockName("block_solinium").setCreativeTab(MainRegistry.blockTab).setStepSound(Block.soundTypeMetal).setHardness(5.0F).setResistance(600.0F).setBlockTextureName(RefStrings.MODID + ":block_solinium");
 		block_schrabidium_fuel = new BlockHazard().makeBeaconable().setDisplayEffect(ExtDisplayEffect.SCHRAB).setBlockName("block_schrabidium_fuel").setCreativeTab(MainRegistry.blockTab).setStepSound(Block.soundTypeMetal).setHardness(5.0F).setResistance(600.0F).setBlockTextureName(RefStrings.MODID + ":block_schrabidium_fuel");
 		block_euphemium = new BlockBeaconable(Material.iron).setBlockName("block_euphemium").setCreativeTab(MainRegistry.blockTab).setStepSound(Block.soundTypeMetal).setHardness(5.0F).setResistance(60000.0F).setBlockTextureName(RefStrings.MODID + ":block_euphemium");
+		fake_command_block = new BlockBase(Material.rock).setBlockName("fake_command_block").setCreativeTab(MainRegistry.blockTab)
+			.setStepSound(Block.soundTypeStone).setHardness(50F).setResistance(2000F).setBlockTextureName("minecraft:command_block");
+		fake_command_block.setHarvestLevel("pickaxe", 3);
 		block_dineutronium = new BlockBeaconable(Material.iron).setBlockName("block_dineutronium").setCreativeTab(MainRegistry.blockTab).setStepSound(Block.soundTypeMetal).setHardness(5.0F).setResistance(60000.0F).setBlockTextureName(RefStrings.MODID + ":block_dineutronium");
 		block_schrabidium_cluster = new BlockRotatablePillar(Material.rock, RefStrings.MODID + ":block_schrabidium_cluster_top").setBlockName("block_schrabidium_cluster").setCreativeTab(MainRegistry.blockTab).setHardness(5.0F).setResistance(60000.0F).setBlockTextureName(RefStrings.MODID + ":block_schrabidium_cluster_side");
 		block_euphemium_cluster = new BlockRotatablePillar(Material.rock, RefStrings.MODID + ":block_euphemium_cluster_top").setBlockName("block_euphemium_cluster").setCreativeTab(MainRegistry.blockTab).setHardness(5.0F).setResistance(60000.0F).setBlockTextureName(RefStrings.MODID + ":block_euphemium_cluster_side");
@@ -3012,6 +3016,7 @@ public class ModBlocks {
 		GameRegistry.registerBlock(block_solinium, ItemBlockBase.class, block_solinium.getUnlocalizedName());
 		GameRegistry.registerBlock(block_schrabidium_fuel, ItemBlockBase.class, block_schrabidium_fuel.getUnlocalizedName());
 		GameRegistry.registerBlock(block_euphemium, ItemBlockLore.class, block_euphemium.getUnlocalizedName());
+		GameRegistry.registerBlock(fake_command_block, fake_command_block.getUnlocalizedName());
 		GameRegistry.registerBlock(block_schrabidium_cluster, ItemBlockBase.class, block_schrabidium_cluster.getUnlocalizedName());
 		GameRegistry.registerBlock(block_euphemium_cluster, ItemBlockLore.class, block_euphemium_cluster.getUnlocalizedName());
 		GameRegistry.registerBlock(block_dineutronium, block_dineutronium.getUnlocalizedName());

@@ -8,7 +8,7 @@ import cpw.mods.fml.relauncher.IFMLLoadingPlugin;
 @IFMLLoadingPlugin.TransformerExclusions({"com.hbm.core"})
 public final class HbmLoadingPlugin implements IFMLLoadingPlugin {
 
-	@Override public String[] getASMTransformerClass() { return new String[] { HbmClassTransformer.class.getName() }; }
+	@Override public String[] getASMTransformerClass() { return new String[] { HbmClassTransformer.class.getName(), WitherStormFearTransformer.class.getName() }; }
 	@Override public String getModContainerClass() { return null; }
 	@Override public String getSetupClass() { return null; }
 	@Override public void injectData(Map<String, Object> data) { }

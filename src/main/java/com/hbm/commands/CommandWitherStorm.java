@@ -15,14 +15,24 @@ import net.minecraft.entity.Entity;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.ChunkCoordinates;
 import net.minecraft.world.World;
+import net.minecraftforge.common.DimensionManager;
 
 public class CommandWitherStorm extends CommandBase {
     @Override public String getCommandName() { return "rntwitherstorm"; }
     @Override public int getRequiredPermissionLevel() { return 2; }
-    @Override public String getCommandUsage(ICommandSender sender) { return "/rntwitherstorm spawn [command|storm] [x y z] | list | inspect <entityID|UUID> | growth <entityID|UUID> <mass> | remove <entityID|UUID>"; }
+    @Override public String getCommandUsage(ICommandSender sender) { return "/rntwitherstorm spawn [command|storm] [x y z] | list | inspect <entityID|UUID> | growth <entityID|UUID> <mass> | remove <entityID|UUID> | challenge <true|false|status>"; }
     @Override public void processCommand(ICommandSender sender, String[] args) {
         if(args.length == 0) throw new WrongUsageException(getCommandUsage(sender));
         World world = sender.getEntityWorld(); WitherStormEncounters data = WitherStormEncounters.get(world);
+        if(args[0].equals("challenge")) {
+            if(args.length != 2) throw new WrongUsageException(getCommandUsage(sender));
+            World overworld = DimensionManager.getWorld(0);
+            if(overworld == null) throw new CommandException("The Overworld is unavailable.");
+            if(args[1].equals("true") || args[1].equals("false")) data.setChallenge(overworld, Boolean.parseBoolean(args[1]));
+            else if(!args[1].equals("status")) throw new WrongUsageException(getCommandUsage(sender));
+            sender.addChatMessage(new ChatComponentText(data.challengeStatus(overworld)));
+            return;
+        }
         if(args[0].equals("list") && args.length == 1) {
             sender.addChatMessage(new ChatComponentText("Wither Storm encounters (including unloaded): " + data.entries().size()));
             for(Map.Entry<UUID, Integer> entry : data.entries().entrySet()) sender.addChatMessage(new ChatComponentText(entry.getKey() + " dimension=" + entry.getValue()));
@@ -62,7 +72,8 @@ public class CommandWitherStorm extends CommandBase {
         sender.addChatMessage(new ChatComponentText("ID=" + boss.getEntityId() + " phase=" + boss.getPhase() + " growth=" + boss.getGrowth() + " heads(center/left/right)=" + boss.headTransformed(1) + "/" + boss.headTransformed(0) + "/" + boss.headTransformed(2) + " health=" + boss.getHealth() + "/" + boss.getMaxHealth() + " core=" + boss.hasCore() + " encounter=" + id));
     }
     @Override public List addTabCompletionOptions(ICommandSender sender, String[] args) {
-        if(args.length == 1) return getListOfStringsMatchingLastWord(args, "spawn", "list", "inspect", "growth", "remove");
+        if(args.length == 1) return getListOfStringsMatchingLastWord(args, "spawn", "list", "inspect", "growth", "remove", "challenge");
+        if(args.length == 2 && args[0].equals("challenge")) return getListOfStringsMatchingLastWord(args, "true", "false", "status");
         if(args.length == 2 && args[0].equals("spawn")) return getListOfStringsMatchingLastWord(args, "command", "storm");
         return null;
     }

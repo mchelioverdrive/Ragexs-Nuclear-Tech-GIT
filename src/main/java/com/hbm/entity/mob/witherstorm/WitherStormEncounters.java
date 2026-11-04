@@ -5,17 +5,28 @@ import java.util.Map;
 import java.util.UUID;
 import com.hbm.config.WitherStormConfig;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.util.ChunkCoordinates;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldSavedData;
 import net.minecraftforge.common.DimensionManager;
 
-/** The overworld ledger counts unloaded encounters too; it never owns chunk tickets. */
+/** The Overworld ledger counts unloaded encounters and owns the world challenge clock. */
 public final class WitherStormEncounters extends WorldSavedData {
     private static final String NAME = "rntWitherStorms";
+    private static final long CHALLENGE_TICKS = 24000L;
     private final Map<UUID, Integer> encounters = new HashMap<UUID, Integer>();
     private final Map<UUID, Entity> loaded = new HashMap<UUID, Entity>();
+    private byte challengeOverride;
+    private boolean challengeActive, challengeCompleted;
+    private long challengeStart;
+    private long retryAt;
+    final WitherStormPursuit.Trails playerTrails = new WitherStormPursuit.Trails();
     public WitherStormEncounters() { super(NAME); }
     public WitherStormEncounters(String name) { super(name); }
 
@@ -41,6 +52,82 @@ public final class WitherStormEncounters extends WorldSavedData {
         return true;
     }
     public boolean room() { return encounters.size() < WitherStormConfig.maxEncounters; }
+    EntityWitherStorm nearestThreat(EntityLivingBase mob, double range) {
+        EntityWitherStorm nearest = null;
+        double best = range * range;
+        for(UUID id : encounters.keySet()) {
+            Entity entity = loaded.get(id);
+            if(!(entity instanceof EntityWitherStorm) || entity.worldObj != mob.worldObj || !entity.isEntityAlive()) continue;
+            double distance = mob.getDistanceSqToEntity(entity);
+            if(distance <= best) { nearest = (EntityWitherStorm)entity; best = distance; }
+        }
+        return nearest;
+    }
+
+    public void setChallenge(World world, boolean enabled) {
+        challengeOverride = (byte)(enabled ? 1 : 2);
+        updateChallenge(world);
+        markDirty();
+    }
+
+    private void updateChallenge(World world) {
+        boolean enabled = challengeOverride == 0 ? WitherStormConfig.challengeMode : challengeOverride == 1;
+        if(challengeActive == enabled) return;
+        challengeActive = enabled;
+        if(enabled && !challengeCompleted) {
+            challengeStart = world.getTotalWorldTime();
+            retryAt = challengeStart;
+        }
+        if(!challengeCompleted) playerTrails.clear();
+        markDirty();
+    }
+
+    private long remaining(World world) {
+        return Math.max(0, CHALLENGE_TICKS - (world.getTotalWorldTime() - challengeStart));
+    }
+
+    public String challengeStatus(World world) {
+        updateChallenge(world);
+        String prefix = "Wither Storm challenge " + (challengeActive ? "enabled. " : "disabled. ");
+        if(challengeCompleted) return prefix + "The automatic spawn has already occurred.";
+        if(!challengeActive) return prefix + "No countdown is active.";
+        long ticks = remaining(world);
+        return prefix + (ticks > 0 ? ticks + " ticks remaining." : "0 ticks remaining. Spawn pending.");
+    }
+
+    void tickChallenge(World world) {
+        updateChallenge(world);
+        if(!challengeActive || challengeCompleted) return;
+        playerTrails.sample(world);
+        long now = world.getTotalWorldTime();
+        if(remaining(world) != 0 || now < retryAt || !room()) return;
+        boolean online = false;
+        for(Object value : MinecraftServer.getServer().getConfigurationManager().playerEntityList) {
+            if(value instanceof EntityPlayerMP && WitherStormPursuit.connected((EntityPlayerMP)value)) {
+                online = true;
+                break;
+            }
+        }
+        if(!online) return;
+        retryAt = now + 20;
+        ChunkCoordinates spawn = world.getSpawnPoint();
+        // Search the loaded spawn area for open space above the local surface.
+        for(int radius = 0; radius <= 16; radius += 8) {
+            for(int dx = -radius; dx <= radius; dx += 8) for(int dz = -radius; dz <= radius; dz += 8) {
+                if(Math.max(Math.abs(dx), Math.abs(dz)) != radius) continue;
+                int x = spawn.posX + dx, z = spawn.posZ + dz;
+                if(!WitherStormMath.areaLoaded(world, x + 0.5D, z + 0.5D, 3)) continue;
+                int y = Math.max(world.getTopSolidOrLiquidBlock(x, z), world.getHeightValue(x, z)) + 7;
+                AxisAlignedBB box = AxisAlignedBB.getBoundingBox(x - 0.5D, y, z - 0.5D, x + 1.5D, y + 4, z + 1.5D);
+                if(!world.func_147461_a(box).isEmpty() || !world.checkNoEntityCollision(box) || world.isAnyLiquid(box)) continue;
+                if(WitherStormEvents.spawnInitial(world, x + 0.5D, y, z + 0.5D, 0, true)) {
+                    challengeCompleted = true;
+                    markDirty();
+                }
+                return;
+            }
+        }
+    }
     public void track(Entity e) {
         if(e instanceof EntityWitherStormSkull) {
             EntityWitherStormSkull incoming = (EntityWitherStormSkull)e, oldest = null;
@@ -89,6 +176,10 @@ public final class WitherStormEncounters extends WorldSavedData {
         return true;
     }
     @Override public void readFromNBT(NBTTagCompound tag) {
+        challengeOverride = tag.getByte("ChallengeOverride");
+        challengeActive = tag.getBoolean("ChallengeActive");
+        challengeCompleted = tag.getBoolean("ChallengeCompleted");
+        challengeStart = tag.getLong("ChallengeStart");
         encounters.clear(); loaded.clear();
         NBTTagList list = tag.getTagList("Encounters", 10);
         for(int i = 0; i < list.tagCount(); i++) {
@@ -98,6 +189,10 @@ public final class WitherStormEncounters extends WorldSavedData {
         }
     }
     @Override public void writeToNBT(NBTTagCompound tag) {
+        tag.setByte("ChallengeOverride", challengeOverride);
+        tag.setBoolean("ChallengeActive", challengeActive);
+        tag.setBoolean("ChallengeCompleted", challengeCompleted);
+        tag.setLong("ChallengeStart", challengeStart);
         NBTTagList list = new NBTTagList();
         for(Map.Entry<UUID, Integer> entry : encounters.entrySet()) {
             NBTTagCompound n = new NBTTagCompound();

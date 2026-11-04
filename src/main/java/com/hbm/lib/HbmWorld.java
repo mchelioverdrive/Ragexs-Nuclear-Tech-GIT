@@ -39,6 +39,7 @@ public class HbmWorld {
 		registerWorldGen(new HbmWorldGen(), 1);
 		registerWorldGen(new LegacyStructureGenerator(), 1);
 		registerWorldGen(new BedrockOilSurface(), 1);
+		registerWorldGen(new com.hbm.world.gen.FakeCommandBlockGenerator(), 2);
 		MinecraftForge.EVENT_BUS.register(new OverworldLargeTerrain());
 		
 		worldGenerator = new NTMWorldGenerator();

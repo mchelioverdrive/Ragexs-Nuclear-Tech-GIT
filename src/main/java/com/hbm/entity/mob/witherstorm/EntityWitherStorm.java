@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import com.hbm.config.WitherStormConfig;
+import com.hbm.entity.logic.IChunkLoader;
+import com.hbm.main.MainRegistry;
 import api.hbm.entity.IRadiationImmune;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityFlying;
@@ -15,6 +17,7 @@ import net.minecraft.entity.item.EntityFallingBlock;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.monster.IMob;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -24,10 +27,14 @@ import net.minecraft.util.DamageSource;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
+import net.minecraft.world.ChunkCoordIntPair;
+import net.minecraft.world.WorldServer;
 import net.minecraft.world.chunk.Chunk;
+import net.minecraftforge.common.ForgeChunkManager;
+import net.minecraftforge.common.ForgeChunkManager.Ticket;
 
 /** Hostile encounter root. Command Block Wither and all evolved forms share this identity. */
-public class EntityWitherStorm extends EntityFlying implements IBossDisplayData, IMob, IRadiationImmune {
+public class EntityWitherStorm extends EntityFlying implements IBossDisplayData, IMob, IRadiationImmune, IChunkLoader {
     private final UUID[] partIds = new UUID[10];
     private final EntityWitherStormPart[] parts = new EntityWitherStormPart[10];
     private final int[] partChunksX = new int[10], partChunksZ = new int[10];
@@ -43,6 +50,9 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
     private boolean restoring;
     private double roamX, roamZ;
     private int roamTicks;
+    private WitherStormPursuit pursuit;
+    private Ticket flightTicket;
+    private ChunkCoordIntPair flightChunk;
 
     public EntityWitherStorm(World world) {
         super(world);
@@ -190,7 +200,11 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
             dataWatcher.updateObject(24 + head, best == null ? 0 : best.getEntityId());
         }
     }
-    private boolean validTarget(Entity e) { return WitherStormMath.targetable(e, worldObj) && getDistanceSqToEntity(e) <= 96D * 96D; }
+    private boolean validTarget(Entity e) {
+        if(pursuit != null && e instanceof EntityPlayer && (!(e instanceof EntityPlayerMP)
+            || !WitherStormPursuit.eligible((EntityPlayerMP)e))) return false;
+        return WitherStormMath.targetable(e, worldObj) && getDistanceSqToEntity(e) <= 96D * 96D;
+    }
     private boolean assigned(Entity e, int head) {
         for(int i = 0; i < head; i++) if(targets[i] == e) return true;
         return false;
@@ -201,14 +215,59 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
         if(targetIds[head] != null && targetIds[head].equals(e.getUniqueID())) d *= 0.6D;
         return d;
     }
+    void startPursuit() { pursuit = new WitherStormPursuit(); }
+
+    void startFlightTicket() {
+        if(pursuit != null && worldObj.provider.dimensionId == 0 && flightTicket == null)
+            init(ForgeChunkManager.requestTicket(MainRegistry.instance, worldObj, ForgeChunkManager.Type.ENTITY));
+    }
+
+    @Override public void init(Ticket ticket) {
+        if(ticket == null) return;
+        if(isDead || pursuit == null || worldObj.provider.dimensionId != 0 || flightTicket != null || ticket.getChunkListDepth() < 1) {
+            ForgeChunkManager.releaseTicket(ticket);
+            return;
+        }
+        flightTicket = ticket;
+        ticket.bindEntity(this);
+        keepFlightChunks();
+    }
+
+    private void keepFlightChunks() {
+        if(flightTicket == null) return;
+        int cx = MathHelper.floor_double(posX) >> 4, cz = MathHelper.floor_double(posZ) >> 4;
+        if(flightChunk != null && flightChunk.chunkXPos == cx && flightChunk.chunkZPos == cz) return;
+        flightChunk = new ChunkCoordIntPair(cx, cz);
+        // Keep only the local flight area active. Waypoint sampling never loads terrain.
+        int radius = flightTicket.getChunkListDepth() >= 9 ? 1 : 0;
+        for(ChunkCoordIntPair chunk : flightTicket.getChunkList()) {
+            if(Math.abs(chunk.chunkXPos - cx) > radius || Math.abs(chunk.chunkZPos - cz) > radius)
+                ForgeChunkManager.unforceChunk(flightTicket, chunk);
+        }
+        for(int x = cx - radius; x <= cx + radius; x++) for(int z = cz - radius; z <= cz + radius; z++) {
+            ChunkCoordIntPair chunk = new ChunkCoordIntPair(x, z);
+            if(worldObj.getPersistentChunks().containsEntry(chunk, flightTicket)) continue;
+            ForgeChunkManager.forceChunk(flightTicket, chunk);
+            ((WorldServer)worldObj).theChunkProviderServer.loadChunk(x, z);
+        }
+    }
+
     private void fly() {
         double margin = Math.max(34D, 19 * getStormScale() + 3);
+        Vec3 waypoint = null;
+        if(pursuit != null && worldObj.provider.dimensionId == 0) {
+            if(flightTicket == null && ticksExisted % 200 == 1) startFlightTicket();
+            keepFlightChunks();
+            waypoint = pursuit.destination(this, WitherStormEncounters.get(worldObj).playerTrails);
+            if(flightTicket != null) margin = 0D;
+        }
         EntityLivingBase target = null;
         for(EntityLivingBase candidate : targets) if(validTarget(candidate)
             && (target == null || getDistanceSqToEntity(candidate) < getDistanceSqToEntity(target))) target = candidate;
-        double tx = target == null ? posX : target.posX, tz = target == null ? posZ : target.posZ;
+        double tx = waypoint != null ? waypoint.xCoord : target == null ? posX : target.posX;
+        double tz = waypoint != null ? waypoint.zCoord : target == null ? posZ : target.posZ;
         double dx = tx - posX, dz = tz - posZ, distance = Math.sqrt(dx * dx + dz * dz);
-        boolean pursuing = target != null && (distance < 1D || WitherStormMath.areaLoaded(worldObj,
+        boolean pursuing = waypoint != null || target != null && (distance < 1D || WitherStormMath.areaLoaded(worldObj,
             posX + dx / distance * Math.min(12D, distance), posZ + dz / distance * Math.min(12D, distance), margin));
         if(!pursuing) {
             double rx = roamX - posX, rz = roamZ - posZ;
@@ -235,13 +294,20 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
                 MathHelper.floor_double(z) >> 4).getHeightValue(MathHelper.floor_double(x) & 15, MathHelper.floor_double(z) & 15));
         }
         double clearance = getPhase() == WitherStormPhase.COMMAND_BLOCK ? 7D : 15D;
-        double ty = Math.min(200, Math.max(ground + clearance, pursuing ? Math.min(ground + 24D, target.posY + 12D) : ground + clearance));
+        double targetY = waypoint != null ? waypoint.yCoord : pursuing ? target.posY : ground;
+        double ty = Math.min(pursuit == null ? 200 : 275, Math.max(ground + clearance,
+            pursuing ? Math.min(ground + 24D, targetY + 12D) : ground + clearance));
         double speed = getPhase() == WitherStormPhase.COMMAND_BLOCK ? 0.22D : 0.32D;
-        motionX = WitherStormMath.limit(motionX * 0.92D + (distance > 6 ? dx / distance * 0.025D : 0), speed);
-        motionZ = WitherStormMath.limit(motionZ * 0.92D + (distance > 6 ? dz / distance * 0.025D : 0), speed);
+        boolean advance = distance > (waypoint == null ? 6 : 2) && (waypoint == null || posY > ground + 2D);
+        motionX = WitherStormMath.limit(motionX * 0.92D + (advance ? dx / distance * 0.025D : 0), speed);
+        motionZ = WitherStormMath.limit(motionZ * 0.92D + (advance ? dz / distance * 0.025D : 0), speed);
         motionY = WitherStormMath.limit(motionY * 0.9D + (ty - posY) * 0.004D, 0.24D);
         // Missing saved attachments still wait for their chunks; they do not own flight.
-        if(!WitherStormMath.areaLoaded(worldObj, posX + motionX, posZ + motionZ, margin)) { motionX = motionZ = 0; roamTicks = 0; }
+        double nextX = posX + motionX, nextZ = posZ + motionZ;
+        if(!WitherStormMath.areaLoaded(worldObj, nextX, nextZ, margin)) {
+            if(flightTicket == null) { motionX = motionZ = 0; roamTicks = 0; }
+            else ((WorldServer)worldObj).theChunkProviderServer.loadChunk(MathHelper.floor_double(nextX) >> 4, MathHelper.floor_double(nextZ) >> 4);
+        }
         if(distance > 2) rotationYaw += MathHelper.wrapAngleTo180_float((float)(Math.atan2(dx, -dz) * 180D / Math.PI) - rotationYaw) * 0.04F;
         renderYawOffset = rotationYaw; rotationYawHead = rotationYaw;
     }
@@ -368,6 +434,7 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
         boolean owner = !worldObj.isRemote && registered && WitherStormEncounters.get(worldObj).find(getUniqueID(), worldObj) == this;
         super.setDead();
         if(!worldObj.isRemote) {
+            if(flightTicket != null) { ForgeChunkManager.releaseTicket(flightTicket); flightTicket = null; }
             for(EntityWitherStormPart part : parts) if(part != null) part.setDead();
             WitherStormEncounters.get(worldObj).untrack(this);
             if(owner) WitherStormEncounters.get(worldObj).remove(getUniqueID());
@@ -384,6 +451,11 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
         for(int i = 0; i < 10; i++) { WitherStormMath.uuid(n, "Part" + i, partIds[i]); n.setInteger("PartX" + i, partChunksX[i]); n.setInteger("PartZ" + i, partChunksZ[i]); }
         for(int i = 0; i < 3; i++) { WitherStormMath.uuid(n, "Target" + i, targetIds[i]); n.setInteger("Attack" + i, attacks[i]); }
         terrain.write(n);
+        if(pursuit != null) {
+            NBTTagCompound tracking = new NBTTagCompound();
+            pursuit.write(tracking);
+            n.setTag("ChallengePursuit", tracking);
+        }
     }
     @Override public void readEntityFromNBT(NBTTagCompound n) {
         super.readEntityFromNBT(n);
@@ -397,5 +469,9 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
         for(int i = 0; i < 10; i++) { partIds[i] = WitherStormMath.uuid(n, "Part" + i); partChunksX[i] = n.getInteger("PartX" + i); partChunksZ[i] = n.getInteger("PartZ" + i); }
         for(int i = 0; i < 3; i++) { targetIds[i] = WitherStormMath.uuid(n, "Target" + i); attacks[i] = Math.max(1, Math.min(12000, n.getInteger("Attack" + i))); }
         visualScale = previousVisualScale = getStormScale(); terrain.read(n);
+        if(n.hasKey("ChallengePursuit", 10)) {
+            startPursuit();
+            pursuit.read(n.getCompoundTag("ChallengePursuit"));
+        }
     }
 }

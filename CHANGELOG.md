@@ -293,3 +293,9 @@
 - Add deliberate loaded-terrain steering, ground support, target selection, punch/sweep/slam/stomp/grab animations with server-owned contact windows, interrupted-attack staggering, braced multiplayer climbing, safe attachment release, and a directional rear-head symbol test. Add the survival-craftable 3D Prismarine Gauntlet and optional ordinary-weapon weak-point damage.
 - Queue contact-only terrain processing under a dimension-wide budget, protect containers and indestructible blocks, honor mobGriefing/block vetoes/Forge break hooks, and suppress incidental item drops. Keep destruction and rare ocean spawning disabled by default. Persist variant, scale, encounter admission, recovery and clock state; reload interrupted attacks safely without replaying impacts.
 - Add operator `/rntcolossus` spawning, activation and removal, a Creative spawn egg, configurable combat and effects, temporary opt-in clock time changes, and delayed collapse/fragment deaths with bounded shard drops. Document Story Mode references and RNT survival adaptations without changing other bosses, nuclear explosions or monument generation.
+
+2026-11-03 19:39 — Add Wither Storm skull summoning, mob fear and Challenge Mode
+
+- Add the mineable Fake Command Block to rare structure loot and exposed Ice Plains Spikes tips. Placing the last wither skeleton skull on either orientation of the matching structure starts a three-headed Command Block Wither and consumes the blocks after a successful spawn.
+- Give non-boss mobs priority escape behavior in both Forge 1.7.10 AI dispatch paths. Use the encounter ledger for nearby threats and space out escape path attempts.
+- Add an opt-in, world-specific 24,000-tick challenge countdown and operator controls. The single automatic Storm follows bounded Overworld player trails with its existing flight and growth systems. The world saves completion, and the Storm saves its current route.

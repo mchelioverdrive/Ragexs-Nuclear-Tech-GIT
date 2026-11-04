@@ -268,7 +268,7 @@ Only use this command when debugging hangs or crashes. `crash` intentionally exi
 
 ### `/rntwitherstorm`
 
-Operator level 2 controls the hostile Wither Storm encounter. No natural spawn is registered.
+Operator level 2 controls the hostile Wither Storm encounter.
 
 ```text
 /rntwitherstorm spawn [x y z]
@@ -278,11 +278,18 @@ Operator level 2 controls the hostile Wither Storm encounter. No natural spawn i
 /rntwitherstorm inspect <entityID|UUID>
 /rntwitherstorm growth <entityID|UUID> <mass>
 /rntwitherstorm remove <entityID|UUID>
+/rntwitherstorm challenge true
+/rntwitherstorm challenge false
+/rntwitherstorm challenge status
 ```
 
 Omitting the form or choosing `command` starts the Command Block Wither with three ordinary Wither heads and an embedded command block. `storm` starts Destroyer at the configured transformation threshold, beginning the central head's transformation. Coordinates must already be loaded; omitted coordinates use the sender's position plus eight blocks vertically. Inspection reports each head's transformation state. Inspection and growth edits require a loaded boss in the sender's dimension. `list` includes saved unloaded encounters across dimensions. `remove UUID` retires an unloaded encounter without loading its chunks; its boss, projectiles and parts disappear when next loaded. Numeric IDs are local to the current runtime and dimension; UUIDs survive restarts.
 
-For survival summoning, make a soul sand T, replace its upper center with an RNT **euphemium block**, and place three wither skeleton skulls across the top. Sneak-right-click the euphemium block with a nether star. Successful summoning consumes the structure and one star (Creative retains the star). This method and the global encounter limit are configurable; it does not change vanilla Wither summoning. The core remains visible in every form. Damage to heads passes to the boss; tentacles pass half damage to the same health pool.
+For survival summoning, place a **Fake Command Block** above one soul sand block and flank the Fake Command Block with soul sand. Leave both lower corners empty. Place three wither skeleton skulls on the top row. The last skull starts the encounter in either horizontal orientation and consumes the structure if the summon succeeds. Find the Fake Command Block in stronghold libraries, jungle temples, and exposed Ice Plains Spikes formations. Mine it with a diamond-tier pickaxe. The legacy euphemium structure still accepts a sneak-right-click with a nether star.
+
+Challenge mode starts a 24,000-tick countdown in the Overworld. The command saves a world-specific override. Running `challenge true` during a countdown preserves its progress, and `challenge false` cancels a pending spawn. Once the automatic summon succeeds, the world has used its challenge spawn. The encounter cap applies, so a full cap leaves the spawn pending. The challenge Storm follows sampled trails from eligible Overworld players and continues toward its last recorded position if they leave.
+
+The core remains visible in every form. Damage to heads passes to the boss, and tentacles pass half damage to the same health pool.
 
 Growth comes from consumed terrain (three mass per block), item stack counts, falling blocks and living victims killed during consumption. Default phases are Command Block below 12,500, Destroyer at 12,500, Devourer above 50,000 and ThunderStorm above 250,000. The central head transforms at 12,500, the first side at the midpoint of the transformation and Devourer thresholds (31,250 by default), and the remaining side above 50,000. Only transformed heads use tractor beams, after their transformation animation finishes. Body volume, necks, head proportions, tentacles and client debris develop with mass. ThunderStorm refreshes ordinary rain/thunder for ten seconds while active in a dimension with a sky. Growth, transformed heads, attack timers, component UUIDs and terrain cursors survive saving; older saves derive head progress from their existing mass. Raising growth preserves completed head transformations, while lowering it explicitly recalculates heads from the configured thresholds. The boss uses loaded terrain only and may stop at unloaded boundaries. See [Wither Storm configuration](configuration.md#wither-storm).
 
