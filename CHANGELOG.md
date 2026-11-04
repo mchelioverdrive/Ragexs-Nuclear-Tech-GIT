@@ -305,3 +305,9 @@
 - Add the Jailhouse Block Giant Ghast with a continuous three-faced body, animated tentacles and mouths, an emissive top core, a walkable roof, and the native boss health bar.
 - Add three health phases, five fireball patterns, melee reflection, and capped summon waves. Real barrage hits can turn summoned Ghasts against their owner. Direct hits on the core multiply damage and trigger a distinct reaction.
 - Save encounter ownership, attack progress and retaliation across chunk unloads and world reloads. Retire owned Ghasts and fireballs on boss death or operator removal. Add `/rntgiantghast`, `/summon hbm.giant_ghast`, and encounter settings with natural spawning and block damage disabled by default.
+
+2026-11-03 20:45 — Refine Prismarine Colossus movement, grabs and model
+
+- Climb supported one-block ledges with a bounded, collision-checked step. Use loaded terrain for clearance and gravity independently of block destruction.
+- Aim and articulate either arm toward the grab target during windup. Capture on swept fist contact and give grabbed players four seconds to escape through distinct Sneak presses, with server-tracked HUD progress and a recoil on escape.
+- Rebuild the prismarine silhouette, face, arms and legs with original stone materials and shared animation, contact geometry and climbing anchors. Preserve the emissive eyes and rear-head weak point.

@@ -1,5 +1,6 @@
 package com.hbm.entity.mob.colossus;
 
+import java.util.ArrayDeque;
 import com.hbm.config.ColossusConfig;
 import com.hbm.packet.toserver.ColossusControlPacket;
 import cpw.mods.fml.common.eventhandler.EventPriority;
@@ -45,10 +46,17 @@ public final class ColossusEvents {
         EntityPlayer p=event.player;
         int grace=p.getEntityData().getInteger("RNTColossusFallGrace");
         if(grace>0) { p.fallDistance=0; p.getEntityData().setInteger("RNTColossusFallGrace",grace-1); }
-        ColossusControlPacket input=ColossusControlPacket.INPUT.remove(p.getUniqueID());
-        if(input==null || input.player!=p || !(p instanceof EntityPlayerMP) || !p.isEntityAlive()) return;
-        Entity entity=p.worldObj.getEntityByID(input.boss);
-        if(entity instanceof EntityPrismarineColossus && ((EntityPrismarineColossus)entity).holds(p)) ((EntityPrismarineColossus)entity).control((EntityPlayerMP)p,input.vertical,input.brace,input.release);
+        ArrayDeque<ColossusControlPacket> inputs=ColossusControlPacket.INPUT.remove(p.getUniqueID());
+        if(inputs==null || !(p instanceof EntityPlayerMP) || !p.isEntityAlive()) return;
+        for(ColossusControlPacket input:inputs) {
+            if(input.player!=p) continue;
+            Entity entity=p.worldObj.getEntityByID(input.boss);
+            if(entity instanceof EntityPrismarineColossus) {
+                EntityPrismarineColossus boss=(EntityPrismarineColossus)entity;
+                if(input.sequence>0) boss.escapeInput((EntityPlayerMP)p,input.token,input.sequence,input.release);
+                else boss.control((EntityPlayerMP)p,input.vertical,input.brace,input.release);
+            }
+        }
     }
     @SubscribeEvent public void fall(LivingFallEvent event) {
         if(event.entityLiving.getEntityData().getInteger("RNTColossusFallGrace")>0) event.setCanceled(true);

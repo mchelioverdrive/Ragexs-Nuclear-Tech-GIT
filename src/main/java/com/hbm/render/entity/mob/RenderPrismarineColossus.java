@@ -22,7 +22,7 @@ public final class RenderPrismarineColossus extends Render {
     private final DoubleBuffer matrix=BufferUtils.createDoubleBuffer(16);
     private final ModelRenderer clock,face,hand;
     public RenderPrismarineColossus() {
-        ModelBase b=new ModelBase() { };b.textureWidth=b.textureHeight=256;
+        ModelBase b=new ModelBase() { };b.textureWidth=256;b.textureHeight=512;
         clock=new ModelRenderer(b,0,0);clock.addBox(-24,-24,-4,48,48,8);
         face=new ModelRenderer(b,0,0);face.addBox(-20,-20,-5,40,40,2);
         hand=new ModelRenderer(b,0,0);hand.addBox(-1,0,-6,2,16,2);
@@ -54,7 +54,7 @@ public final class RenderPrismarineColossus extends Render {
     }
     private void renderClock(float time) {
         GL11.glPushMatrix();matrix.clear();matrix.put(pose.bones[ColossusPose.LEFT_HAND].matrix);matrix.flip();GL11.glMultMatrix(matrix);
-        GL11.glTranslated(0,-3,-2.3);GL11.glColor3f(0.85F,0.6F,0.16F);clock.render(0.125F);
+        GL11.glTranslated(0,ColossusPose.FIST_Y,-2.15);GL11.glColor3f(0.85F,0.6F,0.16F);clock.render(0.125F);
         GL11.glColor3f(0.85F,0.90F,0.72F);face.render(0.125F);
         GL11.glColor3f(0.09F,0.18F,0.22F);
         for(int i=0;i<12;i++) { GL11.glPushMatrix();GL11.glRotatef(i*30,0,0,1);GL11.glTranslatef(0,2,0);GL11.glScalef(1,0.2F,1);hand.render(0.125F);GL11.glPopMatrix(); }

@@ -44,10 +44,22 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
     private final List<EntityLivingBase> candidates=new ArrayList<EntityLivingBase>(64);
     private final Set<UUID> struck=new HashSet<UUID>();
     private final Map<UUID,Grip> grips=new LinkedHashMap<UUID,Grip>();
-    private EntityLivingBase target, grabbed;
+    private EntityLivingBase target, grabTarget, grabbed;
+    private Vec3 grabAnchor;
     private int cooldown=60, searchOffset, blocked, steeringTicks, grabEscape, stagger, shakeTimer=280;
+    private int grabSequence, grabPressTick;
+    private boolean grabKeyDown, grabSpent;
+    private float aimX, aimY, aimZ, previousAimX, previousAimY, previousAimZ;
     private float walk, previousWalk, moving, previousMoving, previousHeadYaw, previousHeadPitch;
     private double steeringX,steeringZ;
+    private double stepY=Double.NaN;
+    private static final double[] STEERING_ANGLES={0,0.6,-0.6,1.1,-1.1};
+    // The first two volumes are the soles and shins. Their lower faces also determine ground contact.
+    private static final double[][] WALK_BODY={
+        {-4,0,-3.65,-0.25,4.75,2.125}, {0.25,0,-3.65,4,4.75,2.125},
+        {-4.1,4.75,-2.4,4.1,9.5,2.4}, {-6.75,4.25,-2.75,6.75,15.75,2.75},
+        {-4.45,13.25,-4.45,4.45,21.125,4.45}
+    };
     private boolean clockUsed, registered, deathDrops, dropShards=true;
     private long clockOriginal,clockStarted,clockExpected;
     private boolean clockChanged;
@@ -65,12 +77,14 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
     }
     @Override protected void entityInit() {
         super.entityInit();
+        dataWatcher.addObject(16,0F); dataWatcher.addObject(17,0F); dataWatcher.addObject(18,0F);
+        dataWatcher.addObject(19,(byte)-1);
         dataWatcher.addObject(20,(byte)ACTIVE); dataWatcher.addObject(21,(byte)ColossusPose.IDLE);
         dataWatcher.addObject(22,0); dataWatcher.addObject(23,1F);
         dataWatcher.addObject(24,0F); dataWatcher.addObject(25,0F); dataWatcher.addObject(26,0);
         dataWatcher.addObject(27,0F); dataWatcher.addObject(28,(byte)0);
         dataWatcher.addObject(29,0F);
-        dataWatcher.addObject(30,0);
+        dataWatcher.addObject(30,0); dataWatcher.addObject(31,0);
     }
     @Override protected void applyEntityAttributes() {
         super.applyEntityAttributes();
@@ -96,6 +110,15 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
     public float stateTime(float partial) { return Math.max(0,Math.min(ColossusPose.duration(state()), (int)worldObj.getTotalWorldTime()-dataWatcher.getWatchableObjectInt(22)+partial)); }
     public float walk(float partial) { return previousWalk+(walk-previousWalk)*partial; }
     public float moving(float partial) { return previousMoving+(moving-previousMoving)*partial; }
+    private int grabSide() { return dataWatcher.getWatchableObjectByte(19); }
+    private int grabHand() { return grabSide()<0?ColossusPose.RIGHT_HAND:ColossusPose.LEFT_HAND; }
+    private int captureTime() { return dataWatcher.getWatchableObjectInt(31); }
+    private int escapeTime() { return dataWatcher.getWatchableObjectInt(26); }
+    public int grabToken() { return dataWatcher.getWatchableObjectInt(22); }
+    public int grabTicksLeft() {
+        return state()==ColossusPose.GRAB && captureTime()>0 && escapeTime()==0
+            ? Math.max(0,captureTime()+ColossusPose.ESCAPE_TICKS-(int)stateTime(0)) : 0;
+    }
     public void setVariant(int variant) { dataWatcher.updateObject(20,(byte)MathHelper.clamp_int(variant,0,3)); }
     public void activate() { if(!worldObj.isRemote && dormant()) { setVariant(ACTIVE); sound("mob.irongolem.throw",0.7F); cooldown=35; } }
     public void setDropShards(boolean value) { dropShards=value; }
@@ -117,9 +140,15 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
         return net.minecraft.util.StatCollector.translateToLocal(variant()==ADMIN ? "entity.hbm.colossus.admin.name" : variant()==GLITCHED ? "entity.hbm.colossus.glitched.name" : dormant() ? "entity.hbm.colossus.dormant.name" : "entity.hbm.prismarine_colossus.name");
     }
     public void evaluate(ColossusPose pose,float partial) {
+        evaluateAt(pose,stateTime(partial),partial);
+    }
+    private void evaluateAt(ColossusPose pose,double time,float partial) {
         float hy=worldObj.isRemote ? previousHeadYaw+(headYaw()-previousHeadYaw)*partial : headYaw();
         float hp=worldObj.isRemote ? previousHeadPitch+(headPitch()-previousHeadPitch)*partial : headPitch();
-        pose.evaluate(state(),stateTime(partial),walk(partial),moving(partial),hy,hp,ticksExisted+partial,reaction,dataWatcher.getWatchableObjectFloat(29));
+        pose.evaluate(state(),time,walk(partial),moving(partial),hy,hp,ticksExisted+partial,reaction,dataWatcher.getWatchableObjectFloat(29),
+            grabSide(),worldObj.isRemote?previousAimX+(aimX-previousAimX)*partial:aimX,
+            worldObj.isRemote?previousAimY+(aimY-previousAimY)*partial:aimY,
+            worldObj.isRemote?previousAimZ+(aimZ-previousAimZ)*partial:aimZ,captureTime(),escapeTime());
     }
     @Override public void onLivingUpdate() {
         if(getHealth()<=0) return;
@@ -128,29 +157,36 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
         if(worldObj.isRemote) {
             interpolate();
             walk=dataWatcher.getWatchableObjectFloat(27); moving+=(dataWatcher.getWatchableObjectByte(28)-moving)*0.3F;
-            if(clientState!=state()) { clientState=state(); reaction=0; }
+            boolean changed=clientState!=state();
+            if(changed) { clientState=state(); reaction=0; }
+            previousAimX=aimX; previousAimY=aimY; previousAimZ=aimZ;
+            float blend=changed || stateTime(0)>=ColossusPose.GRAB_START?1:0.55F;
+            aimX+=(dataWatcher.getWatchableObjectFloat(16)-aimX)*blend;
+            aimY+=(dataWatcher.getWatchableObjectFloat(17)-aimY)*blend;
+            aimZ+=(dataWatcher.getWatchableObjectFloat(18)-aimZ)*blend;
             evaluate(skeleton,1); clientEffects(); return;
         }
         if(!registered) { if(!ColossusEncounters.get(worldObj).admit(getUniqueID())) { setDead(); return; } registered=true; }
         if(ticksExisted%20==1) { findTargets(); maintainParts(); }
-        if(!targetable(target)) { target=null; dataWatcher.updateObject(26,0); }
-        if(target!=null) aim();
+        if(!targetable(target)) target=null;
+        if(target!=null && (state()!=ColossusPose.GRAB || stateTime(0)<=ColossusPose.GRAB_LOCK)) aim();
         if(dormant()) {
-            moving=0;
+            moving=0; stepY=Double.NaN;
             if(ColossusConfig.proximityActivation && target instanceof EntityPlayer && getDistanceSqToEntity(target)<64) activate();
         } else {
             if(state()==ColossusPose.IDLE) {
                 if(cooldown>0) cooldown--;
                 pursue();
                 if(!grips.isEmpty() && --shakeTimer<=0) { begin(ColossusPose.SHAKE); shakeTimer=280; }
-                else if(target!=null && cooldown<=0 && ColossusConfig.attacks) chooseAttack();
+                else if(target!=null && cooldown<=0 && ColossusConfig.attacks && Double.isNaN(stepY)) chooseAttack();
             } else {
                 moving=0; steeringTicks=0;
                 int t=(int)stateTime(0);
+                if(state()==ColossusPose.GRAB && t<=ColossusPose.GRAB_LOCK && targetable(grabTarget)) updateGrabAim(true);
                 evaluate(skeleton,0);
                 attackTick(t);
                 if(variant()==GLITCHED && t==14 && state()!=ColossusPose.STUN && rand.nextInt(8)==0) begin(ColossusPose.STUN);
-                if(t>=ColossusPose.duration(state())) { releaseGrab(); begin(ColossusPose.IDLE); cooldown=ColossusConfig.cooldown*(variant()==ADMIN?3:4)/4; if(variant()==GLITCHED) cooldown=20+rand.nextInt(Math.max(1,cooldown)); }
+                if(t>=attackDuration()) { begin(ColossusPose.IDLE); cooldown=ColossusConfig.cooldown*(variant()==ADMIN?3:4)/4; if(variant()==GLITCHED) cooldown=20+rand.nextInt(Math.max(1,cooldown)); }
             }
             if(variant()==GLITCHED && state()==ColossusPose.IDLE && ticksExisted%173==0) begin(ColossusPose.STUN);
         }
@@ -164,16 +200,18 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
         if(clockChanged && worldObj.getTotalWorldTime()-clockStarted>=200) restoreClock();
         if(ticksExisted%240==0 && !dormant()) sound("mob.irongolem.death",0.35F);
         if(moving>0.1F && Math.floor(walk*0.65/Math.PI)!=Math.floor(previousWalk*0.65/Math.PI)) {
-            Vec3 foot=point(Math.sin(walk*0.65)>0?ColossusPose.RIGHT_FOOT:ColossusPose.LEFT_FOOT,0,-4,-0.5);
+            Vec3 foot=point(Math.sin(walk*0.65)>0?ColossusPose.RIGHT_FOOT:ColossusPose.LEFT_FOOT,0,-ColossusPose.SOLE,-0.5);
             impactEffect(foot,2); sound("step.stone",0.65F);
         }
         renderYawOffset=rotationYaw; rotationYawHead=rotationYaw;
         fallDistance=0;
     }
     private boolean targetable(Entity e) {
+        return eligible(e) && getDistanceSqToEntity(e)<=ColossusConfig.range*ColossusConfig.range;
+    }
+    private boolean eligible(Entity e) {
         if(!(e instanceof EntityLivingBase) || e==this || !e.isEntityAlive() || e.worldObj!=worldObj || e instanceof EntityPrismarineColossus) return false;
-        if(e instanceof EntityPlayer && !ColossusConfig.creative && ((EntityPlayer)e).capabilities.isCreativeMode && variant()!=GLITCHED) return false;
-        return getDistanceSqToEntity(e)<=ColossusConfig.range*ColossusConfig.range;
+        return !(e instanceof EntityPlayer) || ColossusConfig.creative || !((EntityPlayer)e).capabilities.isCreativeMode || variant()==GLITCHED;
     }
     private void findTargets() {
         candidates.clear(); int inspected=0, reach=MathHelper.ceiling_float_int(ColossusConfig.range/16), side=reach*2+1;
@@ -191,49 +229,101 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
         EntityLivingBase best=targetable(target)?target:null;
         double score=best==null?Double.MAX_VALUE:score(best);
         for(EntityLivingBase e:candidates) if(score(e)<score) { best=e; score=score(e); }
-        target=best; dataWatcher.updateObject(26,best==null?0:best.getEntityId());
+        target=best;
     }
     private double score(EntityLivingBase e) { return getDistanceSqToEntity(e)*(e instanceof EntityPlayer?0.25:1)*(e==getAITarget()?0.1:1); }
     private void aim() {
         double dx=target.posX-posX,dz=target.posZ-posZ;
         float desired=(float)Math.toDegrees(Math.atan2(-dx,dz));
         // Root yaw follows Minecraft's +Z heading; the skeleton itself faces -Z.
-        if(!dormant() && state()==ColossusPose.IDLE && grips.isEmpty() && grabbed==null) rotationYaw+=MathHelper.clamp_float(MathHelper.wrapAngleTo180_float(desired-rotationYaw),-2,2);
-        float relative=MathHelper.clamp_float(MathHelper.wrapAngleTo180_float(desired-rotationYaw),-55,55);
-        float pitch=(float)Math.toDegrees(Math.atan2(target.posY+target.getEyeHeight()-(posY+17*scale()),Math.max(1,Math.hypot(dx,dz))));
+        if(!dormant() && state()==ColossusPose.IDLE && grips.isEmpty() && Double.isNaN(stepY)) turnToward(desired,2);
+        float relative=MathHelper.clamp_float(MathHelper.wrapAngleTo180_float(desired-rotationYaw),-42,42);
+        float pitch=(float)Math.toDegrees(Math.atan2(target.posY+target.getEyeHeight()-(posY+18*scale()),Math.max(1,Math.hypot(dx,dz))));
         dataWatcher.updateObject(24,headYaw()+MathHelper.clamp_float(relative-headYaw(),-3,3));
-        dataWatcher.updateObject(25,headPitch()+MathHelper.clamp_float(MathHelper.clamp_float(pitch,-48,20)-headPitch(),-2,2));
+        dataWatcher.updateObject(25,headPitch()+MathHelper.clamp_float(MathHelper.clamp_float(pitch,-25,16)-headPitch(),-2,2));
+    }
+    private void turnToward(float yaw,float speed) {
+        float next=rotationYaw+MathHelper.clamp_float(MathHelper.wrapAngleTo180_float(yaw-rotationYaw),-speed,speed);
+        if(next!=rotationYaw && clearMove(walkBody(posX,posY,posZ,next),0,0,0)) rotationYaw=next;
     }
     private void pursue() {
         moving=0;
+        if(!Double.isNaN(stepY)) {
+            if(advanceStep()) return;
+            stepY=Double.NaN;
+            steeringTicks=0;
+        }
         if(target==null || !grips.isEmpty() || getDistanceSqToEntity(target)<Math.pow(6*scale(),2)) return;
         double dx=target.posX-posX,dz=target.posZ-posZ;
         float desired=(float)Math.toDegrees(Math.atan2(-dx,dz));
         if(Math.abs(MathHelper.wrapAngleTo180_float(desired-rotationYaw))>35) return;
-        if(--steeringTicks<=0) {
-            steeringTicks=5; steeringX=steeringZ=0;
-            double base=Math.toRadians(rotationYaw);
-            double[] angles={0,0.6,-0.6,1.1,-1.1};
-            for(double angle:angles) {
-                double vx=-Math.sin(base+angle)*ColossusConfig.speed, vz=Math.cos(base+angle)*ColossusConfig.speed;
-                if(clearBody(posX+vx*5,posY,posZ+vz*5)) { steeringX=vx; steeringZ=vz; blocked=0; break; }
-                if(clearBody(posX+vx*5,posY+1,posZ+vz*5) && supported(posX+vx*5,posY+1,posZ+vz*5)) { setPosition(posX,posY+1,posZ); steeringX=vx; steeringZ=vz; blocked=0; break; }
-            }
-            if(steeringX==0 && steeringZ==0) blocked++;
+        AxisAlignedBB[] body=walkBody(posX,posY,posZ,rotationYaw);
+        if(--steeringTicks>0 && (steeringX!=0 || steeringZ!=0) && tryMove(body,steeringX,steeringZ)) return;
+        double base=Math.toRadians(rotationYaw);
+        for(double angle:STEERING_ANGLES) {
+            double vx=-Math.sin(base+angle)*ColossusConfig.speed, vz=Math.cos(base+angle)*ColossusConfig.speed;
+            if(tryMove(body,vx,vz)) { steeringTicks=5; blocked=0; return; }
         }
-        if(steeringX!=0 || steeringZ!=0) { setPosition(posX+steeringX,posY,posZ+steeringZ); moving=1; }
-        else if(blocked>=4 && cooldown==0 && ColossusConfig.terrain && ColossusConfig.attacks) { begin(target.posY>posY+7*scale()?ColossusPose.PUNCH:ColossusPose.SLAM); blocked=0; }
+        if(++blocked>=20 && cooldown==0 && ColossusConfig.terrain && ColossusConfig.attacks) {
+            begin(target.posY>posY+7*scale()?ColossusPose.PUNCH:ColossusPose.SLAM);
+            blocked=0;
+        }
+    }
+    private boolean tryMove(AxisAlignedBB[] body,double dx,double dz) {
+        if(clearMove(body,dx,0,dz)) {
+            setPosition(posX+dx,posY,posZ+dz);
+            steeringX=dx; steeringZ=dz; moving=1;
+            return true;
+        }
+        if(!supported(body)) return false;
+        double top=terrain.ledgeHeight(body[0],dx,dz,posY);
+        top=terrain.ledgeHeight(body[1],dx,dz,top);
+        double rise=top-posY;
+        if(rise<=1E-6 || rise>1.000001 || !clearMove(body,0,rise,0)) return false;
+        AxisAlignedBB[] elevated=walkBody(posX,top,posZ,rotationYaw);
+        if(!clearMove(elevated,dx,0,dz) || !supported(walkBody(posX+dx,top,posZ+dz,rotationYaw))) return false;
+        steeringX=dx; steeringZ=dz; stepY=top;
+        return advanceStep();
+    }
+    private boolean advanceStep() {
+        double rise=stepY-posY;
+        if(!clearMove(walkBody(posX,posY,posZ,rotationYaw),0,rise,0)
+            || !clearMove(walkBody(posX,stepY,posZ,rotationYaw),steeringX,0,steeringZ)
+            || !supported(walkBody(posX+steeringX,stepY,posZ+steeringZ,rotationYaw))) return false;
+        motionY=0;
+        moving=1;
+        if(rise>0.24) setPosition(posX,posY+0.24,posZ);
+        else {
+            setPosition(posX+steeringX,stepY,posZ+steeringZ);
+            stepY=Double.NaN;
+        }
+        return true;
     }
     public static boolean loaded(World w,double x,double z,int radius) {
         return w.checkChunksExist(MathHelper.floor_double(x)-radius,0,MathHelper.floor_double(z)-radius,MathHelper.floor_double(x)+radius,255,MathHelper.floor_double(z)+radius);
     }
     public boolean clearBody(double x,double y,double z) {
-        double s=scale();
-        if(y<1 || y+20*s>255 || !loaded(worldObj,x,z,MathHelper.ceiling_double_int(7*s))) return false;
-        // Three coarse anatomical volumes, evaluated only on steering refresh/spawn, never a 20-block vanilla mover.
-        return clear(AxisAlignedBB.getBoundingBox(x-3*s,y+0.1,z-2*s,x+3*s,y+8*s,z+2*s))
-            && clear(AxisAlignedBB.getBoundingBox(x-6*s,y+8*s,z-2*s,x+6*s,y+15*s,z+2*s))
-            && clear(AxisAlignedBB.getBoundingBox(x-3*s,y+15*s,z-3*s,x+3*s,y+20*s,z+3*s));
+        return clearMove(walkBody(x,y,z,rotationYaw),0,0,0);
+    }
+    private AxisAlignedBB[] walkBody(double x,double y,double z,float heading) {
+        double angle=Math.toRadians(180-heading), s=scale(), c=Math.cos(angle), sin=Math.sin(angle);
+        AxisAlignedBB[] body=new AxisAlignedBB[WALK_BODY.length];
+        for(int i=0;i<body.length;i++) {
+            double[] b=WALK_BODY[i];
+            double cx=x+((b[0]+b[3])*c+(b[2]+b[5])*sin)*s*0.5;
+            double cz=z+(-(b[0]+b[3])*sin+(b[2]+b[5])*c)*s*0.5;
+            double hx=((b[3]-b[0])*Math.abs(c)+(b[5]-b[2])*Math.abs(sin))*s*0.5;
+            double hz=((b[3]-b[0])*Math.abs(sin)+(b[5]-b[2])*Math.abs(c))*s*0.5;
+            body[i]=AxisAlignedBB.getBoundingBox(cx-hx,y+b[1]*s,cz-hz,cx+hx,y+b[4]*s,cz+hz);
+        }
+        return body;
+    }
+    private boolean clearMove(AxisAlignedBB[] body,double dx,double dy,double dz) {
+        for(AxisAlignedBB box:body) {
+            AxisAlignedBB sweep=box.addCoord(dx,dy,dz);
+            if(sweep.minY<1 || sweep.maxY>256 || !terrain.clearBlocks(sweep)) return false;
+        }
+        return true;
     }
     private boolean ownedBox(AxisAlignedBB box) { for(EntityColossusPart p:parts) if(p!=null && p.boundingBox==box) return true; return false; }
     private boolean clear(AxisAlignedBB box) {
@@ -241,22 +331,23 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
         return true;
     }
     private boolean supported(double x,double y,double z) {
-        double s=scale(); if(!loaded(worldObj,x,z,MathHelper.ceiling_double_int(3*s+1))) return false;
-        int support=0;
-        for(int a=-1;a<=1;a+=2) for(int b=-1;b<=1;b+=2) {
-            int bx=MathHelper.floor_double(x+a*2*s), by=MathHelper.floor_double(y-0.05), bz=MathHelper.floor_double(z+b*s);
-            AxisAlignedBB box=worldObj.getBlock(bx,by,bz).getCollisionBoundingBoxFromPool(worldObj,bx,by,bz);
-            if(box!=null && box.maxY>=y-0.15) support++;
+        return supported(walkBody(x,y,z,rotationYaw));
+    }
+    private boolean supported(AxisAlignedBB[] body) {
+        for(int i=0;i<2;i++) {
+            AxisAlignedBB foot=body[i];
+            if(terrain.loaded(foot) && terrain.verticalClearance(foot,-0.05)>-0.05) return true;
         }
-        return support>=2;
+        return false;
     }
     private void gravity() {
-        if(!loaded(worldObj,posX,posZ,4)) return;
-        double s=scale();
-        AxisAlignedBB feet=AxisAlignedBB.getBoundingBox(posX-2.7*s,posY,posZ-1.5*s,posX+2.7*s,posY+0.5,posZ+1.5*s);
+        if(!Double.isNaN(stepY)) return;
         motionY=Math.max(-0.8,motionY-0.08);
         double fall=motionY;
-        for(Object o:worldObj.getCollidingBoundingBoxes(this,feet.addCoord(0,fall,0))) if(!ownedBox((AxisAlignedBB)o)) fall=((AxisAlignedBB)o).calculateYOffset(feet,fall);
+        for(AxisAlignedBB box:walkBody(posX,posY,posZ,rotationYaw)) {
+            fall=terrain.verticalClearance(box,fall);
+            if(fall==0) break;
+        }
         setPosition(posX,posY+fall,posZ); onGround=fall!=motionY;
         if(onGround) motionY=0;
     }
@@ -268,15 +359,42 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
         int choice=rand.nextInt(5);
         if(d<4) begin(choice==0?ColossusPose.GRAB:ColossusPose.STOMP);
         else if(target.posY>posY+8*scale()) begin(ColossusPose.PUNCH);
-        else begin(choice==0?ColossusPose.GRAB:choice==1?ColossusPose.SWEEP:choice==2?ColossusPose.PUNCH:ColossusPose.SLAM);
+        else begin(choice==0 && d<=9?ColossusPose.GRAB:choice==1?ColossusPose.SWEEP:choice==2?ColossusPose.PUNCH:ColossusPose.SLAM);
     }
     public void begin(int next) {
         if(worldObj.isRemote) return;
-        if(next!=ColossusPose.GRAB) releaseGrab();
+        releaseGrab();
+        grabTarget=null;
+        stepY=Double.NaN;
         dataWatcher.updateObject(21,(byte)next); dataWatcher.updateObject(22,(int)worldObj.getTotalWorldTime());
         dataWatcher.updateObject(29,target==null?0F:(float)Math.max(0,(target.posY-posY)/scale()));
+        dataWatcher.updateObject(31,0); dataWatcher.updateObject(26,0);
+        grabSpent=next!=ColossusPose.GRAB || !targetable(target);
+        if(next==ColossusPose.GRAB && targetable(target)) {
+            grabTarget=target;
+            Vec3 local=rootLocal(target.posX,target.posY,target.posZ);
+            dataWatcher.updateObject(19,(byte)(local.xCoord>0?1:-1));
+            updateGrabAim(false);
+        }
         struck.clear(); lastHand=null; moving=0;
         if(next!=ColossusPose.IDLE) sound("mob.irongolem.throw",0.6F);
+    }
+    private int attackDuration() {
+        if(state()!=ColossusPose.GRAB) return ColossusPose.duration(state());
+        if(escapeTime()>0) return escapeTime()+24;
+        if(captureTime()>0) return captureTime()+ColossusPose.ESCAPE_TICKS+19;
+        return ColossusPose.GRAB_END+19;
+    }
+    private void updateGrabAim(boolean turn) {
+        double dx=grabTarget.posX-posX,dz=grabTarget.posZ-posZ;
+        if(turn) {
+            double angle=Math.toDegrees(Math.asin(Math.min(0.76,3.6*scale()/Math.max(1,Math.hypot(dx,dz)))));
+            turnToward((float)(Math.toDegrees(Math.atan2(-dx,dz))-grabSide()*angle),2.4F);
+        }
+        double centerY=(grabTarget.boundingBox.minY+grabTarget.boundingBox.maxY)*0.5;
+        Vec3 goal=rootLocal(grabTarget.posX,Math.max(centerY,grabTarget.boundingBox.minY+1.65*scale()),grabTarget.posZ);
+        aimX=(float)goal.xCoord; aimY=(float)goal.yCoord; aimZ=(float)goal.zCoord;
+        dataWatcher.updateObject(16,aimX); dataWatcher.updateObject(17,aimY); dataWatcher.updateObject(18,aimZ);
     }
     private void attackTick(int t) {
         int state=state();
@@ -303,30 +421,94 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
             sound("random.explode",0.6F);
         }
         if(state==ColossusPose.STOMP && t==31) {
-            Vec3 p=point(ColossusPose.LEFT_FOOT,0,-4,-0.5);
+            Vec3 p=point(ColossusPose.LEFT_FOOT,0,-ColossusPose.SOLE,-0.5);
             AxisAlignedBB foot=limbBox(ColossusPose.LEFT_FOOT); hitVolume(foot,1.3F,2.4F);
             terrain.contact(foot.expand(0,0.8,0)); shockwave(p,6*scale(),0.8F,1.8F); impactEffect(p,4); sound("random.explode",0.7F);
         }
         if(state==ColossusPose.GRAB) {
-            if(t>=24 && t<=35 && grabbed==null) {
-                AxisAlignedBB hand=limbBox(ColossusPose.RIGHT_HAND);
-                for(EntityLivingBase e:candidates) if(targetable(e) && !grips.containsKey(e.getUniqueID()) && e.ridingEntity==null && hand.intersectsWith(e.boundingBox)) {
-                    grabbed=e; grabEscape=0; if(e instanceof EntityPlayer) ((EntityPlayer)e).addChatMessage(new ChatComponentTranslation("colossus.grab")); break;
-                }
-            }
+            if(t>=ColossusPose.GRAB_START && t<=ColossusPose.GRAB_END && !grabSpent) tryGrab(t);
             if(grabbed!=null) {
-                if(!targetable(grabbed)) { releaseGrab(); return; }
-                if(grabbed instanceof EntityPlayer && grabbed.isSneaking()) grabEscape++; else grabEscape=Math.max(0,grabEscape-1);
-                if(grabEscape>=8) { releaseGrab(); begin(ColossusPose.STUN); return; }
-                if(t==86) { grabbed.attackEntityFrom(DamageSource.causeMobDamage(this),ColossusConfig.damage*2.5F); releaseGrab(); }
+                if(!eligible(grabbed)) { releaseGrab(); return; }
+                if(t>=captureTime()+ColossusPose.ESCAPE_TICKS) {
+                    grabbed.attackEntityFrom(DamageSource.causeMobDamage(this),ColossusConfig.damage*2.5F);
+                    releaseGrab();
+                }
             }
         }
     }
+    private void tryGrab(int time) {
+        int hand=grabHand();
+        // Sample between server ticks in trajectory order, so an interceptor can take the grab.
+        for(int i=1;i<=5;i++) {
+            evaluateAt(skeleton,time-1+i/5D,0);
+            Vec3 elbow=point(hand,0,0,0), fist=point(hand,0,ColossusPose.FIST_Y,0);
+            Vec3 shoulder=point(grabSide()<0?ColossusPose.RIGHT_ARM:ColossusPose.LEFT_ARM,0,0,0);
+            AxisAlignedBB box=limbBox(hand);
+            if(!terrain.loaded(box.addCoord(shoulder.xCoord-fist.xCoord,0,shoulder.zCoord-fist.zCoord))
+                || !unobstructed(shoulder,elbow) || !unobstructed(elbow,fist)) {
+                grabSpent=true;
+                break;
+            }
+            EntityLivingBase contact=null;
+            double nearest=Double.MAX_VALUE;
+            for(Object o:worldObj.getEntitiesWithinAABB(EntityLivingBase.class,box)) {
+                EntityLivingBase e=(EntityLivingBase)o;
+                if(!eligible(e) || grips.containsKey(e.getUniqueID()) || e.ridingEntity!=null || e.riddenByEntity!=null
+                    || !intersectsFist(e.boundingBox,hand,fist)) continue;
+                Vec3 center=Vec3.createVectorHelper(e.posX,(e.boundingBox.minY+e.boundingBox.maxY)*0.5,e.posZ);
+                double distance=fist.squareDistanceTo(center);
+                if(distance<nearest && unobstructed(fist,center)) { contact=e; nearest=distance; }
+            }
+            if(contact!=null) {
+                grabSpent=true; grabbed=contact;
+                // The swept test can contact between ticks. Pin the passenger at its current location on the capture tick.
+                evaluateAt(skeleton,time,0);
+                grabAnchor=fromWorld(Vec3.createVectorHelper(contact.posX,contact.posY,contact.posZ),hand);
+                grabEscape=0; grabSequence=0; grabKeyDown=true; grabPressTick=time-2;
+                dataWatcher.updateObject(31,time);
+                syncGrab();
+                break;
+            }
+        }
+        evaluate(skeleton,0);
+    }
+    private boolean unobstructed(Vec3 from,Vec3 to) {
+        return worldObj.func_147447_a(Vec3.createVectorHelper(from.xCoord,from.yCoord,from.zCoord),to,false,true,false)==null;
+    }
+    private boolean intersectsFist(AxisAlignedBB box,int hand,Vec3 fist) {
+        // SAT for the rendered, oriented fist against the target's world-aligned box.
+        Vec3 center=Vec3.createVectorHelper((box.minX+box.maxX)*0.5,(box.minY+box.maxY)*0.5,(box.minZ+box.maxZ)*0.5);
+        Vec3 delta=Vec3.createVectorHelper(center.xCoord-fist.xCoord,center.yCoord-fist.yCoord,center.zCoord-fist.zCoord);
+        double s=scale();
+        Vec3[] handAxes={
+            direction(fist,point(hand,1,ColossusPose.FIST_Y,0),s),
+            direction(fist,point(hand,0,ColossusPose.FIST_Y+1,0),s),
+            direction(fist,point(hand,0,ColossusPose.FIST_Y,1),s)
+        };
+        Vec3[] worldAxes={Vec3.createVectorHelper(1,0,0),Vec3.createVectorHelper(0,1,0),Vec3.createVectorHelper(0,0,1)};
+        for(Vec3 axis:handAxes) if(separated(axis,delta,box,handAxes,s)) return false;
+        // World axes were already checked by the enclosing AABB query.
+        for(Vec3 axis:handAxes) for(Vec3 worldAxis:worldAxes)
+            if(separated(axis.crossProduct(worldAxis),delta,box,handAxes,s)) return false;
+        return true;
+    }
+    private static Vec3 direction(Vec3 from,Vec3 to,double scale) {
+        return Vec3.createVectorHelper((to.xCoord-from.xCoord)/scale,(to.yCoord-from.yCoord)/scale,(to.zCoord-from.zCoord)/scale);
+    }
+    private static boolean separated(Vec3 axis,Vec3 delta,AxisAlignedBB box,Vec3[] hand,double s) {
+        double target=(Math.abs(axis.xCoord)*(box.maxX-box.minX)+Math.abs(axis.yCoord)*(box.maxY-box.minY)+Math.abs(axis.zCoord)*(box.maxZ-box.minZ))*0.5;
+        double fist=s*(ColossusPose.FIST_X_RADIUS*Math.abs(axis.dotProduct(hand[0]))
+            +ColossusPose.FIST_Y_RADIUS*Math.abs(axis.dotProduct(hand[1]))+ColossusPose.FIST_Z_RADIUS*Math.abs(axis.dotProduct(hand[2])));
+        return Math.abs(axis.dotProduct(delta))>target+fist+1E-7;
+    }
     private void movingHit(int limb,float damage,float force,boolean destroy) {
-        AxisAlignedBB now=limbBox(limb), swept=now;
-        if(lastHand!=null) swept=AxisAlignedBB.getBoundingBox(Math.min(now.minX,lastHand.minX),Math.min(now.minY,lastHand.minY),Math.min(now.minZ,lastHand.minZ),Math.max(now.maxX,lastHand.maxX),Math.max(now.maxY,lastHand.maxY),Math.max(now.maxZ,lastHand.maxZ));
+        AxisAlignedBB now=limbBox(limb), swept=lastHand==null?now:union(now,lastHand);
         hitVolume(swept,damage,force); if(destroy) terrain.contact(swept);
         lastHand=now;
+    }
+    private static AxisAlignedBB union(AxisAlignedBB a,AxisAlignedBB b) {
+        return AxisAlignedBB.getBoundingBox(Math.min(a.minX,b.minX),Math.min(a.minY,b.minY),Math.min(a.minZ,b.minZ),
+            Math.max(a.maxX,b.maxX),Math.max(a.maxY,b.maxY),Math.max(a.maxZ,b.maxZ));
     }
     private void hitVolume(AxisAlignedBB box,float multiplier,float force) {
         for(EntityLivingBase e:candidates) if(targetable(e) && !grips.containsKey(e.getUniqueID()) && e!=grabbed && box.intersectsWith(e.boundingBox) && struck.add(e.getUniqueID())) {
@@ -350,12 +532,14 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
         double yaw=Math.toRadians(180-rotationYaw), c=Math.cos(yaw),s=Math.sin(yaw),scale=scale();
         return Vec3.createVectorHelper(posX+(local.xCoord*c+local.zCoord*s)*scale,posY+local.yCoord*scale,posZ+(-local.xCoord*s+local.zCoord*c)*scale);
     }
-    public Vec3 fromWorld(Vec3 world,int bone) {
+    private Vec3 rootLocal(double wx,double wy,double wz) {
         double yaw=Math.toRadians(180-rotationYaw),c=Math.cos(yaw),s=Math.sin(yaw),scale=scale();
-        double dx=(world.xCoord-posX)/scale,dz=(world.zCoord-posZ)/scale;
-        double x=dx*c-dz*s,y=(world.yCoord-posY)/scale,z=dx*s+dz*c;
-        double[] m=skeleton.bones[bone].matrix; x-=m[12];y-=m[13];z-=m[14];
-        return Vec3.createVectorHelper(m[0]*x+m[1]*y+m[2]*z,m[4]*x+m[5]*y+m[6]*z,m[8]*x+m[9]*y+m[10]*z);
+        double dx=(wx-posX)/scale,dz=(wz-posZ)/scale;
+        return Vec3.createVectorHelper(dx*c-dz*s,(wy-posY)/scale,dx*s+dz*c);
+    }
+    public Vec3 fromWorld(Vec3 world,int bone) {
+        Vec3 local=rootLocal(world.xCoord,world.yCoord,world.zCoord);
+        return skeleton.bones[bone].inversePoint(local.xCoord,local.yCoord,local.zCoord);
     }
     public AxisAlignedBB boneBox(int bone,double x,double y,double z,double hx,double hy,double hz) {
         double minX=Double.MAX_VALUE,minY=minX,minZ=minX,maxX=-minX,maxY=maxX,maxZ=maxX;
@@ -366,17 +550,21 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
         }
         return AxisAlignedBB.getBoundingBox(minX,minY,minZ,maxX,maxY,maxZ);
     }
-    public AxisAlignedBB limbBox(int bone) { return boneBox(bone,0,bone==ColossusPose.LEFT_FOOT?-3:-3.0,bone==ColossusPose.LEFT_FOOT?-0.5:0,1.65,1.1,1.8); }
+    public AxisAlignedBB limbBox(int bone) {
+        if(bone==ColossusPose.LEFT_FOOT || bone==ColossusPose.RIGHT_FOOT)
+            return boneBox(bone,0,-0.5,-0.625,1.875,0.75,2.125);
+        return boneBox(bone,0,ColossusPose.FIST_Y,0,ColossusPose.FIST_X_RADIUS,ColossusPose.FIST_Y_RADIUS,ColossusPose.FIST_Z_RADIUS);
+    }
     public AxisAlignedBB partBox(int slot) {
         switch(slot) {
-            case 0: return boneBox(ColossusPose.TORSO,0,3.5,0,4,3.5,2);
-            case 1: return boneBox(ColossusPose.HEAD,0,2.5,0,3,2.5,2.5);
-            case 2: return boneBox(ColossusPose.HEAD,0,2.7,2.65,0.95,0.85,0.12);
+            case 0: return boneBox(ColossusPose.TORSO,0,3.125,0,4,3.5,2.125);
+            case 1: return boneBox(ColossusPose.HEAD,0,1.75,-0.25,2.75,3,2.75);
+            case 2: return boneBox(ColossusPose.HEAD,0,ColossusPose.RUNE_Y,ColossusPose.RUNE_Z,0.95,0.85,0.125);
             case 3: return limbBox(ColossusPose.LEFT_HAND);
             case 4: return limbBox(ColossusPose.RIGHT_HAND);
-            case 5: return boneBox(ColossusPose.LEFT_LEG,0,-2,0,1.6,2,1.6);
-            case 6: return boneBox(ColossusPose.RIGHT_LEG,0,-2,0,1.6,2,1.6);
-            default: return boneBox(ColossusPose.ROOT,0,1.8,0,4,1.8,2.7);
+            case 5: return boneBox(ColossusPose.LEFT_LEG,0,-2.125,0,1.625,2.125,1.5);
+            case 6: return boneBox(ColossusPose.RIGHT_LEG,0,-2.125,0,1.625,2.125,1.5);
+            default: return union(limbBox(ColossusPose.LEFT_FOOT),limbBox(ColossusPose.RIGHT_FOOT));
         }
     }
     private void maintainParts() {
@@ -390,12 +578,12 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
     public boolean hit(int slot,DamageSource source,float damage) {
         if(worldObj.isRemote || !isEntityAlive() || !Float.isFinite(damage) || damage<=0) return false;
         activate();
-        Entity actor=source.getEntity(); if(targetable(actor)) { target=(EntityLivingBase)actor; dataWatcher.updateObject(26,actor.getEntityId()); }
+        Entity actor=source.getEntity(); if(targetable(actor)) target=(EntityLivingBase)actor;
         evaluate(skeleton,0);
         if(weakHit(source)) {
             boolean gauntlet=actor instanceof EntityPlayer && ((EntityPlayer)actor).getHeldItem()!=null && ((EntityPlayer)actor).getHeldItem().getItem()==ColossusContent.gauntlet && source.getSourceOfDamage()==actor;
             if(ColossusConfig.gauntletRequired && !gauntlet) { sound("random.orb",0.5F); return false; }
-            reaction=1; dataWatcher.updateObject(30,(int)worldObj.getTotalWorldTime()+20); impactEffect(point(ColossusPose.HEAD,0,2.7,2.7),6); sound("dig.glass",0.5F);
+            reaction=1; dataWatcher.updateObject(30,(int)worldObj.getTotalWorldTime()+20); impactEffect(point(ColossusPose.HEAD,0,ColossusPose.RUNE_Y,ColossusPose.RUNE_Z),6); sound("dig.glass",0.5F);
             return super.attackEntityFrom(source,gauntlet?2048:damage*ColossusConfig.weakMultiplier);
         }
         if(source==DamageSource.outOfWorld) return super.attackEntityFrom(source,damage);
@@ -422,11 +610,11 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
             to=Vec3.createVectorHelper(direct.posX+direct.motionX,direct.posY+direct.motionY,direct.posZ+direct.motionZ);
         }
         Vec3 a=fromWorld(from,ColossusPose.HEAD),b=fromWorld(to,ColossusPose.HEAD);
-        if(a.zCoord<=2.64 || b.zCoord>=a.zCoord) return false;
-        double t=(2.65-a.zCoord)/(b.zCoord-a.zCoord); if(t<0 || t>1) return false;
+        if(a.zCoord<=ColossusPose.RUNE_Z || b.zCoord>=a.zCoord) return false;
+        double t=(ColossusPose.RUNE_Z-a.zCoord)/(b.zCoord-a.zCoord); if(t<0 || t>1) return false;
         double x=a.xCoord+(b.xCoord-a.xCoord)*t,y=a.yCoord+(b.yCoord-a.yCoord)*t;
-        if(Math.abs(x)>0.95 || Math.abs(y-2.7)>0.85) return false;
-        Vec3 contact=point(ColossusPose.HEAD,x,y,2.65);
+        if(Math.abs(x)>0.95 || Math.abs(y-ColossusPose.RUNE_Y)>0.85) return false;
+        Vec3 contact=point(ColossusPose.HEAD,x,y,ColossusPose.RUNE_Z);
         MovingObjectPosition obstruction=worldObj.rayTraceBlocks(from,contact);
         return obstruction==null;
     }
@@ -440,19 +628,53 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
         Grip g=new Grip(p,local.xCoord<0?-1:1); grips.put(p.getUniqueID(),g); p.addChatMessage(new ChatComponentTranslation("colossus.climb")); return true;
     }
     public void control(EntityPlayerMP p,int vertical,boolean brace,boolean release) {
-        if(grabbed==p) { if(release) grabEscape+=2; return; }
         Grip g=grips.get(p.getUniqueID()); if(g==null) return;
         g.input=MathHelper.clamp_int(vertical,-1,1); g.brace=brace; g.inputTick=worldObj.getTotalWorldTime();
         if(release) release(p,false);
     }
+    public void escapeInput(EntityPlayerMP p,int token,int sequence,boolean down) {
+        if(grabbed!=p || token!=grabToken() || sequence<=grabSequence || grabTicksLeft()==0) return;
+        grabSequence=sequence;
+        boolean pressed=down && !grabKeyDown;
+        grabKeyDown=down;
+        int time=(int)stateTime(0);
+        if(!pressed || time-grabPressTick<2) return;
+        grabPressTick=time;
+        if(++grabEscape<ColossusConfig.escapePresses) { syncGrab(); return; }
+        dataWatcher.updateObject(26,time);
+        releaseGrab();
+        // Move away from the hand without displacing the player through terrain.
+        double dx=p.posX-posX,dz=p.posZ-posZ, length=Math.max(0.01,Math.hypot(dx,dz));
+        dx=dx/length*0.65; dz=dz/length*0.65;
+        if(terrain.clearBlocks(p.boundingBox.addCoord(dx,0,dz))) {
+            if(p.playerNetServerHandler!=null) p.playerNetServerHandler.setPlayerLocation(p.posX+dx,p.posY,p.posZ+dz,p.rotationYaw,p.rotationPitch);
+            else p.setPosition(p.posX+dx,p.posY,p.posZ+dz);
+            p.addVelocity(dx,0.16,dz); p.velocityChanged=true;
+        }
+        sound("dig.stone",0.7F);
+    }
     public Vec3 climbPoint(float progress,int side) {
         // Continuous travel between leg, hip, torso, shoulder and rear-skull holds.
         float q=MathHelper.clamp_float(progress,0,4); int node=Math.min(3,(int)q); float f=q-node;
-        int[] bones={side<0?ColossusPose.RIGHT_LEG:ColossusPose.LEFT_LEG,ColossusPose.TORSO,ColossusPose.TORSO,ColossusPose.HEAD,ColossusPose.HEAD};
-        double[][] offsets={{2.2,-6.8,2.1},{3,-1,2.6},{3,4.5,2.6},{2,0,3.3},{0,1.5,3.8}};
+        int[] bones={side<0?ColossusPose.RIGHT_FOOT:ColossusPose.LEFT_FOOT,ColossusPose.TORSO,ColossusPose.TORSO,ColossusPose.HEAD,ColossusPose.HEAD};
+        double[][] offsets={{0.9,0,2.1},{2.85,-1,2.65},{3.1,4.25,2.75},{1.85,-0.25,3.0},{0,1.4,3.55}};
         Vec3 a=point(bones[node],offsets[node][0]*side,offsets[node][1],offsets[node][2]);
         Vec3 b=point(bones[node+1],offsets[node+1][0]*side,offsets[node+1][1],offsets[node+1][2]);
         return Vec3.createVectorHelper(a.xCoord+(b.xCoord-a.xCoord)*f,a.yCoord+(b.yCoord-a.yCoord)*f,a.zCoord+(b.zCoord-a.zCoord)*f);
+    }
+    public Vec3 grabPoint(int side,double x,double y,double z,Entity passenger) {
+        int hand=side<0?ColossusPose.RIGHT_HAND:ColossusPose.LEFT_HAND;
+        Vec3 contact=point(hand,x,y,z);
+        if(captureTime()<=0) return contact;
+        double close=ColossusPose.smooth((stateTime(0)-captureTime()-10)/55D);
+        Vec3 palm=point(hand,0,ColossusPose.FIST_Y,0);
+        double px=contact.xCoord+(palm.xCoord-contact.xCoord)*close;
+        double py=contact.yCoord+(palm.yCoord-passenger.height*0.5-contact.yCoord)*close;
+        double pz=contact.zCoord+(palm.zCoord-contact.zCoord)*close;
+        // The hand can roll slightly downward before lifting. Keep grounded passengers above the floor.
+        double half=passenger.width*0.5;
+        AxisAlignedBB footprint=AxisAlignedBB.getBoundingBox(px-half,py,pz-half,px+half,py+passenger.height,pz+half);
+        return Vec3.createVectorHelper(px,py+terrain.floorLift(footprint),pz);
     }
     private void updateAttachments() {
         Iterator<Grip> it=grips.values().iterator();
@@ -463,25 +685,35 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
             g.progress=MathHelper.clamp_float(g.progress+g.input*0.014F,0,4);
             Vec3 anchor=climbPoint(g.progress,g.side);
             if(!placeAttached(p,anchor)) { detach(p); it.remove(); continue; }
-            if(ticksExisted%4==0) syncGrip(p,g.progress,false,g.side);
+            if(ticksExisted%4==0) syncGrip(p,g.progress,g.side);
         }
         if(grabbed!=null) {
-            Vec3 anchor=point(ColossusPose.RIGHT_HAND,0,-3,-0.8);
+            Vec3 anchor=grabPoint(grabSide(),grabAnchor.xCoord,grabAnchor.yCoord,grabAnchor.zCoord,grabbed);
             if(!placeAttached(grabbed,anchor)) releaseGrab();
-            else if(ticksExisted%4==0) syncGrip(grabbed,0,true,1);
+            else if(ticksExisted%4==0) syncGrab();
         }
     }
     private boolean placeAttached(Entity e,Vec3 p) {
         if(!loaded(worldObj,p.xCoord,p.zCoord,1)) return false;
-        AxisAlignedBB box=e.boundingBox.copy().offset(p.xCoord-e.posX,p.yCoord-e.posY,p.zCoord-e.posZ);
-        if(!clear(box)) return false;
+        double dx=p.xCoord-e.posX,dy=p.yCoord-e.posY,dz=p.zCoord-e.posZ;
+        if(e==grabbed) {
+            AxisAlignedBB start=e.boundingBox.contract(1E-6,1E-6,1E-6);
+            double lift=terrain.floorLift(start);
+            if(!terrain.clearBlocks(start.offset(0,lift,0).addCoord(dx,dy-lift,dz))) return false;
+        }
+        AxisAlignedBB box=e.boundingBox.copy().offset(dx,dy,dz);
+        if(!clear(box.contract(1E-6,1E-6,1E-6))) return false;
         e.motionX=e.motionY=e.motionZ=0; e.fallDistance=0;
         if(e instanceof EntityPlayerMP && ((EntityPlayerMP)e).playerNetServerHandler!=null && ticksExisted%4==0) ((EntityPlayerMP)e).playerNetServerHandler.setPlayerLocation(p.xCoord,p.yCoord,p.zCoord,e.rotationYaw,e.rotationPitch);
         else e.setPosition(p.xCoord,p.yCoord,p.zCoord);
         return true;
     }
-    private void syncGrip(Entity e,float progress,boolean grabbed,int side) {
-        PacketDispatcher.wrapper.sendToAllAround(new ColossusAttachmentPacket(getEntityId(),e.getEntityId(),progress,grabbed,side),new TargetPoint(dimension,posX,posY,posZ,128));
+    private void syncGrip(Entity e,float progress,int side) {
+        PacketDispatcher.wrapper.sendToAllAround(new ColossusAttachmentPacket(getEntityId(),e.getEntityId(),progress,false,side),new TargetPoint(dimension,posX,posY,posZ,128));
+    }
+    private void syncGrab() {
+        PacketDispatcher.wrapper.sendToAllAround(new ColossusAttachmentPacket(getEntityId(),grabbed.getEntityId(),grabEscape,grabSide(),
+            grabToken(),ColossusConfig.escapePresses,grabAnchor),new TargetPoint(dimension,posX,posY,posZ,128));
     }
     private void detach(Entity e) {
         e.fallDistance=0;
@@ -493,9 +725,8 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
         grips.remove(p.getUniqueID()); detach(p);
         if(shaken) { double yaw=Math.toRadians(rotationYaw); p.addVelocity(Math.sin(yaw)*0.6,0.4,-Math.cos(yaw)*0.6); p.velocityChanged=true; }
     }
-    private void releaseGrab() { if(grabbed!=null) { detach(grabbed); grabbed=null; } }
+    private void releaseGrab() { if(grabbed!=null) { detach(grabbed); grabbed=null; grabAnchor=null; } }
     public void releaseAll() { releaseGrab(); for(Grip g:grips.values()) detach(g.player); grips.clear(); }
-    public boolean holds(EntityPlayer p) { return grabbed==p || grips.containsKey(p.getUniqueID()); }
     public void unload() { releaseAll(); restoreClock(); terrain.clear(); for(EntityColossusPart p:parts) if(p!=null) p.setDead(); }
     public void restoreClock() {
         if(!clockChanged || worldObj.isRemote) return;
@@ -543,7 +774,7 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
     }
     private void burst(int bone,double y) {
         for(int i=0;i<ColossusConfig.particles;i++) {
-            Vec3 p=bone==ColossusPose.HEAD?point(bone,0,2.7,2.7):point(bone,(rand.nextDouble()-0.5)*7,y,(rand.nextDouble()-0.5)*4);
+            Vec3 p=bone==ColossusPose.HEAD?point(bone,0,ColossusPose.RUNE_Y,ColossusPose.RUNE_Z):point(bone,(rand.nextDouble()-0.5)*7,y,(rand.nextDouble()-0.5)*4);
             String particle=variant()==GLITCHED && i%3==0?"portal":i%2==0?"blockcrack_"+Block.getIdFromBlock(Blocks.stone)+"_0":"iconcrack_"+net.minecraft.item.Item.getIdFromItem(ColossusContent.shard);
             worldObj.spawnParticle(particle,p.xCoord,p.yCoord,p.zCoord,(rand.nextDouble()-0.5)*0.5,rand.nextDouble()*0.5,(rand.nextDouble()-0.5)*0.5);
         }

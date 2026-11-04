@@ -7538,5 +7538,5 @@ item.colossus_prismarine_shard.name=Prismarine Shard
 item.colossus_spawn_egg.name=Spawn Prismarine Colossus
 colossus.gauntlet.tip=Strike the glowing symbol on the back of the Colossus's head.
 colossus.climb=Climbing: W/S to move, Space to brace against shaking, Sneak to release. Reach the rear-head symbol!
-colossus.grab=The Colossus has grabbed you! Hold Sneak to escape before it reaches its mouth.
+colossus.escape=Tap %s to escape  %s/%s
 colossus.spawn.unsafe=Colossus disabled, encounter limit reached, or unsafe location. Use a broad, clear, loaded area.

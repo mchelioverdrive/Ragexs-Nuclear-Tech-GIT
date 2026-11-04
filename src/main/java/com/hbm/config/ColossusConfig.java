@@ -10,7 +10,7 @@ public final class ColossusConfig {
     public static boolean enabled = true, terrain = false, climbing = true, gauntletRequired = true;
     public static boolean natural = false, clock = true, clockTime = false, permanentTime = false, creative = false;
     public static boolean attacks = true, proximityActivation = false, bypassArmor = false;
-    public static int blocks = 32, maximum = 2, cooldown = 65, particles = 12;
+    public static int blocks = 32, maximum = 2, cooldown = 65, particles = 12, escapePresses = 5;
     public static float health = 600, damage = 24, speed = 0.16F, range = 64, scale = 1, weakMultiplier = 8, volume = 2;
     public static Set<String> protectedBlocks = new HashSet<String>();
     public static void loadFromConfig(Configuration c) {
@@ -26,6 +26,7 @@ public final class ColossusConfig {
         gauntletRequired = bool(c, s, "gauntletRequired", "Require a held Prismarine Gauntlet to finish the rear-head symbol. False permits normal weapons.", true);
         bypassArmor = bool(c, s, "allowBodyDamage", "Allow highly reduced body damage to kill the boss instead of stopping at one health.", false);
         climbing = bool(c, s, "climbing", "Right-click the lower body to climb; W/S move, Space braces, Sneak releases.", true);
+        escapePresses = integer(c, s, "grabEscapePresses", "Distinct Sneak presses required within four seconds to escape a grab.", 5, 1, 16);
         terrain = bool(c, s, "terrainDestruction", "Contact-only limb destruction; also requires mobGriefing. Containers and machines are always protected.", false);
         blocks = integer(c, s, "blocksPerTick", "Dimension-wide maximum terrain coordinates examined across all Colossi, including air and protected blocks.", 32, 0, 256);
         maximum = integer(c, s, "maxActivePerDimension", "Maximum saved encounters, including dormant and unloaded bosses. Zero prevents new encounters.", 2, 0, 16);

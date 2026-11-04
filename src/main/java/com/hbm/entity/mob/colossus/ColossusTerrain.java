@@ -19,6 +19,32 @@ public final class ColossusTerrain {
     private static World suppression;
     public ColossusTerrain(EntityPrismarineColossus boss) { this.boss = boss; }
     public static boolean suppressing(World w) { return suppression == w; }
+    boolean loaded(AxisAlignedBB box) {
+        return boss.worldObj.checkChunksExist(MathHelper.floor_double(box.minX), 0, MathHelper.floor_double(box.minZ),
+            MathHelper.floor_double(box.maxX), 255, MathHelper.floor_double(box.maxZ));
+    }
+    boolean clearBlocks(AxisAlignedBB box) {
+        return loaded(box) && boss.worldObj.func_147461_a(box).isEmpty();
+    }
+    double verticalClearance(AxisAlignedBB box, double offset) {
+        AxisAlignedBB sweep = box.addCoord(0, offset, 0);
+        if(!loaded(sweep)) return 0;
+        for(Object collision : boss.worldObj.func_147461_a(sweep)) offset = ((AxisAlignedBB)collision).calculateYOffset(box, offset);
+        return offset;
+    }
+    double floorLift(AxisAlignedBB box) {
+        if(clearBlocks(box)) return 0;
+        double probe=0.25;
+        AxisAlignedBB raised=box.getOffsetBoundingBox(0,probe,0);
+        if(!clearBlocks(raised)) return 0;
+        return probe+verticalClearance(raised,-probe);
+    }
+    double ledgeHeight(AxisAlignedBB foot, double dx, double dz, double height) {
+        AxisAlignedBB sweep = foot.addCoord(dx, 0, dz);
+        if(!loaded(sweep)) return Double.POSITIVE_INFINITY;
+        for(Object collision : boss.worldObj.func_147461_a(sweep)) height = Math.max(height, ((AxisAlignedBB)collision).maxY);
+        return height;
+    }
     public void contact(AxisAlignedBB box) {
         if(ColossusConfig.terrain && queue.size() < 32) queue.add(new Contact(box));
     }

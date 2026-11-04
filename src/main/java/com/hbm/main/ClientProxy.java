@@ -863,7 +863,9 @@ public class ClientProxy extends ServerProxy {
 			@Override protected net.minecraft.util.ResourceLocation getEntityTexture(net.minecraft.entity.Entity e) { return null; }
 			@Override public void doRender(net.minecraft.entity.Entity e, double x, double y, double z, float yaw, float partial) { }
 		});
-		FMLCommonHandler.instance().bus().register(new com.hbm.render.entity.mob.ColossusClient());
+		com.hbm.render.entity.mob.ColossusClient colossusClient = new com.hbm.render.entity.mob.ColossusClient();
+		FMLCommonHandler.instance().bus().register(colossusClient);
+		net.minecraftforge.common.MinecraftForge.EVENT_BUS.register(colossusClient);
 		net.minecraftforge.client.MinecraftForgeClient.registerItemRenderer(com.hbm.entity.mob.colossus.ColossusContent.gauntlet, new com.hbm.render.item.ItemRenderPrismarineGauntlet());
 		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.mob.witherstorm.EntityWitherStormPart.class, new com.hbm.render.entity.mob.RenderWitherStormPart());
 		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.mob.witherstorm.EntityWitherStormSkull.class, new com.hbm.render.entity.projectile.RenderWitherStormSkull());
