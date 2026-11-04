@@ -13,6 +13,7 @@ public final class ModelGiantGhast {
     private static final int CHARCOAL = 0x222222, PANEL = 0x191919, BLACK = 0x0d0d0d;
     private static final int ROOF_COLOR = 0x292929, RIDGE = 0x2d2d2d;
     private static final double MARK_DEPTH = 0.003;
+    private static final double MOUTH_DEPTH = 0.19;
 
     // Pixel panels in sixteenths of a face, stored as x, y, width, height, and color.
     private static final int[][] CASING = {
@@ -27,28 +28,26 @@ public final class ModelGiantGhast {
     private static final int[][] FACE_MARKS = {
         {1, 12, 2, 1, PANEL}, {3, 11, 1, 1, PANEL}, {12, 12, 2, 1, PANEL},
         {13, 11, 1, 1, PANEL}, {0, 9, 2, 1, PANEL}, {1, 7, 2, 1, BLACK},
-        {4, 7, 2, 1, BLACK}, {10, 7, 2, 1, BLACK}, {14, 8, 2, 1, PANEL},
+        {14, 8, 2, 1, PANEL},
         {2, 5, 1, 1, PANEL}, {13, 5, 2, 1, PANEL}, {0, 3, 3, 1, PANEL},
         {5, 2, 2, 1, PANEL}, {7, 1, 3, 1, PANEL}, {11, 3, 4, 1, PANEL},
         {13, 2, 3, 1, BLACK}, {14, 0, 2, 1, PANEL}
     };
 
     private static final String[] CORE_PIXELS = {
-        "   dd  ",
-        "  drrd ",
-        " drhrrd",
-        "drhhrd ",
-        " drhrrd",
-        "  drrd ",
-        "   d   "
+        "  ddd  ",
+        " drrhd ",
+        "drhhrdd",
+        " drrrd ",
+        " ddd   "
     };
-    private static final double CORE_PIXEL = 0.32;
     private static final double[] TENTACLE_LENGTHS = {4.75, 5.65, 5.0, 5.40, 5.92, 5.57, 4.92, 5.62, 5.21};
     private static final double[] TENTACLE_RADII = {0.63, 0.68, 0.60, 0.68, 0.70, 0.65, 0.65, 0.69, 0.62};
 
     public void render(EntityGiantGhast boss, float age, float death) {
         int pose = boss.pose();
         boolean hit = (pose & 16) != 0;
+        boolean firing = boss.isFiring();
         boolean exposed = boss.state() == EntityGiantGhast.State.EXPOSED;
         boolean dying = boss.state() == EntityGiantGhast.State.DYING;
         boolean agitated = (pose & 8) != 0 || hit || dying;
@@ -69,7 +68,7 @@ public final class ModelGiantGhast {
             TESS.startDrawingQuads();
             body(hit, alpha);
             roof(alpha);
-            for (int face = 0; face < 3; face++) face(face, pose, age, agitated, hit, alpha);
+            for (int face = 0; face < 3; face++) face(face, mouthOpening(face, pose, firing), hit, alpha);
             core(false, age, exposed, hit, dying, alpha);
             TESS.draw();
 
@@ -77,7 +76,10 @@ public final class ModelGiantGhast {
 
             OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240, 240);
             TESS.startDrawingQuads();
-            for (int face = 0; face < 3; face++) eyes(face, boss.getEntityId(), pose, age, agitated, hit, alpha);
+            for (int face = 0; face < 3; face++) {
+                eyes(face, boss.getEntityId(), pose, age, agitated, hit, alpha);
+                mouthGlow(face, mouthOpening(face, pose, firing), alpha);
+            }
             if (!dying) core(true, age, exposed, hit, false, alpha);
             TESS.draw();
         } finally {
@@ -159,16 +161,17 @@ public final class ModelGiantGhast {
         quad(Surface.TOP, plate.minX, plate.minZ, plate.maxX, plate.maxZ, plate.maxY, ROOF_COLOR, alpha);
     }
 
-    private static void face(int face, int pose, float age, boolean agitated, boolean hit, float alpha) {
+    private static void face(int face, double opening, boolean hit, float alpha) {
         boolean center = face == 1;
         GiantGhastShape shape = center ? HEAD : face == 0 ? LEFT : RIGHT;
         Surface surface = faceSurface(face);
         double plane = facePlane(face);
         double u0 = center ? shape.minX : shape.minZ, u1 = center ? shape.maxX : shape.maxZ;
         double y0 = shape.minY, y1 = center ? EntityGiantGhast.ROOF : shape.maxY;
-        double u = (u0 + u1) * 0.5, eyeY = EntityGiantGhast.eyeY(face), mouthY = EntityGiantGhast.mouthY(face);
-        double spacing = eyeSpacing(face), eyeW = center ? 0.52 : 0.43, eyeH = center ? 0.39 : 0.33;
-        double mouthW = center ? 0.85 : 0.65, mouthH = center ? 0.33 : 0.26;
+        double u = faceCenter(face), eyeY = EntityGiantGhast.eyeY(face), mouthY = EntityGiantGhast.mouthY(face);
+        double spacing = eyeSpacing(face), eyeW = center ? 0.45 : 0.39, eyeH = center ? 0.39 : 0.34;
+        double mouthW = center ? 0.57 + 0.20 * opening : 0.39 + 0.17 * opening;
+        double mouthH = mouthHeight(face, opening);
         double inner = plane - surface.sign * 0.14;
         int skin = surface == Surface.RIGHT ? (hit ? 0x2a1d21 : 0x1b1b1b)
             : hit ? 0x302126 : center ? CHARCOAL : 0x1f1f1f;
@@ -188,12 +191,9 @@ public final class ModelGiantGhast {
             inset(surface, eye - eyeW, eyeY - eyeH, eye + eyeW, eyeY + eyeH, plane, inner, PANEL, alpha);
             quad(surface, eye - eyeW, eyeY - eyeH, eye + eyeW, eyeY + eyeH, inner, BLACK, alpha);
         }
-        inset(surface, u - mouthW, mouthY - mouthH, u + mouthW, mouthY + mouthH, plane, inner, PANEL, alpha);
-        quad(surface, u - mouthW, mouthY - mouthH, u + mouthW, mouthY + mouthH, inner, PANEL, alpha);
-        double opening = 0.06 + (agitated ? 0.12 + Math.sin(age * 0.75 + face) * 0.04
-            : (pose & (1 << face)) != 0 ? ((pose >> 8) & 15) * 0.009 : 0);
-        quad(surface, u - mouthW * 0.84, mouthY - opening, u + mouthW * 0.84, mouthY + opening,
-            inner + surface.sign * MARK_DEPTH, BLACK, alpha);
+        double mouthBack = plane - surface.sign * MOUTH_DEPTH;
+        inset(surface, u - mouthW, mouthY - mouthH, u + mouthW, mouthY + mouthH, plane, mouthBack, PANEL, alpha);
+        quad(surface, u - mouthW, mouthY - mouthH, u + mouthW, mouthY + mouthH, mouthBack, BLACK, alpha);
     }
 
     private static void eyes(int face, int id, int pose, float age, boolean agitated, boolean hit, float alpha) {
@@ -202,21 +202,46 @@ public final class ModelGiantGhast {
         double y = EntityGiantGhast.eyeY(face);
         boolean blink = !agitated && Math.floorMod((int)age + id + face * 17, 113) < 4;
         boolean charging = (pose & (1 << face)) != 0;
-        double w = face == 1 ? 0.33 : 0.27;
-        double h = blink ? 0.035 : charging || agitated ? 0.20 : 0.16;
+        double w = face == 1 ? 0.32 : 0.27;
+        double h = blink ? 0.035 : charging || agitated ? 0.26 : face == 1 ? 0.22 : 0.20;
         for (int sign = -1; sign <= 1; sign += 2) {
-            double x = (face == 1 ? 0 : (LEFT.minZ + LEFT.maxZ) * 0.5) + sign * eyeSpacing(face);
+            double x = faceCenter(face) + sign * eyeSpacing(face);
             quad(surface, x - w, y - h, x + w, y + h, inner, hit ? 0xff5145 : 0xf51d24, alpha);
             quad(surface, x - w, y - h, x - w * 0.25, y + h, inner + surface.sign * MARK_DEPTH, 0xd3121b, alpha);
         }
     }
 
+    private static void mouthGlow(int face, double opening, float alpha) {
+        if (face == 1 && opening == 0) return;
+        Surface surface = faceSurface(face);
+        double plane = facePlane(face) - surface.sign * (MOUTH_DEPTH - MARK_DEPTH);
+        double u = faceCenter(face), y = EntityGiantGhast.mouthY(face);
+        double h = mouthHeight(face, opening);
+        double w = (face == 1 ? 0.32 : 0.24) + 0.12 * opening;
+        int color = 0xb5181a + ((int)(74 * opening) << 16) + ((int)(22 * opening) << 8);
+        quad(surface, u - w, y - h * 0.53, u + w, y + h * 0.50, plane, color, alpha);
+        quad(surface, u - w * 0.72, y + h * 0.50, u + w * 0.46, y + h * 0.82, plane, color, alpha);
+        quad(surface, u - w * 0.50, y - h * 0.76, u + w * 0.72, y - h * 0.53, plane, color, alpha);
+    }
+
+    private static double mouthOpening(int face, int pose, boolean firing) {
+        if (face == 1 && firing) return 1;
+        return (pose & (1 << face)) == 0 ? 0 : ((pose >> 8) & 15) / 15.0;
+    }
+
+    private static double mouthHeight(int face, double opening) {
+        return face == 1 ? 0.28 + 0.61 * opening : 0.37 + 0.31 * opening;
+    }
+
     private static Surface faceSurface(int face) { return face == 1 ? Surface.FRONT : face == 0 ? Surface.LEFT : Surface.RIGHT; }
     private static double facePlane(int face) { return face == 1 ? HEAD.maxZ : face == 0 ? LEFT.minX : RIGHT.maxX; }
-    private static double eyeSpacing(int face) { return face == 1 ? 1.72 : 1.32; }
+    private static double faceCenter(int face) { return face == 1 ? 0 : (LEFT.minZ + LEFT.maxZ) * 0.5; }
+    private static double eyeSpacing(int face) { return face == 1 ? 1.88 : 1.37; }
 
     private static void core(boolean glow, float age, boolean exposed, boolean hit, boolean dying, float alpha) {
-        double bottom = CORE.minY, top = CORE.maxY, start = -CORE_PIXELS.length * CORE_PIXEL / 2;
+        double bottom = CORE.minY, top = CORE.maxY;
+        double pixelX = (CORE.maxX - CORE.minX) / CORE_PIXELS[0].length();
+        double pixelZ = (CORE.maxZ - CORE.minZ) / CORE_PIXELS.length;
         int red = hit ? 0xff3b37 : exposed ? 0xf92429 : 0xe52125;
         int highlight = (int)(51 + 8 * Math.sin(age * (exposed ? 0.32 : 0.13)));
         int light = 0xff0000 | highlight << 8 | highlight;
@@ -224,8 +249,8 @@ public final class ModelGiantGhast {
             for (int x = 0; x < CORE_PIXELS[z].length(); x++) {
                 char pixel = CORE_PIXELS[z].charAt(x);
                 if (pixel == ' ') continue;
-                double x0 = start + x * CORE_PIXEL, x1 = start + (x + 1) * CORE_PIXEL;
-                double z0 = start + z * CORE_PIXEL, z1 = start + (z + 1) * CORE_PIXEL;
+                double x0 = CORE.minX + x * pixelX, x1 = CORE.minX + (x + 1) * pixelX;
+                double z0 = CORE.minZ + z * pixelZ, z1 = CORE.minZ + (z + 1) * pixelZ;
                 if (glow || dying) {
                     quad(Surface.TOP, x0, z0, x1, z1, top, dying ? 0x371417 : pixel == 'h' ? light : pixel == 'd' ? 0xb81b22 : red, alpha);
                 }

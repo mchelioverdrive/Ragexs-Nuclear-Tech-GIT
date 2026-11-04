@@ -44,6 +44,7 @@ public final class EntityGiantGhast extends EntityFlying implements IBossDisplay
     public static final float BODY_BASE = (float)GiantGhastShape.HEAD.minY;
     public static final int DEATH_TICKS = 58;
     private static final int PHASE = 20, POSE = 21, DEATH = 22, STATE = 23;
+    private static final int FIRING_POSE = 32, MUZZLE_FLASH_TICKS = 2;
     private static final int MIN_SPIN_TICKS = 76, BARRAGE_TICKS = 120, CORE_COOLDOWN = 10;
     private static final double HOVER_CLEARANCE = 0.18;
     private static final byte CORE_HIT = 61;
@@ -68,7 +69,7 @@ public final class EntityGiantGhast extends EntityFlying implements IBossDisplay
     private UUID attackTargetId;
     private GiantGhastEncounters.Fight fight;
     private boolean admitted, nextSmallFlower, allowDeath;
-    private int attackAge, recovery = 40, summonWait, targetCheck, flash, coreWait, coreStrikes, deathXp;
+    private int attackAge, recovery = 40, summonWait, targetCheck, flash, muzzleFlash, coreWait, coreStrikes, deathXp;
     private double hoverY = Double.NaN;
     private float restYaw;
 
@@ -129,6 +130,7 @@ public final class EntityGiantGhast extends EntityFlying implements IBossDisplay
     public int phase() { return dataWatcher.getWatchableObjectByte(PHASE); }
     public State state() { return STATES[dataWatcher.getWatchableObjectByte(STATE)]; }
     public int pose() { return dataWatcher.getWatchableObjectInt(POSE); }
+    public boolean isFiring() { return (pose() & FIRING_POSE) != 0; }
     public int deathProgress() { return Math.max(deathTime, dataWatcher.getWatchableObjectByte(DEATH)); }
     boolean wasAdmitted() { return admitted; }
     boolean canSummonsFire() { return state().ordinal() < State.SETTLE.ordinal(); }
@@ -239,6 +241,7 @@ public final class EntityGiantGhast extends EntityFlying implements IBossDisplay
         int phase = Math.max(phase(), phaseFor(fraction));
         dataWatcher.updateObject(PHASE, (byte)phase);
         if (flash > 0) flash--;
+        if (muzzleFlash > 0) muzzleFlash--;
         if (coreWait > 0) coreWait--;
         if (phase == 5) {
             if (state().ordinal() < State.DESCENT.ordinal()) {
@@ -393,10 +396,13 @@ public final class EntityGiantGhast extends EntityFlying implements IBossDisplay
             case SUMMON: charge = 32; interval = 1; shots = 1; group = 0; break;
             default: return;
         }
-        syncPose(attack == State.SUMMON ? 7 : 2, attack == State.SUMMON, Math.min(15, age * 15 / charge));
+        boolean summon = attack == State.SUMMON;
+        int faces = summon ? 7 : 2;
         int lastShot = charge + (shots - 1) * interval;
+        int opening = age > lastShot ? 0 : age <= charge ? chargeOpening(age, charge)
+            : chargeOpening((age - charge - 1) % interval + 1, interval);
         if (age >= charge && age <= lastShot && (age - charge) % interval == 0) {
-            if (attack == State.SUMMON) {
+            if (summon) {
                 summonWave(encounters, phase >= 4 ? 7 : 4);
             } else {
                 if (!canTarget(attackTarget)) {
@@ -404,23 +410,31 @@ public final class EntityGiantGhast extends EntityFlying implements IBossDisplay
                     return;
                 }
                 int count = Math.min(group, GiantGhastConfig.maxFireballs);
-                if (encounters.count(worldObj, fight, true) > GiantGhastConfig.maxFireballs - count) return;
+                if (encounters.count(worldObj, fight, true) > GiantGhastConfig.maxFireballs - count) {
+                    syncPose(faces, false, opening);
+                    return;
+                }
                 firePattern(attack, (age - charge) / interval, count, false);
             }
         }
+        syncPose(opening == 0 ? 0 : faces, summon && opening > 0, opening);
         attackAge = age;
         if (age >= lastShot + 5) finishAttack(phase);
     }
 
     private void finishAttack(int phase) {
         changeState(State.IDLE);
+        syncPose(0, false, 0);
         int delay = GiantGhastConfig.attackCooldown * (5 - phase) / 4;
         recovery = Math.max(8, delay + (phase == 4 ? rand.nextInt(9) - 4 : 0));
     }
 
     private void syncPose(int faces, boolean scream, int opening) {
-        dataWatcher.updateObject(POSE, faces | (scream ? 8 : 0) | (flash > 0 ? 16 : 0) | opening << 8);
+        dataWatcher.updateObject(POSE, faces | (scream ? 8 : 0) | (flash > 0 ? 16 : 0)
+            | (muzzleFlash > 0 ? FIRING_POSE : 0) | opening << 8);
     }
+
+    private static int chargeOpening(int tick, int duration) { return 2 + 9 * tick / duration; }
 
     private void tickFinal(GiantGhastEncounters encounters) {
         motionX = motionY = motionZ = 0;
@@ -428,7 +442,6 @@ public final class EntityGiantGhast extends EntityFlying implements IBossDisplay
         switch (state()) {
             case DESCENT:
                 rotationYaw = MathHelper.wrapAngleTo180_float(rotationYaw + Math.min(16, 0.8F + attackAge * 0.13F));
-                syncPose(7, true, 15);
                 if (attackAge % 24 == 0 && attackAge <= BARRAGE_TICKS) playSound("mob.ghast.scream", 7, 0.65F);
                 if (attackAge % 5 == 0 && attackAge <= BARRAGE_TICKS) {
                     int free = GiantGhastConfig.maxFireballs - encounters.count(worldObj, fight, true);
@@ -436,6 +449,8 @@ public final class EntityGiantGhast extends EntityFlying implements IBossDisplay
                     if (free > 0) firePattern(pattern == 0 ? State.TRIPLE : pattern == 1 ? State.SMALL_FLOWER : State.RETURN,
                         0, Math.min(free, pattern == 0 ? 3 : pattern == 1 ? 5 : 1), true);
                 }
+                int opening = attackAge <= BARRAGE_TICKS ? chargeOpening((attackAge - 1) % 5 + 1, 5) : 0;
+                syncPose(7, true, opening);
                 double drop = GiantGhastFlight.availableDrop(worldObj, boundingBox, 3);
                 if (drop < 0) return;
                 double remaining = Math.max(0, drop - HOVER_CLEARANCE);
@@ -468,7 +483,7 @@ public final class EntityGiantGhast extends EntityFlying implements IBossDisplay
     }
 
     public static double mouthY(int face) { return face == 1 ? 9.85 : 10.1; }
-    public static double eyeY(int face) { return mouthY(face) + (face == 1 ? 2.55 : 2.1); }
+    public static double eyeY(int face) { return face == 1 ? 12.65 : 12.55; }
 
     private Vec3 muzzle(double clearance, double yaw) {
         double edge = GiantGhastShape.HEAD.maxZ + clearance;
@@ -539,7 +554,8 @@ public final class EntityGiantGhast extends EntityFlying implements IBossDisplay
         EntityGiantGhastFireball shot = new EntityGiantGhastFireball(this, shooter, origin, heading, power, damage, reflectable, stray);
         if (!GiantGhastFlight.clear(worldObj, shot.boundingBox)
                 || !GiantGhastEncounters.get(worldObj).spawnChild(this, shot, shot.expires())) return false;
-        if (shooter != this) worldObj.playSoundEffect(origin.xCoord, origin.yCoord, origin.zCoord, "mob.ghast.fireball", 1.1F, 1);
+        if (shooter == this) muzzleFlash = MUZZLE_FLASH_TICKS;
+        else worldObj.playSoundEffect(origin.xCoord, origin.yCoord, origin.zCoord, "mob.ghast.fireball", 1.1F, 1);
         return true;
     }
 
