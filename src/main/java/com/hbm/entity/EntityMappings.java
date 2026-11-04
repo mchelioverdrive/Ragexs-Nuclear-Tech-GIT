@@ -298,6 +298,11 @@ public class EntityMappings {
 		EntityRegistry.registerModEntity(com.hbm.entity.mob.giantenderman.EntityGiantEndermanPart.class, "giant_enderman_part", id++, MainRegistry.instance, 256, 3, false);
 		EntityRegistry.registerModEntity(com.hbm.entity.mob.giantenderman.EntityEndermanTerrain.class, "giant_enderman_terrain", id++, MainRegistry.instance, 192, 1, true);
 		if (GiantGhastConfig.natural) EntityRegistry.addSpawn(EntityGiantGhast.class, 1, 1, 1, EnumCreatureType.monster, BiomeGenBase.hell);
+		EntityRegistry.registerModEntity(com.hbm.entity.mob.magmagolem.EntityGiantMagmaGolem.class, "giant_magma_golem", id++, MainRegistry.instance, 160, 2, true);
+		EntityRegistry.registerModEntity(com.hbm.entity.mob.magmagolem.EntityGolemFireball.class, "magma_golem_fireball", id++, MainRegistry.instance, 96, 2, true);
+		EntityRegistry.registerModEntity(com.hbm.entity.mob.magmagolem.EntityGolemMagmaCube.class, "magma_golem_cube", id++, MainRegistry.instance, 80, 3, true);
+		if (com.hbm.config.MagmaGolemConfig.natural) EntityRegistry.addSpawn(com.hbm.entity.mob.magmagolem.EntityGiantMagmaGolem.class,
+			1, 1, 1, EnumCreatureType.monster, BiomeGenBase.plains, BiomeGenBase.desert);
 
 		for(Quartet<Class<? extends Entity>, String, Integer, Integer> entry : mobMappings) {
 			EntityRegistry.registerGlobalEntityID(entry.getW(), entry.getX(), EntityRegistry.findGlobalUniqueEntityId(), entry.getY(), entry.getZ());

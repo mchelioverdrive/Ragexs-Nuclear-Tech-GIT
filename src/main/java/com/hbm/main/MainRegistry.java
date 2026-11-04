@@ -1084,6 +1084,7 @@ public class MainRegistry {
 		com.hbm.entity.mob.witherstorm.WitherStormEvents witherStormEvents = new com.hbm.entity.mob.witherstorm.WitherStormEvents();
 		MinecraftForge.EVENT_BUS.register(witherStormEvents);
 		MinecraftForge.EVENT_BUS.register(new com.hbm.entity.mob.giantghast.GiantGhastEncounters.Effects());
+		MinecraftForge.EVENT_BUS.register(new com.hbm.entity.mob.magmagolem.MagmaGolemTerrain.Explosions());
 		FMLCommonHandler.instance().bus().register(witherStormEvents);
 		com.hbm.entity.mob.colossus.ColossusEvents colossusEvents = new com.hbm.entity.mob.colossus.ColossusEvents();
 		MinecraftForge.EVENT_BUS.register(colossusEvents);
@@ -1160,7 +1161,11 @@ public class MainRegistry {
 		event.registerServerCommand(new com.hbm.commands.CommandWitherStorm());
 		event.registerServerCommand(new com.hbm.commands.CommandColossus());
 		event.registerServerCommand(new com.hbm.commands.CommandGiantGhast());
+
 		event.registerServerCommand(new com.hbm.commands.CommandGiantEnderman());
+
+		event.registerServerCommand(new com.hbm.commands.CommandMagmaGolem());
+
 		event.registerServerCommand(new com.hbm.commands.CommandSandworm());
 		MinecraftForge.EVENT_BUS.register(new NukeScheduler());
 		FMLCommonHandler.instance().bus().register(new NukeScheduler());
@@ -1193,7 +1198,11 @@ public class MainRegistry {
 		com.hbm.config.WitherStormConfig.loadFromConfig(config);
 		com.hbm.config.ColossusConfig.loadFromConfig(config);
 		com.hbm.config.GiantGhastConfig.loadFromConfig(config);
+
 		com.hbm.config.GiantEndermanConfig.loadFromConfig(config);
+
+		com.hbm.config.MagmaGolemConfig.loadFromConfig(config);
+
 		com.hbm.config.SandwormConfig.loadFromConfig(config);
 		RabiesConfig.loadFromConfig(config);
 		StructureConfig.loadFromConfig(config);

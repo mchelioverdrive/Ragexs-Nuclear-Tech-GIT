@@ -352,6 +352,20 @@ At 10% health the Giant Ghast starts spinning, fires erratically, and descends. 
 
 The three faces, fireball patterns, retaliation, and exposed top weak point follow the [Giant Ghast reference](https://wiki.ronlab.site/content/minecraftwiki_en_all_maxi_2025-11/Story_Mode%3AGiant_Ghast) and [Jailhouse Block transcript](https://minecraftstorymode.fandom.com/wiki/Jailhouse_Block/Transcript). The timed phases and walkable roof adapt the fight to ordinary survival gameplay.
 
+### `/rntmagmagolem`
+
+Operators with permission level 2 can summon the Giant Magma Golem in a loaded area with about 10 blocks of width and 12 blocks of height. Use a hostile difficulty and a dimension where water can be placed. Coordinates accept vanilla relative offsets.
+
+```
+/rntmagmagolem spawn
+/rntmagmagolem spawn <x> <y> <z>
+/summon hbm.giant_magma_golem <x> <y> <z>
+```
+
+Pour water against each arm until it turns gray, then strike that arm with a pickaxe. Destroy both arms to expose the feet. A primed TNT charge very close to either foot knocks the golem down. Glancing blasts accumulate. Let water reach a foot or the fallen body and keep it wet for about a second to finish the fight. A bucket works on dry ground after the knockdown, and the golem stays down while you fetch water.
+
+The arm and TNT sequence follows the [Story Mode Giant Magma Golem encounter](https://minecraftstorymode.fandom.com/wiki/Giant_Magma_Golem). See [Giant Magma Golem configuration](configuration.md#giant-magma-golem).
+
 ## Permissions notes
 
 Most server command classes do not override Forge's default permission behavior. `/rntwitherstorm` and `/rntachievement` explicitly require permission level 2, and `/hbmbedrockdrop` explicitly requires permission level 4. Server owners should additionally restrict command access with their server management tooling, especially for radiation, stations, satellites, recipe reloads, chunk diagnostics, and nuclear toggles.
