@@ -53,7 +53,7 @@ public final class CommandColossus extends CommandBase {
         EntityPrismarineColossus boss=new EntityPrismarineColossus(w); boss.setVariant(variant);
         boss.setLocationAndAngles(x,y,z,sender instanceof EntityPlayer?((EntityPlayer)sender).rotationYaw:0,0);
         if(!boss.safeSpawn()) throw new CommandException("Unsafe location: the entire Colossus needs loaded, clear terrain and a broad supporting floor.");
-        if(!w.spawnEntityInWorld(boss)) throw new CommandException("Colossus spawning was canceled.");
+        if(!w.spawnEntityInWorld(boss)) { boss.setDead(); throw new CommandException("Colossus spawning was canceled."); }
         sender.addChatMessage(new ChatComponentText("Summoned "+boss.getCommandSenderName()+" ID="+boss.getEntityId()+" UUID="+boss.getUniqueID()));
     }
     @Override public List addTabCompletionOptions(ICommandSender s,String[] args) {

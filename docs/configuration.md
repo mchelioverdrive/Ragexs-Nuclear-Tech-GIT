@@ -348,6 +348,25 @@ Startup category `12_mobs.sandworm` in `hbm.cfg` isolates the encounter from all
 
 The implementation uses [ModularBosses 1.8](https://github.com/gummby8/ModularBosses/tree/1.8) as a gameplay reference. All distributed Java, model geometry, textures, room schematics and synthesized heartbeat sounds are original RNT implementations; no ModularBosses code, models or resources are included and the mod is not a dependency. Bundled classic Alpha schematics use registry-name palettes, validated fixed dimensions, saved rotations and reciprocal door masks. A finite spanning tree connects every room and both organ chambers. Construction resumes from its saved cursor without rebuilding finished rooms. Return records and organ deaths are server-owned overworld saved data; only exterior pose and visual combat state are synchronized to clients.
 
+## Prismarine Colossus
+
+Startup category `12_mobs.prismarineColossus` in `hbm.cfg`. Settings are independent of Wither Storm, Sandworm and nuclear explosions.
+
+| Settings | Defaults | Behavior |
+| --- | --- | --- |
+| `enabled`, `maxActivePerDimension` | true, 2 | Limit new encounters; saved dormant/unloaded bosses count. Existing bosses remain loadable when disabled. |
+| `health`, `attackDamage`, `attackCooldownTicks` | 600, 24, 65 | Native health cap 1024. Attacks have separate windup, contact and recovery windows. Romeo recovers faster; glitched cooldowns vary. |
+| `movementSpeed`, `targetRange`, `modelScale` | 0.16, 64, 1 | Blocks per tick, blocks, and anatomy scale. Default height is 20 blocks. Scale (0.5–2) affects geometry, contact, reach and climbing and persists per entity. |
+| `weakPointMultiplier`, `gauntletRequired`, `allowBodyDamage` | 8, true, false | Rear-facing animated symbol rectangle is vulnerable. Gauntlet melee finishes it; disable the requirement to use other weapons. Body hits deal 1% damage, capped at 2, and stop at one health unless body kills are enabled. Explosions/magic/fire cannot count as directed symbol hits. Void damage remains an administrative escape hatch. |
+| `climbing`, `attacks`, `targetCreativePlayers` | true, true, false | Independent encounter controls. The glitched variant selects any nearby living target (apart from Colossi); normal forms prioritize survival players and attackers. Vanilla Creative invulnerability still applies. |
+| `terrainDestruction`, `blocksPerTick` | false, 32 | Contact volumes only, also gated by mobGriefing. Dimension-wide coordinate budget, including air/rejections; hard cap 256. Bounded queues expire after 100 ticks and do not load chunks or persist delayed destruction. |
+| `protectedBlocks` | chests, ender chests, enchanting tables | Additional block registry names. Bedrock, negative-hardness blocks, portals, command blocks, liquids and all tile entities are always protected. Respect canEntityDestroy and Forge BreakEvent with the Minecraft fake player; claim mods must enforce their normal fake-player break rules. Drops are suppressed during removals. |
+| `particleIntensity`, `soundVolume` | 12, 2 | Bounded local particles and existing Minecraft stone/golem/impact sounds. Client particle settings also apply. No decorative server fragment entities. |
+| `naturalSpawning`, `proximityActivation` | false, false | Optional single loaded-ocean attempt every 24000 ticks near a survival player; no monument edits. Optional dormant activation within eight blocks. |
+| `giantClock`, `clockChangesTime`, `permanentClockTime` | true, false, false | Romeo visibly raises a clock once. Time mutation requires explicit enablement. Normally restore the original time plus elapsed daylight progression after ten seconds, death or unload; preserve unrelated time commands. Keeping the shift requires a second explicit option. |
+
+See [Colossus commands and survival controls](commands.md#rntcolossus). Animation starts, target/head orientation, variant, scale and weak-point flare are server-tracked. Only bounded validated climb input is accepted from clients and is applied on the server tick. Interrupted attacks reload in a stagger instead of replaying impacts. A saved encounter ledger enforces admission across restarts; no chunk tickets are requested.
+
 ## Recommended server workflow
 
 1. Start a new server once to generate all configs.

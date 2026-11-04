@@ -47,7 +47,7 @@ public final class RenderPrismarineColossus extends Render {
         float fade=boss.state()==ColossusPose.DEATH?Math.max(0,1-boss.stateTime(partial)/85F):1;
         if(fade>0 && (boss.state()!=ColossusPose.DEATH || ((int)boss.stateTime(partial)/4)%3!=0)) {
             GL11.glEnable(GL11.GL_BLEND);GL11.glBlendFunc(GL11.GL_SRC_ALPHA,GL11.GL_ONE);
-            model.render(pose,true,corruption,fade,0);
+            model.render(pose,true,corruption,fade*(1+boss.weakFlare(partial)),0);
         }
         OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit,brightnessX,brightnessY);
         GL11.glPopMatrix();GL11.glPopAttrib();

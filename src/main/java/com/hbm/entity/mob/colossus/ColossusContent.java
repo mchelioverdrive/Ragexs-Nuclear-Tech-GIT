@@ -30,7 +30,8 @@ public final class ColossusContent {
                 EntityPrismarineColossus boss=new EntityPrismarineColossus(w);
                 boss.setLocationAndAngles(x+0.5,y+1,z+0.5,player.rotationYaw,0);
                 if(!ColossusConfig.enabled || !ColossusEncounters.get(w).room() || !boss.safeSpawn()) { player.addChatMessage(new ChatComponentTranslation("colossus.spawn.unsafe")); return false; }
-                return w.spawnEntityInWorld(boss);
+                if(w.spawnEntityInWorld(boss)) return true;
+                boss.setDead(); return false;
             }
         }.setUnlocalizedName("colossus_spawn_egg").setTextureName("hbm:colossus_spawn_egg").setCreativeTab(CreativeTabs.tabMisc);
         GameRegistry.registerItem(gauntlet,"prismarine_gauntlet");

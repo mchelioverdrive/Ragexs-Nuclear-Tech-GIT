@@ -308,6 +308,24 @@ Each worm owns a separate connected interior. Fight through Ticks and four Spark
 
 `list` and `inspect` include unloaded encounters and generation progress. `remove` cancels an encounter and opens its exit without loading the exterior. Offline occupants retain their dungeon and return records. Death returns a participant safely to the original dimension, with a saved ten-second grace period before swallowing is possible again. The same exterior can then swallow them again while the encounter remains active. Disconnected players resume in the saved interior. Empty abandoned encounters eventually expire; completed/canceled interiors are cleared in bounded batches only after no saved occupant remains inside. Ownership records remain until the exterior acknowledges retirement, then are removed after cleanup; saved registered exteriors cannot recreate a missing encounter. See [Sandworm configuration](configuration.md#sandworm).
 
+### `/rntcolossus`
+
+Operator level 2 controls the Prismarine Colossus:
+
+```text
+/rntcolossus spawn [active|dormant|admin|glitched] [x y z]
+/rntcolossus activate <entityID>
+/rntcolossus remove <entityID>
+```
+
+Bare `spawn` creates an active boss eighteen blocks ahead on the surface. Console execution requires absolute coordinates. All spawn locations require already loaded terrain, a broad supporting floor, and room for the complete anatomy. The Creative inventory also contains a spawn egg; right-click a broad floor. Dormant statues track targets with glowing eyes and awaken through damage, sneak-interaction, the activation command, or the optional proximity trigger. No natural spawning occurs by default.
+
+Craft the Prismarine Gauntlet with `DED / GPG / _G_`: D = diamond, E = emerald, G = gold ingot, P = ender pearl, underscore = empty. Hold it as a weapon. Approach the rear of either leg and right-click the lower body to grip the Colossus, then use W/S to climb between the leg, hip, back, shoulder and rear-head holds. Hold Space when it shakes; Sneak releases. Four players can climb simultaneously. Aim and punch the glowing rear-head symbol with the gauntlet for a finishing strike. Elevated platforms and terrain provide another approach. Heavy body hits can force a temporary kneel; body attacks otherwise do very little damage and cannot finish it by default. Server settings can permit ordinary weapons against the symbol. A grabbed player can hold Sneak briefly to escape before consumption.
+
+The normal and Romeo forms leave one stack of Prismarine Shards after the collapse; the glitched form drops none. Shards and sand craft four quartz. Summon integrations can call `setDropShards(false)`. Death, removal, logout, chunk unload and world unload release attached entities; released players receive a short fall-damage grace period. Attachments never persist across saves.
+
+The rear symbol, gauntlet finish, climbing, grab/eat attempt, clock and berserk Terminal Space appearance follow the [Story Mode Colossus reference](https://minecraftstorymode.fandom.com/wiki/Prismarine_Colossus) and [Episode 2 transcript](https://minecraftstorymode.fandom.com/wiki/Giant_Consequences/Transcript). The repeatable attack cycle, radial shockwaves, gauntlet recipe, W/S climbing route, bracing, stagger threshold and temporary clock reset are RNT survival adaptations. The model, textures and implementation are original; no Story Mode audio or models are redistributed.
+
 ## Permissions notes
 
 Most server command classes do not override Forge's default permission behavior. `/rntwitherstorm` and `/rntachievement` explicitly require permission level 2, and `/hbmbedrockdrop` explicitly requires permission level 4. Server owners should additionally restrict command access with their server management tooling, especially for radiation, stations, satellites, recipe reloads, chunk diagnostics, and nuclear toggles.

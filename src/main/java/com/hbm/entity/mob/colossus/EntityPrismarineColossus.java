@@ -70,6 +70,7 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
         dataWatcher.addObject(24,0F); dataWatcher.addObject(25,0F); dataWatcher.addObject(26,0);
         dataWatcher.addObject(27,0F); dataWatcher.addObject(28,(byte)0);
         dataWatcher.addObject(29,0F);
+        dataWatcher.addObject(30,0);
     }
     @Override protected void applyEntityAttributes() {
         super.applyEntityAttributes();
@@ -90,6 +91,7 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
     public float scale() { return dataWatcher.getWatchableObjectFloat(23); }
     public float headYaw() { return dataWatcher.getWatchableObjectFloat(24); }
     public float headPitch() { return dataWatcher.getWatchableObjectFloat(25); }
+    public float weakFlare(float partial) { return Math.max(0,Math.min(1,(dataWatcher.getWatchableObjectInt(30)-(int)worldObj.getTotalWorldTime()-partial)/20F)); }
     public boolean dormant() { return variant()==DORMANT; }
     public float stateTime(float partial) { return Math.max(0,Math.min(ColossusPose.duration(state()), (int)worldObj.getTotalWorldTime()-dataWatcher.getWatchableObjectInt(22)+partial)); }
     public float walk(float partial) { return previousWalk+(walk-previousWalk)*partial; }
@@ -196,7 +198,7 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
         double dx=target.posX-posX,dz=target.posZ-posZ;
         float desired=(float)Math.toDegrees(Math.atan2(-dx,dz));
         // Root yaw follows Minecraft's +Z heading; the skeleton itself faces -Z.
-        if(!dormant() && state()==ColossusPose.IDLE) rotationYaw+=MathHelper.clamp_float(MathHelper.wrapAngleTo180_float(desired-rotationYaw),-2,2);
+        if(!dormant() && state()==ColossusPose.IDLE && grips.isEmpty() && grabbed==null) rotationYaw+=MathHelper.clamp_float(MathHelper.wrapAngleTo180_float(desired-rotationYaw),-2,2);
         float relative=MathHelper.clamp_float(MathHelper.wrapAngleTo180_float(desired-rotationYaw),-55,55);
         float pitch=(float)Math.toDegrees(Math.atan2(target.posY+target.getEyeHeight()-(posY+17*scale()),Math.max(1,Math.hypot(dx,dz))));
         dataWatcher.updateObject(24,headYaw()+MathHelper.clamp_float(relative-headYaw(),-3,3));
@@ -393,7 +395,7 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
         if(weakHit(source)) {
             boolean gauntlet=actor instanceof EntityPlayer && ((EntityPlayer)actor).getHeldItem()!=null && ((EntityPlayer)actor).getHeldItem().getItem()==ColossusContent.gauntlet && source.getSourceOfDamage()==actor;
             if(ColossusConfig.gauntletRequired && !gauntlet) { sound("random.orb",0.5F); return false; }
-            reaction=1; impactEffect(point(ColossusPose.HEAD,0,2.7,2.7),6); sound("random.glass",0.5F);
+            reaction=1; dataWatcher.updateObject(30,(int)worldObj.getTotalWorldTime()+20); impactEffect(point(ColossusPose.HEAD,0,2.7,2.7),6); sound("dig.glass",0.5F);
             return super.attackEntityFrom(source,gauntlet?2048:damage*ColossusConfig.weakMultiplier);
         }
         if(source==DamageSource.outOfWorld) return super.attackEntityFrom(source,damage);
@@ -431,11 +433,11 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
     @Override protected boolean interact(EntityPlayer p) {
         if(worldObj.isRemote) return true;
         if(p.isSneaking() && dormant()) { activate(); return true; }
-        if(!ColossusConfig.climbing || !isEntityAlive() || !p.isEntityAlive() || p.ridingEntity!=null || grips.size()>=4 || p==grabbed) return false;
+        if(!ColossusConfig.climbing || !isEntityAlive() || !p.isEntityAlive() || p.ridingEntity!=null || grips.size()>=4 || p==grabbed || p instanceof net.minecraftforge.common.util.FakePlayer) return false;
         if(grips.containsKey(p.getUniqueID())) return true;
         Vec3 local=fromWorld(Vec3.createVectorHelper(p.posX,p.posY,p.posZ),ColossusPose.ROOT);
-        if(Math.abs(local.xCoord)>5.8 || Math.abs(local.zCoord)>4 || local.yCoord>4.5 || local.yCoord< -1) return false;
-        Grip g=new Grip(p); grips.put(p.getUniqueID(),g); p.addChatMessage(new ChatComponentTranslation("colossus.climb")); return true;
+        if(Math.abs(local.xCoord)>5.8 || Math.abs(local.xCoord)<2 || local.zCoord<1 || local.zCoord>4 || local.yCoord>4.5 || local.yCoord< -1) return false;
+        Grip g=new Grip(p,local.xCoord<0?-1:1); grips.put(p.getUniqueID(),g); p.addChatMessage(new ChatComponentTranslation("colossus.climb")); return true;
     }
     public void control(EntityPlayerMP p,int vertical,boolean brace,boolean release) {
         if(grabbed==p) { if(release) grabEscape+=2; return; }
@@ -443,13 +445,13 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
         g.input=MathHelper.clamp_int(vertical,-1,1); g.brace=brace; g.inputTick=worldObj.getTotalWorldTime();
         if(release) release(p,false);
     }
-    public Vec3 climbPoint(float progress) {
+    public Vec3 climbPoint(float progress,int side) {
         // Continuous travel between leg, hip, torso, shoulder and rear-skull holds.
         float q=MathHelper.clamp_float(progress,0,4); int node=Math.min(3,(int)q); float f=q-node;
-        int[] bones={ColossusPose.LEFT_LEG,ColossusPose.TORSO,ColossusPose.TORSO,ColossusPose.HEAD,ColossusPose.HEAD};
-        double[][] offsets={{2,-5,2.1},{3,-1,2.6},{3,4.5,2.6},{2,0,3.3},{0,1.5,3.8}};
-        Vec3 a=point(bones[node],offsets[node][0],offsets[node][1],offsets[node][2]);
-        Vec3 b=point(bones[node+1],offsets[node+1][0],offsets[node+1][1],offsets[node+1][2]);
+        int[] bones={side<0?ColossusPose.RIGHT_LEG:ColossusPose.LEFT_LEG,ColossusPose.TORSO,ColossusPose.TORSO,ColossusPose.HEAD,ColossusPose.HEAD};
+        double[][] offsets={{2.2,-6.8,2.1},{3,-1,2.6},{3,4.5,2.6},{2,0,3.3},{0,1.5,3.8}};
+        Vec3 a=point(bones[node],offsets[node][0]*side,offsets[node][1],offsets[node][2]);
+        Vec3 b=point(bones[node+1],offsets[node+1][0]*side,offsets[node+1][1],offsets[node+1][2]);
         return Vec3.createVectorHelper(a.xCoord+(b.xCoord-a.xCoord)*f,a.yCoord+(b.yCoord-a.yCoord)*f,a.zCoord+(b.zCoord-a.zCoord)*f);
     }
     private void updateAttachments() {
@@ -459,14 +461,14 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
             if(p.isDead || !p.isEntityAlive() || p.worldObj!=worldObj || p.getDistanceSqToEntity(this)>Math.pow(30*scale(),2)) { detach(p); it.remove(); continue; }
             if(worldObj.getTotalWorldTime()-g.inputTick>10) { g.input=0; g.brace=false; }
             g.progress=MathHelper.clamp_float(g.progress+g.input*0.014F,0,4);
-            Vec3 anchor=climbPoint(g.progress);
+            Vec3 anchor=climbPoint(g.progress,g.side);
             if(!placeAttached(p,anchor)) { detach(p); it.remove(); continue; }
-            if(ticksExisted%4==0) syncGrip(p,g.progress,false);
+            if(ticksExisted%4==0) syncGrip(p,g.progress,false,g.side);
         }
         if(grabbed!=null) {
             Vec3 anchor=point(ColossusPose.RIGHT_HAND,0,-3,-0.8);
             if(!placeAttached(grabbed,anchor)) releaseGrab();
-            else if(ticksExisted%4==0) syncGrip(grabbed,0,true);
+            else if(ticksExisted%4==0) syncGrip(grabbed,0,true,1);
         }
     }
     private boolean placeAttached(Entity e,Vec3 p) {
@@ -474,18 +476,18 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
         AxisAlignedBB box=e.boundingBox.copy().offset(p.xCoord-e.posX,p.yCoord-e.posY,p.zCoord-e.posZ);
         if(!clear(box)) return false;
         e.motionX=e.motionY=e.motionZ=0; e.fallDistance=0;
-        if(e instanceof EntityPlayerMP && ticksExisted%4==0) ((EntityPlayerMP)e).playerNetServerHandler.setPlayerLocation(p.xCoord,p.yCoord,p.zCoord,e.rotationYaw,e.rotationPitch);
+        if(e instanceof EntityPlayerMP && ((EntityPlayerMP)e).playerNetServerHandler!=null && ticksExisted%4==0) ((EntityPlayerMP)e).playerNetServerHandler.setPlayerLocation(p.xCoord,p.yCoord,p.zCoord,e.rotationYaw,e.rotationPitch);
         else e.setPosition(p.xCoord,p.yCoord,p.zCoord);
         return true;
     }
-    private void syncGrip(Entity e,float progress,boolean grabbed) {
-        PacketDispatcher.wrapper.sendToAllAround(new ColossusAttachmentPacket(getEntityId(),e.getEntityId(),progress,grabbed),new TargetPoint(dimension,posX,posY,posZ,128));
+    private void syncGrip(Entity e,float progress,boolean grabbed,int side) {
+        PacketDispatcher.wrapper.sendToAllAround(new ColossusAttachmentPacket(getEntityId(),e.getEntityId(),progress,grabbed,side),new TargetPoint(dimension,posX,posY,posZ,128));
     }
     private void detach(Entity e) {
         e.fallDistance=0;
         if(e instanceof EntityLivingBase && e.isEntityAlive()) ((EntityLivingBase)e).addPotionEffect(new PotionEffect(Potion.resistance.id,80,4));
         if(e instanceof EntityPlayer) e.getEntityData().setInteger("RNTColossusFallGrace",100);
-        PacketDispatcher.wrapper.sendToAllAround(new ColossusAttachmentPacket(0,e.getEntityId(),0,false),new TargetPoint(dimension,posX,posY,posZ,128));
+        PacketDispatcher.wrapper.sendToAllAround(new ColossusAttachmentPacket(0,e.getEntityId(),0,false,1),new TargetPoint(dimension,posX,posY,posZ,128));
     }
     private void release(EntityPlayer p,boolean shaken) {
         grips.remove(p.getUniqueID()); detach(p);
@@ -498,7 +500,8 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
     public void restoreClock() {
         if(!clockChanged || worldObj.isRemote) return;
         long elapsed=worldObj.getTotalWorldTime()-clockStarted;
-        if(Math.abs(worldObj.getWorldTime()-(clockExpected+elapsed))<=5) worldObj.setWorldTime(clockOriginal+elapsed);
+        long advance=worldObj.getGameRules().getGameRuleBooleanValue("doDaylightCycle")?elapsed:0;
+        if(Math.abs(worldObj.getWorldTime()-(clockExpected+advance))<=5) worldObj.setWorldTime(clockOriginal+advance);
         clockChanged=false;
     }
     @Override public void onDeath(DamageSource source) {
@@ -530,6 +533,7 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
         worldObj.setEntityState(this,(byte)(strength>=5?43:strength>=4?42:41));
     }
     @Override public void handleHealthUpdate(byte code) {
+        if(code==2) reaction=1;
         if(code>=41 && code<=43) { burst(code==43?ColossusPose.HEAD:ColossusPose.ROOT,code==43?17:0.4); return; }
         super.handleHealthUpdate(code);
     }
@@ -540,7 +544,8 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
     private void burst(int bone,double y) {
         for(int i=0;i<ColossusConfig.particles;i++) {
             Vec3 p=bone==ColossusPose.HEAD?point(bone,0,2.7,2.7):point(bone,(rand.nextDouble()-0.5)*7,y,(rand.nextDouble()-0.5)*4);
-            worldObj.spawnParticle(variant()==GLITCHED && i%3==0?"portal":"blockcrack_"+Block.getIdFromBlock(Blocks.stone)+"_0",p.xCoord,p.yCoord,p.zCoord,(rand.nextDouble()-0.5)*0.5,rand.nextDouble()*0.5,(rand.nextDouble()-0.5)*0.5);
+            String particle=variant()==GLITCHED && i%3==0?"portal":i%2==0?"blockcrack_"+Block.getIdFromBlock(Blocks.stone)+"_0":"iconcrack_"+net.minecraft.item.Item.getIdFromItem(ColossusContent.shard);
+            worldObj.spawnParticle(particle,p.xCoord,p.yCoord,p.zCoord,(rand.nextDouble()-0.5)*0.5,rand.nextDouble()*0.5,(rand.nextDouble()-0.5)*0.5);
         }
     }
     @Override public void writeEntityToNBT(NBTTagCompound n) {
@@ -555,17 +560,18 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
         registered=false; cooldown=MathHelper.clamp_int(n.getInteger("Cooldown"),20,1200);
         int savedState=MathHelper.clamp_int(n.getInteger("State"),0,9);
         // Transient grips never persist; interrupted attacks reload kneeling rather than duplicating their impact.
-        begin(getHealth()<=0?ColossusPose.DEATH:savedState==ColossusPose.IDLE?ColossusPose.IDLE:ColossusPose.STUN);
+        begin(getHealth()<=0?ColossusPose.DEATH:dormant() || savedState==ColossusPose.IDLE?ColossusPose.IDLE:ColossusPose.STUN);
         if(getHealth()<=0) dataWatcher.updateObject(22,(int)worldObj.getTotalWorldTime()-MathHelper.clamp_int(n.getInteger("StateTime"),0,139));
         clockUsed=n.getBoolean("ClockUsed"); clockChanged=n.getBoolean("ClockChanged"); clockOriginal=n.getLong("ClockOriginal"); clockStarted=n.getLong("ClockStarted"); clockExpected=n.getLong("ClockExpected");
         dropShards=!n.hasKey("DropShards") || n.getBoolean("DropShards"); deathDrops=n.getBoolean("DeathDrops");
     }
     private static final class Grip {
         final EntityPlayer player;
+        final int side;
         float progress;
         int input;
         boolean brace;
         long inputTick;
-        Grip(EntityPlayer p) { player=p; }
+        Grip(EntityPlayer p,int side) { player=p;this.side=side; }
     }
 }

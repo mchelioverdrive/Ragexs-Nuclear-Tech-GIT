@@ -24,10 +24,10 @@ public final class ColossusClient {
     public static void accept(ColossusAttachmentPacket packet,World w) {
         if(world!=w) { attached.clear();world=w; }
         if(packet.boss==0) { attached.remove(packet.passenger);return; }
-        if(!Float.isFinite(packet.progress) || packet.progress<0 || packet.progress>4) return;
+        if(!Float.isFinite(packet.progress) || packet.progress<0 || packet.progress>4 || (packet.side!=1 && packet.side!= -1)) return;
         Attachment a=attached.get(packet.passenger);
         if(a==null || a.boss!=packet.boss) { a=new Attachment(); a.boss=packet.boss;a.progress=packet.progress;attached.put(packet.passenger,a); }
-        a.goal=packet.progress;a.grabbed=packet.grabbed;a.seen=w.getTotalWorldTime();
+        a.goal=packet.progress;a.grabbed=packet.grabbed;a.side=packet.side;a.seen=w.getTotalWorldTime();
     }
     @SubscribeEvent public void tick(TickEvent.ClientTickEvent event) {
         if(event.phase!=TickEvent.Phase.END) return;
@@ -41,8 +41,9 @@ public final class ColossusClient {
             if(!(root instanceof EntityPrismarineColossus) || root.isDead || !root.isEntityAlive() || passenger==null || world.getTotalWorldTime()-a.seen>20) { it.remove();continue; }
             EntityPrismarineColossus boss=(EntityPrismarineColossus)root;
             a.progress+=(a.goal-a.progress)*0.5F;
-            Vec3 p=a.grabbed?boss.point(ColossusPose.RIGHT_HAND,0,-3,-0.8):boss.climbPoint(a.progress);
-            passenger.setPosition(p.xCoord,p.yCoord,p.zCoord);passenger.motionX=passenger.motionY=passenger.motionZ=0;passenger.fallDistance=0;
+            Vec3 p=a.grabbed?boss.point(ColossusPose.RIGHT_HAND,0,-3,-0.8):boss.climbPoint(a.progress,a.side);
+            // Local 1.7.10 players store eye-height posY; server/remote players store feet.
+            passenger.setPosition(p.xCoord,p.yCoord+passenger.yOffset,p.zCoord);passenger.motionX=passenger.motionY=passenger.motionZ=0;passenger.fallDistance=0;
             if(passenger==mc.thePlayer && mc.thePlayer.ticksExisted%3==0) {
                 int direction=mc.gameSettings.keyBindForward.getIsKeyPressed()?1:mc.gameSettings.keyBindBack.getIsKeyPressed()?-1:0;
                 PacketDispatcher.wrapper.sendToServer(new ColossusControlPacket(a.boss,direction,mc.gameSettings.keyBindJump.getIsKeyPressed(),mc.gameSettings.keyBindSneak.getIsKeyPressed()));
@@ -51,6 +52,7 @@ public final class ColossusClient {
     }
     private static final class Attachment {
         int boss;
+        int side=1;
         float progress,goal;
         boolean grabbed;
         long seen;

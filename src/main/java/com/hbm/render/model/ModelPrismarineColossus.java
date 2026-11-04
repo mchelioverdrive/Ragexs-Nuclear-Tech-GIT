@@ -78,18 +78,20 @@ public final class ModelPrismarineColossus extends ModelBase {
         for(int i=0;i<3;i++) box(lower,2,-1.25+i*0.9,-3.9,-2.8,0.6,0.65,0.2);
     }
     private void spiral(int bone,double x,double y,double z,double size,boolean glow) {
-        double h=size/2,w=glow?0.22:0.28; int material=glow?4:1;
-        box(bone,material,x-h,y-h,z,size,w,0.15);
-        box(bone,material,x-h,y-h,z,w,size,0.15);
-        box(bone,material,x-h,y+h-w,z,size,w,0.15);
-        box(bone,material,x+h-w,y-h+size*0.4,z,w,size*0.6,0.15);
-        box(bone,material,x-size*0.1,y-size*0.1,z,size*0.6,w,0.15);
-        box(bone,material,x-size*0.1,y-size*0.1,z,w,size*0.4,0.15);
+        // Integer texel spans meet at edges; overlapping coplanar glow faces flicker in 1.7's depth buffer.
+        int span=Math.max(8,(int)Math.round(size*8)),w=2,lo= -span/2,hi=lo+span,inner= -span/10;
+        int material=glow?4:1;
+        box(bone,material,x+lo/8D,y+lo/8D,z,span/8D,w/8D,0.125);
+        box(bone,material,x+lo/8D,y+(lo+w)/8D,z,w/8D,(span-2*w)/8D,0.125);
+        box(bone,material,x+lo/8D,y+(hi-w)/8D,z,span/8D,w/8D,0.125);
+        box(bone,material,x+(hi-w)/8D,y+(inner+w)/8D,z,w/8D,Math.max(1,hi-inner-2*w)/8D,0.125);
+        box(bone,material,x+inner/8D,y+inner/8D,z,(hi-inner)/8D,w/8D,0.125);
+        box(bone,material,x+inner/8D,y+(inner+w)/8D,z,w/8D,Math.max(1,span/3-w)/8D,0.125);
     }
     private void box(int bone,int material,double x,double y,double z,double w,double h,double d) {
         ModelRenderer model=new ModelRenderer(this,0,0);
         model.addBox((float)x*8,(float)y*8,(float)z*8,Math.max(1,(int)Math.round(w*8)),Math.max(1,(int)Math.round(h*8)),Math.max(1,(int)Math.round(d*8)));
-        pieces.add(new Piece(bone,material,model));
+        pieces.add(new Piece(bone,material,model,pieces.size()*31+bone*17));
     }
     private void matrix(ColossusPose pose,int bone) { transform.clear();transform.put(pose.bones[bone].matrix);transform.flip();GL11.glMultMatrix(transform); }
     public void render(ColossusPose pose,boolean glow,float corruption,float fade,float breakup) {
@@ -115,6 +117,6 @@ public final class ModelPrismarineColossus extends ModelBase {
     }
     private static final class Piece {
         final int bone,material,seed; final ModelRenderer model;
-        Piece(int b,int m,ModelRenderer p) { bone=b;material=m;model=p;seed=(b*37+m*13+p.cubeList.size()*7+Float.floatToIntBits(((net.minecraft.client.model.ModelBox)p.cubeList.get(0)).posX1))&0x7FFF; }
+        Piece(int b,int m,ModelRenderer p,int n) { bone=b;material=m;model=p;seed=n; }
     }
 }
