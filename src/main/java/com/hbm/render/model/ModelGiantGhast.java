@@ -34,11 +34,13 @@ public final class ModelGiantGhast {
     };
 
     private static final String[] CORE_PIXELS = {
-        "  ddd  ",
-        " drrhd ",
+        "ddddddd",
+        "dddrrdd",
+        "ddrrhdd",
         "drhhrdd",
-        " drrrd ",
-        " ddd   "
+        "ddrrrdd",
+        "ddrrddd",
+        "ddddddd"
     };
     private static final double[] TENTACLE_LENGTHS = {4.75, 5.65, 5.0, 5.40, 5.92, 5.57, 4.92, 5.62, 5.21};
     private static final double[] TENTACLE_RADII = {0.63, 0.68, 0.60, 0.68, 0.70, 0.65, 0.65, 0.69, 0.62};
@@ -68,7 +70,7 @@ public final class ModelGiantGhast {
             body(hit, alpha);
             roof(alpha);
             for (int face = 0; face < 3; face++) face(face, mouthOpening(face, pose, firing), hit, alpha);
-            core(false, age, exposed, hit, dying, alpha);
+            if (dying) core(age, exposed, hit, true, alpha);
             TESS.draw();
 
             for (int i = 0; i < TENTACLE_LENGTHS.length; i++) tentacle(i, age, agitated, exposed || dying, alpha);
@@ -79,7 +81,7 @@ public final class ModelGiantGhast {
                 eyes(face, boss.getEntityId(), pose, age, agitated, hit, alpha);
                 mouthGlow(face, mouthOpening(face, pose, firing), alpha);
             }
-            if (!dying) core(true, age, exposed, hit, false, alpha);
+            if (!dying) core(age, exposed, hit, false, alpha);
             TESS.draw();
         } finally {
             OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, savedX, savedY);
@@ -130,16 +132,14 @@ public final class ModelGiantGhast {
         roofPlate(ROOF_BACK, alpha);
         roofPlate(ROOF_LEFT, alpha);
         roofPlate(ROOF_RIGHT, alpha);
-        quad(Surface.TOP, -rim, -rim, rim, rim, floor, BLACK, alpha);
         inset(Surface.TOP, -rim, -rim, rim, rim, top, floor, PANEL, alpha);
 
-        // A shallow ledge at the foot of the cavity wall leaves the red core clear.
-        double lip = rim - 0.14, lipY = floor + 0.13;
+        // The red core meets the inner edge of the dark ledge.
+        double lip = CORE.maxX, lipY = CORE.maxY;
         quad(Surface.TOP, -rim, -rim, rim, -lip, lipY, CHARCOAL, alpha);
         quad(Surface.TOP, -rim, lip, rim, rim, lipY, CHARCOAL, alpha);
         quad(Surface.TOP, -rim, -lip, -lip, lip, lipY, CHARCOAL, alpha);
         quad(Surface.TOP, lip, -lip, rim, lip, lipY, CHARCOAL, alpha);
-        inset(Surface.TOP, -lip, -lip, lip, lip, lipY, floor, PANEL, alpha);
 
         for (int sign = -1; sign <= 1; sign += 2) {
             double x = sign * 2.55;
@@ -257,8 +257,8 @@ public final class ModelGiantGhast {
     private static double eyeSpacing(int face) { return face == 1 ? 2.03 : 1.47; }
     private static double eyeHeight(int face) { return EntityGiantGhast.eyeY(face) + (face == 1 ? 0.29 : 0.15); }
 
-    private static void core(boolean glow, float age, boolean exposed, boolean hit, boolean dying, float alpha) {
-        double bottom = CORE.minY, top = CORE.maxY;
+    private static void core(float age, boolean exposed, boolean hit, boolean dying, float alpha) {
+        double top = CORE.maxY;
         double pixelX = (CORE.maxX - CORE.minX) / CORE_PIXELS[0].length();
         double pixelZ = (CORE.maxZ - CORE.minZ) / CORE_PIXELS.length;
         int red = hit ? 0xff3b37 : exposed ? 0xf92429 : 0xe52125;
@@ -267,24 +267,11 @@ public final class ModelGiantGhast {
         for (int z = 0; z < CORE_PIXELS.length; z++) {
             for (int x = 0; x < CORE_PIXELS[z].length(); x++) {
                 char pixel = CORE_PIXELS[z].charAt(x);
-                if (pixel == ' ') continue;
                 double x0 = CORE.minX + x * pixelX, x1 = CORE.minX + (x + 1) * pixelX;
                 double z0 = CORE.minZ + z * pixelZ, z1 = CORE.minZ + (z + 1) * pixelZ;
-                if (glow || dying) {
-                    quad(Surface.TOP, x0, z0, x1, z1, top, dying ? 0x371417 : pixel == 'h' ? light : pixel == 'd' ? 0xb81b22 : red, alpha);
-                }
-                if (glow) continue;
-                int edge = 0x531619;
-                if (!corePixel(x, z + 1)) quad(Surface.FRONT, x0, bottom, x1, top, z1, edge, alpha);
-                if (!corePixel(x, z - 1)) quad(Surface.BACK, x0, bottom, x1, top, z0, edge, alpha);
-                if (!corePixel(x + 1, z)) quad(Surface.RIGHT, z0, bottom, z1, top, x1, edge, alpha);
-                if (!corePixel(x - 1, z)) quad(Surface.LEFT, z0, bottom, z1, top, x0, edge, alpha);
+                quad(Surface.TOP, x0, z0, x1, z1, top, dying ? 0x371417 : pixel == 'h' ? light : pixel == 'd' ? 0xb81b22 : red, alpha);
             }
         }
-    }
-
-    private static boolean corePixel(int x, int z) {
-        return z >= 0 && z < CORE_PIXELS.length && x >= 0 && x < CORE_PIXELS[z].length() && CORE_PIXELS[z].charAt(x) != ' ';
     }
 
     private static void tentacle(int index, float age, boolean agitated, boolean resting, float alpha) {

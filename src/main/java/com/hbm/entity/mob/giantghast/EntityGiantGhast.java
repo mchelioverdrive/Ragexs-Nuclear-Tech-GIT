@@ -401,6 +401,7 @@ public final class EntityGiantGhast extends EntityFlying implements IBossDisplay
         int lastShot = charge + (shots - 1) * interval;
         int opening = age > lastShot ? 0 : age <= charge ? chargeOpening(age, charge)
             : chargeOpening((age - charge - 1) % interval + 1, interval);
+        if (attack == State.RAPID && age >= charge && age <= lastShot) opening = 15;
         if (age >= charge && age <= lastShot && (age - charge) % interval == 0) {
             if (summon) {
                 summonWave(encounters, phase >= 4 ? 7 : 4);
