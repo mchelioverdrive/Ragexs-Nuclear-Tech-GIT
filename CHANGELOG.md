@@ -317,3 +317,9 @@
 - Build a deep central head and connected flank heads with animated tentacles and a pulsing top core. The head and core geometry also define the multipart hitboxes and solid roof.
 - Raise the configurable default to 2,000 HP. Schedule four ordinary shots and a reflectable fifth, 15-shot bursts, large radial flowers, and alternating triples and five-shot flowers. Keep the per-encounter projectile cap and summon retaliation.
 - At 10% health, spin and descend with an erratic barrage, then expose the core for eight configurable melee strikes. Save combat and execution progress, credit the final attacker, and clear owned Ghasts and fireballs during the death sequence.
+
+2026-11-04 01:07 — Fix Prismarine Colossus steps, aimed attacks and terrain contact
+
+- Drive alternating planted steps, knee bend, foot lift and footsteps from horizontal travel. Synchronize stride and ground height with the shared render and collision pose.
+- Aim punches and grabs with either arm, track the selected target during windup, and resolve contact along the committed animation. Keep grab escape and consumption server-authoritative.
+- Use swept fist, arm and foot geometry for terrain strikes. During blocked pursuit, probe the failed movement path and punch reachable obstructions. Enable terrain destruction by default while respecting explicit config values, mobGriefing, block protections and the shared block budget.

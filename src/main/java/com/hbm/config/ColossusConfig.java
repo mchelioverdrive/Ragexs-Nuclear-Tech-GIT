@@ -7,7 +7,7 @@ import net.minecraftforge.common.config.Configuration;
 
 public final class ColossusConfig {
     private ColossusConfig() { }
-    public static boolean enabled = true, terrain = false, climbing = true, gauntletRequired = true;
+    public static boolean enabled = true, terrain = true, climbing = true, gauntletRequired = true;
     public static boolean natural = false, clock = true, clockTime = false, permanentTime = false, creative = false;
     public static boolean attacks = true, proximityActivation = false, bypassArmor = false;
     public static int blocks = 32, maximum = 2, cooldown = 65, particles = 12, escapePresses = 5;
@@ -27,7 +27,7 @@ public final class ColossusConfig {
         bypassArmor = bool(c, s, "allowBodyDamage", "Allow highly reduced body damage to kill the boss instead of stopping at one health.", false);
         climbing = bool(c, s, "climbing", "Right-click the lower body to climb; W/S move, Space braces, Sneak releases.", true);
         escapePresses = integer(c, s, "grabEscapePresses", "Distinct Sneak presses required within four seconds to escape a grab.", 5, 1, 16);
-        terrain = bool(c, s, "terrainDestruction", "Contact-only limb destruction; also requires mobGriefing. Containers and machines are always protected.", false);
+        terrain = bool(c, s, "terrainDestruction", "Contact-only limb destruction; also requires mobGriefing. Containers and machines are always protected.", true);
         blocks = integer(c, s, "blocksPerTick", "Dimension-wide maximum terrain coordinates examined across all Colossi, including air and protected blocks.", 32, 0, 256);
         maximum = integer(c, s, "maxActivePerDimension", "Maximum saved encounters, including dormant and unloaded bosses. Zero prevents new encounters.", 2, 0, 16);
         particles = integer(c, s, "particleIntensity", "Maximum particles per local impact/death tick; respects client particle settings.", 12, 0, 48);
