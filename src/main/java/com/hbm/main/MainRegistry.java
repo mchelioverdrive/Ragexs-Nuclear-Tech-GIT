@@ -405,6 +405,7 @@ public class MainRegistry {
 		ChestGenHooks.addItem(ChestGenHooks.STRONGHOLD_LIBRARY, new WeightedRandomChestContent(new ItemStack(ModBlocks.fake_command_block), 1, 1, 1));
 		ChestGenHooks.addItem(ChestGenHooks.PYRAMID_JUNGLE_CHEST, new WeightedRandomChestContent(new ItemStack(ModBlocks.fake_command_block), 1, 1, 1));
 		com.hbm.entity.mob.colossus.ColossusContent.register();
+		com.hbm.entity.mob.giantenderman.GiantEndermanEvents.registerEgg();
 		//CompatNER.init();
 
 
@@ -1087,6 +1088,9 @@ public class MainRegistry {
 		com.hbm.entity.mob.colossus.ColossusEvents colossusEvents = new com.hbm.entity.mob.colossus.ColossusEvents();
 		MinecraftForge.EVENT_BUS.register(colossusEvents);
 		FMLCommonHandler.instance().bus().register(colossusEvents);
+		com.hbm.entity.mob.giantenderman.GiantEndermanEvents giantEndermanEvents = new com.hbm.entity.mob.giantenderman.GiantEndermanEvents();
+		MinecraftForge.EVENT_BUS.register(giantEndermanEvents);
+		FMLCommonHandler.instance().bus().register(giantEndermanEvents);
 		com.hbm.world.sandworm.WormEvents wormEvents = new com.hbm.world.sandworm.WormEvents();
 		MinecraftForge.EVENT_BUS.register(wormEvents);
 		FMLCommonHandler.instance().bus().register(wormEvents);
@@ -1156,6 +1160,7 @@ public class MainRegistry {
 		event.registerServerCommand(new com.hbm.commands.CommandWitherStorm());
 		event.registerServerCommand(new com.hbm.commands.CommandColossus());
 		event.registerServerCommand(new com.hbm.commands.CommandGiantGhast());
+		event.registerServerCommand(new com.hbm.commands.CommandGiantEnderman());
 		event.registerServerCommand(new com.hbm.commands.CommandSandworm());
 		MinecraftForge.EVENT_BUS.register(new NukeScheduler());
 		FMLCommonHandler.instance().bus().register(new NukeScheduler());
@@ -1188,6 +1193,7 @@ public class MainRegistry {
 		com.hbm.config.WitherStormConfig.loadFromConfig(config);
 		com.hbm.config.ColossusConfig.loadFromConfig(config);
 		com.hbm.config.GiantGhastConfig.loadFromConfig(config);
+		com.hbm.config.GiantEndermanConfig.loadFromConfig(config);
 		com.hbm.config.SandwormConfig.loadFromConfig(config);
 		RabiesConfig.loadFromConfig(config);
 		StructureConfig.loadFromConfig(config);

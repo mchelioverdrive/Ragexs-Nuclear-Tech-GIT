@@ -7540,3 +7540,10 @@ colossus.gauntlet.tip=Strike the glowing symbol on the back of the Colossus's he
 colossus.climb=Climbing: W/S to move, Space to brace against shaking, Sneak to release. Reach the rear-head symbol!
 colossus.escape=Tap %s to escape  %s/%s
 colossus.spawn.unsafe=Colossus disabled, encounter limit reached, or unsafe location. Use a broad, clear, loaded area.
+
+entity.hbm.giant_enderman.name=Giant Enderman
+item.giant_enderman_spawn_egg.name=Giant Enderman Spawn Egg
+giant_enderman.spawn.unsafe=The Giant Enderman needs solid ground and 30 blocks of vertical clearance in loaded chunks.
+giant_enderman.spawn.canceled=Giant Enderman spawn was canceled.
+giant_enderman.spawn.success=Summoned an active Giant Enderman encounter.
+giant_enderman.grab.escape=Strike the grabbing hand to break free!

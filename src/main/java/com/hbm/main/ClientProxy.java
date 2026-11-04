@@ -857,6 +857,15 @@ public class ClientProxy extends ServerProxy {
 		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.mob.witherstorm.EntityWitherStorm.class, new com.hbm.render.entity.mob.RenderWitherStorm());
 		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.mob.colossus.EntityPrismarineColossus.class, new com.hbm.render.entity.mob.RenderPrismarineColossus());
 		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.mob.giantghast.EntityGiantGhast.class, new com.hbm.render.entity.mob.RenderGiantGhast());
+		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.mob.giantenderman.EntityGiantEnderman.class, new com.hbm.render.entity.mob.RenderGiantEnderman());
+		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.mob.giantenderman.EntityEndermanTerrain.class, new com.hbm.render.entity.mob.RenderEndermanTerrain());
+		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.mob.giantenderman.EntityGiantEndermanPart.class, new net.minecraft.client.renderer.entity.Render() {
+			@Override public void doRender(net.minecraft.entity.Entity e, double x, double y, double z, float yaw, float partial) { }
+			@Override protected net.minecraft.util.ResourceLocation getEntityTexture(net.minecraft.entity.Entity e) { return null; }
+		});
+		com.hbm.render.entity.mob.GiantEndermanClient giantEndermanClient = new com.hbm.render.entity.mob.GiantEndermanClient();
+		FMLCommonHandler.instance().bus().register(giantEndermanClient);
+		net.minecraftforge.common.MinecraftForge.EVENT_BUS.register(giantEndermanClient);
 		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.mob.giantghast.EntitySummonedGhast.class, new net.minecraft.client.renderer.entity.RenderGhast());
 		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.mob.giantghast.EntityGiantGhastFireball.class, new com.hbm.render.entity.projectile.RenderGiantGhastFireball());
 		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.mob.colossus.EntityColossusPart.class, new net.minecraft.client.renderer.entity.Render() {

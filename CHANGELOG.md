@@ -328,3 +328,9 @@
 
 - Recreate the charcoal cube, integrated flank heads, inset red eyes, and longer independently swaying tentacles. Shape a stepped roof recess around an irregular red core.
 - Match the multipart bounds to the new heads and walkable roof rim, and align the fireball muzzle with the central mouth. The recessed core remains a melee target from above during the execution phase.
+
+2026-11-04 03:12 — Add the Giant Enderman boss encounter
+
+- Add the 30-block Giant Enderman with a dedicated animated model, exposed rib cage, emissive face, multipart hit regions and three health-based combat phases.
+- Add telegraphed swipes, stomps and shockwaves, safe teleportation, throwable terrain formations and escapable grabs. Terrain changes respect mobGriefing, block protection and a shared per-dimension budget.
+- Add a Prismarine Colossus duel and head-tearing finisher, an operator spawn command, a Creative spawn egg and opt-in natural encounters in the End.

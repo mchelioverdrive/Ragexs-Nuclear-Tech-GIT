@@ -399,3 +399,21 @@ Attack phases begin at 75%, 50%, 25%, and 10% health. Ordinary body hits deal 28
 5. Edit recipes, fluid traits, fallout, item pools, and custom machines as needed.
 6. Test with representative players and machines.
 7. Back up the final config set before opening the long-term world.
+
+## Giant Enderman
+
+Startup category `12_mobs.giantenderman` in `config/hbm.cfg`.
+
+| Setting | Default | Effect |
+| --- | --- | --- |
+| `maximumHealth` | 1000 | Maximum HP for new bosses, up to the Forge 1.7.10 limit of 1024. Saved bosses retain their saved attribute. |
+| `attackDamageMultiplier` | 1 | Scales combat damage. A player held in a grab retains at least one HP from the bites. |
+| `detectionRange`, `movementSpeed` | 96 blocks, 0.26 blocks/tick | Target range and stalking speed. Pursuit speeds up as health falls. |
+| `teleportCooldownTicks` | 160 | Base interval between teleports. Later phases shorten it. |
+| `terrainDestruction`, `terrainDestructionRadius` | true, 5 blocks | Control the maximum size of terrain contacts. The boss also observes `mobGriefing`, spawn and Forge break protection, and the Colossus block protection list. |
+| `terrainBudgetPerTick` | 24 | Shared limit on terrain coordinates examined per dimension each tick. |
+| `naturalSpawning` | false | Allows rare neutral encounters near players in the End. |
+| `bossCombat` | true | Enables combat with other hostile bosses and the Prismarine Colossus duel. |
+| `playerGrabbing` | true | Allows player grabs. Small mobs remain eligible when disabled. |
+
+Health, phase, target memory and cooldowns survive saving. Reloaded encounters resume from recovery, releasing held victims and discarding temporary terrain formations. See [Giant Enderman commands](commands.md#rntgiantenderman).

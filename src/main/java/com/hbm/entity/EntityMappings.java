@@ -294,6 +294,9 @@ public class EntityMappings {
 		EntityRegistry.registerModEntity(EntityGiantGhast.class, "giant_ghast", id++, MainRegistry.instance, 192, 2, false);
 		EntityRegistry.registerModEntity(EntitySummonedGhast.class, "giant_ghast_minion", id++, MainRegistry.instance, 128, 2, false);
 		EntityRegistry.registerModEntity(EntityGiantGhastFireball.class, "giant_ghast_fireball", id++, MainRegistry.instance, 128, 2, true);
+		EntityRegistry.registerModEntity(com.hbm.entity.mob.giantenderman.EntityGiantEnderman.class, "giant_enderman", id++, MainRegistry.instance, 256, 1, false);
+		EntityRegistry.registerModEntity(com.hbm.entity.mob.giantenderman.EntityGiantEndermanPart.class, "giant_enderman_part", id++, MainRegistry.instance, 256, 3, false);
+		EntityRegistry.registerModEntity(com.hbm.entity.mob.giantenderman.EntityEndermanTerrain.class, "giant_enderman_terrain", id++, MainRegistry.instance, 192, 1, true);
 		if (GiantGhastConfig.natural) EntityRegistry.addSpawn(EntityGiantGhast.class, 1, 1, 1, EnumCreatureType.monster, BiomeGenBase.hell);
 
 		for(Quartet<Class<? extends Entity>, String, Integer, Integer> entry : mobMappings) {

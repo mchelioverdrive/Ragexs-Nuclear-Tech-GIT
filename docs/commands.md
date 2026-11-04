@@ -355,3 +355,9 @@ The three faces, fireball patterns, retaliation, and exposed top weak point foll
 ## Permissions notes
 
 Most server command classes do not override Forge's default permission behavior. `/rntwitherstorm` and `/rntachievement` explicitly require permission level 2, and `/hbmbedrockdrop` explicitly requires permission level 4. Server owners should additionally restrict command access with their server management tooling, especially for radiation, stations, satellites, recipe reloads, chunk diagnostics, and nuclear toggles.
+
+## /rntgiantenderman
+
+Operator level 2 can run `/rntgiantenderman spawn [x y z]`. The command starts an active encounter at the specified feet position or searches for open ground near the sender. Use solid ground in loaded terrain with roughly 14 blocks of width and 32 blocks of vertical clearance. The Creative spawn egg places a neutral boss on top of the selected block.
+
+Eye contact or damage provokes a neutral Giant Enderman. At 70% health it adds grabs and two-handed smashes. At 35% health it roars, recovers faster, and adds expanding shockwaves and spread throws. Strike the hand holding you to escape, and aim at the glowing chest when it opens after a heavy attack. See [Giant Enderman configuration](configuration.md#giant-enderman).

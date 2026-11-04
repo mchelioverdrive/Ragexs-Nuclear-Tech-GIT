@@ -358,6 +358,17 @@
 	  },
 	  "sandworm.heart_up": {"category": "hostile", "sounds": ["sandworm/heart_up"]},
 	  "sandworm.heart_down": {"category": "hostile", "sounds": ["sandworm/heart_down"]},
+  "giant_enderman.idle": {"category": "hostile", "sounds": [{"name": "minecraft:mob/endermen/idle1", "pitch": 0.56}, {"name": "minecraft:mob/endermen/idle2", "pitch": 0.56}, {"name": "minecraft:mob/endermen/idle3", "pitch": 0.56}, {"name": "minecraft:mob/endermen/idle4", "pitch": 0.56}, {"name": "minecraft:mob/endermen/idle5", "pitch": 0.56}]},
+  "giant_enderman.scream": {"category": "hostile", "sounds": [{"name": "minecraft:mob/endermen/scream1", "pitch": 0.51}, {"name": "minecraft:mob/endermen/scream2", "pitch": 0.51}, {"name": "minecraft:mob/endermen/scream3", "pitch": 0.51}, {"name": "minecraft:mob/endermen/scream4", "pitch": 0.51}]},
+  "giant_enderman.teleport": {"category": "hostile", "sounds": [{"name": "minecraft:mob/endermen/portal", "pitch": 0.54}, {"name": "minecraft:mob/endermen/portal2", "pitch": 0.54}]},
+  "giant_enderman.step": {"category": "hostile", "sounds": [{"name": "minecraft:mob/irongolem/walk1", "pitch": 0.52}, {"name": "minecraft:mob/irongolem/walk2", "pitch": 0.52}, {"name": "minecraft:mob/irongolem/walk3", "pitch": 0.52}, {"name": "minecraft:mob/irongolem/walk4", "pitch": 0.52}]},
+  "giant_enderman.windup": {"category": "hostile", "sounds": [{"name": "minecraft:mob/endermen/stare", "pitch": 0.59}]},
+  "giant_enderman.swing": {"category": "hostile", "sounds": [{"name": "minecraft:mob/irongolem/throw", "pitch": 0.55}]},
+  "giant_enderman.impact": {"category": "hostile", "sounds": [{"name": "minecraft:random/explode1", "pitch": 0.57}, {"name": "minecraft:random/explode2", "pitch": 0.57}, {"name": "minecraft:random/explode3", "pitch": 0.57}, {"name": "minecraft:random/explode4", "pitch": 0.57}]},
+  "giant_enderman.grab": {"category": "hostile", "sounds": [{"name": "minecraft:mob/irongolem/throw", "pitch": 0.65}]},
+  "giant_enderman.bite": {"category": "hostile", "sounds": [{"name": "minecraft:random/eat1", "pitch": 0.56}, {"name": "minecraft:random/eat2", "pitch": 0.56}, {"name": "minecraft:random/eat3", "pitch": 0.56}]},
+  "giant_enderman.hurt": {"category": "hostile", "sounds": [{"name": "minecraft:mob/endermen/hit1", "pitch": 0.56}, {"name": "minecraft:mob/endermen/hit2", "pitch": 0.56}, {"name": "minecraft:mob/endermen/hit3", "pitch": 0.56}, {"name": "minecraft:mob/endermen/hit4", "pitch": 0.56}]},
+  "giant_enderman.death": {"category": "hostile", "sounds": [{"name": "minecraft:mob/endermen/death", "pitch": 0.52}]},
 	  "alarm.mama": {
 		"category": "record",
 		"sounds": [

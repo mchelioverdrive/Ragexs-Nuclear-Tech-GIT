@@ -41,13 +41,13 @@ public final class RenderPrismarineColossus extends Render {
         bindTexture(SKIN);
         float corruption=boss.variant()==EntityPrismarineColossus.GLITCHED?(float)(0.5+0.5*Math.sin((boss.ticksExisted+partial)*0.73)):0;
         float breakup=boss.state()==ColossusPose.DEATH?(float)ColossusPose.smooth((boss.stateTime(partial)-(boss.variant()==EntityPrismarineColossus.ADMIN?65:100))/70):0;
-        model.render(pose,false,corruption,1,breakup);
+        model.render(pose,false,corruption,1,breakup,boss.endermanHeadDetached());
         if(boss.state()==ColossusPose.CLOCK) renderClock(boss.stateTime(partial));
         GL11.glDisable(GL11.GL_LIGHTING);OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit,240,240);
         float fade=boss.state()==ColossusPose.DEATH?Math.max(0,1-boss.stateTime(partial)/85F):1;
         if(fade>0 && (boss.state()!=ColossusPose.DEATH || ((int)boss.stateTime(partial)/4)%3!=0)) {
             GL11.glEnable(GL11.GL_BLEND);GL11.glBlendFunc(GL11.GL_SRC_ALPHA,GL11.GL_ONE);
-            model.render(pose,true,corruption,fade*(1+boss.weakFlare(partial)),0);
+            model.render(pose,true,corruption,fade*(1+boss.weakFlare(partial)),0,boss.endermanHeadDetached());
         }
         OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit,brightnessX,brightnessY);
         GL11.glPopMatrix();GL11.glPopAttrib();

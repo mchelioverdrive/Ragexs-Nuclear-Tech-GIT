@@ -111,8 +111,9 @@ public final class ModelPrismarineColossus extends ModelBase {
         pieces.add(new Piece(bone,material,model,pieces.size()*31+bone*17));
     }
     private void matrix(ColossusPose pose,int bone) { transform.clear();transform.put(pose.bones[bone].matrix);transform.flip();GL11.glMultMatrix(transform); }
-    public void render(ColossusPose pose,boolean glow,float corruption,float fade,float breakup) {
+    public void render(ColossusPose pose,boolean glow,float corruption,float fade,float breakup,boolean headDetached) {
         for(int bone=0;bone<pose.bones.length;bone++) {
+            if(headDetached && bone==ColossusPose.HEAD) continue;
             GL11.glPushMatrix();matrix(pose,bone);
             for(Piece p:pieces) if(p.bone==bone && (p.material==4)==glow) {
                 if(breakup>0 && p.seed%17 < breakup*17) continue;
@@ -131,6 +132,14 @@ public final class ModelPrismarineColossus extends ModelBase {
                 GL11.glPopMatrix();
             }
             GL11.glPopMatrix();
+        }
+    }
+    public void renderDetachedHead() {
+        for(Piece piece:pieces) if(piece.bone==ColossusPose.HEAD) {
+            if(piece.material==4) GL11.glColor3f(0.24F,0.74F,0.67F);
+            else if(piece.material==1) GL11.glColor3f(0.16F,0.25F,0.22F);
+            else GL11.glColor3f(0.34F,0.50F,0.46F);
+            piece.model.render(0.125F);
         }
     }
     private static final class Piece {

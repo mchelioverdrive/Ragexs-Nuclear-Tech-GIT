@@ -182,9 +182,9 @@ public final class ColossusPose {
         public Bone parent;
         public double x, y, z, rx, ry, rz;
         public final double[] matrix = new double[16];
-        void reset() { parent = null; x = y = z = rx = ry = rz = 0; }
-        void set(Bone p, double a, double b, double c) { parent = p; x = a; y = b; z = c; }
-        void compose() {
+        public void reset() { parent = null; x = y = z = rx = ry = rz = 0; }
+        public void set(Bone p, double a, double b, double c) { parent = p; x = a; y = b; z = c; }
+        public void compose() {
             double cx = Math.cos(rx), sx = Math.sin(rx), cy = Math.cos(ry), sy = Math.sin(ry), cz = Math.cos(rz), sz = Math.sin(rz);
             double[] m = matrix;
             // Rz * Ry * Rx, in column-major OpenGL order.
@@ -201,7 +201,7 @@ public final class ColossusPose {
             }
         }
         public Vec3 point(double a, double b, double c) { return Vec3.createVectorHelper(matrix[0]*a+matrix[4]*b+matrix[8]*c+matrix[12], matrix[1]*a+matrix[5]*b+matrix[9]*c+matrix[13], matrix[2]*a+matrix[6]*b+matrix[10]*c+matrix[14]); }
-        Vec3 inversePoint(double a, double b, double c) {
+        public Vec3 inversePoint(double a, double b, double c) {
             a-=matrix[12]; b-=matrix[13]; c-=matrix[14];
             return Vec3.createVectorHelper(matrix[0]*a+matrix[1]*b+matrix[2]*c, matrix[4]*a+matrix[5]*b+matrix[6]*c, matrix[8]*a+matrix[9]*b+matrix[10]*c);
         }

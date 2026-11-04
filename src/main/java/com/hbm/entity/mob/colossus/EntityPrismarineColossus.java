@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import com.hbm.config.ColossusConfig;
+import com.hbm.config.GiantEndermanConfig;
+import com.hbm.entity.mob.giantenderman.EntityGiantEnderman;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.ColossusAttachmentPacket;
 import api.hbm.entity.IRadiationImmune;
@@ -260,6 +262,7 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
         return eligible(e) && getDistanceSqToEntity(e)<=ColossusConfig.range*ColossusConfig.range;
     }
     private boolean eligible(Entity e) {
+        if(e instanceof EntityGiantEnderman && !GiantEndermanConfig.bossCombat) return false;
         if(!(e instanceof EntityLivingBase) || e==this || !e.isEntityAlive() || e.worldObj!=worldObj || e instanceof EntityPrismarineColossus) return false;
         return !(e instanceof EntityPlayer) || ColossusConfig.creative || !((EntityPlayer)e).capabilities.isCreativeMode || variant()==GLITCHED;
     }
@@ -569,7 +572,9 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
             for(Object o:nearby) {
                 EntityLivingBase e=(EntityLivingBase)o;
                 if(!eligible(e) || e==grabbed || grips.containsKey(e.getUniqueID()) || struck.contains(e.getUniqueID())
-                    || grab && (e.ridingEntity!=null || e.riddenByEntity!=null) || !sample.intersects(e.boundingBox)) continue;
+                    || grab && (e.ridingEntity!=null || e.riddenByEntity!=null || e instanceof EntityGiantEnderman)
+                    || !sample.intersects(e.boundingBox) && !(e instanceof EntityGiantEnderman)
+                    || e instanceof EntityGiantEnderman && !((EntityGiantEnderman)e).intersectsParts(sample::intersects)) continue;
                 Vec3 center=boxCenter(e.boundingBox);
                 if(aimed) {
                     double f=(double)i/steps, dy=(startY-posY)*(1-f);
@@ -691,6 +696,33 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
             EntityColossusPart part=new EntityColossusPart(worldObj); part.attach(this,i);
             if(loaded(worldObj,part.posX,part.posZ,1) && worldObj.spawnEntityInWorld(part)) parts[i]=part;
         }
+    }
+    public Vec3 endermanHead() { return point(ColossusPose.HEAD,0,1.75,0); }
+    public boolean canEndermanFinish() { return isEntityAlive() && getHealth()<=getMaxHealth()*0.12F+0.01F; }
+    public boolean endermanHeadDetached() { return state()==ColossusPose.DEATH && escapeTime()!=0; }
+    public boolean windingUpAgainstEnderman(EntityGiantEnderman enderman) {
+        return attackTarget==enderman && state()!=ColossusPose.IDLE && state()!=ColossusPose.STUN
+            && state()!=ColossusPose.DEATH && stateTime(0)>=8 && stateTime(0)<18;
+    }
+    public void holdForEnderman() {
+        if(worldObj.isRemote || !GiantEndermanConfig.bossCombat || !canEndermanFinish() || state()==ColossusPose.STUN) return;
+        releaseGrab(); begin(ColossusPose.STUN); cooldown=40;
+    }
+    public void endermanStrike(EntityGiantEnderman enderman,float damage) {
+        if(worldObj.isRemote || !GiantEndermanConfig.bossCombat || !isEntityAlive()) return;
+        activate();
+        if(targetable(enderman)) target=enderman;
+        float amount=Math.min(damage,Math.max(0,getHealth()-getMaxHealth()*0.12F));
+        if(amount>0 && super.attackEntityFrom(DamageSource.causeMobDamage(enderman),amount)) {
+            reaction=1; sound("dig.stone",0.55F);
+        }
+    }
+    public boolean endermanFinish(EntityGiantEnderman enderman) {
+        if(worldObj.isRemote || !GiantEndermanConfig.bossCombat || !canEndermanFinish()) return false;
+        DamageSource source=DamageSource.causeMobDamage(enderman).setDamageBypassesArmor();
+        if(!super.attackEntityFrom(source,Math.max(1024,getMaxHealth()*2)) || getHealth()>0) return false;
+        dataWatcher.updateObject(26,1);
+        return true;
     }
     @Override public boolean attackEntityFrom(DamageSource source,float damage) { return hit(-1,source,damage); }
     public boolean hit(int slot,DamageSource source,float damage) {
@@ -902,6 +934,7 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
         n.setInteger("State",state()); n.setInteger("StateTime",(int)stateTime(0)); n.setInteger("Cooldown",cooldown); n.setFloat("Walk",walk);
         n.setBoolean("ClockUsed",clockUsed); n.setBoolean("ClockChanged",clockChanged); n.setLong("ClockOriginal",clockOriginal); n.setLong("ClockStarted",clockStarted); n.setLong("ClockExpected",clockExpected);
         n.setBoolean("DropShards",dropShards); n.setBoolean("DeathDrops",deathDrops);
+        if(endermanHeadDetached()) n.setBoolean("EndermanHeadDetached",true);
     }
     @Override public void readEntityFromNBT(NBTTagCompound n) {
         super.readEntityFromNBT(n); setVariant(n.getInteger("Variant"));
@@ -912,6 +945,7 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
         begin(getHealth()<=0?ColossusPose.DEATH:dormant() || savedState==ColossusPose.IDLE?ColossusPose.IDLE:ColossusPose.STUN);
         if(getHealth()<=0) dataWatcher.updateObject(22,(int)worldObj.getTotalWorldTime()-MathHelper.clamp_int(n.getInteger("StateTime"),0,139));
         clockUsed=n.getBoolean("ClockUsed"); clockChanged=n.getBoolean("ClockChanged"); clockOriginal=n.getLong("ClockOriginal"); clockStarted=n.getLong("ClockStarted"); clockExpected=n.getLong("ClockExpected");
+        if(getHealth()<=0 && n.getBoolean("EndermanHeadDetached")) dataWatcher.updateObject(26,1);
         dropShards=!n.hasKey("DropShards") || n.getBoolean("DropShards"); deathDrops=n.getBoolean("DeathDrops");
     }
     private static final class Grip {
