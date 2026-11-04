@@ -311,3 +311,9 @@
 - Climb supported one-block ledges with a bounded, collision-checked step. Use loaded terrain for clearance and gravity independently of block destruction.
 - Aim and articulate either arm toward the grab target during windup. Capture on swept fist contact and give grabbed players four seconds to escape through distinct Sneak presses, with server-tracked HUD progress and a recoil on escape.
 - Rebuild the prismarine silhouette, face, arms and legs with original stone materials and shared animation, contact geometry and climbing anchors. Preserve the emissive eyes and rear-head weak point.
+
+2026-11-04 00:29 — Expand the Giant Ghast encounter
+
+- Build a deep central head and connected flank heads with animated tentacles and a pulsing top core. The head and core geometry also define the multipart hitboxes and solid roof.
+- Raise the configurable default to 2,000 HP. Schedule four ordinary shots and a reflectable fifth, 15-shot bursts, large radial flowers, and alternating triples and five-shot flowers. Keep the per-encounter projectile cap and summon retaliation.
+- At 10% health, spin and descend with an erratic barrage, then expose the core for eight configurable melee strikes. Save combat and execution progress, credit the final attacker, and clear owned Ghasts and fireballs during the death sequence.

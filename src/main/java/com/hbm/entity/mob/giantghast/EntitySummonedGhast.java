@@ -101,7 +101,7 @@ public final class EntitySummonedGhast extends EntityGhast {
         }
         if (cooldown > 0) cooldown--;
         prevAttackCounter = attackCounter;
-        if (GiantGhastFlight.combatant(target, worldObj) && getDistanceSqToEntity(target) < 64 * 64) {
+        if (boss.canSummonsFire() && GiantGhastFlight.combatant(target, worldObj) && getDistanceSqToEntity(target) < 64 * 64) {
             Vec3 center = GiantGhastFlight.center(this);
             Vec3 aim = GiantGhastFlight.center(target);
             Vec3 heading = Vec3.createVectorHelper(aim.xCoord - center.xCoord, aim.yCoord - center.yCoord, aim.zCoord - center.zCoord);
@@ -112,7 +112,7 @@ public final class EntitySummonedGhast extends EntityGhast {
                     && GiantGhastFlight.visible(worldObj, mouth, aim)) {
                 if (++attackCounter == 10) playSound("mob.ghast.charge", 2, 1);
                 if (attackCounter >= 20) {
-                    boss.fire(this, mouth, heading, 0.9F, isRetaliating() ? 1.45F : 0.82F, null, false);
+                    boss.fire(this, mouth, heading, 0.9F, isRetaliating() ? 1.45F : 0.82F, true, false);
                     attackCounter = 0;
                     cooldown = 42 + rand.nextInt(25);
                 }

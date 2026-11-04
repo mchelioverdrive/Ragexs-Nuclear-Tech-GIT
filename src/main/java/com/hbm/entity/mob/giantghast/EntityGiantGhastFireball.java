@@ -24,23 +24,29 @@ import net.minecraft.world.WorldServer;
 
 public final class EntityGiantGhastFireball extends EntityFireball implements IEntityAdditionalSpawnData {
     private static final int LIFETIME = 180;
-    private UUID bossId, launcherId, shooterId, steeringId;
+    private static final int REFLECTED = 20;
+    private UUID bossId, launcherId, shooterId;
     private long expiry;
-    private boolean bound, reflected, stray;
+    private boolean bound, reflectable = true, reflected, stray;
     private float power = 1, damageScale = 1;
 
     public EntityGiantGhastFireball(World world) { super(world); }
 
+    @Override protected void entityInit() {
+        super.entityInit();
+        dataWatcher.addObject(REFLECTED, (byte)0);
+    }
+
     EntityGiantGhastFireball(EntityGiantGhast boss, EntityLivingBase shooter, Vec3 origin, Vec3 heading,
-            float power, float damageScale, EntityLivingBase steer, boolean stray) {
+            float power, float damageScale, boolean reflectable, boolean stray) {
         this(boss.worldObj);
         bossId = boss.getUniqueID();
         shooterId = launcherId = shooter.getUniqueID();
         shootingEntity = shooter;
-        steeringId = steer == null ? null : steer.getUniqueID();
         expiry = worldObj.getTotalWorldTime() + LIFETIME;
         this.power = power;
         this.damageScale = damageScale;
+        this.reflectable = reflectable;
         this.stray = stray;
         setSizeForPower();
         setPosition(origin.xCoord, origin.yCoord, origin.zCoord);
@@ -56,6 +62,8 @@ public final class EntityGiantGhastFireball extends EntityFireball implements IE
     }
 
     public float visualSize() { return power < 0.75F ? 0.63F : 1.3F; }
+    public boolean isReflectable() { return reflectable; }
+    boolean wasReflected() { return reflected; }
     long expires() { return expiry; }
     boolean isStrayFrom(UUID id) { return stray && !reflected && id != null && id.equals(bossId) && id.equals(launcherId); }
 
@@ -87,15 +95,15 @@ public final class EntityGiantGhastFireball extends EntityFireball implements IE
             }
             // A projectile saved in an adjacent chunk waits for its encounter to load.
             if (encounters.boss(worldObj, bossId) == null) return;
-            if (shootingEntity == null && (ticksExisted == 1 || ticksExisted % 12 == 0)) {
+            if ((shootingEntity == null || shootingEntity.isDead) && (ticksExisted == 1 || ticksExisted % 12 == 0)) {
                 shootingEntity = resolve(encounters, shooterId);
             }
-            steer(encounters);
         }
 
         double speed = Math.sqrt(motionX * motionX + motionY * motionY + motionZ * motionZ);
         if (speed > 0.001) {
-            double cap = reflected ? 1.10 : power < 0.75F ? 1.02 : 0.90;
+            boolean redirected = worldObj.isRemote ? dataWatcher.getWatchableObjectByte(REFLECTED) != 0 : reflected;
+            double cap = redirected ? 1.10 : power < 0.75F ? 1.02 : 0.90;
             double factor = Math.min(speed + 0.022, cap) / speed;
             motionX *= factor;
             motionY *= factor;
@@ -119,7 +127,8 @@ public final class EntityGiantGhastFireball extends EntityFireball implements IE
         setPosition(end.xCoord, end.yCoord, end.zCoord);
         if (worldObj.isRemote && ticksExisted % 2 == 0) {
             worldObj.spawnParticle("smoke", posX, posY + height * 0.5, posZ, 0, 0, 0);
-            if (power >= 0.75F) worldObj.spawnParticle("flame", posX, posY + height * 0.5, posZ, 0, 0.02, 0);
+            if (reflectable) worldObj.spawnParticle("reddust", posX, posY + height * 0.5, posZ, 0.2, 0.75, 1);
+            else if (power >= 0.75F) worldObj.spawnParticle("flame", posX, posY + height * 0.5, posZ, 0, 0.02, 0);
         }
     }
 
@@ -127,33 +136,6 @@ public final class EntityGiantGhastFireball extends EntityFireball implements IE
         Entity entity = encounters.member(worldObj, bossId, id);
         if (entity == null) entity = GiantGhastEncounters.player(worldObj, id);
         return entity instanceof EntityLivingBase ? (EntityLivingBase)entity : null;
-    }
-
-    private void steer(GiantGhastEncounters encounters) {
-        if (steeringId == null) return;
-        EntityLivingBase target = resolve(encounters, steeringId);
-        Vec3 origin = Vec3.createVectorHelper(posX, posY, posZ);
-        if (!GiantGhastFlight.combatant(target, worldObj) || getDistanceSqToEntity(target) > 128 * 128) {
-            steeringId = null;
-            return;
-        }
-        Vec3 aim = GiantGhastFlight.center(target);
-        if ((ticksExisted & 3) == 0 && !GiantGhastFlight.visible(worldObj, origin, aim)) {
-            steeringId = null;
-            return;
-        }
-        Vec3 wanted = Vec3.createVectorHelper(aim.xCoord - posX, aim.yCoord - posY, aim.zCoord - posZ).normalize();
-        Vec3 current = Vec3.createVectorHelper(motionX, motionY, motionZ);
-        double speed = current.lengthVector();
-        if (speed < 0.01 || current.dotProduct(wanted) < 0) {
-            steeringId = null;
-            return;
-        }
-        // A small directional blend limits the turn even when the target sprints sideways.
-        Vec3 turned = current.normalize().addVector(wanted.xCoord * 0.055, wanted.yCoord * 0.055, wanted.zCoord * 0.055).normalize();
-        motionX = turned.xCoord * speed;
-        motionY = turned.yCoord * speed;
-        motionZ = turned.zCoord * speed;
     }
 
     private MovingObjectPosition traceImpact(Vec3 start, Vec3 end) {
@@ -164,8 +146,13 @@ public final class EntityGiantGhastFireball extends EntityFireball implements IE
         for (Object object : worldObj.getEntitiesWithinAABBExcludingEntity(this, sweep)) {
             Entity entity = (Entity)object;
             if (!canHit(entity)) continue;
-            double margin = entity instanceof EntityDragonPart ? 0 : 0.16;
-            MovingObjectPosition contact = entity.boundingBox.expand(margin, margin, margin).calculateIntercept(start, limit);
+            MovingObjectPosition contact;
+            if (entity instanceof EntityDragonPart && ((EntityDragonPart)entity).entityDragonObj instanceof EntityGiantGhast) {
+                contact = ((EntityGiantGhast)((EntityDragonPart)entity).entityDragonObj).tracePart(entity, start, limit);
+            } else {
+                double margin = entity instanceof EntityDragonPart ? 0 : 0.16;
+                contact = entity.boundingBox.expand(margin, margin, margin).calculateIntercept(start, limit);
+            }
             if (contact == null) continue;
             double distance = start.squareDistanceTo(contact.hitVec);
             if (distance < nearest) {
@@ -187,6 +174,7 @@ public final class EntityGiantGhastFireball extends EntityFireball implements IE
     @Override protected void onImpact(MovingObjectPosition impact) {
         if (worldObj.isRemote) return;
         if (impact.entityHit != null) {
+            if (shootingEntity == null || shootingEntity.isDead) shootingEntity = resolve(GiantGhastEncounters.get(worldObj), shooterId);
             EnumDifficulty difficulty = worldObj.difficultySetting;
             float scale = difficulty == EnumDifficulty.HARD ? 1.25F : difficulty == EnumDifficulty.EASY ? 0.65F : 1;
             DamageSource source = new EntityDamageSourceIndirect("fireball", this, shootingEntity).setProjectile();
@@ -207,12 +195,13 @@ public final class EntityGiantGhastFireball extends EntityFireball implements IE
     }
 
     @Override public boolean attackEntityFrom(DamageSource source, float amount) {
-        if (!(source.getEntity() instanceof EntityPlayer) || source.getSourceOfDamage() != source.getEntity() || isDead) return false;
+        if (!reflectable || !(source.getEntity() instanceof EntityPlayer)
+                || source.getSourceOfDamage() != source.getEntity() || !"player".equals(source.getDamageType()) || isDead) return false;
         if (worldObj.isRemote) return true;
         if (!super.attackEntityFrom(source, amount)) return false;
         reflected = true;
+        dataWatcher.updateObject(REFLECTED, (byte)1);
         shooterId = source.getEntity().getUniqueID();
-        steeringId = null;
         velocityChanged = true;
         return true;
     }
@@ -224,6 +213,7 @@ public final class EntityGiantGhastFireball extends EntityFireball implements IE
 
     @Override public void writeSpawnData(ByteBuf out) {
         out.writeFloat(power);
+        out.writeBoolean(reflectable);
         out.writeDouble(motionX);
         out.writeDouble(motionY);
         out.writeDouble(motionZ);
@@ -231,6 +221,7 @@ public final class EntityGiantGhastFireball extends EntityFireball implements IE
 
     @Override public void readSpawnData(ByteBuf in) {
         power = in.readFloat();
+        reflectable = in.readBoolean();
         setSizeForPower();
         motionX = in.readDouble();
         motionY = in.readDouble();
@@ -242,9 +233,9 @@ public final class EntityGiantGhastFireball extends EntityFireball implements IE
         GiantGhastEncounters.writeId(tag, "Boss", bossId);
         GiantGhastEncounters.writeId(tag, "Launcher", launcherId);
         GiantGhastEncounters.writeId(tag, "Shooter", shooterId);
-        GiantGhastEncounters.writeId(tag, "Steering", steeringId);
         tag.setLong("Expires", expiry);
         tag.setBoolean("Reflected", reflected);
+        tag.setBoolean("Reflectable", reflectable);
         tag.setBoolean("Stray", stray);
         tag.setFloat("Power", power);
         tag.setFloat("DamageScale", damageScale);
@@ -255,9 +246,10 @@ public final class EntityGiantGhastFireball extends EntityFireball implements IE
         bossId = GiantGhastEncounters.readId(tag, "Boss");
         launcherId = GiantGhastEncounters.readId(tag, "Launcher");
         shooterId = GiantGhastEncounters.readId(tag, "Shooter");
-        steeringId = GiantGhastEncounters.readId(tag, "Steering");
         expiry = tag.getLong("Expires");
         reflected = tag.getBoolean("Reflected");
+        dataWatcher.updateObject(REFLECTED, (byte)(reflected ? 1 : 0));
+        reflectable = !tag.hasKey("Reflectable") || tag.getBoolean("Reflectable");
         stray = tag.getBoolean("Stray");
         power = MathHelper.clamp_float(tag.getFloat("Power"), 0.65F, 1.25F);
         damageScale = MathHelper.clamp_float(tag.getFloat("DamageScale"), 0.5F, 1.5F);

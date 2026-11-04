@@ -28,6 +28,18 @@ final class GiantGhastFlight {
             && world.func_147461_a(box).isEmpty();
     }
 
+    static double availableDrop(World world, AxisAlignedBB body, double distance) {
+        double drop = Math.min(distance, Math.max(0, body.minY - 1));
+        AxisAlignedBB probe = AxisAlignedBB.getBoundingBox(body.minX, body.minY - drop, body.minZ,
+            body.maxX, body.minY + 0.01, body.maxZ);
+        if (!loaded(world, probe)) return -1;
+        double offset = -drop;
+        for (Object object : world.func_147461_a(probe)) {
+            offset = ((AxisAlignedBB)object).calculateYOffset(body, offset);
+        }
+        return -offset;
+    }
+
     static Vec3 center(Entity entity) {
         return Vec3.createVectorHelper(entity.posX, entity.boundingBox.minY + entity.height * 0.5, entity.posZ);
     }
@@ -64,6 +76,25 @@ final class GiantGhastFlight {
                     || Math.abs(player.boundingBox.minY - oldBox.maxY) > 0.09) continue;
             if (player instanceof EntityPlayerMP) SupportedPlayer.resetFloating((EntityPlayerMP)player);
             if (moved) player.moveEntity(dx, dy, dz);
+        }
+    }
+
+    static void supportPlayers(Entity platform, Entity[] surfaces, double lowestRoof) {
+        AxisAlignedBB box = platform.boundingBox;
+        AxisAlignedBB above = AxisAlignedBB.getBoundingBox(box.minX, lowestRoof - 0.1, box.minZ,
+            box.maxX, box.maxY + 0.25, box.maxZ);
+        for (Object object : platform.worldObj.getEntitiesWithinAABB(EntityPlayerMP.class, above)) {
+            EntityPlayerMP player = (EntityPlayerMP)object;
+            if (player.ridingEntity != null || player.capabilities.isFlying || player.motionY > 0.05) continue;
+            AxisAlignedBB feet = player.boundingBox;
+            for (Entity surface : surfaces) {
+                AxisAlignedBB roof = surface.boundingBox;
+                if (Math.abs(feet.minY - roof.maxY) < 0.10 && feet.maxX > roof.minX && feet.minX < roof.maxX
+                        && feet.maxZ > roof.minZ && feet.minZ < roof.maxZ) {
+                    SupportedPlayer.resetFloating(player);
+                    break;
+                }
+            }
         }
     }
 
