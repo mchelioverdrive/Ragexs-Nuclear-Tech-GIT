@@ -323,3 +323,8 @@
 - Drive alternating planted steps, knee bend, foot lift and footsteps from horizontal travel. Synchronize stride and ground height with the shared render and collision pose.
 - Aim punches and grabs with either arm, track the selected target during windup, and resolve contact along the committed animation. Keep grab escape and consumption server-authoritative.
 - Use swept fist, arm and foot geometry for terrain strikes. During blocked pursuit, probe the failed movement path and punch reachable obstructions. Enable terrain destruction by default while respecting explicit config values, mobGriefing, block protections and the shared block budget.
+
+2026-11-04 01:44 — Rebuild the Giant Ghast model and recessed core
+
+- Recreate the charcoal cube, integrated flank heads, inset red eyes, and longer independently swaying tentacles. Shape a stepped roof recess around an irregular red core.
+- Match the multipart bounds to the new heads and walkable roof rim, and align the fireball muzzle with the central mouth. The recessed core remains a melee target from above during the execution phase.

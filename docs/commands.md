@@ -344,11 +344,11 @@ Operator level 2 controls the Giant Ghast in the sender's dimension.
 /summon hbm.giant_ghast <x> <y> <z>
 ```
 
-Use open, loaded air on a hostile difficulty. The coordinates place the bottom of the tentacles. `kill` retires all saved encounters in the dimension, removes their loaded Ghasts and fireballs, and discards any remaining encounter entities when their chunks next load.
+Use open, loaded air on a hostile difficulty. Allow about 20 blocks of width and 17 blocks of height for the boss to turn. The coordinates place the boss near the tips of its tentacles. `kill` retires all saved encounters in the dimension, removes their loaded Ghasts and fireballs, and discards any remaining encounter entities when their chunks next load.
 
 The opening attack fires four orange shots followed by a blue-tinted shot. Hit the blue shot with melee while aiming at the boss to return it. At 75% health the boss switches to 15-shot bursts, at 50% it fires large radial flowers, and at 25% it alternates triple shots and five-shot flowers. Later patterns also include marked shots you can return. Summoned Ghasts initially attack players and can turn on the boss after a stray hit.
 
-At 10% health the Giant Ghast starts spinning, fires erratically, and descends. Once it settles, build up or jump onto the solid roof and hit the exposed red core directly with melee. Eight valid strikes defeat the boss by default. See [Giant Ghast configuration](configuration.md#giant-ghast).
+At 10% health the Giant Ghast starts spinning, fires erratically, and descends. Once it settles, build up or jump onto the solid roof and strike down into the central recess to hit the exposed red core with melee. Eight valid strikes defeat the boss by default. See [Giant Ghast configuration](configuration.md#giant-ghast).
 
 The three faces, fireball patterns, retaliation, and exposed top weak point follow the [Giant Ghast reference](https://wiki.ronlab.site/content/minecraftwiki_en_all_maxi_2025-11/Story_Mode%3AGiant_Ghast) and [Jailhouse Block transcript](https://minecraftstorymode.fandom.com/wiki/Jailhouse_Block/Transcript). The timed phases and walkable roof adapt the fight to ordinary survival gameplay.
 

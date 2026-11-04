@@ -38,8 +38,9 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.ForgeHooks;
 
 public final class EntityGiantGhast extends EntityFlying implements IBossDisplayData, IEntityMultiPart, IMob, IEntityAdditionalSpawnData {
-    public static final float WIDTH = 17.5F, ROOF = (float)GiantGhastShape.HEAD.maxY;
-    public static final float CORE_RISE = (float)(GiantGhastShape.CORE.maxY - ROOF);
+    // A square envelope large enough for the outer flank corners at any yaw.
+    public static final float WIDTH = (float)(2 * Math.hypot(GiantGhastShape.RIGHT.maxX, GiantGhastShape.RIGHT.maxZ));
+    public static final float ROOF = (float)GiantGhastShape.ROOF_FRONT.maxY;
     public static final float BODY_BASE = (float)GiantGhastShape.HEAD.minY;
     public static final int DEATH_TICKS = 58;
     private static final int PHASE = 20, POSE = 21, DEATH = 22, STATE = 23;
@@ -74,7 +75,7 @@ public final class EntityGiantGhast extends EntityFlying implements IBossDisplay
     public EntityGiantGhast(World world) {
         super(world);
         for (int i = 0; i < parts.length; i++) parts[i] = hitPart(SHAPES[i]);
-        setSize(WIDTH, ROOF + CORE_RISE);
+        setSize(WIDTH, ROOF);
         isImmuneToFire = true;
         experienceValue = 100;
         scoreValue = 100;
@@ -466,7 +467,8 @@ public final class EntityGiantGhast extends EntityFlying implements IBossDisplay
         }
     }
 
-    public static double mouthY(int face) { return face == 1 ? 7.65 : 7.95; }
+    public static double mouthY(int face) { return face == 1 ? 9.85 : 10.1; }
+    public static double eyeY(int face) { return mouthY(face) + (face == 1 ? 2.55 : 2.1); }
 
     private Vec3 muzzle(double clearance, double yaw) {
         double edge = GiantGhastShape.HEAD.maxZ + clearance;
@@ -637,7 +639,8 @@ public final class EntityGiantGhast extends EntityFlying implements IBossDisplay
         MovingObjectPosition hit = tracePart(parts[GiantGhastShape.CORE.ordinal()], eye, end);
         if (hit == null || !GiantGhastFlight.visible(worldObj, eye, hit.hitVec)) return false;
         double distance = eye.squareDistanceTo(hit.hitVec);
-        for (int i = 0; i < GiantGhastShape.CORE.ordinal(); i++) {
+        for (int i = 0; i < parts.length; i++) {
+            if (i == GiantGhastShape.CORE.ordinal()) continue;
             AxisAlignedBB box = parts[i].boundingBox;
             MovingObjectPosition obstruction = box.calculateIntercept(eye, end);
             if (box.isVecInside(eye) || obstruction != null && eye.squareDistanceTo(obstruction.hitVec) < distance) return false;

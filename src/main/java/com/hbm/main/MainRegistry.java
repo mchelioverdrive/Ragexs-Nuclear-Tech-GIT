@@ -1013,8 +1013,7 @@ public class MainRegistry {
 		CompatHandler.init();
 
 		// Entity queries must reach the Giant Ghast's roof even across a vertical chunk section boundary.
-		World.MAX_ENTITY_RADIUS = Math.max(World.MAX_ENTITY_RADIUS, Math.max(8.75,
-			com.hbm.entity.mob.giantghast.EntityGiantGhast.ROOF + com.hbm.entity.mob.giantghast.EntityGiantGhast.CORE_RISE));
+		World.MAX_ENTITY_RADIUS = Math.max(World.MAX_ENTITY_RADIUS, com.hbm.entity.mob.giantghast.EntityGiantGhast.ROOF);
 
 		MinecraftForge.EVENT_BUS.register(new SchistStratum()); //DecorateBiomeEvent.Pre
 		//MinecraftForge.EVENT_BUS.register(new DeepLayer()); //DecorateBiomeEvent.Pre

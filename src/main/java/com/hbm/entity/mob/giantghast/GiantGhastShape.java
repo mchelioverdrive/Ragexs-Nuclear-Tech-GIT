@@ -4,10 +4,14 @@ import net.minecraft.util.AxisAlignedBB;
 
 /** Box dimensions in the boss's local coordinates, with the central face toward +Z. */
 public enum GiantGhastShape {
-    HEAD(-5, 4, -5.5, 5, 13, 5.5),
-    LEFT(-7.5, 5, -3.5, -4.75, 11.5, 4.5),
-    RIGHT(4.75, 5, -3.5, 7.5, 11.5, 4.5),
-    CORE(-1.25, 13, -1.25, 1.25, 13.65, 1.25);
+    HEAD(-5.5, 6, -5.5, 5.5, 16.25, 5.5),
+    LEFT(-8.5, 6.75, -3.75, -5.5, 15.75, 4.5),
+    RIGHT(5.5, 6.75, -3.75, 8.5, 15.75, 4.5),
+    CORE(-1.15, 16.25, -1.15, 1.15, 16.54, 1.15),
+    ROOF_FRONT(-5.5, 16.25, 1.55, 5.5, 17, 5.5),
+    ROOF_BACK(-5.5, 16.25, -5.5, 5.5, 17, -1.55),
+    ROOF_LEFT(-5.5, 16.25, -1.55, -1.55, 17, 1.55),
+    ROOF_RIGHT(1.55, 16.25, -1.55, 5.5, 17, 1.55);
 
     public final double minX, minY, minZ, maxX, maxY, maxZ;
     final AxisAlignedBB local;

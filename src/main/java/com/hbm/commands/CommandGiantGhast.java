@@ -47,7 +47,8 @@ public final class CommandGiantGhast extends CommandBase {
                 boss.setLocationAndAngles(x, y, z, 0, 0);
             }
         }
-        if (!boss.hasSpawnClearance()) throw new CommandException("The Giant Ghast needs clear, loaded space about 18 blocks wide and 14 blocks tall.");
+        if (!boss.hasSpawnClearance()) throw new CommandException("The Giant Ghast needs clear, loaded space about "
+            + (int)Math.ceil(EntityGiantGhast.WIDTH) + " blocks wide and " + (int)EntityGiantGhast.ROOF + " blocks tall.");
         if (!world.spawnEntityInWorld(boss)) throw new CommandException("Giant Ghast spawn was canceled.");
         sender.addChatMessage(new ChatComponentText("Summoned " + boss.getCommandSenderName() + "."));
     }
