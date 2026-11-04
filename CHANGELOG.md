@@ -299,3 +299,9 @@
 - Add the mineable Fake Command Block to rare structure loot and exposed Ice Plains Spikes tips. Placing the last wither skeleton skull on either orientation of the matching structure starts a three-headed Command Block Wither and consumes the blocks after a successful spawn.
 - Give non-boss mobs priority escape behavior in both Forge 1.7.10 AI dispatch paths. Use the encounter ledger for nearby threats and space out escape path attempts.
 - Add an opt-in, world-specific 24,000-tick challenge countdown and operator controls. The single automatic Storm follows bounded Overworld player trails with its existing flight and growth systems. The world saves completion, and the Storm saves its current route.
+
+2026-11-03 20:20 — Add the Giant Ghast boss encounter
+
+- Add the Jailhouse Block Giant Ghast with a continuous three-faced body, animated tentacles and mouths, an emissive top core, a walkable roof, and the native boss health bar.
+- Add three health phases, five fireball patterns, melee reflection, and capped summon waves. Real barrage hits can turn summoned Ghasts against their owner. Direct hits on the core multiply damage and trigger a distinct reaction.
+- Save encounter ownership, attack progress and retaliation across chunk unloads and world reloads. Retire owned Ghasts and fireballs on boss death or operator removal. Add `/rntgiantghast`, `/summon hbm.giant_ghast`, and encounter settings with natural spawning and block damage disabled by default.

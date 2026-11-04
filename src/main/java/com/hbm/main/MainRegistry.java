@@ -1012,8 +1012,9 @@ public class MainRegistry {
 		// Load compatibility for OC.
 		CompatHandler.init();
 
-		//expand for the largest entity we have (currently Quackos who is 17.5m in diameter, that's one fat duck)
-		World.MAX_ENTITY_RADIUS = Math.max(World.MAX_ENTITY_RADIUS, 8.75);
+		// Entity queries must reach the Giant Ghast's roof even across a vertical chunk section boundary.
+		World.MAX_ENTITY_RADIUS = Math.max(World.MAX_ENTITY_RADIUS, Math.max(8.75,
+			com.hbm.entity.mob.giantghast.EntityGiantGhast.ROOF + com.hbm.entity.mob.giantghast.EntityGiantGhast.CORE_RISE));
 
 		MinecraftForge.EVENT_BUS.register(new SchistStratum()); //DecorateBiomeEvent.Pre
 		//MinecraftForge.EVENT_BUS.register(new DeepLayer()); //DecorateBiomeEvent.Pre
@@ -1082,6 +1083,7 @@ public class MainRegistry {
 		MinecraftForge.EVENT_BUS.register(new com.hbm.explosion.ExplosionTerrainAccess());
 		com.hbm.entity.mob.witherstorm.WitherStormEvents witherStormEvents = new com.hbm.entity.mob.witherstorm.WitherStormEvents();
 		MinecraftForge.EVENT_BUS.register(witherStormEvents);
+		MinecraftForge.EVENT_BUS.register(new com.hbm.entity.mob.giantghast.GiantGhastEncounters.Effects());
 		FMLCommonHandler.instance().bus().register(witherStormEvents);
 		com.hbm.entity.mob.colossus.ColossusEvents colossusEvents = new com.hbm.entity.mob.colossus.ColossusEvents();
 		MinecraftForge.EVENT_BUS.register(colossusEvents);
@@ -1154,6 +1156,7 @@ public class MainRegistry {
 		event.registerServerCommand(new CommandRNTAchievement());
 		event.registerServerCommand(new com.hbm.commands.CommandWitherStorm());
 		event.registerServerCommand(new com.hbm.commands.CommandColossus());
+		event.registerServerCommand(new com.hbm.commands.CommandGiantGhast());
 		event.registerServerCommand(new com.hbm.commands.CommandSandworm());
 		MinecraftForge.EVENT_BUS.register(new NukeScheduler());
 		FMLCommonHandler.instance().bus().register(new NukeScheduler());
@@ -1185,6 +1188,7 @@ public class MainRegistry {
 		MobConfig.loadFromConfig(config);
 		com.hbm.config.WitherStormConfig.loadFromConfig(config);
 		com.hbm.config.ColossusConfig.loadFromConfig(config);
+		com.hbm.config.GiantGhastConfig.loadFromConfig(config);
 		com.hbm.config.SandwormConfig.loadFromConfig(config);
 		RabiesConfig.loadFromConfig(config);
 		StructureConfig.loadFromConfig(config);

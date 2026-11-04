@@ -373,6 +373,22 @@ Startup category `12_mobs.prismarineColossus` in `hbm.cfg`. Settings are indepen
 
 See [Colossus commands and survival controls](commands.md#rntcolossus). Animation starts, target/head orientation, variant, scale and weak-point flare are server-tracked. Only bounded validated climb input is accepted from clients and is applied on the server tick. Interrupted attacks reload in a stagger instead of replaying impacts. A saved encounter ledger enforces admission across restarts; no chunk tickets are requested.
 
+## Giant Ghast
+
+Startup category `12_mobs.giantGhast` in `config/hbm.cfg`. Each Giant Ghast has its own saved encounter. Its entity state and owned Ghasts survive ordinary saves and reloads. Projectiles expire after 180 world ticks and also count against the encounter cap while unloaded.
+
+| Settings | Defaults | Behavior |
+| --- | --- | --- |
+| `health`, `fireballDamage` | 300 HP, 8 HP | Starting boss health and base direct projectile damage. Attack type and difficulty scale projectile damage. |
+| `attackRange`, `attackCooldownTicks` | 88 blocks, 54 ticks | Maximum acquisition and attack range. Attacks require line of sight. Recovery gets shorter in later phases. |
+| `summonPhaseHealth`, `enragePhaseHealth` | 0.65, 0.30 | Fractions of maximum health that unlock summon waves and curved shots, then faster attacks and erratic barrages. |
+| `maxActiveFireballs`, `maxSummonedGhasts`, `summonCooldownTicks` | 32, 12, 480 ticks | Per-encounter limits and time between summon waves. Reflected and minion fireballs count toward the same projectile limit. |
+| `weakPointMultiplier` | 5 | Damage multiplier for direct hits on the raised core, with an additional 35% in the enraged phase. Body hits deal 28% of normal damage. Reflected fireballs deal at least 12% of maximum health. |
+| `bossGriefing`, `fireballExplosionBlockDamage` | false, false | Both settings and vanilla `mobGriefing` must be enabled for the encounter's explosions to break blocks. |
+| `naturalSpawning` | false | Allows rare natural spawns in the Nether when a clear area is available. |
+
+See [Giant Ghast commands](commands.md#rntgiantghast).
+
 ## Recommended server workflow
 
 1. Start a new server once to generate all configs.

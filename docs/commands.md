@@ -333,6 +333,23 @@ The normal and Romeo forms leave one stack of Prismarine Shards after the collap
 
 The rear symbol, gauntlet finish, climbing, grab/eat attempt, clock and berserk Terminal Space appearance follow the [Story Mode Colossus reference](https://minecraftstorymode.fandom.com/wiki/Prismarine_Colossus) and [Episode 2 transcript](https://minecraftstorymode.fandom.com/wiki/Giant_Consequences/Transcript). The repeatable attack cycle, radial shockwaves, gauntlet recipe, W/S climbing route, bracing, stagger threshold and temporary clock reset are RNT survival adaptations. The model, textures and implementation are original; no Story Mode audio or models are redistributed.
 
+### `/rntgiantghast`
+
+Operator level 2 controls the Giant Ghast in the sender's dimension.
+
+```
+/rntgiantghast spawn
+/rntgiantghast spawn <x> <y> <z>
+/rntgiantghast kill
+/summon hbm.giant_ghast <x> <y> <z>
+```
+
+Use open, loaded air on a hostile difficulty. The coordinates place the bottom of the tentacles. `kill` retires all saved encounters in the dimension, removes their loaded Ghasts and fireballs, and discards any remaining encounter entities when their chunks next load.
+
+Hit incoming fireballs with melee to send them back. Summoned Ghasts initially attack players and can turn on the boss after taking a stray shot in the enraged phase. Build or jump onto the flat roof and strike the glowing core directly with a weapon. Summoned Ghasts can serve as stepping platforms. See [Giant Ghast configuration](configuration.md#giant-ghast).
+
+The three faces, fireball patterns, retaliation, and exposed top weak point follow the [Giant Ghast reference](https://wiki.ronlab.site/content/minecraftwiki_en_all_maxi_2025-11/Story_Mode%3AGiant_Ghast) and [Jailhouse Block transcript](https://minecraftstorymode.fandom.com/wiki/Jailhouse_Block/Transcript). The timed phases and walkable roof adapt the fight to ordinary survival gameplay.
+
 ## Permissions notes
 
 Most server command classes do not override Forge's default permission behavior. `/rntwitherstorm` and `/rntachievement` explicitly require permission level 2, and `/hbmbedrockdrop` explicitly requires permission level 4. Server owners should additionally restrict command access with their server management tooling, especially for radiation, stations, satellites, recipe reloads, chunk diagnostics, and nuclear toggles.

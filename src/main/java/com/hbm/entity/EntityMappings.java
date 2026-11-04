@@ -18,6 +18,10 @@ import com.hbm.entity.missile.EntityMissileTier4.*;
 import com.hbm.entity.missile.EntityRideableRocket.EntityRideableRocketDummy;
 import com.hbm.entity.mob.*;
 import com.hbm.entity.mob.botprime.*;
+import com.hbm.config.GiantGhastConfig;
+import com.hbm.entity.mob.giantghast.EntityGiantGhast;
+import com.hbm.entity.mob.giantghast.EntityGiantGhastFireball;
+import com.hbm.entity.mob.giantghast.EntitySummonedGhast;
 //import com.hbm.entity.mob.glyphid.*;
 import com.hbm.entity.mob.siege.*;
 import com.hbm.entity.particle.*;
@@ -286,6 +290,11 @@ public class EntityMappings {
 		EntityRegistry.registerModEntity(com.hbm.entity.mob.sandworm.EntityWormProjectile.class, "worm_projectile", id++, MainRegistry.instance, 96, 2, true);
 		EntityRegistry.registerModEntity(com.hbm.entity.mob.colossus.EntityPrismarineColossus.class, "prismarine_colossus", id++, MainRegistry.instance, 256, 3, true);
 		EntityRegistry.registerModEntity(com.hbm.entity.mob.colossus.EntityColossusPart.class, "colossus_part", id++, MainRegistry.instance, 256, 3, false);
+
+		EntityRegistry.registerModEntity(EntityGiantGhast.class, "giant_ghast", id++, MainRegistry.instance, 192, 2, false);
+		EntityRegistry.registerModEntity(EntitySummonedGhast.class, "giant_ghast_minion", id++, MainRegistry.instance, 128, 2, false);
+		EntityRegistry.registerModEntity(EntityGiantGhastFireball.class, "giant_ghast_fireball", id++, MainRegistry.instance, 128, 2, true);
+		if (GiantGhastConfig.natural) EntityRegistry.addSpawn(EntityGiantGhast.class, 1, 1, 1, EnumCreatureType.monster, BiomeGenBase.hell);
 
 		for(Quartet<Class<? extends Entity>, String, Integer, Integer> entry : mobMappings) {
 			EntityRegistry.registerGlobalEntityID(entry.getW(), entry.getX(), EntityRegistry.findGlobalUniqueEntityId(), entry.getY(), entry.getZ());
