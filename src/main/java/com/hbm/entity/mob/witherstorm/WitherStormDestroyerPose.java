@@ -52,10 +52,9 @@ public final class WitherStormDestroyerPose {
     public static void armPoint(int slot, double t, double time, double[] out) {
         double[] p = ARMS[slot - 3];
         double q = 1D - t, a = q * q * q, b = 3D * q * q * t, c = 3D * q * t * t, d = t * t * t;
-        double amplitude = (WitherStormStage.B.hasRaisedTentacle(slot) ? 1.25D : 0.75D) * t * t;
-        double wave = time * (slot == 3 ? 0.023D : slot == 6 ? 0.032D : 0.046D) + slot * 1.73D - t * 1.4D;
-        out[0] = a * p[0] + b * p[3] + c * p[6] + d * p[9] + Math.sin(wave) * amplitude;
-        out[1] = a * p[1] + b * p[4] + c * p[7] + d * p[10] + Math.cos(wave) * amplitude * 0.60D;
-        out[2] = a * p[2] + b * p[5] + c * p[8] + d * p[11] + Math.sin(wave + 1.25D) * amplitude * 0.9D;
+        out[0] = a * p[0] + b * p[3] + c * p[6] + d * p[9];
+        out[1] = a * p[1] + b * p[4] + c * p[7] + d * p[10];
+        out[2] = a * p[2] + b * p[5] + c * p[8] + d * p[11];
+        WitherStormTentacleMotion.idle(slot, t, time, WitherStormStage.B.hasRaisedTentacle(slot) ? 1.8D : 1.2D, out);
     }
 }

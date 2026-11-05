@@ -1,6 +1,7 @@
 package com.hbm.render.model;
 
 import com.hbm.entity.mob.witherstorm.WitherStormDevourerPose;
+import com.hbm.entity.mob.witherstorm.EntityWitherStorm;
 import java.nio.FloatBuffer;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
@@ -29,18 +30,18 @@ public final class ModelWitherStormDevourer {
     private final FloatBuffer frame = BufferUtils.createFloatBuffer(16);
     private int mantle;
 
-    public void render(float development, double time) {
+    public void render(EntityWitherStorm boss, double time, float partial) {
         if(mantle == 0) compile();
-        float size = WitherStormDevourerPose.size(development);
+        float size = WitherStormDevourerPose.size(boss.development());
         GL11.glPushMatrix();
         GL11.glScalef(size, size, size);
         GL11.glCallList(mantle);
         for(int slot = 3; slot < 10; slot++) {
-            WitherStormDevourerPose.armPoint(slot, 0D, time, point);
+            boss.posedArmPoint(slot, 0D, time, partial, point);
             int[] arm = sections[slot];
             for(int i = 0; i < arm.length; i++) {
                 double x = point[0], y = point[1], z = point[2];
-                WitherStormDevourerPose.armPoint(slot, (double)(i + 1) / arm.length, time, point);
+                boss.posedArmPoint(slot, (double)(i + 1) / arm.length, time, partial, point);
                 WitherStormMesh.renderSegment(frame, arm[i], tapers[slot][i], x, y, z, point[0], point[1], point[2]);
             }
         }

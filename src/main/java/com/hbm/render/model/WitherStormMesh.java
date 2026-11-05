@@ -5,7 +5,7 @@ import net.minecraft.client.renderer.GLAllocation;
 import net.minecraft.client.renderer.Tessellator;
 import org.lwjgl.opengl.GL11;
 
-/** Retained storm-skin geometry shared by the Stage B and Stage C (Small) models. */
+/** Retained storm-skin geometry shared by the Stage B and Stage C models. */
 final class WitherStormMesh {
     static final int[] DX = {1, -1, 0, 0, 0, 0};
     static final int[] DY = {0, 0, 1, -1, 0, 0};

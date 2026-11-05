@@ -3,6 +3,8 @@ package com.hbm.particle;
 import com.hbm.config.WitherStormConfig;
 import com.hbm.entity.mob.witherstorm.EntityWitherStorm;
 import com.hbm.entity.mob.witherstorm.WitherStormDestroyerPose;
+import com.hbm.entity.mob.witherstorm.WitherStormDevourerPose;
+import com.hbm.entity.mob.witherstorm.WitherStormBigDevourerPose;
 import com.hbm.entity.mob.witherstorm.WitherStormMath;
 import com.hbm.entity.mob.witherstorm.WitherStormStage;
 import cpw.mods.fml.relauncher.Side;
@@ -31,37 +33,30 @@ public final class WitherStormDebris extends EntityFX {
     private static final int[][] FACES = {{4, 0, 1, 5}, {2, 6, 7, 3}, {1, 0, 2, 3}, {4, 5, 7, 6}, {0, 4, 6, 2}, {5, 1, 3, 7}};
     private static final float[] SHADE = {0.5F, 1F, 0.8F, 0.8F, 0.6F, 0.6F};
     private final EntityWitherStorm boss;
-    private final double startX, startY, startZ, awayX, awayZ, spin, phase;
+    private final double startX, startY, startZ, spin, phase;
     private final float[] u0 = new float[6], u1 = new float[6], v0 = new float[6], v1 = new float[6];
     private final double[] vertices = new double[24];
     private final float size;
     private final int tint, light;
     private final DestroyerDebris destroyer;
-    private final double radius, angle, rise, sweep, sinkHeight;
+    private final double angle, sweep, hoverLift;
+    private final double[] crown = new double[4];
     private boolean counted = true;
     private WitherStormDebris(World world, EntityWitherStorm boss, double x, double y, double z, Block block, int meta,
                               DestroyerDebris destroyer) {
         super(world, x, y, z);
         this.boss = boss; startX = posX; startY = posY; startZ = posZ;
         this.destroyer = destroyer;
-        double dx = startX - boss.posX, dz = startZ - boss.posZ, length = Math.max(0.01D, Math.sqrt(dx * dx + dz * dz));
-        awayX = dx / length; awayZ = dz / length;
-        spin = (rand.nextBoolean() ? 1 : -1) * (0.06D + rand.nextDouble() * 0.1D); phase = rand.nextDouble() * Math.PI * 2D;
+        spin = (rand.nextBoolean() ? 1 : -1) * (0.035D + rand.nextDouble() * 0.065D);
+        phase = rand.nextDouble() * Math.PI * 2D;
+        angle = phase;
+        sweep = Math.copySign(0.8D + rand.nextDouble() * 0.7D, spin);
+        hoverLift = rand.nextDouble() * 3D;
+        // Lift, hover/corrupt, then sink. This effect never changes world blocks or growth.
+        particleMaxAge = 88 + rand.nextInt(25);
         if(destroyer != null) {
-            double scale = mantleScale(boss);
-            double yaw = Math.toRadians(boss.rotationYaw);
-            sinkHeight = 5.6D + rand.nextDouble() * 5D;
-            double sx = dx + Math.sin(yaw) * 1.6D * scale, sz = dz - Math.cos(yaw) * 1.6D * scale;
-            radius = Math.sqrt(sx * sx + sz * sz);
-            angle = Math.atan2(sz, sx);
-            rise = startY - boss.posY - sinkHeight * scale;
-            sweep = Math.copySign(1.7D + rand.nextDouble() * 1.6D, spin);
-            particleMaxAge = 43 + rand.nextInt(31);
             destroyer.active++;
             destroyer.lastBirth = boss.ticksExisted;
-        } else {
-            radius = angle = rise = sweep = sinkHeight = 0D;
-            particleMaxAge = 35 + rand.nextInt(15);
         }
         // Unsupported/non-cube renderers use a small textured chunk, never a tile renderer or item hook.
         float extent = 0.45F; int color = 0xFFFFFF;
@@ -134,6 +129,7 @@ public final class WitherStormDebris extends EntityFX {
         Entity e = world.getEntityByID(id);
         if(!(e instanceof EntityWitherStorm) || mc.renderViewEntity == null || mc.renderViewEntity.getDistanceSqToEntity(e) > 128D * 128D) return;
         EntityWitherStorm boss = (EntityWitherStorm)e;
+        if(records.length >= 5) boss.capturedBlocksVisual();
         DestroyerDebris debris = boss.getStage() == WitherStormStage.B ? destroyerDebris(boss) : null;
         int spawned = 0;
         int stride = Math.max(1, 4 - (int)(boss.development() * 3F)) * (mc.gameSettings.particleSetting == 1 ? 2 : 1);
@@ -153,30 +149,55 @@ public final class WitherStormDebris extends EntityFX {
     @Override public void onUpdate() {
         prevPosX = posX; prevPosY = posY; prevPosZ = posZ;
         if(++particleAge >= particleMaxAge || boss.isDead || Minecraft.getMinecraft().theWorld != worldObj) { setDead(); return; }
-        double t = (double)particleAge / particleMaxAge, ease = t * t;
-        if(destroyer != null) {
-            if(boss.getStage() != WitherStormStage.B || worldObj.getEntityByID(boss.getEntityId()) != boss) { setDead(); return; }
-            double scale = mantleScale(boss), yaw = Math.toRadians(boss.rotationYaw);
-            double wave = Math.sin(t * Math.PI);
-            double bearing = angle + sweep * (0.45D * t + 0.55D * ease) + 0.15D * wave * Math.sin(phase + t * 8D);
-            double distance = (radius + wave * Math.sin(phase + t * 6D) * scale) * (1D - ease);
-            setPosition(boss.posX - Math.sin(yaw) * 1.6D * scale + Math.cos(bearing) * distance,
-                boss.posY + sinkHeight * scale + rise * (1D - ease) + wave * scale * (1.2D + Math.cos(phase + t * 5D)),
-                boss.posZ + Math.cos(yaw) * 1.6D * scale + Math.sin(bearing) * distance);
-            return;
+        if(worldObj.getEntityByID(boss.getEntityId()) != boss) { setDead(); return; }
+        double t = (double)particleAge / particleMaxAge;
+        upperBody();
+        double drift = smooth((t - 0.43D) / 0.35D);
+        double bearing = angle + sweep * drift;
+        double orbit = crown[3] * (1D + 0.04D * Math.sin(phase + drift * 5D));
+        double sink = smooth((t - 0.78D) / 0.22D);
+        double localX = crown[0] + Math.cos(bearing) * orbit * (1D - sink);
+        double localY = crown[1] + hoverLift + Math.sin(phase + drift * 4D) * 0.8D - sink * (5D + hoverLift);
+        double localZ = crown[2] + Math.sin(bearing) * orbit * 0.85D * (1D - sink);
+        double scale = boss.getStormScale(), yaw = Math.toRadians(boss.rotationYaw);
+        double tx = boss.posX + (localX * Math.cos(yaw) - localZ * Math.sin(yaw)) * scale;
+        double ty = boss.posY + localY * scale;
+        double tz = boss.posZ + (localX * Math.sin(yaw) + localZ * Math.cos(yaw)) * scale;
+        double lift = smooth(t / 0.43D);
+        setPosition(startX + (tx - startX) * lift, startY + (ty - startY) * lift, startZ + (tz - startZ) * lift);
+    }
+
+    private static double smooth(double t) {
+        t = Math.max(0D, Math.min(1D, t));
+        return t * t * (3D - 2D * t);
+    }
+
+    /** Local upper-mantle orbit and radius; the final destination is inside the mantle. */
+    private void upperBody() {
+        double s;
+        switch(boss.getStage()) {
+            case C_BIG:
+                s = WitherStormBigDevourerPose.size(boss.development());
+                crown[0] = -2D * s; crown[1] = 36D * s; crown[2] = 14D * s; crown[3] = 19D * s;
+                break;
+            case C_SMALL:
+                s = WitherStormDevourerPose.size(boss.development());
+                crown[0] = -2D * s; crown[1] = 25D * s; crown[2] = 8D * s; crown[3] = 14D * s;
+                break;
+            case B:
+                s = WitherStormDestroyerPose.size(boss.development());
+                crown[0] = 0D; crown[1] = 13D * s; crown[2] = 2D * s; crown[3] = 12D * s;
+                break;
+            default:
+                double d = boss.development();
+                crown[0] = -d * 2D; crown[1] = 3D + d * 18D; crown[2] = d * 1.5D; crown[3] = 2D + d * 14D;
+                break;
         }
-        double burst = Math.sin(t * Math.PI) * (1D - t) * 4D;
-        double curve = Math.sin(t * Math.PI) * Math.sin(t * 5D + phase) * 2.5D;
-        double tx = boss.posX, ty = boss.posY + (1.35D + boss.development() * 6D) * boss.getStormScale(), tz = boss.posZ;
-        setPosition(startX + (tx - startX) * ease + awayX * burst - awayZ * curve,
-            startY + (ty - startY) * ease + Math.sin(t * Math.PI) * 3D + burst,
-            startZ + (tz - startZ) * ease + awayZ * burst + awayX * curve);
-        if(t > 0.5D && getDistanceSq(tx, ty, tz) < 0.36D) setDead();
     }
     @Override public void renderParticle(Tessellator tess, float partial, float rx, float ry, float rz, float ux, float uz) {
         double age = particleAge + partial, t = age / particleMaxAge;
-        double fade = destroyer == null ? 0.15D : 0.36D;
-        double shrink = Math.max(0D, Math.min(1D, (1D - t) / fade));
+        double shrink = 1D - smooth((t - 0.88D) / 0.12D);
+        float corruption = (float)smooth((t - 0.43D) / 0.30D);
         double a = phase + age * spin, b = phase * 0.7D + age * spin * 0.63D;
         double ca = Math.cos(a), sa = Math.sin(a), cb = Math.cos(b), sb = Math.sin(b);
         double px = prevPosX + (posX - prevPosX) * partial - interpPosX;
@@ -200,7 +221,10 @@ public final class WitherStormDebris extends EntityFX {
             double fx = vertices[a2] - vertices[a0], fy = vertices[a2 + 1] - vertices[a0 + 1], fz = vertices[a2 + 2] - vertices[a0 + 2];
             if((ey * fz - ez * fy) * vertices[a0] + (ez * fx - ex * fz) * vertices[a0 + 1] + (ex * fy - ey * fx) * vertices[a0 + 2] >= 0D) continue;
             float shade = SHADE[face];
-            tess.setColorOpaque_F(((tint >> 16) & 255) / 255F * shade, ((tint >> 8) & 255) / 255F * shade, (tint & 255) / 255F * shade);
+            float material = 1F - corruption * 0.96F;
+            tess.setColorOpaque_F((((tint >> 16) & 255) / 255F * material + corruption * 0.025F) * shade,
+                (((tint >> 8) & 255) / 255F * material + corruption * 0.012F) * shade,
+                ((tint & 255) / 255F * material + corruption * 0.045F) * shade);
             for(int corner = 0; corner < 4; corner++) {
                 int v = FACES[face][corner] * 3;
                 tess.addVertexWithUV(vertices[v], vertices[v + 1], vertices[v + 2], corner == 0 || corner == 3 ? u0[face] : u1[face], corner < 2 ? v1[face] : v0[face]);

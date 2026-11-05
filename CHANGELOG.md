@@ -388,3 +388,9 @@
 - Give Stage C (Small) its own tall, irregular mantle, three low glowing heads, one long raised side arm and six curved lower appendages. Use the same attachments for rendered heads, beam and skull origins, and tracked tentacle contacts.
 - Keep the Stage B body and arms. Replace its attached debris clusters with individual client-side block fragments that spiral inward and shrink, using the original block textures when absorption records arrive.
 - Require 24,000 active Stage B ticks by default before automatic evolution. Save the timer and continue counting absorbed mass during the hold. Explicit growth commands still apply immediately.
+
+2026-11-05 01:20 — Rebuild the second Devourer as Story Mode Stage C (Big)
+
+- Replace the generic big Devourer mantle with a towering, deep sloped slab of corrupted blocks, three low glowing heads, a heavy curved side arm and nine varied hanging appendages. Share head and neck attachments with tracked parts, beam eyes and projectile mouths; retain the existing growth thresholds and damaged form.
+- Give existing tentacles staggered travelling idle bends, smooth target-driven extension and recoil, and cosmetic terrain-gripping motion using the existing debris packets. Keep the seven gameplay contacts; the extra rear curls are visual geometry. Raise only the big Devourer's terrain clearance to accommodate its longer hanging arms.
+- Lift captured block fragments to an upper-mantle orbit, darken them to purple-black, then draw them inside and expire them. Reuse the bounded client particle batch without adding server entities or awarding growth again.

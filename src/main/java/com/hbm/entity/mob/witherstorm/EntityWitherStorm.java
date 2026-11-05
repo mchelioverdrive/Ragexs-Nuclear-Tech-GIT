@@ -54,6 +54,9 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
     private int lastGrowthSoundMass;
     private int stageBTicks;
     private float visualScale = 0.9F, previousVisualScale = 0.9F;
+    private float tentacleActivity, previousTentacleActivity;
+    private long visualCaptureUntil;
+    private float visualCapture, previousVisualCapture;
     private boolean restoring;
     private double roamX, roamZ;
     private int roamTicks;
@@ -120,6 +123,7 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
             case A_TRANSFORMED: return 0.58F;
             case B: return WitherStormDestroyerPose.headSize(head, development());
             case C_SMALL: return WitherStormDevourerPose.headSize(head, development());
+            case C_BIG: return WitherStormBigDevourerPose.headSize(head, development());
             default: return 1.15F + development() * 0.65F;
         }
     }
@@ -191,6 +195,17 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
         if(!worldObj.isRemote && registered && !WitherStormEncounters.get(worldObj).contains(getUniqueID())) { setDead(); return; }
         previousVisualScale = visualScale;
         visualScale += (getStormScale() - visualScale) * 0.05F;
+        previousTentacleActivity = tentacleActivity;
+        float activity = (float)Math.min(0.25D, Math.sqrt(motionX * motionX + motionZ * motionZ) * 2D);
+        for(int head = 0; head < 3; head++) {
+            if(headTarget(head) != 0) activity = Math.max(activity, 0.45F);
+            if(beamActive(head) || parts[head] != null && parts[head].skullWindingUp()) activity = 1F;
+        }
+        tentacleActivity += (activity - tentacleActivity) * 0.08F;
+        previousVisualCapture = visualCapture;
+        float capture = worldObj.isRemote ? (float)Math.max(0D, Math.min(1D,
+            (visualCaptureUntil - worldObj.getTotalWorldTime()) / 20D)) : 0F;
+        visualCapture += (capture - visualCapture) * 0.12F;
         if(!worldObj.isRemote && isEntityAlive()) {
             if(!registered) { if(!WitherStormEncounters.get(worldObj).admit(this)) { setDead(); return; } registered = true; }
             if(transitionTicks() > 0) dataWatcher.updateObject(23, transitionTicks() - 1);
@@ -232,9 +247,12 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
             case A_TRANSFORMED: bodyHeight = 3.89F + Math.max(0F, development - 0.22F) * 3F; break;
             case B: bodyHeight = 1.6F + development * 5.2F + (1.9F + development * 9F) * 0.77F; break;
             case C_SMALL:
-            case C_BIG:
             case D:
                 bodyHeight = 1.6F + development * 5.2F + (1.9F + development * 9F) * 1.895F * stage.crownScale();
+                break;
+            case C_BIG:
+                bodyHeight = 46F * WitherStormBigDevourerPose.size(development);
+                wantedWidth = 32F * WitherStormBigDevourerPose.size(development) * s;
                 break;
             default: break;
         }
@@ -360,6 +378,9 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
                 MathHelper.floor_double(z) >> 4).getHeightValue(MathHelper.floor_double(x) & 15, MathHelper.floor_double(z) & 15));
         }
         double clearance = getPhase() == WitherStormPhase.COMMAND_BLOCK ? 7D : 15D;
+        // The big Devourer's hanging arms extend below its root; keep their tips above the terrain.
+        if(getStage() == WitherStormStage.C_BIG)
+            clearance = Math.max(clearance, 27D * WitherStormBigDevourerPose.size(development()) * getStormScale());
         double targetY = waypoint != null ? waypoint.yCoord : pursuing ? target.posY : ground;
         double ty = Math.min(pursuit == null ? 200 : 275, Math.max(ground + clearance,
             pursuing ? Math.min(ground + 24D, targetY + 12D) : ground + clearance));
@@ -442,6 +463,8 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
                 return WitherStormDestroyerPose.headBase(slot, d, scale, yaw);
             case C_SMALL:
                 return WitherStormDevourerPose.headBase(slot, d, scale, yaw);
+            case C_BIG:
+                return WitherStormBigDevourerPose.headBase(slot, d, scale, yaw);
             default:
                 return WitherStormMath.headOffset((slot - 1) * (1.50D + 9D * d) * scale,
                     ((slot == 1 ? 2.05D : 2D) + 2D * d) * scale, -((slot == 1 ? 3.53D : 3.28D) + 9D * d) * scale, yaw, 0F);
@@ -461,16 +484,49 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
     }
     Vec3 posedArmPosition(int slot, double t) {
         double time = worldObj.getTotalWorldTime();
-        float size;
-        if(getStage() == WitherStormStage.B) {
-            WitherStormDestroyerPose.armPoint(slot, t, time, armSample);
-            size = WitherStormDestroyerPose.size(development());
-        } else {
-            WitherStormDevourerPose.armPoint(slot, t, time, armSample);
-            size = WitherStormDevourerPose.size(development());
-        }
+        posedArmPoint(slot, t, time, 1F, armSample);
+        float size = getStage() == WitherStormStage.B ? WitherStormDestroyerPose.size(development())
+            : getStage() == WitherStormStage.C_BIG ? WitherStormBigDevourerPose.size(development())
+            : WitherStormDevourerPose.size(development());
         float scale = size * getStormScale();
         return local(armSample[0] * scale, armSample[1] * scale, armSample[2] * scale);
+    }
+
+    public float tentacleActivity(float partial) {
+        return previousTentacleActivity + (tentacleActivity - previousTentacleActivity) * partial;
+    }
+
+    /** Existing terrain packets may add a cosmetic grip between the tracked endpoints. */
+    public void capturedBlocksVisual() { visualCaptureUntil = worldObj.getTotalWorldTime() + 35L; }
+    public float tentacleCapture(float partial) {
+        return previousVisualCapture + (visualCapture - previousVisualCapture) * partial;
+    }
+
+    /** Shared by the retained models and server contact points; no client classes or per-sample allocations. */
+    public void posedArmPoint(int slot, double t, double time, float partial, double[] out) {
+        if(getStage() == WitherStormStage.B) {
+            WitherStormDestroyerPose.armPoint(slot, t, time, out);
+        } else if(getStage() == WitherStormStage.C_BIG) {
+            WitherStormBigDevourerPose.armPoint(slot, t, time, out);
+        } else {
+            WitherStormDevourerPose.armPoint(slot, t, time, out);
+        }
+        double strength = tentacleActivity(partial);
+        double stroke = WitherStormTentacleMotion.stroke(slot, t, time) * strength;
+        Entity target = worldObj.getEntityByID(headTarget((slot - 3) % 3));
+        if(target != null) {
+            double dx = target.posX - posX, dz = target.posZ - posZ;
+            double yaw = Math.toRadians(rotationYaw), scale = Math.max(1D, getStormScale());
+            out[0] += WitherStormMath.limit((dx * Math.cos(yaw) + dz * Math.sin(yaw)) / scale, 3D) * stroke;
+            out[1] += WitherStormMath.limit((target.posY - posY) / scale, 3D) * stroke;
+            out[2] += WitherStormMath.limit((-dx * Math.sin(yaw) + dz * Math.cos(yaw)) / scale, 3D) * stroke;
+        }
+        out[1] += Math.sin(time * 0.085D + slot * 2.4D - t * 4.5D) * strength * t * t * 1.1D;
+        // Visual terrain gripping never moves the server's contact endpoints.
+        double grip = Math.sin(Math.PI * t) * tentacleCapture(partial)
+            * Math.sin(time * 0.09D + slot * 2.4D - t * 3D);
+        out[1] += grip * 1.4D;
+        out[2] -= grip * 1.8D;
     }
     public Vec3 mouth(int head) {
         if(parts[head] != null && !parts[head].isDead) return parts[head].mouth(1F);

@@ -7,6 +7,7 @@ import com.hbm.render.model.ModelCommandBlockWither;
 import com.hbm.render.model.ModelWitherStorm;
 import com.hbm.render.model.ModelWitherStormDestroyer;
 import com.hbm.render.model.ModelWitherStormDevourer;
+import com.hbm.render.model.ModelWitherStormBigDevourer;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.client.Minecraft;
@@ -27,6 +28,7 @@ public final class RenderWitherStorm extends Render {
     private final ModelWitherStorm model = new ModelWitherStorm();
     private final ModelWitherStormDestroyer destroyer = new ModelWitherStormDestroyer();
     private final ModelWitherStormDevourer devourer = new ModelWitherStormDevourer();
+    private final ModelWitherStormBigDevourer bigDevourer = new ModelWitherStormBigDevourer();
     private final ModelCommandBlockWither commandModel = new ModelCommandBlockWither();
     private final RenderBlocks blocks = new RenderBlocks();
     private long lastParticles = Long.MIN_VALUE;
@@ -49,8 +51,9 @@ public final class RenderWitherStorm extends Render {
             GL11.glPushAttrib(GL11.GL_TEXTURE_BIT);
             brightenStormSkin();
             double time = boss.worldObj.getTotalWorldTime() + (double)partial;
-            if(stage == WitherStormStage.B) destroyer.render(boss.development(), time, distance < 96D * 96D);
-            else devourer.render(boss.development(), time);
+            if(stage == WitherStormStage.B) destroyer.render(boss, time, partial, distance < 96D * 96D);
+            else if(stage == WitherStormStage.C_BIG) bigDevourer.render(boss, time, partial);
+            else devourer.render(boss, time, partial);
             GL11.glPopAttrib();
         } else if(!stage.hasTentacles()) {
             if(stage == WitherStormStage.A_TRANSFORMED) {

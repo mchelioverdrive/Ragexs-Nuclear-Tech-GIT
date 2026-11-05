@@ -4,6 +4,7 @@ import com.hbm.entity.mob.witherstorm.EntityWitherStorm;
 import com.hbm.entity.mob.witherstorm.EntityWitherStormPart;
 import com.hbm.entity.mob.witherstorm.WitherStormDestroyerPose;
 import com.hbm.entity.mob.witherstorm.WitherStormDevourerPose;
+import com.hbm.entity.mob.witherstorm.WitherStormBigDevourerPose;
 import com.hbm.entity.mob.witherstorm.WitherStormMath;
 import com.hbm.entity.mob.witherstorm.WitherStormStage;
 import com.hbm.render.model.ModelWitherStormHead;
@@ -118,17 +119,20 @@ public final class RenderWitherStormPart extends Render {
                                 double dx, double dy, double dz, int segments) {
         double length = Math.sqrt(dx * dx + dy * dy + dz * dz);
         if(!Double.isFinite(length) || length < 0.001D) return;
-        double wave = (part.ticksExisted + partial) * 0.085D + part.slot() * 1.7D;
+        double wave = (boss.worldObj.getTotalWorldTime() + (double)partial) * (0.028D + part.slot() * 0.002D) + part.slot() * 2.4D;
         double horizontal = Math.max(0.001D, Math.sqrt(dx * dx + dz * dz));
-        double sway = Math.sin(wave) * 0.09D * length;
-        double bendX = dz / horizontal * sway, bendZ = -dx / horizontal * sway;
-        double bendY = Math.cos(wave) * 0.065D * length;
+        double amplitude = 0.065D + boss.tentacleActivity(partial) * 0.075D + boss.tentacleCapture(partial) * 0.045D;
         boolean heavy = part.slot() >= 8;
         float scale = part.scale();
         double x = 0D, y = 0D, z = 0D;
         for(int i = 0; i < segments; i++) {
             double t = (double)(i + 1) / segments;
             double arc = i + 1 == segments ? 0D : Math.sin(Math.PI * t);
+            // Samples run tip to root: waves travel outward, while both tracked anchors stay fixed.
+            double lag = wave - (1D - t) * 4D;
+            double sway = Math.sin(lag) * amplitude * length;
+            double bendX = dz / horizontal * sway, bendZ = -dx / horizontal * sway;
+            double bendY = (Math.cos(lag - 0.7D) * amplitude * 0.6D - 0.035D) * length;
             double nextX = dx * t + bendX * arc, nextY = dy * t + bendY * arc, nextZ = dz * t + bendZ * arc;
             double sx = nextX - x, sy = nextY - y, sz = nextZ - z;
             GL11.glPushMatrix();
@@ -183,6 +187,7 @@ public final class RenderWitherStormPart extends Render {
         boolean destroyer = stage == WitherStormStage.B;
         Vec3 root = destroyer ? WitherStormDestroyerPose.neckRoot(slot, development, bodyScale, bodyYaw)
             : stage == WitherStormStage.C_SMALL ? WitherStormDevourerPose.neckRoot(slot, development, bodyScale, bodyYaw)
+            : stage == WitherStormStage.C_BIG ? WitherStormBigDevourerPose.neckRoot(slot, development, bodyScale, bodyYaw)
             : early ? WitherStormMath.headOffset(0, 1.82D * bodyScale, 0.12D * bodyScale, bodyYaw, 0)
             : WitherStormMath.headOffset((slot - 1) * (0.75D + development * 7D) * bodyScale,
                 (2.05D + development * 3.5D) * bodyScale, (-0.3D - development * 7D) * bodyScale, bodyYaw, 0);
@@ -197,6 +202,7 @@ public final class RenderWitherStormPart extends Render {
             GL11.glPushMatrix(); GL11.glTranslated(0, length * i / 3D, 0);
             float width = bodyScale * (destroyer ? 3.35F * WitherStormDestroyerPose.size(development)
                 : stage == WitherStormStage.C_SMALL ? 2.05F * WitherStormDevourerPose.size(development)
+                : stage == WitherStormStage.C_BIG ? 2.7F * WitherStormBigDevourerPose.size(development)
                 : early ? 0.42F : 0.52F + development * 2.65F) * (1F - 0.22F * i);
             GL11.glScalef(width, (float)(length / 3D + bodyScale * 0.16D), width);
             head.renderNeckSegment(); GL11.glPopMatrix();

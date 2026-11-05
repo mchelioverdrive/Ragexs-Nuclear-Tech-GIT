@@ -60,10 +60,9 @@ public final class WitherStormDevourerPose {
         int start = Math.min((int)segment, count - 1);
         double f = segment - start;
         int p = start * 3;
-        double wave = time * (0.019D + (slot - 3) * 0.004D) + slot * 2.37D - t * 2.6D;
-        double swing = (slot == 3 ? 1.05D : 1.4D) * t * t;
-        out[0] = points[p] + (points[p + 3] - points[p]) * f + Math.sin(wave) * swing;
-        out[1] = points[p + 1] + (points[p + 4] - points[p + 1]) * f + Math.cos(wave) * swing * 0.62D;
-        out[2] = points[p + 2] + (points[p + 5] - points[p + 2]) * f + Math.sin(wave + 1.1D) * swing;
+        out[0] = points[p] + (points[p + 3] - points[p]) * f;
+        out[1] = points[p + 1] + (points[p + 4] - points[p + 1]) * f;
+        out[2] = points[p + 2] + (points[p + 5] - points[p + 2]) * f;
+        WitherStormTentacleMotion.idle(slot, t, time, slot == 3 ? 1.65D : 1.8D, out);
     }
 }

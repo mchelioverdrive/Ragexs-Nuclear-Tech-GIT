@@ -1,6 +1,7 @@
 package com.hbm.render.model;
 
 import com.hbm.entity.mob.witherstorm.WitherStormDestroyerPose;
+import com.hbm.entity.mob.witherstorm.EntityWitherStorm;
 import com.hbm.entity.mob.witherstorm.WitherStormStage;
 import java.nio.FloatBuffer;
 import org.lwjgl.BufferUtils;
@@ -42,25 +43,25 @@ public final class ModelWitherStormDestroyer {
     private int mantle;
     private int[] fineSegments, coarseSegments;
 
-    public void render(float development, double time, boolean detailed) {
+    public void render(EntityWitherStorm boss, double time, float partial, boolean detailed) {
         if(mantle == 0) compile();
-        float size = WitherStormDestroyerPose.size(development);
+        float size = WitherStormDestroyerPose.size(boss.development());
         GL11.glPushMatrix();
         GL11.glScalef(size, size, size);
         GL11.glCallList(mantle);
         for(int slot = 3; slot < 10; slot++) {
             boolean fine = detailed && WitherStormStage.B.hasRaisedTentacle(slot);
-            renderArm(slot, time, fine ? fineSegments : coarseSegments, fine ? FINE_TAPER : COARSE_TAPER);
+            renderArm(boss, slot, time, partial, fine ? fineSegments : coarseSegments, fine ? FINE_TAPER : COARSE_TAPER);
         }
         GL11.glPopMatrix();
     }
 
-    private void renderArm(int slot, double time, int[] segments, float[] taper) {
-        WitherStormDestroyerPose.armPoint(slot, 0, time, point);
+    private void renderArm(EntityWitherStorm boss, int slot, double time, float partial, int[] segments, float[] taper) {
+        boss.posedArmPoint(slot, 0, time, partial, point);
         double x = point[0], y = point[1], z = point[2];
         float rootWidth = WitherStormDestroyerPose.armWidth(slot);
         for(int i = 0; i < segments.length; i++) {
-            WitherStormDestroyerPose.armPoint(slot, (double)(i + 1) / segments.length, time, point);
+            boss.posedArmPoint(slot, (double)(i + 1) / segments.length, time, partial, point);
             WitherStormMesh.renderSegment(frame, segments[i], rootWidth * taper[i], x, y, z,
                 point[0], point[1], point[2]);
             x = point[0]; y = point[1]; z = point[2];
