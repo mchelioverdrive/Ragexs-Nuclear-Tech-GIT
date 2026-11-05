@@ -60,7 +60,7 @@ public class EntityWitherStormPart extends Entity {
                 rotationPitch += (nextPitch - rotationPitch) / steps;
             }
             EntityWitherStorm boss = parent();
-            if(boss != null && (slot() < 3 || boss.getStage() == WitherStormStage.B)) {
+            if(boss != null && (slot() < 3 || boss.getStage().hasPosedTentacles())) {
                 // Match the client anatomy while head rotation still follows the tracked part.
                 Vec3 position = boss.partPosition(slot());
                 setPosition(position.xCoord, position.yCoord, position.zCoord);
@@ -95,7 +95,7 @@ public class EntityWitherStormPart extends Entity {
             Entity target = worldObj.getEntityByID(boss.headTarget(slot()));
             Vec3 shotAim = boss.windingUpSkullTarget(slot()) == target && WitherStormMath.targetable(target, worldObj)
                 ? skullAim(target, boss) : null;
-            float yaw = boss.rotationYaw, pitch = boss.getStage() == WitherStormStage.B ? WitherStormDestroyerPose.REST_PITCH : 0F;
+            float yaw = boss.rotationYaw, pitch = boss.getStage().hasShallowHeads() ? WitherStormDestroyerPose.REST_PITCH : 0F;
             if(shotAim != null) {
                 yaw = (float)shotAim.xCoord;
                 pitch = (float)shotAim.yCoord;
@@ -159,12 +159,12 @@ public class EntityWitherStormPart extends Entity {
     }
 
     private double skullMouthHeight(EntityWitherStorm boss) {
-        if(boss.getStage() == WitherStormStage.B) return WitherStormDestroyerPose.MOUTH_Y;
+        if(boss.getStage().hasShallowHeads()) return WitherStormDestroyerPose.MOUTH_Y;
         return !isCommandHead(boss) && boss.headTransformed(slot()) ? STORM_MOUTH_Y : WITHER_MOUTH_Y;
     }
 
     private double skullMouthDepth(EntityWitherStorm boss) {
-        if(boss.getStage() == WitherStormStage.B) return WitherStormDestroyerPose.MOUTH_Z;
+        if(boss.getStage().hasShallowHeads()) return WitherStormDestroyerPose.MOUTH_Z;
         return !isCommandHead(boss) && boss.headTransformed(slot()) ? STORM_MOUTH_Z : WITHER_MOUTH_Z;
     }
 
@@ -219,7 +219,7 @@ public class EntityWitherStormPart extends Entity {
 
     public Vec3 mouth(float partial) {
         EntityWitherStorm boss = parent();
-        if(boss != null && boss.getStage() == WitherStormStage.B) {
+        if(boss != null && boss.getStage().hasShallowHeads()) {
             double size = skullMouthScale(boss);
             return headPoint(partial, boss, skullMouthHeight(boss) * size, skullMouthDepth(boss) * size);
         }
@@ -262,8 +262,8 @@ public class EntityWitherStormPart extends Entity {
             double dy = half * pitchExtent;
             double dz = half * (sinYaw + cosYaw * pitchExtent);
             boundingBox.setBounds(x - dx, y + half - dy, z - dz, x + dx, y + half + dy, z + dz);
-        } else if(slot() < 3 && boss != null && boss.getStage() == WitherStormStage.B) {
-            updateDestroyerHeadBounds(boss);
+        } else if(slot() < 3 && boss != null && boss.getStage().hasShallowHeads()) {
+            updateShallowHeadBounds(boss);
         } else if(slot() < 3) {
             double x = posX, y = posY, z = posZ;
             float size = boss == null ? 1F : boss.headSize(slot());
@@ -272,15 +272,15 @@ public class EntityWitherStormPart extends Entity {
                 ? 2.05F * scale() : extent * size * scale();
             setSize(extent * size * scale(), height); setPosition(x, y, z);
         } else if(boss != null) {
-            boolean destroyer = boss.getStage() == WitherStormStage.B;
-            // The curled Stage B arms only use their striking end for contact, rather than an empty diagonal box.
-            Vec3 root = destroyer ? boss.destroyerArmPosition(slot(), 0.82D) : boss.tentacleRoot(slot());
-            double padding = (destroyer ? 0.45D : slot() >= 8 ? 1.4D : 0.7D) * scale();
+            boolean posed = boss.getStage().hasPosedTentacles();
+            // Use the striking end of the curved arm for contact.
+            Vec3 root = posed ? boss.posedArmPosition(slot(), 0.82D) : boss.tentacleRoot(slot());
+            double padding = (boss.getStage() == WitherStormStage.B ? 0.45D : slot() >= 8 ? 1.4D : 0.7D) * scale();
             boundingBox.setBounds(Math.min(posX, root.xCoord) - padding, Math.min(posY, root.yCoord) - padding, Math.min(posZ, root.zCoord) - padding,
                 Math.max(posX, root.xCoord) + padding, Math.max(posY, root.yCoord) + padding, Math.max(posZ, root.zCoord) + padding);
         }
     }
-    private void updateDestroyerHeadBounds(EntityWitherStorm boss) {
+    private void updateShallowHeadBounds(EntityWitherStorm boss) {
         double size = boss.headModelScale(slot(), 0F, boss.getStormScale());
         float yaw = headYaw(1F, boss), pitch = headPitch(1F, boss);
         // Enclose the shallow crown and the hinged jaw through its full windup.

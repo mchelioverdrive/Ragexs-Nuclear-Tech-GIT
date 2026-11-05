@@ -82,13 +82,13 @@ public final class ModelWitherStormHead extends ModelBase {
         upperTeeth.render(0.0625F);
         GL11.glPushMatrix(); jaw.postRender(0.0625F); lowerTeeth.render(0.0625F); GL11.glPopMatrix();
     }
-    public void renderDestroyerHead(float age, boolean beam, boolean windingUp) {
+    public void renderShallowHead(float age, boolean beam, boolean windingUp) {
         destroyerShell.render(0.0625F);
         destroyerJaw.rotateAngleX = -0.12F - (beam ? 0.15F : 0.02F)
             - (float)Math.sin(age * 0.12F) * 0.045F - (windingUp ? 0.30F : 0F);
         destroyerJaw.render(0.0625F);
     }
-    public void renderDestroyerTeeth() {
+    public void renderShallowTeeth() {
         destroyerUpperTeeth.render(0.0625F);
         GL11.glPushMatrix();
         destroyerJaw.postRender(0.0625F);

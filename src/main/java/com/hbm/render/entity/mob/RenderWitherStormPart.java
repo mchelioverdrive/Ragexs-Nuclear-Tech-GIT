@@ -3,6 +3,7 @@ package com.hbm.render.entity.mob;
 import com.hbm.entity.mob.witherstorm.EntityWitherStorm;
 import com.hbm.entity.mob.witherstorm.EntityWitherStormPart;
 import com.hbm.entity.mob.witherstorm.WitherStormDestroyerPose;
+import com.hbm.entity.mob.witherstorm.WitherStormDevourerPose;
 import com.hbm.entity.mob.witherstorm.WitherStormMath;
 import com.hbm.entity.mob.witherstorm.WitherStormStage;
 import com.hbm.render.model.ModelWitherStormHead;
@@ -34,16 +35,16 @@ public final class RenderWitherStormPart extends Render {
             if(part.slot() < 3) renderCommandHead(boss, part, partial);
             return;
         }
-        // Stage B arms are posed and drawn with the interpolated torso.
-        if(part.slot() >= 3 && (!stage.hasTentacles() || stage == WitherStormStage.B)) return;
+        // The articulated arms are posed and drawn with the interpolated torso.
+        if(part.slot() >= 3 && (!stage.hasTentacles() || stage.hasPosedTentacles())) return;
         GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_CURRENT_BIT | GL11.GL_DEPTH_BUFFER_BIT | GL11.GL_LIGHTING_BIT);
         GL11.glPushMatrix(); bindTexture(RenderWitherStorm.SKIN);
         GL11.glEnable(GL11.GL_NORMALIZE);
         if(part.slot() < 3) {
-            boolean destroyer = stage == WitherStormStage.B;
-            if(destroyer) {
+            boolean shallow = stage.hasShallowHeads();
+            if(shallow) {
                 GL11.glPushAttrib(GL11.GL_TEXTURE_BIT);
-                RenderWitherStorm.brightenDestroyerSkin();
+                RenderWitherStorm.brightenStormSkin();
             }
             boolean upgraded = boss.headTransformed(part.slot());
             float scale = boss.renderScale(partial);
@@ -58,8 +59,8 @@ public final class RenderWitherStormPart extends Render {
             z = boss.lastTickPosZ + (boss.posZ - boss.lastTickPosZ) * partial + base.zCoord;
             GL11.glTranslated(x - RenderManager.renderPosX, y - RenderManager.renderPosY, z - RenderManager.renderPosZ);
             if(stage != WitherStormStage.A_TRANSFORMED || part.slot() == 1) {
-                Vec3 joint = headPoint(destroyer ? 0.24D : upgraded ? ModelWitherStormHead.NECK_Y : 0,
-                    destroyer ? 0.26D : 0, skull, pivotHeight, headYaw, headPitch);
+                Vec3 joint = headPoint(shallow ? 0.24D : upgraded ? ModelWitherStormHead.NECK_Y : 0,
+                    shallow ? 0.26D : 0, skull, pivotHeight, headYaw, headPitch);
                 neck(boss.development(), part.slot(), stage, scale, bodyYaw, base, joint);
             }
             GL11.glPushMatrix(); GL11.glTranslatef(0, pivotHeight, 0);
@@ -71,7 +72,7 @@ public final class RenderWitherStormPart extends Render {
             if(part.skullWindingUp()) GL11.glColor4f(1F, 0.55F, 1F, 1F);
             if(upgraded) {
                 bindTexture(RenderWitherStorm.SKIN);
-                if(destroyer) head.renderDestroyerHead(part.ticksExisted + partial, beam, part.skullWindingUp());
+                if(shallow) head.renderShallowHead(part.ticksExisted + partial, beam, part.skullWindingUp());
                 else head.renderHead(part.ticksExisted + partial, beam, part.skullWindingUp());
                 teeth(stage); eye(stage);
             } else {
@@ -80,7 +81,7 @@ public final class RenderWitherStormPart extends Render {
             }
             if(part.skullWindingUp()) GL11.glColor4f(1F, 1F, 1F, 1F);
             GL11.glPopMatrix();
-            if(destroyer) GL11.glPopAttrib();
+            if(shallow) GL11.glPopAttrib();
             Entity target = boss.worldObj.getEntityByID(boss.headTarget(part.slot()));
             if(beam && WitherStormMath.targetable(target, boss.worldObj) && mc.renderViewEntity.getDistanceSqToEntity(part) < 128D * 128D) {
                 // Match T(pivot) R_y(-yaw) R_x(pitch) S used by the skull and eye.
@@ -181,6 +182,7 @@ public final class RenderWitherStormPart extends Render {
         boolean early = stage == WitherStormStage.A_TRANSFORMED;
         boolean destroyer = stage == WitherStormStage.B;
         Vec3 root = destroyer ? WitherStormDestroyerPose.neckRoot(slot, development, bodyScale, bodyYaw)
+            : stage == WitherStormStage.C_SMALL ? WitherStormDevourerPose.neckRoot(slot, development, bodyScale, bodyYaw)
             : early ? WitherStormMath.headOffset(0, 1.82D * bodyScale, 0.12D * bodyScale, bodyYaw, 0)
             : WitherStormMath.headOffset((slot - 1) * (0.75D + development * 7D) * bodyScale,
                 (2.05D + development * 3.5D) * bodyScale, (-0.3D - development * 7D) * bodyScale, bodyYaw, 0);
@@ -194,6 +196,7 @@ public final class RenderWitherStormPart extends Render {
         for(int i = 0; i < 3; i++) {
             GL11.glPushMatrix(); GL11.glTranslated(0, length * i / 3D, 0);
             float width = bodyScale * (destroyer ? 3.35F * WitherStormDestroyerPose.size(development)
+                : stage == WitherStormStage.C_SMALL ? 2.05F * WitherStormDevourerPose.size(development)
                 : early ? 0.42F : 0.52F + development * 2.65F) * (1F - 0.22F * i);
             GL11.glScalef(width, (float)(length / 3D + bodyScale * 0.16D), width);
             head.renderNeckSegment(); GL11.glPopMatrix();
@@ -201,15 +204,14 @@ public final class RenderWitherStormPart extends Render {
         GL11.glPopMatrix();
     }
     private void teeth(WitherStormStage stage) {
-        boolean destroyer = stage == WitherStormStage.B;
         GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_CURRENT_BIT);
         GL11.glDisable(GL11.GL_TEXTURE_2D);
-        if(destroyer) {
+        if(stage.hasShallowHeads()) {
             float lightX = OpenGlHelper.lastBrightnessX, lightY = OpenGlHelper.lastBrightnessY;
             OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240F, 240F);
             GL11.glDisable(GL11.GL_LIGHTING);
             GL11.glColor4f(1F, 0.96F, 0.68F, 1F);
-            head.renderDestroyerTeeth();
+            head.renderShallowTeeth();
             OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, lightX, lightY);
         } else {
             GL11.glColor4f(0.73F, 0.68F, 0.75F, 1F);

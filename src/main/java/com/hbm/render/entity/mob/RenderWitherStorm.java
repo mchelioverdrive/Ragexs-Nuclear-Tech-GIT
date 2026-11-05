@@ -2,9 +2,11 @@ package com.hbm.render.entity.mob;
 
 import com.hbm.entity.mob.witherstorm.EntityWitherStorm;
 import com.hbm.entity.mob.witherstorm.WitherStormStage;
+import com.hbm.particle.WitherStormDebris;
 import com.hbm.render.model.ModelCommandBlockWither;
 import com.hbm.render.model.ModelWitherStorm;
 import com.hbm.render.model.ModelWitherStormDestroyer;
+import com.hbm.render.model.ModelWitherStormDevourer;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.client.Minecraft;
@@ -24,6 +26,7 @@ public final class RenderWitherStorm extends Render {
     public static final ResourceLocation WITHER = new ResourceLocation("textures/entity/wither/wither.png");
     private final ModelWitherStorm model = new ModelWitherStorm();
     private final ModelWitherStormDestroyer destroyer = new ModelWitherStormDestroyer();
+    private final ModelWitherStormDevourer devourer = new ModelWitherStormDevourer();
     private final ModelCommandBlockWither commandModel = new ModelCommandBlockWither();
     private final RenderBlocks blocks = new RenderBlocks();
     private long lastParticles = Long.MIN_VALUE;
@@ -41,11 +44,13 @@ public final class RenderWitherStorm extends Render {
         float scale = boss.renderScale(partial); GL11.glScalef(scale, scale, scale);
         GL11.glEnable(GL11.GL_NORMALIZE);
         WitherStormStage stage = boss.getStage();
-        if(stage == WitherStormStage.B) {
+        if(stage.hasPosedTentacles()) {
             bindTexture(SKIN);
             GL11.glPushAttrib(GL11.GL_TEXTURE_BIT);
-            brightenDestroyerSkin();
-            destroyer.render(boss.development(), boss.worldObj.getTotalWorldTime() + (double)partial, distance < 96D * 96D);
+            brightenStormSkin();
+            double time = boss.worldObj.getTotalWorldTime() + (double)partial;
+            if(stage == WitherStormStage.B) destroyer.render(boss.development(), time, distance < 96D * 96D);
+            else devourer.render(boss.development(), time);
             GL11.glPopAttrib();
         } else if(!stage.hasTentacles()) {
             if(stage == WitherStormStage.A_TRANSFORMED) {
@@ -55,6 +60,7 @@ public final class RenderWitherStorm extends Render {
             renderCommandWither(boss.hasCore());
         } else renderStorm(boss, stage);
         GL11.glPopMatrix(); GL11.glPopAttrib();
+        if(stage == WitherStormStage.B && distance < 96D * 96D) WitherStormDebris.fillDestroyer(boss);
         long tick = boss.worldObj.getTotalWorldTime();
         if(tick != lastParticles && distance < 96D * 96D && mc.gameSettings.particleSetting != 2) {
             lastParticles = tick;
@@ -65,7 +71,7 @@ public final class RenderWitherStorm extends Render {
     }
 
     /** Lift the existing near-black skin so the new relief reads at a distance. Keep the lightmap active. */
-    static void brightenDestroyerSkin() {
+    static void brightenStormSkin() {
         GL11.glTexEnvi(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_MODE, GL13.GL_COMBINE);
         GL11.glTexEnvi(GL11.GL_TEXTURE_ENV, GL13.GL_COMBINE_RGB, GL11.GL_MODULATE);
         GL11.glTexEnvi(GL11.GL_TEXTURE_ENV, GL13.GL_SOURCE0_RGB, GL11.GL_TEXTURE);

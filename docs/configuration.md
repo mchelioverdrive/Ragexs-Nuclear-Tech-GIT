@@ -308,6 +308,7 @@ The `12_mobs.witherstorm` category in `config/hbm.cfg` controls the hostile boss
 | Setting | Default | Meaning |
 | --- | --- | --- |
 | `transformGrowth` / `devourerGrowth` / `thunderStormGrowth` | 12500 / 50000 / 250000 | Consumed mass thresholds, strictly ordered. The center head transforms at `transformGrowth`. Both side heads transform and tentacles emerge at `transformGrowth + max(1, (devourerGrowth - transformGrowth) / 2)` using integer division. Devourer and ThunderStorm begin above their thresholds. See the [appearance stages](commands.md#rntwitherstorm) for the full model progression. |
+| `minimumStageBTicks` | 24000 | Active Stage B ticks required before automatic evolution, in addition to the growth requirement. Mass still accumulates, and elapsed ticks are saved when the boss unloads. Zero disables the timer. |
 | `maxEncounters` | 1 | Global limit including unloaded saved bosses; zero disables new encounters. Use `/rntwitherstorm list` and `remove UUID` to retire an unloaded encounter. |
 | `survivalSummoning` | true | Allow the Fake Command Block structure and legacy euphemium ritual described in the [command guide](commands.md#rntwitherstorm). |
 | `challengeMode` | false | Default for worlds without a command override. Starts a 24,000-tick Overworld countdown the first time it is enabled in a world. |

@@ -382,3 +382,9 @@
 
 - Build a broad, layered mantle with low front skulls, two long curling upper arms, five smaller appendages and floating fragments. Reuse the storm skin and keep the other stages' models.
 - Align each head's glowing eye, hinged grin, skull launch point and selection bounds with its new pose. Animate the Stage B arms from the torso and use the same curves for their tracked contact points.
+
+2026-11-04 23:21 — Rebuild the small Devourer and extend Stage B
+
+- Give Stage C (Small) its own tall, irregular mantle, three low glowing heads, one long raised side arm and six curved lower appendages. Use the same attachments for rendered heads, beam and skull origins, and tracked tentacle contacts.
+- Keep the Stage B body and arms. Replace its attached debris clusters with individual client-side block fragments that spiral inward and shrink, using the original block textures when absorption records arrive.
+- Require 24,000 active Stage B ticks by default before automatic evolution. Save the timer and continue counting absorbed mass during the hold. Explicit growth commands still apply immediately.
