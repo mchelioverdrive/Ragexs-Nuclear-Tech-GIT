@@ -173,8 +173,9 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
             }
         }
         float s = getStormScale();
-        float wantedWidth = (2F + development() * 21F) * s;
-        float wantedHeight = (3.5F + development() * 10.5F) * s;
+        boolean commandPhase = getPhase() == WitherStormPhase.COMMAND_BLOCK;
+        float wantedWidth = (commandPhase ? 41F / 16F : 2F + development() * 21F) * s;
+        float wantedHeight = (commandPhase ? 30F / 16F : 3.5F + development() * 10.5F) * s;
         if(width != wantedWidth || height != wantedHeight) {
             // 1.7.10 setSize moves a growing entity toward its old box corner.
             // Keep growth and reload sizing centered on the saved flight position.
@@ -336,6 +337,11 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
     }
     public Vec3 partPosition(int slot) {
         float s = getStormScale();
+        if(slot < 3 && getPhase() == WitherStormPhase.COMMAND_BLOCK) {
+            Vec3 center = commandHeadOffset(slot, rotationYaw, s);
+            return Vec3.createVectorHelper(posX + center.xCoord,
+                posY + center.yCoord - 0.5F * commandHeadSize(slot) * s, posZ + center.zCoord);
+        }
         float d = development();
         if(slot < 3) return local((slot - 1) * (0.85D + 9D * d) * s,
             ((slot == 1 ? 2.1D : 1.8D) + d * (slot == 1 ? 3D : 5D)) * s, -(0.05D + 9D * d) * s);
@@ -344,6 +350,13 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
         double length = (slot >= 8 ? 7D : 5D) + d * 11D;
         return local(Math.cos(angle) * (length + wave) * s, (slot >= 8 ? -2D : -4D - d * 6D) * s, Math.sin(angle) * length * s);
     }
+    public static float commandHeadSize(int slot) { return slot == 1 ? 1F : 0.75F; }
+
+    /** Shared skull centers for the shoulder joints, part positions and client rendering. */
+    public static Vec3 commandHeadOffset(int slot, float yaw, float scale) {
+        return WitherStormMath.headOffset((slot - 1) * scale,
+            (slot == 1 ? 34D : 30D) * scale / 16D, (slot == 1 ? -3.5D : 1D) * scale / 16D, yaw, 0);
+    }
     public Vec3 tentacleRoot(int slot) {
         double angle = (slot - 3) * Math.PI * 2D / 7D;
         return local(Math.cos(angle) * (1D + development() * 5D) * getStormScale(),
@@ -351,6 +364,12 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
     }
     public Vec3 mouth(int head) {
         if(parts[head] != null && !parts[head].isDead) return parts[head].mouth(1F);
+        if(getPhase() == WitherStormPhase.COMMAND_BLOCK) {
+            float scale = getStormScale();
+            Vec3 center = commandHeadOffset(head, rotationYaw, scale);
+            Vec3 front = WitherStormMath.headOffset(0, 0, -0.51D * commandHeadSize(head) * scale, rotationYaw, 0);
+            return Vec3.createVectorHelper(posX + center.xCoord + front.xCoord, posY + center.yCoord, posZ + center.zCoord + front.zCoord);
+        }
         Vec3 v = partPosition(head), offset = WitherStormMath.headOffset(0, 0, -1.5D * getStormScale(), rotationYaw, 0);
         return Vec3.createVectorHelper(v.xCoord + offset.xCoord, v.yCoord + 0.6D * getStormScale(), v.zCoord + offset.zCoord);
     }

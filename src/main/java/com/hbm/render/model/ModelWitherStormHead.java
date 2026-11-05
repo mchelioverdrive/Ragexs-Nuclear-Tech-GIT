@@ -10,10 +10,11 @@ public final class ModelWitherStormHead extends ModelBase {
     public static final float HEAD_SCALE = WitherStormMath.HEAD_SCALE;
     public static final double EYE_Y = WitherStormMath.EYE_Y, EYE_Z = WitherStormMath.EYE_Z, EYE_HALF_SIZE = 0.1875D;
     public static final double NECK_Y = 12D / 16D;
-    private final ModelRenderer shell, brow, jaw, upperTeeth, lowerTeeth, neck, ordinary;
+    private final ModelRenderer shell, brow, jaw, upperTeeth, lowerTeeth, neck, ordinary, sideSkull;
     public ModelWitherStormHead() {
         textureWidth = textureHeight = 64;
         ordinary = box(-4, -4, -4, 8, 8, 8, 0, 0);
+        sideSkull = box(-3, -3, -3, 6, 6, 6, 32, 0);
         shell = new ModelRenderer(this, 0, 0);
         shell.addBox(-13, 9, -15, 26, 16, 26);
         shell.addBox(-15, 0, -10, 5, 17, 22);
@@ -35,8 +36,20 @@ public final class ModelWitherStormHead extends ModelBase {
         ModelRenderer part = new ModelRenderer(this, u, v); part.addBox(x, y, z, w, h, d); return part;
     }
     public void renderOrdinary() {
-        // Vanilla model UVs assume downward Y; rotate its symmetric face upright.
-        GL11.glPushMatrix(); GL11.glRotatef(180, 0, 0, 1); ordinary.render(0.0625F); GL11.glPopMatrix();
+        renderUpright(ordinary, 0.0625F);
+    }
+    public void renderCommandSkull(boolean center) {
+        renderUpright(center ? ordinary : sideSkull, 0.125F);
+    }
+    private void renderUpright(ModelRenderer skull, float pixel) {
+        // Vanilla uses downward Y. A half roll keeps the face on -Z and turns it upright.
+        GL11.glPushMatrix();
+        GL11.glRotatef(180, 0, 0, 1);
+        // A ModelRenderer display list bakes its first render scale.
+        float scale = pixel / 0.0625F;
+        GL11.glScalef(scale, scale, scale);
+        skull.render(0.0625F);
+        GL11.glPopMatrix();
     }
     public void renderHead(float age, boolean beam) {
         shell.render(0.0625F); brow.render(0.0625F);

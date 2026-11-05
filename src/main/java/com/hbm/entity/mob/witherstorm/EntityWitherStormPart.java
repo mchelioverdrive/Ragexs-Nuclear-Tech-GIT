@@ -54,8 +54,13 @@ public class EntityWitherStormPart extends Entity {
                 rotationYaw += MathHelper.wrapAngleTo180_float(nextYaw - rotationYaw) / steps;
                 rotationPitch += (nextPitch - rotationPitch) / steps;
             }
-            // Client ray selection needs the same growing hitboxes as the server.
-            updateBounds(parent());
+            EntityWitherStorm boss = parent();
+            if(isCommandHead(boss)) {
+                // Keep the selection box on the shoulder while rotation still follows the tracked part.
+                Vec3 position = boss.partPosition(slot());
+                setPosition(position.xCoord, position.yCoord, position.zCoord);
+            }
+            updateBounds(boss);
             return;
         }
         if(slot() < 0 || slot() > 9 || parentId == null) { setDead(); return; }
@@ -80,14 +85,13 @@ public class EntityWitherStormPart extends Entity {
         Vec3 position = boss.partPosition(slot());
         if(!WitherStormMath.loaded(worldObj, position.xCoord, position.zCoord)) return;
         setPosition(position.xCoord, position.yCoord, position.zCoord);
-        updateBounds(boss);
         parentChunkX = MathHelper.floor_double(boss.posX) >> 4; parentChunkZ = MathHelper.floor_double(boss.posZ) >> 4;
         if(slot() < 3) {
             Entity target = worldObj.getEntityByID(boss.headTarget(slot()));
             float yaw = boss.rotationYaw, pitch = 0;
             if(WitherStormMath.targetable(target, worldObj)) {
                 Vec3 aim = WitherStormMath.targetPoint(target, 1F);
-                double dx = aim.xCoord - posX, dz = aim.zCoord - posZ, dy = aim.yCoord - (posY + scale() * 0.6D);
+                double dx = aim.xCoord - posX, dz = aim.zCoord - posZ, dy = aim.yCoord - (posY + headPivotHeight(boss));
                 double horizontal = Math.sqrt(dx * dx + dz * dz);
                 yaw = horizontal < 0.001D ? rotationYaw : (float)(Math.atan2(dx, -dz) * 180D / Math.PI);
                 pitch = (float)(Math.atan2(dy, horizontal) * 180D / Math.PI);
@@ -103,6 +107,7 @@ public class EntityWitherStormPart extends Entity {
             rotationYaw += MathHelper.wrapAngleTo180_float(yaw - rotationYaw) * 0.12F;
             rotationPitch += (pitch - rotationPitch) * 0.12F;
         }
+        updateBounds(boss);
     }
     @SideOnly(Side.CLIENT)
     @Override public void setPositionAndRotation2(double x, double y, double z, float yaw, float pitch, int ticks) {
@@ -117,12 +122,20 @@ public class EntityWitherStormPart extends Entity {
     }
     public float headYaw(float partial) { return prevRotationYaw + MathHelper.wrapAngleTo180_float(rotationYaw - prevRotationYaw) * partial; }
     public float headPitch(float partial) { return prevRotationPitch + (rotationPitch - prevRotationPitch) * partial; }
+    private boolean isCommandHead(EntityWitherStorm boss) {
+        return slot() < 3 && boss != null && boss.getPhase() == WitherStormPhase.COMMAND_BLOCK;
+    }
+    private double headPivotHeight(EntityWitherStorm boss) {
+        return isCommandHead(boss) ? 0.5D * EntityWitherStorm.commandHeadSize(slot()) * boss.getStormScale() : 0.6D * scale();
+    }
     public Vec3 mouth(float partial) {
         EntityWitherStorm boss = parent();
-        double size = boss == null ? scale() : scale() * boss.headSize(slot());
-        Vec3 offset = WitherStormMath.headOffset(0, 0, -(boss != null && boss.headTransformed(slot()) ? 1.65D : 0.51D) * size, headYaw(partial), headPitch(partial));
+        boolean commandHead = isCommandHead(boss);
+        double size = commandHead ? EntityWitherStorm.commandHeadSize(slot()) * boss.getStormScale()
+            : boss == null ? scale() : scale() * boss.headSize(slot());
+        Vec3 offset = WitherStormMath.headOffset(0, 0, -(boss != null && !commandHead && boss.headTransformed(slot()) ? 1.65D : 0.51D) * size, headYaw(partial), headPitch(partial));
         return Vec3.createVectorHelper(lastTickPosX + (posX - lastTickPosX) * partial + offset.xCoord,
-            lastTickPosY + (posY - lastTickPosY) * partial + scale() * 0.6D + offset.yCoord,
+            lastTickPosY + (posY - lastTickPosY) * partial + headPivotHeight(boss) + offset.yCoord,
             lastTickPosZ + (posZ - lastTickPosZ) * partial + offset.zCoord);
     }
     public Vec3 eye(float partial) {
@@ -134,7 +147,23 @@ public class EntityWitherStormPart extends Entity {
             lastTickPosZ + (posZ - lastTickPosZ) * partial + offset.zCoord);
     }
     private void updateBounds(EntityWitherStorm boss) {
-        if(slot() < 3) {
+        if(isCommandHead(boss)) {
+            double x = posX, y = posY, z = posZ;
+            double half = headPivotHeight(boss);
+            float size = (float)(2D * half);
+            if(width != size || height != size) {
+                setSize(size, size);
+                setPosition(x, y, z);
+            }
+            // Enclose the pitched and yawed cube about its center, not the base of the entity.
+            double yaw = Math.toRadians(rotationYaw), pitch = Math.toRadians(rotationPitch);
+            double cosYaw = Math.abs(Math.cos(yaw)), sinYaw = Math.abs(Math.sin(yaw));
+            double pitchExtent = Math.abs(Math.cos(pitch)) + Math.abs(Math.sin(pitch));
+            double dx = half * (cosYaw + sinYaw * pitchExtent);
+            double dy = half * pitchExtent;
+            double dz = half * (sinYaw + cosYaw * pitchExtent);
+            boundingBox.setBounds(x - dx, y + half - dy, z - dz, x + dx, y + half + dy, z + dz);
+        } else if(slot() < 3) {
             double x = posX, y = posY, z = posZ;
             float size = boss == null ? 1F : boss.headSize(slot());
             float extent = boss != null && boss.headTransformed(slot()) ? 2.7F : 1F;

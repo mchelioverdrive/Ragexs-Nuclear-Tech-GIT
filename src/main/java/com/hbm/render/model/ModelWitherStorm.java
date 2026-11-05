@@ -4,7 +4,7 @@ import net.minecraft.client.model.ModelBase;
 import net.minecraft.client.model.ModelRenderer;
 import org.lwjgl.opengl.GL11;
 
-/** Retained geometry: a Wither skeleton, an enclosing core and overlapping growth lobes. */
+/** Retained geometry for the evolved mantle, exposed spine and core frame. */
 public final class ModelWitherStorm extends ModelBase {
     private final ModelRenderer skeleton, cage, cube;
     private final ModelRenderer[] mantle = new ModelRenderer[28];
@@ -37,7 +37,7 @@ public final class ModelWitherStorm extends ModelBase {
             mantle[i].rotateAngleZ = (float)Math.cos(angle) * 0.22F;
         }
     }
-    public void command() { skeleton.render(0.0625F); }
+    public void earlyStormSpine() { skeleton.render(0.0625F); }
     public void coreFrame() { cage.render(0.0625F); }
     public void storm(float development, boolean detailed) {
         if(development <= 0F) return;

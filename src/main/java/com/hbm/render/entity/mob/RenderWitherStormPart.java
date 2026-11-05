@@ -3,6 +3,7 @@ package com.hbm.render.entity.mob;
 import com.hbm.entity.mob.witherstorm.EntityWitherStorm;
 import com.hbm.entity.mob.witherstorm.EntityWitherStormPart;
 import com.hbm.entity.mob.witherstorm.WitherStormMath;
+import com.hbm.entity.mob.witherstorm.WitherStormPhase;
 import com.hbm.render.model.ModelWitherStormHead;
 import com.hbm.render.model.ModelWitherStormTentacle;
 import cpw.mods.fml.relauncher.Side;
@@ -11,6 +12,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.entity.Render;
+import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.MathHelper;
@@ -27,6 +29,10 @@ public final class RenderWitherStormPart extends Render {
         EntityWitherStorm boss = part.parent();
         Minecraft mc = Minecraft.getMinecraft();
         if(boss == null || mc.renderViewEntity == null || mc.renderViewEntity.getDistanceSqToEntity(boss) > 256D * 256D) return;
+        if(boss.getPhase() == WitherStormPhase.COMMAND_BLOCK) {
+            if(part.slot() < 3) renderCommandHead(boss, part, partial);
+            return;
+        }
         GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_CURRENT_BIT | GL11.GL_DEPTH_BUFFER_BIT | GL11.GL_LIGHTING_BIT);
         GL11.glPushMatrix(); GL11.glTranslated(x, y, z); bindTexture(RenderWitherStorm.SKIN);
         GL11.glEnable(GL11.GL_NORMALIZE);
@@ -92,6 +98,27 @@ public final class RenderWitherStormPart extends Render {
         }
         GL11.glPopMatrix(); GL11.glPopAttrib();
     }
+
+    private void renderCommandHead(EntityWitherStorm boss, EntityWitherStormPart part, float partial) {
+        float scale = boss.renderScale(partial);
+        float bodyYaw = boss.prevRotationYaw + MathHelper.wrapAngleTo180_float(boss.rotationYaw - boss.prevRotationYaw) * partial;
+        Vec3 center = EntityWitherStorm.commandHeadOffset(part.slot(), bodyYaw, scale);
+        GL11.glPushAttrib(GL11.GL_ENABLE_BIT);
+        GL11.glPushMatrix();
+        // Use the torso's interpolated transform so network updates cannot separate the skulls from their joints.
+        GL11.glTranslated(
+            boss.lastTickPosX + (boss.posX - boss.lastTickPosX) * partial - RenderManager.renderPosX + center.xCoord,
+            boss.lastTickPosY + (boss.posY - boss.lastTickPosY) * partial - RenderManager.renderPosY + center.yCoord,
+            boss.lastTickPosZ + (boss.posZ - boss.lastTickPosZ) * partial - RenderManager.renderPosZ + center.zCoord);
+        GL11.glRotatef(-part.headYaw(partial), 0, 1, 0);
+        GL11.glRotatef(part.headPitch(partial), 1, 0, 0);
+        GL11.glScalef(scale, scale, scale);
+        GL11.glEnable(GL11.GL_NORMALIZE);
+        bindTexture(RenderWitherStorm.WITHER);
+        head.renderCommandSkull(part.slot() == 1);
+        GL11.glPopMatrix();
+        GL11.glPopAttrib();
+    }
     /** Offset from the interpolated part position, in the same space as doRender. */
     private Vec3 headPoint(EntityWitherStormPart part, float partial, double y, double z) {
         double scale = skullScale(part.parent(), part, partial);
@@ -108,7 +135,7 @@ public final class RenderWitherStormPart extends Render {
         float development = boss.development();
         double bodyScale = boss.renderScale(partial);
         float bodyYaw = boss.prevRotationYaw + MathHelper.wrapAngleTo180_float(boss.rotationYaw - boss.prevRotationYaw) * partial;
-        // These anchors lie inside the shoulders (or the command-phase spine).
+        // These anchors lie inside the evolved shoulders.
         Vec3 root = WitherStormMath.headOffset((part.slot() - 1) * (0.45D + development * 5.8D) * bodyScale,
             (1.85D + development * 3D) * bodyScale, -development * 2.8D * bodyScale, bodyYaw, 0);
         double x = boss.lastTickPosX + (boss.posX - boss.lastTickPosX) * partial + root.xCoord

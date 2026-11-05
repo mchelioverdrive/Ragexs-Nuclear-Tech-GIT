@@ -351,3 +351,8 @@
 - Land a damaging ground slam with either or both available arms. Hold the terrain contact pose for ten seconds so players can cool and mine each arm independently. Keep the remaining arm planted when the other breaks, and resume saved holds without replaying the impact.
 - Match arm hitboxes to the shared model pose and show stone chips where a pickaxe hits. Retain cooling and mining progress across openings.
 - Start the existing collapse on lethal damage in any phase. The arm removal, TNT knockdown, and water finish remain available.
+
+2026-11-04 20:05 — Rebuild the Command Block Wither model
+
+- Give the opening phase a compact charcoal skeleton, three independently aimed vanilla Wither skulls, and a fixed Command Block seated in the chest. Align the head joints and hitboxes with the new model.
+- Switch to the existing purple mantle and evolved head sequence at the Destroyer threshold.
