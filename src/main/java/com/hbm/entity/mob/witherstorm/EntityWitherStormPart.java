@@ -55,7 +55,7 @@ public class EntityWitherStormPart extends Entity {
                 rotationPitch += (nextPitch - rotationPitch) / steps;
             }
             EntityWitherStorm boss = parent();
-            if(isCommandHead(boss)) {
+            if(slot() < 3 && boss != null) {
                 // Keep the selection box on the shoulder while rotation still follows the tracked part.
                 Vec3 position = boss.partPosition(slot());
                 setPosition(position.xCoord, position.yCoord, position.zCoord);
@@ -104,8 +104,16 @@ public class EntityWitherStormPart extends Entity {
                     pitch -= (float)(Math.asin(Math.min(0.95D, eyeHeight / Math.max(0.01D, range))) * 180D / Math.PI);
                 }
             }
-            rotationYaw += MathHelper.wrapAngleTo180_float(yaw - rotationYaw) * 0.12F;
-            rotationPitch += (pitch - rotationPitch) * 0.12F;
+            if(isCommandHead(boss)) {
+                rotationYaw += MathHelper.wrapAngleTo180_float(yaw - rotationYaw) * 0.12F;
+                rotationPitch += (pitch - rotationPitch) * 0.12F;
+            } else {
+                // Smooth within the shoulder's travel, including when the body turns under the head.
+                float currentYaw = limitStormYaw(boss.rotationYaw, rotationYaw);
+                rotationYaw = currentYaw + (limitStormYaw(boss.rotationYaw, yaw) - currentYaw) * 0.12F;
+                float currentPitch = limitStormPitch(rotationPitch);
+                rotationPitch = currentPitch + (limitStormPitch(pitch) - currentPitch) * 0.12F;
+            }
         }
         updateBounds(boss);
     }
@@ -120,8 +128,19 @@ public class EntityWitherStormPart extends Entity {
         Vec3 expected = boss.partPosition(slot());
         return WitherStormMath.loaded(worldObj, posX, posZ) && getDistanceSq(expected.xCoord, expected.yCoord, expected.zCoord) < 4D;
     }
-    public float headYaw(float partial) { return prevRotationYaw + MathHelper.wrapAngleTo180_float(rotationYaw - prevRotationYaw) * partial; }
-    public float headPitch(float partial) { return prevRotationPitch + (rotationPitch - prevRotationPitch) * partial; }
+    private static float limitStormYaw(float bodyYaw, float yaw) {
+        return bodyYaw + MathHelper.clamp_float(MathHelper.wrapAngleTo180_float(yaw - bodyYaw), -48F, 48F);
+    }
+    private static float limitStormPitch(float pitch) { return MathHelper.clamp_float(pitch, -72F, 10F); }
+
+    public float headYaw(float partial, EntityWitherStorm boss) {
+        float yaw = prevRotationYaw + MathHelper.wrapAngleTo180_float(rotationYaw - prevRotationYaw) * partial;
+        return boss == null || isCommandHead(boss) ? yaw : limitStormYaw(boss.bodyYaw(partial), yaw);
+    }
+    public float headPitch(float partial, EntityWitherStorm boss) {
+        float pitch = prevRotationPitch + (rotationPitch - prevRotationPitch) * partial;
+        return boss == null || isCommandHead(boss) ? pitch : limitStormPitch(pitch);
+    }
     private boolean isCommandHead(EntityWitherStorm boss) {
         return slot() < 3 && boss != null && boss.getPhase() == WitherStormPhase.COMMAND_BLOCK;
     }
@@ -133,7 +152,8 @@ public class EntityWitherStormPart extends Entity {
         boolean commandHead = isCommandHead(boss);
         double size = commandHead ? EntityWitherStorm.commandHeadSize(slot()) * boss.getStormScale()
             : boss == null ? scale() : scale() * boss.headSize(slot());
-        Vec3 offset = WitherStormMath.headOffset(0, 0, -(boss != null && !commandHead && boss.headTransformed(slot()) ? 1.65D : 0.51D) * size, headYaw(partial), headPitch(partial));
+        Vec3 offset = WitherStormMath.headOffset(0, 0, -(boss != null && !commandHead && boss.headTransformed(slot()) ? 1.65D : 0.51D) * size,
+            headYaw(partial, boss), headPitch(partial, boss));
         return Vec3.createVectorHelper(lastTickPosX + (posX - lastTickPosX) * partial + offset.xCoord,
             lastTickPosY + (posY - lastTickPosY) * partial + headPivotHeight(boss) + offset.yCoord,
             lastTickPosZ + (posZ - lastTickPosZ) * partial + offset.zCoord);
@@ -141,7 +161,8 @@ public class EntityWitherStormPart extends Entity {
     public Vec3 eye(float partial) {
         EntityWitherStorm boss = parent();
         double size = scale() * WitherStormMath.HEAD_SCALE * (boss == null ? 1F : boss.headSize(slot()));
-        Vec3 offset = WitherStormMath.headOffset(0, WitherStormMath.EYE_Y * size, WitherStormMath.EYE_Z * size, headYaw(partial), headPitch(partial));
+        Vec3 offset = WitherStormMath.headOffset(0, WitherStormMath.EYE_Y * size, WitherStormMath.EYE_Z * size,
+            headYaw(partial, boss), headPitch(partial, boss));
         return Vec3.createVectorHelper(lastTickPosX + (posX - lastTickPosX) * partial + offset.xCoord,
             lastTickPosY + (posY - lastTickPosY) * partial + scale() * 0.6D + offset.yCoord,
             lastTickPosZ + (posZ - lastTickPosZ) * partial + offset.zCoord);
@@ -172,7 +193,8 @@ public class EntityWitherStormPart extends Entity {
             setSize(extent * size * scale(), height); setPosition(x, y, z);
         } else if(boss != null) {
             Vec3 root = boss.tentacleRoot(slot()); double padding = (slot() >= 8 ? 1.4D : 0.7D) * scale();
-            boundingBox.setBounds(Math.min(posX, root.xCoord) - padding, Math.min(posY, root.yCoord) - padding, Math.min(posZ, root.zCoord) - padding,
+            double sag = boss.getStage().hasRaisedTentacle(slot()) ? getDistance(root.xCoord, root.yCoord, root.zCoord) * 0.28D : 0D;
+            boundingBox.setBounds(Math.min(posX, root.xCoord) - padding, Math.min(posY, root.yCoord) - padding - sag, Math.min(posZ, root.zCoord) - padding,
                 Math.max(posX, root.xCoord) + padding, Math.max(posY, root.yCoord) + padding, Math.max(posZ, root.zCoord) + padding);
         }
     }

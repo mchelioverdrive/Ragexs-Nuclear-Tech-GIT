@@ -109,7 +109,11 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
     }
     public float headSize(int head) {
         if(!headTransformed(head)) return commandHeadSize(head);
-        return getStage() == WitherStormStage.A_TRANSFORMED ? 0.58F : 1.15F + development() * 0.65F;
+        switch(getStage()) {
+            case A_TRANSFORMED: return 0.58F;
+            case B: return 0.88F + development() * 0.36F;
+            default: return 1.15F + development() * 0.65F;
+        }
     }
     public boolean beamActive(int head) { return isEntityAlive() && headTransformed(head) && (dataWatcher.getWatchableObjectByte(28) & (1 << head)) != 0; }
     private int headsForGrowth(int mass) {
@@ -120,6 +124,9 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
         return dataWatcher.getWatchableObjectFloat(27);
     }
     public float renderScale(float partial) { return previousVisualScale + (visualScale - previousVisualScale) * partial; }
+    public float bodyYaw(float partial) {
+        return prevRotationYaw + MathHelper.wrapAngleTo180_float(rotationYaw - prevRotationYaw) * partial;
+    }
     public float attackStrength() { return 8F + getPhase().ordinal() * 5F + Math.min(16F, getGrowth() / 25000F); }
     public void addMass(int amount) { if(amount > 0) setGrowth((int)Math.min(1000000000L, (long)getGrowth() + amount)); }
     public void setGrowth(int mass) {
@@ -166,8 +173,8 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
             for(int i = 0; i < 3; i++) {
                 if(!validTarget(targets[i])) { targets[i] = null; dataWatcher.updateObject(24 + i, 0); }
             }
-            maintainParts();
             fly();
+            maintainParts();
             for(int i = 0; i < 3; i++) if(--attacks[i] <= 0) {
                 attacks[i] = Math.max(10, WitherStormConfig.attackTicks / (1 + getPhase().ordinal())) + rand.nextInt(10);
                 EntityLivingBase target = targets[i];
@@ -193,6 +200,7 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
         switch(stage) {
             case A: bodyHeight = 30F / 16F; break;
             case A_TRANSFORMED: bodyHeight = 3.89F + Math.max(0F, development - 0.22F) * 3F; break;
+            case B: bodyHeight = 1.6F + development * 5.2F + (1.9F + development * 9F) * 0.77F; break;
             case C_SMALL:
             case C_BIG:
             case D:
@@ -375,26 +383,44 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
 
     public Vec3 partPosition(int slot) {
         float s = getStormScale();
-        if(slot < 3 && getPhase() == WitherStormPhase.COMMAND_BLOCK) {
-            Vec3 center = commandHeadOffset(slot, rotationYaw, s);
-            return Vec3.createVectorHelper(posX + center.xCoord,
-                posY + center.yCoord - 0.5F * commandHeadSize(slot) * s, posZ + center.zCoord);
+        if(slot < 3) {
+            Vec3 offset = headPartOffset(slot, rotationYaw, s);
+            return Vec3.createVectorHelper(posX + offset.xCoord, posY + offset.yCoord, posZ + offset.zCoord);
         }
         float d = development();
-        if(slot < 3) {
-            if(getStage() == WitherStormStage.A_TRANSFORMED) {
-                return local((slot - 1) * 1.10D * s, (slot == 1 ? 0.92D : 1.275D) * s, (slot == 1 ? -0.54D : 0.0625D) * s);
-            }
-            // The head pivots clear the front of the mantle, even at the broadest stage.
-            return local((slot - 1) * (1.50D + 9D * d) * s,
-                ((slot == 1 ? 2.05D : 2D) + 2D * d) * s, -((slot == 1 ? 2D : 1.8D) + 9D * d) * s);
-        }
         double angle = (slot - 3) * Math.PI * 2D / 7D;
         double wave = Math.sin((worldObj.getTotalWorldTime() + slot * 19) * 0.04D);
+        if(getStage() == WitherStormStage.B) {
+            if(WitherStormStage.B.hasRaisedTentacle(slot)) {
+                double side = slot == 3 ? 1D : -1D;
+                return local(side * (4.8D + d * 7D + wave * 0.55D) * s, (3.6D + wave * 1.1D) * s, -(2.2D + d * 2D) * s);
+            }
+            double reach = 1.7D + d * 4.5D;
+            return local(Math.cos(angle) * (reach + wave * 0.35D) * s, (-2.5D - d * 3.4D) * s, Math.sin(angle) * reach * s);
+        }
         double length = (slot >= 8 ? 7D : 5D) + d * 11D;
         return local(Math.cos(angle) * (length + wave) * s, (slot >= 8 ? -2D : -4D - d * 6D) * s, Math.sin(angle) * length * s);
     }
     public static float commandHeadSize(int slot) { return slot == 1 ? 1F : 0.75F; }
+
+    /** Shared attachment base for tracked hitboxes and the interpolated render pose. */
+    public Vec3 headPartOffset(int slot, float yaw, float scale) {
+        float d = development();
+        switch(getStage()) {
+            case A:
+                Vec3 center = commandHeadOffset(slot, yaw, scale);
+                return Vec3.createVectorHelper(center.xCoord, center.yCoord - 0.5F * commandHeadSize(slot) * scale, center.zCoord);
+            case A_TRANSFORMED:
+                return WitherStormMath.headOffset((slot - 1) * 1.10D * scale,
+                    (slot == 1 ? 0.92D : 1.275D) * scale, (slot == 1 ? -1.23D : -0.27D) * scale, yaw, 0F);
+            case B:
+                return WitherStormMath.headOffset((slot - 1) * (1.05D + 7.5D * d) * scale,
+                    (1.58D + 2D * d) * scale, -((slot == 1 ? 2.9D : 2.65D) + 8.3D * d) * scale, yaw, 0F);
+            default:
+                return WitherStormMath.headOffset((slot - 1) * (1.50D + 9D * d) * scale,
+                    ((slot == 1 ? 2.05D : 2D) + 2D * d) * scale, -((slot == 1 ? 3.53D : 3.28D) + 9D * d) * scale, yaw, 0F);
+        }
+    }
 
     /** Shared skull centers for the shoulder joints, part positions and client rendering. */
     public static Vec3 commandHeadOffset(int slot, float yaw, float scale) {
@@ -403,6 +429,10 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
     }
     public Vec3 tentacleRoot(int slot) {
         double angle = (slot - 3) * Math.PI * 2D / 7D;
+        if(getStage().hasRaisedTentacle(slot)) {
+            float scale = getStormScale();
+            return local((slot == 3 ? 1D : -1D) * (1.7D + 4D * development()) * scale, 2.8D * scale, -1.1D * scale);
+        }
         return local(Math.cos(angle) * (1D + development() * 5D) * getStormScale(),
             (2D + development() * 3D) * getStormScale(), Math.sin(angle) * (1D + development() * 4D) * getStormScale());
     }
@@ -438,7 +468,7 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
             Vec3 m = part.eye(1F), end = WitherStormMath.targetPoint(target, 1F);
             double dx = end.xCoord - m.xCoord, dy = end.yCoord - m.yCoord, dz = end.zCoord - m.zCoord;
             double length = Math.sqrt(dx * dx + dy * dy + dz * dz);
-            Vec3 forward = WitherStormMath.headOffset(0, 0, -1, part.rotationYaw, part.rotationPitch);
+            Vec3 forward = WitherStormMath.headOffset(0, 0, -1, part.headYaw(1F, this), part.headPitch(1F, this));
             if(!Double.isFinite(length) || length < 0.1D || length > 48D
                 || (dx * forward.xCoord + dy * forward.yCoord + dz * forward.zCoord) / length < 0.985D) continue;
             active |= 1 << h;

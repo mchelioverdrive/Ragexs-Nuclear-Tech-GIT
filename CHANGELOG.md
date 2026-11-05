@@ -366,3 +366,8 @@
 
 - Keep the two ordinary skulls visible during the center head's transformation. At Stage B, transform both side heads together and keep all three clear of the mantle. Bring older two-transformed-head saves forward to the paired form.
 - Grow from the exposed-core Stage A forms into Stage B, then the small, big and damaged Stage C silhouettes and Stage D. Tentacles emerge in Stage B, and the core becomes visible again when Stage C fractures at low health.
+
+2026-11-04 21:30 — Refine Destroyer and keep evolved heads clear of the mantle
+
+- Give Stage B a stepped mantle, smaller front-mounted skulls, two raised curling arms and shorter hanging tentacles.
+- Keep evolved skulls on the body's interpolated shoulders and limit their aiming range. Beam direction and skull rotation use the same limits, so heads hold at the edge of their travel when a target moves behind them.
