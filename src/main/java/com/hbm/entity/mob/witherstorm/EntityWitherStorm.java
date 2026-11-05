@@ -35,12 +35,18 @@ import net.minecraftforge.common.ForgeChunkManager.Ticket;
 
 /** Hostile encounter root. Command Block Wither and all evolved forms share this identity. */
 public class EntityWitherStorm extends EntityFlying implements IBossDisplayData, IMob, IRadiationImmune, IChunkLoader {
+    private static final String HURT_SOUND = "hbm:entity.witherStorm.hurt";
+    private static final int SKULL_WINDUP_TICKS = 10;
     private final UUID[] partIds = new UUID[10];
     private final EntityWitherStormPart[] parts = new EntityWitherStormPart[10];
     private final int[] partChunksX = new int[10], partChunksZ = new int[10];
+    private final double[] destroyerArmSample = new double[3];
     private final EntityLivingBase[] targets = new EntityLivingBase[3];
     private final UUID[] targetIds = new UUID[3];
-    private final int[] attacks = new int[] {40, 60, 80};
+    private int skullCooldown = skullCooldownForPhase();
+    private int skullHead = -1, skullWindup;
+    private EntityLivingBase skullTarget;
+    private long nextHurtSoundTick;
     private final List<Entity> nearby = new ArrayList<Entity>(64);
     public final WitherStormTerrain terrain = new WitherStormTerrain(this);
     public boolean registered;
@@ -111,9 +117,14 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
         if(!headTransformed(head)) return commandHeadSize(head);
         switch(getStage()) {
             case A_TRANSFORMED: return 0.58F;
-            case B: return 0.88F + development() * 0.36F;
+            case B: return WitherStormDestroyerPose.headSize(head, development());
             default: return 1.15F + development() * 0.65F;
         }
+    }
+    public float headModelScale(int head, float partial, float bodyScale) {
+        if(getStage() == WitherStormStage.A) return bodyScale;
+        float size = bodyScale * headSize(head);
+        return headTransformed(head) ? size * WitherStormMath.HEAD_SCALE * (0.45F + 0.55F * headDevelopment(head, partial)) : size;
     }
     public boolean beamActive(int head) { return isEntityAlive() && headTransformed(head) && (dataWatcher.getWatchableObjectByte(28) & (1 << head)) != 0; }
     private int headsForGrowth(int mass) {
@@ -175,11 +186,7 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
             }
             fly();
             maintainParts();
-            for(int i = 0; i < 3; i++) if(--attacks[i] <= 0) {
-                attacks[i] = Math.max(10, WitherStormConfig.attackTicks / (1 + getPhase().ordinal())) + rand.nextInt(10);
-                EntityLivingBase target = targets[i];
-                if(target != null && canEntityBeSeen(target)) fire(i, target);
-            }
+            updateSkullAttack();
             interact();
             terrain.tick();
             if(--roarTimer <= 0) { playSound("hbm:entity.witherStorm.roar", 2F, 0.9F); roarTimer = 300 + rand.nextInt(200); }
@@ -220,6 +227,7 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
     }
     private void chooseTargets() {
         for(int head = 0; head < 3; head++) {
+            if(head == skullHead && validTarget(skullTarget)) continue;
             EntityLivingBase best = null; double score = Double.MAX_VALUE;
             Vec3 mouth = mouth(head);
             // Keep a valid lock even when the rolling bounded search misses its chunk.
@@ -240,6 +248,7 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
         return WitherStormMath.targetable(e, worldObj) && getDistanceSqToEntity(e) <= 96D * 96D;
     }
     private boolean assigned(Entity e, int head) {
+        if(skullHead > head && e == skullTarget) return true;
         for(int i = 0; i < head; i++) if(targets[i] == e) return true;
         return false;
     }
@@ -387,17 +396,10 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
             Vec3 offset = headPartOffset(slot, rotationYaw, s);
             return Vec3.createVectorHelper(posX + offset.xCoord, posY + offset.yCoord, posZ + offset.zCoord);
         }
+        if(getStage() == WitherStormStage.B) return destroyerArmPosition(slot, 1D);
         float d = development();
         double angle = (slot - 3) * Math.PI * 2D / 7D;
         double wave = Math.sin((worldObj.getTotalWorldTime() + slot * 19) * 0.04D);
-        if(getStage() == WitherStormStage.B) {
-            if(WitherStormStage.B.hasRaisedTentacle(slot)) {
-                double side = slot == 3 ? 1D : -1D;
-                return local(side * (4.8D + d * 7D + wave * 0.55D) * s, (3.6D + wave * 1.1D) * s, -(2.2D + d * 2D) * s);
-            }
-            double reach = 1.7D + d * 4.5D;
-            return local(Math.cos(angle) * (reach + wave * 0.35D) * s, (-2.5D - d * 3.4D) * s, Math.sin(angle) * reach * s);
-        }
         double length = (slot >= 8 ? 7D : 5D) + d * 11D;
         return local(Math.cos(angle) * (length + wave) * s, (slot >= 8 ? -2D : -4D - d * 6D) * s, Math.sin(angle) * length * s);
     }
@@ -414,8 +416,7 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
                 return WitherStormMath.headOffset((slot - 1) * 1.10D * scale,
                     (slot == 1 ? 0.92D : 1.275D) * scale, (slot == 1 ? -1.23D : -0.27D) * scale, yaw, 0F);
             case B:
-                return WitherStormMath.headOffset((slot - 1) * (1.05D + 7.5D * d) * scale,
-                    (1.58D + 2D * d) * scale, -((slot == 1 ? 2.9D : 2.65D) + 8.3D * d) * scale, yaw, 0F);
+                return WitherStormDestroyerPose.headBase(slot, d, scale, yaw);
             default:
                 return WitherStormMath.headOffset((slot - 1) * (1.50D + 9D * d) * scale,
                     ((slot == 1 ? 2.05D : 2D) + 2D * d) * scale, -((slot == 1 ? 3.53D : 3.28D) + 9D * d) * scale, yaw, 0F);
@@ -428,13 +429,15 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
             (slot == 1 ? 34D : 30D) * scale / 16D, (slot == 1 ? -3.5D : 1D) * scale / 16D, yaw, 0);
     }
     public Vec3 tentacleRoot(int slot) {
+        if(getStage() == WitherStormStage.B) return destroyerArmPosition(slot, 0D);
         double angle = (slot - 3) * Math.PI * 2D / 7D;
-        if(getStage().hasRaisedTentacle(slot)) {
-            float scale = getStormScale();
-            return local((slot == 3 ? 1D : -1D) * (1.7D + 4D * development()) * scale, 2.8D * scale, -1.1D * scale);
-        }
         return local(Math.cos(angle) * (1D + development() * 5D) * getStormScale(),
             (2D + development() * 3D) * getStormScale(), Math.sin(angle) * (1D + development() * 4D) * getStormScale());
+    }
+    Vec3 destroyerArmPosition(int slot, double t) {
+        WitherStormDestroyerPose.armPoint(slot, t, worldObj.getTotalWorldTime(), destroyerArmSample);
+        float scale = WitherStormDestroyerPose.size(development()) * getStormScale();
+        return local(destroyerArmSample[0] * scale, destroyerArmSample[1] * scale, destroyerArmSample[2] * scale);
     }
     public Vec3 mouth(int head) {
         if(parts[head] != null && !parts[head].isDead) return parts[head].mouth(1F);
@@ -444,20 +447,73 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
             Vec3 front = WitherStormMath.headOffset(0, 0, -0.51D * commandHeadSize(head) * scale, rotationYaw, 0);
             return Vec3.createVectorHelper(posX + center.xCoord + front.xCoord, posY + center.yCoord, posZ + center.zCoord + front.zCoord);
         }
-        Vec3 v = partPosition(head), offset = WitherStormMath.headOffset(0, 0, -1.5D * getStormScale(), rotationYaw, 0);
+        Vec3 v = partPosition(head);
+        Vec3 offset;
+        if(getStage() == WitherStormStage.B) {
+            float scale = headModelScale(head, 0F, getStormScale());
+            offset = WitherStormMath.headOffset(0, WitherStormDestroyerPose.MOUTH_Y * scale,
+                WitherStormDestroyerPose.MOUTH_Z * scale, rotationYaw, WitherStormDestroyerPose.REST_PITCH);
+        } else offset = WitherStormMath.headOffset(0, 0, -1.5D * getStormScale(), rotationYaw, 0);
         return Vec3.createVectorHelper(v.xCoord + offset.xCoord, v.yCoord + 0.6D * getStormScale(), v.zCoord + offset.zCoord);
     }
     private Vec3 local(double x, double y, double z) {
         double a = rotationYaw * Math.PI / 180D, c = Math.cos(a), s = Math.sin(a);
         return Vec3.createVectorHelper(posX + x * c - z * s, posY + y, posZ + x * s + z * c);
     }
-    private void fire(int head, EntityLivingBase target) {
-        Vec3 p = mouth(head);
-        Vec3 direction = Vec3.createVectorHelper(target.posX - p.xCoord, target.posY + target.height * 0.5D - p.yCoord, target.posZ - p.zCoord).normalize();
+    private int skullCooldownForPhase() {
+        int base = WitherStormConfig.attackTicks;
+        return Math.max(40, base - base * getPhase().ordinal() / 8);
+    }
+
+    EntityLivingBase windingUpSkullTarget(int head) {
+        return skullHead == head && skullTarget == targets[head] ? skullTarget : null;
+    }
+
+    private boolean canFireSkull(EntityWitherStormPart part, EntityLivingBase target) {
+        int range = WitherStormConfig.skullAttackRange;
+        if(part == null || !part.ready() || !validTarget(target) || getDistanceSqToEntity(target) > range * range) return false;
+        if(headTransformed(part.slot()) && headDevelopment(part.slot(), 0) < 1F) return false;
+        Vec3 mouth = part.skullMouth(this);
+        return WitherStormMath.targetPoint(target, 1F).squareDistanceTo(mouth) <= range * range
+            && part.skullAim(target, this) != null && canEntityBeSeen(target);
+    }
+
+    private void updateSkullAttack() {
+        if(skullHead < 0 && skullCooldown > 0 && --skullCooldown > 0) return;
+        if(skullHead >= 0) {
+            if(--skullWindup > 0) return;
+            EntityWitherStormPart part = parts[skullHead];
+            if(part != null) part.setSkullWindingUp(false);
+            EntityLivingBase target = windingUpSkullTarget(skullHead);
+            if(canFireSkull(part, target)) fireSkull(part, target);
+        }
+        for(int head = skullHead + 1; head < 3; head++) {
+            if(!canFireSkull(parts[head], targets[head])) continue;
+            skullHead = head;
+            skullTarget = targets[head];
+            skullWindup = SKULL_WINDUP_TICKS;
+            parts[head].setSkullWindingUp(true);
+            return;
+        }
+        if(skullHead >= 0) skullCooldown = skullCooldownForPhase();
+        skullHead = -1;
+        skullTarget = null;
+    }
+
+    private void fireSkull(EntityWitherStormPart part, EntityLivingBase target) {
+        Vec3 mouth = part.skullMouth(this);
+        Vec3 direction = WitherStormMath.headOffset(0, 0, -1, part.headYaw(1F, this), part.headPitch(1F, this));
+        // Clear the face by the projectile's radius, independent of the Storm's size.
+        Vec3 spawn = mouth.addVector(direction.xCoord * 0.45D, direction.yCoord * 0.45D, direction.zCoord * 0.45D);
+        if(!part.skullPathClearsBody(this, mouth, spawn, direction)) return;
+        double reach = spawn.distanceTo(WitherStormMath.targetPoint(target, 1F)) + target.width + target.height;
+        Vec3 end = spawn.addVector(direction.xCoord * reach, direction.yCoord * reach, direction.zCoord * reach);
+        if(target.boundingBox.expand(0.3D, 0.3D, 0.3D).calculateIntercept(spawn, end) == null
+            || !WitherStormMath.areaLoaded(worldObj, spawn.xCoord, spawn.zCoord, 34)) return;
         EntityWitherStormSkull skull = new EntityWitherStormSkull(worldObj);
-        skull.launch(this, p, direction);
-        if(!WitherStormMath.areaLoaded(worldObj, skull.posX, skull.posZ, 34) || !worldObj.spawnEntityInWorld(skull)) skull.setDead();
-        if(head == 0) playSound("hbm:entity.witherStorm.shoot", 1F, 1F);
+        skull.launch(this, spawn, direction);
+        if(worldObj.spawnEntityInWorld(skull)) worldObj.playSoundEffect(mouth.xCoord, mouth.yCoord, mouth.zCoord, "hbm:entity.witherStorm.shoot", 1F, 1F);
+        else skull.setDead();
     }
     private void interact() {
         int active = 0;
@@ -511,10 +567,21 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
     }
     @Override public boolean attackEntityFrom(DamageSource source, float damage) {
         if(worldObj.isRemote || source.getEntity() instanceof EntityWitherStorm || source.getEntity() instanceof EntityWitherStormPart || source.getSourceOfDamage() instanceof EntityWitherStormSkull || !Float.isFinite(damage)) return false;
-        return super.attackEntityFrom(source, damage);
+        float health = getHealth();
+        boolean hit = super.attackEntityFrom(source, damage);
+        long tick = worldObj.getTotalWorldTime();
+        if(hit && isEntityAlive() && getHealth() < health && tick >= nextHurtSoundTick) {
+            nextHurtSoundTick = tick + 12;
+            super.playSound(HURT_SOUND, 3F + 3F * development(), getSoundPitch());
+        }
+        return hit;
     }
     @Override protected String getLivingSound() { return "hbm:entity.witherStorm.ambient"; }
-    @Override protected String getHurtSound() { return "hbm:entity.witherStorm.hurt"; }
+    @Override protected String getHurtSound() { return HURT_SOUND; }
+    @Override public void playSound(String sound, float volume, float pitch) {
+        // Both vanilla's damage handler and the client's hurt animation call this.
+        if(!HURT_SOUND.equals(sound)) super.playSound(sound, volume, pitch);
+    }
     @Override protected String getDeathSound() { return "hbm:entity.witherStorm.death"; }
     @Override protected float getSoundVolume() { return 1.5F; }
     @Override public int getTalkInterval() { return 200; }
@@ -542,7 +609,8 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
         n.setByte("TransformingHeads", dataWatcher.getWatchableObjectByte(31));
         WitherStormMath.uuid(n, "Encounter", getUniqueID());
         for(int i = 0; i < 10; i++) { WitherStormMath.uuid(n, "Part" + i, partIds[i]); n.setInteger("PartX" + i, partChunksX[i]); n.setInteger("PartZ" + i, partChunksZ[i]); }
-        for(int i = 0; i < 3; i++) { WitherStormMath.uuid(n, "Target" + i, targetIds[i]); n.setInteger("Attack" + i, attacks[i]); }
+        for(int i = 0; i < 3; i++) WitherStormMath.uuid(n, "Target" + i, targetIds[i]);
+        n.setInteger("SkullCooldown", skullHead >= 0 ? skullCooldownForPhase() : skullCooldown);
         terrain.write(n);
         if(pursuit != null) {
             NBTTagCompound tracking = new NBTTagCompound();
@@ -560,7 +628,8 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
         lastGrowthSoundMass = n.getInteger("GrowthSoundMass");
         dataWatcher.updateObject(23, Math.max(0, Math.min(80, n.getInteger("Transition")))); roarTimer = Math.max(40, Math.min(500, n.getInteger("RoarTimer")));
         for(int i = 0; i < 10; i++) { partIds[i] = WitherStormMath.uuid(n, "Part" + i); partChunksX[i] = n.getInteger("PartX" + i); partChunksZ[i] = n.getInteger("PartZ" + i); }
-        for(int i = 0; i < 3; i++) { targetIds[i] = WitherStormMath.uuid(n, "Target" + i); attacks[i] = Math.max(1, Math.min(12000, n.getInteger("Attack" + i))); }
+        for(int i = 0; i < 3; i++) targetIds[i] = WitherStormMath.uuid(n, "Target" + i);
+        skullCooldown = n.hasKey("SkullCooldown") ? Math.max(0, Math.min(12000, n.getInteger("SkullCooldown"))) : skullCooldownForPhase();
         visualScale = previousVisualScale = getStormScale(); terrain.read(n);
         if(n.hasKey("ChallengePursuit", 10)) {
             startPursuit();

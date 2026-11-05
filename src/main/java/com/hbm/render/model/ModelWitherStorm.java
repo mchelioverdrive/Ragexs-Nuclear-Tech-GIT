@@ -35,10 +35,6 @@ public final class ModelWitherStorm extends ModelBase {
         float y = 1.6F + growth * 5.2F;
         float z = 0.45F - growth * 2.3F;
 
-        if(stage == WitherStormStage.B) {
-            renderDestroyer(width, height, depth, y, z);
-            return;
-        }
         mass(0, y, z, width * 0.80F, height * 0.84F, depth * 0.85F);
         // Overlapping shoulders extend forward beneath the heads, into the neck roots.
         mass(-width * 0.26F, y + height * 0.06F, z - depth * 0.22F, width * 0.58F, height * 0.66F, depth * 0.71F);
@@ -65,20 +61,6 @@ public final class ModelWitherStorm extends ModelBase {
             mass(-width * 0.25F, y + crown * 1.70F, z + depth * 0.10F, width * 0.45F, crown * 0.39F, depth * 0.49F);
             if(stage == WitherStormStage.D) fissures(width, height, depth, y, z, false);
         }
-    }
-
-    private void renderDestroyer(float width, float height, float depth, float y, float z) {
-        // Stage B has a low, stepped mantle and a narrow underside between the tentacles.
-        mass(0, y, z, width * 0.79F, height * 0.76F, depth * 0.87F);
-        mass(-width * 0.26F, y - height * 0.07F, z - depth * 0.19F, width * 0.47F, height * 0.55F, depth * 0.64F);
-        mass(width * 0.27F, y - height * 0.10F, z - depth * 0.15F, width * 0.45F, height * 0.52F, depth * 0.64F);
-        mass(0, y - height * 0.33F, z + depth * 0.09F, width * 0.60F, height * 0.45F, depth * 0.76F);
-        mass(-width * 0.17F, y + height * 0.33F, z + depth * 0.07F, width * 0.54F, height * 0.49F, depth * 0.75F);
-        mass(width * 0.18F, y + height * 0.24F, z + depth * 0.14F, width * 0.51F, height * 0.48F, depth * 0.69F);
-        mass(-width * 0.05F, y + height * 0.54F, z + depth * 0.14F, width * 0.47F, height * 0.34F, depth * 0.59F);
-        mass(-width * 0.14F, y + height * 0.67F, z + depth * 0.09F, width * 0.27F, height * 0.20F, depth * 0.36F);
-        mass(width * 0.37F, y + height * 0.14F, z + depth * 0.12F, width * 0.24F, height * 0.34F, depth * 0.53F);
-        mass(-width * 0.33F, y + height * 0.10F, z - depth * 0.25F, width * 0.22F, height * 0.25F, depth * 0.42F);
     }
 
     private void fissures(float width, float height, float depth, float y, float z, boolean damaged) {

@@ -2,6 +2,7 @@ package com.hbm.render.entity.mob;
 
 import com.hbm.entity.mob.witherstorm.EntityWitherStorm;
 import com.hbm.entity.mob.witherstorm.EntityWitherStormPart;
+import com.hbm.entity.mob.witherstorm.WitherStormDestroyerPose;
 import com.hbm.entity.mob.witherstorm.WitherStormMath;
 import com.hbm.entity.mob.witherstorm.WitherStormStage;
 import com.hbm.render.model.ModelWitherStormHead;
@@ -33,16 +34,22 @@ public final class RenderWitherStormPart extends Render {
             if(part.slot() < 3) renderCommandHead(boss, part, partial);
             return;
         }
-        if(part.slot() >= 3 && !stage.hasTentacles()) return;
+        // Stage B arms are posed and drawn with the interpolated torso.
+        if(part.slot() >= 3 && (!stage.hasTentacles() || stage == WitherStormStage.B)) return;
         GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_CURRENT_BIT | GL11.GL_DEPTH_BUFFER_BIT | GL11.GL_LIGHTING_BIT);
         GL11.glPushMatrix(); bindTexture(RenderWitherStorm.SKIN);
         GL11.glEnable(GL11.GL_NORMALIZE);
         if(part.slot() < 3) {
+            boolean destroyer = stage == WitherStormStage.B;
+            if(destroyer) {
+                GL11.glPushAttrib(GL11.GL_TEXTURE_BIT);
+                RenderWitherStorm.brightenDestroyerSkin();
+            }
             boolean upgraded = boss.headTransformed(part.slot());
             float scale = boss.renderScale(partial);
             float bodyYaw = boss.bodyYaw(partial);
             float headYaw = part.headYaw(partial, boss), headPitch = part.headPitch(partial, boss);
-            float skull = skullScale(boss, part, partial, scale);
+            float skull = boss.headModelScale(part.slot(), partial, scale);
             float pivotHeight = scale * 0.6F;
             Vec3 base = boss.headPartOffset(part.slot(), bodyYaw, scale);
             // Independent part packets supply aim, while the torso supplies the render position.
@@ -51,7 +58,8 @@ public final class RenderWitherStormPart extends Render {
             z = boss.lastTickPosZ + (boss.posZ - boss.lastTickPosZ) * partial + base.zCoord;
             GL11.glTranslated(x - RenderManager.renderPosX, y - RenderManager.renderPosY, z - RenderManager.renderPosZ);
             if(stage != WitherStormStage.A_TRANSFORMED || part.slot() == 1) {
-                Vec3 joint = headPoint(upgraded ? ModelWitherStormHead.NECK_Y : 0, 0, skull, pivotHeight, headYaw, headPitch);
+                Vec3 joint = headPoint(destroyer ? 0.24D : upgraded ? ModelWitherStormHead.NECK_Y : 0,
+                    destroyer ? 0.26D : 0, skull, pivotHeight, headYaw, headPitch);
                 neck(boss.development(), part.slot(), stage, scale, bodyYaw, base, joint);
             }
             GL11.glPushMatrix(); GL11.glTranslatef(0, pivotHeight, 0);
@@ -60,19 +68,23 @@ public final class RenderWitherStormPart extends Render {
             GL11.glRotatef(headPitch, 1, 0, 0);
             GL11.glScalef(skull, skull, skull);
             boolean beam = boss.beamActive(part.slot());
+            if(part.skullWindingUp()) GL11.glColor4f(1F, 0.55F, 1F, 1F);
             if(upgraded) {
                 bindTexture(RenderWitherStorm.SKIN);
-                head.renderHead(part.ticksExisted + partial, beam);
-                teeth(); eye();
+                if(destroyer) head.renderDestroyerHead(part.ticksExisted + partial, beam, part.skullWindingUp());
+                else head.renderHead(part.ticksExisted + partial, beam, part.skullWindingUp());
+                teeth(stage); eye(stage);
             } else {
                 bindTexture(RenderWitherStorm.WITHER);
                 head.renderWitherSkull(false);
             }
+            if(part.skullWindingUp()) GL11.glColor4f(1F, 1F, 1F, 1F);
             GL11.glPopMatrix();
+            if(destroyer) GL11.glPopAttrib();
             Entity target = boss.worldObj.getEntityByID(boss.headTarget(part.slot()));
             if(beam && WitherStormMath.targetable(target, boss.worldObj) && mc.renderViewEntity.getDistanceSqToEntity(part) < 128D * 128D) {
                 // Match T(pivot) R_y(-yaw) R_x(pitch) S used by the skull and eye.
-                Vec3 origin = headPoint(ModelWitherStormHead.EYE_Y, ModelWitherStormHead.EYE_Z, skull, pivotHeight, headYaw, headPitch);
+                Vec3 origin = headPoint(stage.eyeY(), stage.eyeZ(), skull, pivotHeight, headYaw, headPitch);
                 Vec3 end = WitherStormMath.targetPoint(target, partial);
                 Vec3 forward = WitherStormMath.headOffset(0, 0, -1, headYaw, headPitch);
                 double dx = end.xCoord - x - origin.xCoord;
@@ -96,23 +108,21 @@ public final class RenderWitherStormPart extends Render {
             double dz = root.zCoord + boss.lastTickPosZ + (boss.posZ - boss.lastTickPosZ) * partial - boss.posZ
                 - (part.lastTickPosZ + (part.posZ - part.lastTickPosZ) * partial);
             int segments = mc.renderViewEntity.getDistanceSqToEntity(part) < 96D * 96D ? 7 : 3;
-            renderTentacle(boss, part, partial, dx, dy, dz, segments, stage);
+            renderTentacle(boss, part, partial, dx, dy, dz, segments);
         }
         GL11.glPopMatrix(); GL11.glPopAttrib();
     }
 
     private void renderTentacle(EntityWitherStorm boss, EntityWitherStormPart part, float partial,
-                                double dx, double dy, double dz, int segments, WitherStormStage stage) {
+                                double dx, double dy, double dz, int segments) {
         double length = Math.sqrt(dx * dx + dy * dy + dz * dz);
         if(!Double.isFinite(length) || length < 0.001D) return;
-        // Sample the curve in world axes so the raised arms sag below their tips as they curl.
         double wave = (part.ticksExisted + partial) * 0.085D + part.slot() * 1.7D;
         double horizontal = Math.max(0.001D, Math.sqrt(dx * dx + dz * dz));
         double sway = Math.sin(wave) * 0.09D * length;
         double bendX = dz / horizontal * sway, bendZ = -dx / horizontal * sway;
-        boolean raised = stage.hasRaisedTentacle(part.slot());
-        double bendY = (raised ? -0.28D : Math.cos(wave) * 0.065D) * length;
-        boolean heavy = part.slot() >= 8 && stage != WitherStormStage.B;
+        double bendY = Math.cos(wave) * 0.065D * length;
+        boolean heavy = part.slot() >= 8;
         float scale = part.scale();
         double x = 0D, y = 0D, z = 0D;
         for(int i = 0; i < segments; i++) {
@@ -123,8 +133,7 @@ public final class RenderWitherStormPart extends Render {
             GL11.glPushMatrix();
             GL11.glTranslated(x, y, z);
             orientAlong(sx, sy, sz);
-            float tip = raised ? 0.12F : 0.34F;
-            float width = (tip + (i + 0.5F) / segments * (1.45F + boss.development() * 2F)) * scale;
+            float width = (0.34F + (i + 0.5F) / segments * (1.45F + boss.development() * 2F)) * scale;
             if(heavy) width *= 1.25F;
             GL11.glScalef(width, (float)Math.sqrt(sx * sx + sy * sy + sz * sz) * 1.25F, width);
             tentacle.renderSegment();
@@ -144,7 +153,7 @@ public final class RenderWitherStormPart extends Render {
         float scale = boss.renderScale(partial);
         float bodyYaw = boss.bodyYaw(partial);
         Vec3 center = EntityWitherStorm.commandHeadOffset(part.slot(), bodyYaw, scale);
-        GL11.glPushAttrib(GL11.GL_ENABLE_BIT);
+        GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_CURRENT_BIT);
         GL11.glPushMatrix();
         // Use the torso's interpolated transform so network updates cannot separate the skulls from their joints.
         GL11.glTranslated(
@@ -153,9 +162,11 @@ public final class RenderWitherStormPart extends Render {
             boss.lastTickPosZ + (boss.posZ - boss.lastTickPosZ) * partial - RenderManager.renderPosZ + center.zCoord);
         GL11.glRotatef(-part.headYaw(partial, boss), 0, 1, 0);
         GL11.glRotatef(part.headPitch(partial, boss), 1, 0, 0);
-        GL11.glScalef(scale, scale, scale);
+        float skull = boss.headModelScale(part.slot(), partial, scale);
+        GL11.glScalef(skull, skull, skull);
         GL11.glEnable(GL11.GL_NORMALIZE);
         bindTexture(RenderWitherStorm.WITHER);
+        if(part.skullWindingUp()) GL11.glColor4f(1F, 0.55F, 1F, 1F);
         head.renderWitherSkull(part.slot() == 1);
         GL11.glPopMatrix();
         GL11.glPopAttrib();
@@ -165,15 +176,12 @@ public final class RenderWitherStormPart extends Render {
         Vec3 offset = WitherStormMath.headOffset(0, y * scale, z * scale, yaw, pitch);
         return Vec3.createVectorHelper(offset.xCoord, pivotHeight + offset.yCoord, offset.zCoord);
     }
-    private float skullScale(EntityWitherStorm boss, EntityWitherStormPart part, float partial, float scale) {
-        float size = boss.headSize(part.slot());
-        if(boss.headTransformed(part.slot())) size *= ModelWitherStormHead.HEAD_SCALE * (0.45F + 0.55F * boss.headDevelopment(part.slot(), partial));
-        return scale * size;
-    }
     private void neck(float development, int slot, WitherStormStage stage, float bodyScale, float bodyYaw, Vec3 base, Vec3 joint) {
         // These anchors lie inside the evolved shoulders.
         boolean early = stage == WitherStormStage.A_TRANSFORMED;
-        Vec3 root = early ? WitherStormMath.headOffset(0, 1.82D * bodyScale, 0.12D * bodyScale, bodyYaw, 0)
+        boolean destroyer = stage == WitherStormStage.B;
+        Vec3 root = destroyer ? WitherStormDestroyerPose.neckRoot(slot, development, bodyScale, bodyYaw)
+            : early ? WitherStormMath.headOffset(0, 1.82D * bodyScale, 0.12D * bodyScale, bodyYaw, 0)
             : WitherStormMath.headOffset((slot - 1) * (0.75D + development * 7D) * bodyScale,
                 (2.05D + development * 3.5D) * bodyScale, (-0.3D - development * 7D) * bodyScale, bodyYaw, 0);
         // End inside the shell, rather than at its rear face: yaw/pitch cannot open a seam.
@@ -185,19 +193,31 @@ public final class RenderWitherStormPart extends Render {
         orientAlong(dx, dy, dz);
         for(int i = 0; i < 3; i++) {
             GL11.glPushMatrix(); GL11.glTranslated(0, length * i / 3D, 0);
-            float width = bodyScale * (early ? 0.42F : 0.52F + development * 2.65F) * (1F - 0.22F * i);
+            float width = bodyScale * (destroyer ? 3.35F * WitherStormDestroyerPose.size(development)
+                : early ? 0.42F : 0.52F + development * 2.65F) * (1F - 0.22F * i);
             GL11.glScalef(width, (float)(length / 3D + bodyScale * 0.16D), width);
             head.renderNeckSegment(); GL11.glPopMatrix();
         }
         GL11.glPopMatrix();
     }
-    private void teeth() {
+    private void teeth(WitherStormStage stage) {
+        boolean destroyer = stage == WitherStormStage.B;
         GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_CURRENT_BIT);
-        GL11.glDisable(GL11.GL_TEXTURE_2D); GL11.glColor4f(0.73F, 0.68F, 0.75F, 1F);
-        head.renderTeeth();
+        GL11.glDisable(GL11.GL_TEXTURE_2D);
+        if(destroyer) {
+            float lightX = OpenGlHelper.lastBrightnessX, lightY = OpenGlHelper.lastBrightnessY;
+            OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240F, 240F);
+            GL11.glDisable(GL11.GL_LIGHTING);
+            GL11.glColor4f(1F, 0.96F, 0.68F, 1F);
+            head.renderDestroyerTeeth();
+            OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, lightX, lightY);
+        } else {
+            GL11.glColor4f(0.73F, 0.68F, 0.75F, 1F);
+            head.renderTeeth();
+        }
         GL11.glPopAttrib();
     }
-    private void eye() {
+    private void eye(WitherStormStage stage) {
         GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT | GL11.GL_CURRENT_BIT);
         float lightX = OpenGlHelper.lastBrightnessX, lightY = OpenGlHelper.lastBrightnessY;
         OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240F, 240F);
@@ -206,9 +226,8 @@ public final class RenderWitherStormPart extends Render {
         GL11.glEnable(GL11.GL_BLEND); GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         GL11.glDepthMask(false);
         Tessellator t = Tessellator.instance; t.startDrawingQuads(); t.setColorRGBA_F(0.78F, 0.16F, 1F, 1F);
-        // Shell front is z=-15/16; the eye sits below the brow and above the upper jaw.
         // One centered square, with front-facing winding and no texture/emissive duplicate.
-        double half = ModelWitherStormHead.EYE_HALF_SIZE, y = ModelWitherStormHead.EYE_Y, z = ModelWitherStormHead.EYE_Z;
+        double half = ModelWitherStormHead.EYE_HALF_SIZE, y = stage.eyeY(), z = stage.eyeZ();
         t.addVertex(-half, y - half, z); t.addVertex(-half, y + half, z);
         t.addVertex(half, y + half, z); t.addVertex(half, y - half, z);
         t.draw();

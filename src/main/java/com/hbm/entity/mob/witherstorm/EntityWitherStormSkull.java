@@ -4,11 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import com.hbm.config.WitherStormConfig;
+import com.hbm.entity.projectile.EntityThrowableNT;
 import com.hbm.explosion.vanillant.ExplosionVNT;
 import com.hbm.explosion.vanillant.standard.ExplosionEffectStandard;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.projectile.EntityThrowable;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
@@ -18,7 +18,7 @@ import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 import net.minecraftforge.event.ForgeEventFactory;
 
-public class EntityWitherStormSkull extends EntityThrowable {
+public class EntityWitherStormSkull extends EntityThrowableNT {
     public UUID parentId;
     private float strength = 2F, damage = 8F;
     private int life;
@@ -28,23 +28,31 @@ public class EntityWitherStormSkull extends EntityThrowable {
         parentId = parent.getUniqueID(); damage = parent.attackStrength();
         born = worldObj.getTotalWorldTime();
         strength = WitherStormConfig.explosionStrength * (1F + parent.getPhase().ordinal() * 0.35F);
-        // Start outside the mouth. Collision with any encounter part is explicitly ignored.
-        setPosition(position.xCoord + direction.xCoord * 3 * parent.getStormScale(), position.yCoord + direction.yCoord * 3 * parent.getStormScale(), position.zCoord + direction.zCoord * 3 * parent.getStormScale());
-        motionX = direction.xCoord * 1.1D; motionY = direction.yCoord * 1.1D; motionZ = direction.zCoord * 1.1D;
+        setPosition(position.xCoord, position.yCoord, position.zCoord);
+        // Initialize the throwable's motion-derived angles before the first tracking packet.
+        setThrowableHeading(direction.xCoord, direction.yCoord, direction.zCoord, 1.1F, 0F);
     }
-    @Override protected float getGravityVelocity() { return 0F; }
+    @Override public double getGravityVelocity() { return 0D; }
     @Override public void onUpdate() {
-        // The vanilla throwable update can query the destination chunk. Stop before it
+        // The throwable's collision trace can query the destination chunk. Stop before it
         // crosses an unloaded boundary rather than allowing a projectile to generate terrain.
         if(!worldObj.isRemote && (++life > 160 || expired() || !WitherStormMath.areaLoaded(worldObj, posX + motionX, posZ + motionZ, 34)
             || (life > 20 && !WitherStormEncounters.get(worldObj).contains(parentId)))) { setDead(); return; }
+        lastTickPosX = posX;
+        lastTickPosY = posY;
+        lastTickPosZ = posZ;
         super.onUpdate();
     }
     public boolean expired() { return worldObj.getTotalWorldTime() - born >= 160; }
     public long birthTime() { return born; }
+    @Override protected boolean canImpactEntity(Entity entity) {
+        return !(entity instanceof EntityWitherStorm || entity instanceof EntityWitherStormPart || entity instanceof EntityWitherStormSkull);
+    }
+    @Override protected MovingObjectPosition traceBlocks(Vec3 start, Vec3 end) {
+        return worldObj.rayTraceBlocks(start, end);
+    }
     @Override protected void onImpact(MovingObjectPosition hit) {
         if(worldObj.isRemote || isDead) return;
-        if(hit.entityHit instanceof EntityWitherStorm || hit.entityHit instanceof EntityWitherStormPart || hit.entityHit instanceof EntityWitherStormSkull) return;
         Entity e = WitherStormEncounters.get(worldObj).find(parentId, worldObj);
         if(!(e instanceof EntityWitherStorm)) { setDead(); return; }
         EntityWitherStorm boss = (EntityWitherStorm)e;

@@ -174,7 +174,7 @@ public abstract class EntityThrowableNT extends Entity implements IProjectile {
 			Vec3 pos = Vec3.createVectorHelper(this.posX, this.posY, this.posZ);
 			Vec3 nextPos = Vec3.createVectorHelper(this.posX + this.motionX * motionMult(), this.posY + this.motionY * motionMult(), this.posZ + this.motionZ * motionMult());
 			MovingObjectPosition mop = null;
-			if(!this.isSpectral()) mop = this.worldObj.func_147447_a(pos, nextPos, false, true, false);
+			if(!this.isSpectral()) mop = this.traceBlocks(pos, nextPos);
 			pos = Vec3.createVectorHelper(this.posX, this.posY, this.posZ);
 			nextPos = Vec3.createVectorHelper(this.posX + this.motionX * motionMult(), this.posY + this.motionY * motionMult(), this.posZ + this.motionZ * motionMult());
 
@@ -193,7 +193,7 @@ public abstract class EntityThrowableNT extends Entity implements IProjectile {
 				for(int j = 0; j < list.size(); ++j) {
 					Entity entity = (Entity) list.get(j);
 
-					if(entity.canBeCollidedWith() && (entity != thrower || this.ticksInAir >= this.selfDamageDelay()) && entity.isEntityAlive()) {
+					if(entity.canBeCollidedWith() && (entity != thrower || this.ticksInAir >= this.selfDamageDelay()) && this.canImpactEntity(entity)) {
 						double hitbox = 0.3F;
 						AxisAlignedBB aabb = entity.boundingBox.expand(hitbox, hitbox, hitbox);
 						MovingObjectPosition hitMop = aabb.calculateIntercept(pos, nextPos);
@@ -281,6 +281,14 @@ public abstract class EntityThrowableNT extends Entity implements IProjectile {
 
 	public boolean doesImpactEntities() {
 		return true;
+	}
+
+	protected boolean canImpactEntity(Entity entity) {
+		return entity.isEntityAlive();
+	}
+
+	protected MovingObjectPosition traceBlocks(Vec3 start, Vec3 end) {
+		return this.worldObj.func_147447_a(start, end, false, true, false);
 	}
 
 	public boolean doesPenetrate() {

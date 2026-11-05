@@ -4,6 +4,7 @@ import com.hbm.entity.mob.witherstorm.EntityWitherStorm;
 import com.hbm.entity.mob.witherstorm.WitherStormStage;
 import com.hbm.render.model.ModelCommandBlockWither;
 import com.hbm.render.model.ModelWitherStorm;
+import com.hbm.render.model.ModelWitherStormDestroyer;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.client.Minecraft;
@@ -15,12 +16,14 @@ import net.minecraft.entity.boss.BossStatus;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.ResourceLocation;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL13;
 
 @SideOnly(Side.CLIENT)
 public final class RenderWitherStorm extends Render {
     public static final ResourceLocation SKIN = new ResourceLocation("hbm", "textures/entity/wither_storm.png");
     public static final ResourceLocation WITHER = new ResourceLocation("textures/entity/wither/wither.png");
     private final ModelWitherStorm model = new ModelWitherStorm();
+    private final ModelWitherStormDestroyer destroyer = new ModelWitherStormDestroyer();
     private final ModelCommandBlockWither commandModel = new ModelCommandBlockWither();
     private final RenderBlocks blocks = new RenderBlocks();
     private long lastParticles = Long.MIN_VALUE;
@@ -38,7 +41,13 @@ public final class RenderWitherStorm extends Render {
         float scale = boss.renderScale(partial); GL11.glScalef(scale, scale, scale);
         GL11.glEnable(GL11.GL_NORMALIZE);
         WitherStormStage stage = boss.getStage();
-        if(!stage.hasTentacles()) {
+        if(stage == WitherStormStage.B) {
+            bindTexture(SKIN);
+            GL11.glPushAttrib(GL11.GL_TEXTURE_BIT);
+            brightenDestroyerSkin();
+            destroyer.render(boss.development(), boss.worldObj.getTotalWorldTime() + (double)partial, distance < 96D * 96D);
+            GL11.glPopAttrib();
+        } else if(!stage.hasTentacles()) {
             if(stage == WitherStormStage.A_TRANSFORMED) {
                 bindTexture(SKIN);
                 model.renderEarlyGrowth(boss.development());
@@ -53,6 +62,17 @@ public final class RenderWitherStorm extends Render {
             for(int i = 0; i < count; i++) boss.worldObj.spawnParticle("largesmoke", boss.posX + (boss.worldObj.rand.nextDouble() - 0.5D) * boss.width,
                 boss.posY + boss.worldObj.rand.nextDouble() * boss.height, boss.posZ + (boss.worldObj.rand.nextDouble() - 0.5D) * boss.width, 0, 0.04D, 0);
         }
+    }
+
+    /** Lift the existing near-black skin so the new relief reads at a distance. Keep the lightmap active. */
+    static void brightenDestroyerSkin() {
+        GL11.glTexEnvi(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_MODE, GL13.GL_COMBINE);
+        GL11.glTexEnvi(GL11.GL_TEXTURE_ENV, GL13.GL_COMBINE_RGB, GL11.GL_MODULATE);
+        GL11.glTexEnvi(GL11.GL_TEXTURE_ENV, GL13.GL_SOURCE0_RGB, GL11.GL_TEXTURE);
+        GL11.glTexEnvi(GL11.GL_TEXTURE_ENV, GL13.GL_SOURCE1_RGB, GL13.GL_PREVIOUS);
+        GL11.glTexEnvi(GL11.GL_TEXTURE_ENV, GL13.GL_OPERAND0_RGB, GL11.GL_SRC_COLOR);
+        GL11.glTexEnvi(GL11.GL_TEXTURE_ENV, GL13.GL_OPERAND1_RGB, GL11.GL_SRC_COLOR);
+        GL11.glTexEnvi(GL11.GL_TEXTURE_ENV, GL13.GL_RGB_SCALE, 2);
     }
 
     private void renderCommandWither(boolean hasCore) {

@@ -322,7 +322,8 @@ The `12_mobs.witherstorm` category in `config/hbm.cfg` controls the hostile boss
 | `consumeTileEntities` | false | Explicitly allow destroying machines/containers and their contents. |
 | `protectedBlocks` | chest, ender chest, enchanting table | Registry-name blacklist. |
 | `consumeProtectedBlocks` | false | Explicitly override blacklist and block-level `canEntityDestroy` vetoes. Negative hardness, bedrock, command blocks and portal infrastructure always remain protected. |
-| `skullAttackTicks` | 80 | Per-head base cooldown; phase divides it by 1–4, with a ten-tick minimum and a small random stagger. |
+| `skullAttackTicks` | 80 | Base cooldown after a volley. Each later phase subtracts one eighth of the base, to a minimum of 40 ticks. Up to three heads fire once each, with a 10-tick windup per shot. |
+| `skullAttackRange` | 96 | Maximum target distance in blocks from both the Storm and the firing mouth. Accepts 8–96. |
 | `skullExplosionStrength` | 2 | Ordinary area attack strength (0–8), increased by phase. Terrain damage shares the normal processing budget and protections. |
 | `entityQueryBudget` | 512 | Entries examined per 20-tick cached search (64–4096); at most 64 candidates retained. Flight targets players and hostile mobs; nearby other living entities can be consumed. |
 | `debrisPerTick` | 4 | Maximum consumed-block visual records per encounter per tick (0–16), batched every five ticks. No physical debris is spawned on the server. |

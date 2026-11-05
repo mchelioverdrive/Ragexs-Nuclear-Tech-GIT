@@ -13,6 +13,8 @@ import net.minecraft.world.World;
 
 /** A damageable attachment, never an autonomous mob or a separate encounter. */
 public class EntityWitherStormPart extends Entity {
+    private static final double STORM_MOUTH_Y = 5D / 16D, STORM_MOUTH_Z = -15D / 16D;
+    private static final double WITHER_MOUTH_Y = -2D / 16D, WITHER_MOUTH_Z = -0.5D;
     public UUID parentId;
     public EntityWitherStorm parent;
     private int parentChunkX, parentChunkZ;
@@ -25,9 +27,12 @@ public class EntityWitherStormPart extends Entity {
         dataWatcher.addObject(20, Integer.valueOf(0));
         dataWatcher.addObject(21, Byte.valueOf((byte)0));
         dataWatcher.addObject(22, Float.valueOf(0.35F));
+        dataWatcher.addObject(23, Byte.valueOf((byte)0));
     }
     public int slot() { return dataWatcher.getWatchableObjectByte(21); }
     public float scale() { return dataWatcher.getWatchableObjectFloat(22); }
+    public boolean skullWindingUp() { return dataWatcher.getWatchableObjectByte(23) != 0; }
+    void setSkullWindingUp(boolean windingUp) { dataWatcher.updateObject(23, (byte)(windingUp ? 1 : 0)); }
     public void attach(EntityWitherStorm boss, int slot, UUID id) {
         parent = boss; parentId = boss.getUniqueID();
         if(id != null) entityUniqueID = id;
@@ -55,8 +60,8 @@ public class EntityWitherStormPart extends Entity {
                 rotationPitch += (nextPitch - rotationPitch) / steps;
             }
             EntityWitherStorm boss = parent();
-            if(slot() < 3 && boss != null) {
-                // Keep the selection box on the shoulder while rotation still follows the tracked part.
+            if(boss != null && (slot() < 3 || boss.getStage() == WitherStormStage.B)) {
+                // Match the client anatomy while head rotation still follows the tracked part.
                 Vec3 position = boss.partPosition(slot());
                 setPosition(position.xCoord, position.yCoord, position.zCoord);
             }
@@ -67,7 +72,7 @@ public class EntityWitherStormPart extends Entity {
         EntityWitherStorm boss = parent();
         if(boss != null && boss.isEntityAlive()) {
             if(!boss.isPartActive(slot())) boss.retirePart(this);
-            else followParent();
+            else if(slot() >= 3) followParent(); // The root moves and aims heads together before its attack update.
         }
         else {
             parent = null;
@@ -88,8 +93,13 @@ public class EntityWitherStormPart extends Entity {
         parentChunkX = MathHelper.floor_double(boss.posX) >> 4; parentChunkZ = MathHelper.floor_double(boss.posZ) >> 4;
         if(slot() < 3) {
             Entity target = worldObj.getEntityByID(boss.headTarget(slot()));
-            float yaw = boss.rotationYaw, pitch = 0;
-            if(WitherStormMath.targetable(target, worldObj)) {
+            Vec3 shotAim = boss.windingUpSkullTarget(slot()) == target && WitherStormMath.targetable(target, worldObj)
+                ? skullAim(target, boss) : null;
+            float yaw = boss.rotationYaw, pitch = boss.getStage() == WitherStormStage.B ? WitherStormDestroyerPose.REST_PITCH : 0F;
+            if(shotAim != null) {
+                yaw = (float)shotAim.xCoord;
+                pitch = (float)shotAim.yCoord;
+            } else if(WitherStormMath.targetable(target, worldObj)) {
                 Vec3 aim = WitherStormMath.targetPoint(target, 1F);
                 double dx = aim.xCoord - posX, dz = aim.zCoord - posZ, dy = aim.yCoord - (posY + headPivotHeight(boss));
                 double horizontal = Math.sqrt(dx * dx + dz * dz);
@@ -98,21 +108,21 @@ public class EntityWitherStormPart extends Entity {
                 if(boss.headTransformed(slot())) {
                     // Aim from the elevated eye, not the jaw pivot. The forward eye offset
                     // cancels; the perpendicular offset requires this angular correction.
-                    double eyeHeight = WitherStormMath.EYE_Y * WitherStormMath.HEAD_SCALE * scale() * boss.headSize(slot())
-                        * (0.45D + 0.55D * boss.headDevelopment(slot(), 0));
+                    double eyeHeight = boss.getStage().eyeY() * boss.headModelScale(slot(), 0F, scale());
                     double range = Math.sqrt(horizontal * horizontal + dy * dy);
                     pitch -= (float)(Math.asin(Math.min(0.95D, eyeHeight / Math.max(0.01D, range))) * 180D / Math.PI);
                 }
             }
+            float turn = shotAim == null ? 0.12F : 0.65F;
             if(isCommandHead(boss)) {
-                rotationYaw += MathHelper.wrapAngleTo180_float(yaw - rotationYaw) * 0.12F;
-                rotationPitch += (pitch - rotationPitch) * 0.12F;
+                rotationYaw += MathHelper.wrapAngleTo180_float(yaw - rotationYaw) * turn;
+                rotationPitch += (pitch - rotationPitch) * turn;
             } else {
                 // Smooth within the shoulder's travel, including when the body turns under the head.
                 float currentYaw = limitStormYaw(boss.rotationYaw, rotationYaw);
-                rotationYaw = currentYaw + (limitStormYaw(boss.rotationYaw, yaw) - currentYaw) * 0.12F;
+                rotationYaw = currentYaw + (limitStormYaw(boss.rotationYaw, yaw) - currentYaw) * turn;
                 float currentPitch = limitStormPitch(rotationPitch);
-                rotationPitch = currentPitch + (limitStormPitch(pitch) - currentPitch) * 0.12F;
+                rotationPitch = currentPitch + (limitStormPitch(pitch) - currentPitch) * turn;
             }
         }
         updateBounds(boss);
@@ -147,8 +157,72 @@ public class EntityWitherStormPart extends Entity {
     private double headPivotHeight(EntityWitherStorm boss) {
         return isCommandHead(boss) ? 0.5D * EntityWitherStorm.commandHeadSize(slot()) * boss.getStormScale() : 0.6D * scale();
     }
+
+    private double skullMouthHeight(EntityWitherStorm boss) {
+        if(boss.getStage() == WitherStormStage.B) return WitherStormDestroyerPose.MOUTH_Y;
+        return !isCommandHead(boss) && boss.headTransformed(slot()) ? STORM_MOUTH_Y : WITHER_MOUTH_Y;
+    }
+
+    private double skullMouthDepth(EntityWitherStorm boss) {
+        if(boss.getStage() == WitherStormStage.B) return WitherStormDestroyerPose.MOUTH_Z;
+        return !isCommandHead(boss) && boss.headTransformed(slot()) ? STORM_MOUTH_Z : WITHER_MOUTH_Z;
+    }
+
+    private double skullMouthScale(EntityWitherStorm boss) {
+        double size = boss.headModelScale(slot(), 0F, boss.getStormScale());
+        // The ordinary side skull's mesh is three quarters the size of the center mesh.
+        return isCommandHead(boss) ? size * EntityWitherStorm.commandHeadSize(slot())
+            : boss.headTransformed(slot()) ? size : size * EntityWitherStorm.commandHeadSize(0);
+    }
+
+    Vec3 skullMouth(EntityWitherStorm boss) {
+        double size = skullMouthScale(boss);
+        return headPoint(1F, boss, skullMouthHeight(boss) * size, skullMouthDepth(boss) * size);
+    }
+
+    Vec3 skullAim(Entity target, EntityWitherStorm boss) {
+        Vec3 point = WitherStormMath.targetPoint(target, 1F);
+        double dx = point.xCoord - posX, dz = point.zCoord - posZ, dy = point.yCoord - posY - headPivotHeight(boss);
+        double horizontal = Math.sqrt(dx * dx + dz * dz);
+        double distance = Math.sqrt(horizontal * horizontal + dy * dy);
+        double mouthHeight = skullMouthHeight(boss) * skullMouthScale(boss);
+        if(horizontal < 0.001D || distance <= Math.abs(mouthHeight)) return null;
+        float yaw = (float)Math.toDegrees(Math.atan2(dx, -dz));
+        // Solve for a forward ray through the mouth, which sits above or below the pivot.
+        float pitch = (float)Math.toDegrees(Math.atan2(dy, horizontal) - Math.asin(mouthHeight / distance));
+        float relativeYaw = MathHelper.wrapAngleTo180_float(yaw - boss.rotationYaw);
+        if(isCommandHead(boss) ? Math.abs(relativeYaw) > 70F || Math.abs(pitch) >= 85F
+            : Math.abs(relativeYaw) > 48F || pitch != limitStormPitch(pitch)) return null;
+        return Vec3.createVectorHelper(yaw, pitch, 0);
+    }
+
+    boolean skullPathClearsBody(EntityWitherStorm boss, Vec3 mouth, Vec3 spawn, Vec3 direction) {
+        Vec3 localSpawn = bossLocal(boss, spawn);
+        Vec3 end = bossLocal(boss, spawn.addVector(direction.xCoord, direction.yCoord, direction.zCoord));
+        if(localSpawn.zCoord >= 0D || end.zCoord >= localSpawn.zCoord) return false;
+        if(boss.getStage().hasTentacles()) return true; // Evolved heads sit ahead of the mantle and aim outward.
+
+        // The compact skeleton's center skull can look down through its own chest.
+        // Test in body space because the root's world AABB also encloses empty space.
+        Vec3 start = bossLocal(boss, mouth);
+        AxisAlignedBB chest = AxisAlignedBB.getBoundingBox(-0.57D, 0, -1.04D, 0.57D, 1.76D, 0.33D);
+        AxisAlignedBB shoulders = AxisAlignedBB.getBoundingBox(-1.23D, 1.10D, -0.16D, 1.23D, 1.76D, 0.36D);
+        return !chest.isVecInside(start) && chest.calculateIntercept(start, end) == null
+            && !shoulders.isVecInside(start) && shoulders.calculateIntercept(start, end) == null;
+    }
+
+    private Vec3 bossLocal(EntityWitherStorm boss, Vec3 point) {
+        float scale = boss.getStormScale();
+        return WitherStormMath.headOffset((point.xCoord - boss.posX) / scale, (point.yCoord - boss.posY) / scale,
+            (point.zCoord - boss.posZ) / scale, -boss.rotationYaw, 0F);
+    }
+
     public Vec3 mouth(float partial) {
         EntityWitherStorm boss = parent();
+        if(boss != null && boss.getStage() == WitherStormStage.B) {
+            double size = skullMouthScale(boss);
+            return headPoint(partial, boss, skullMouthHeight(boss) * size, skullMouthDepth(boss) * size);
+        }
         boolean commandHead = isCommandHead(boss);
         double size = commandHead ? EntityWitherStorm.commandHeadSize(slot()) * boss.getStormScale()
             : boss == null ? scale() : scale() * boss.headSize(slot());
@@ -160,9 +234,13 @@ public class EntityWitherStormPart extends Entity {
     }
     public Vec3 eye(float partial) {
         EntityWitherStorm boss = parent();
-        double size = scale() * WitherStormMath.HEAD_SCALE * (boss == null ? 1F : boss.headSize(slot()));
-        Vec3 offset = WitherStormMath.headOffset(0, WitherStormMath.EYE_Y * size, WitherStormMath.EYE_Z * size,
-            headYaw(partial, boss), headPitch(partial, boss));
+        double size = boss == null ? scale() * WitherStormMath.HEAD_SCALE : boss.headModelScale(slot(), 0F, scale());
+        double y = boss == null ? WitherStormMath.EYE_Y : boss.getStage().eyeY();
+        double z = boss == null ? WitherStormMath.EYE_Z : boss.getStage().eyeZ();
+        return headPoint(partial, boss, y * size, z * size);
+    }
+    private Vec3 headPoint(float partial, EntityWitherStorm boss, double y, double z) {
+        Vec3 offset = WitherStormMath.headOffset(0, y, z, headYaw(partial, boss), headPitch(partial, boss));
         return Vec3.createVectorHelper(lastTickPosX + (posX - lastTickPosX) * partial + offset.xCoord,
             lastTickPosY + (posY - lastTickPosY) * partial + scale() * 0.6D + offset.yCoord,
             lastTickPosZ + (posZ - lastTickPosZ) * partial + offset.zCoord);
@@ -184,6 +262,8 @@ public class EntityWitherStormPart extends Entity {
             double dy = half * pitchExtent;
             double dz = half * (sinYaw + cosYaw * pitchExtent);
             boundingBox.setBounds(x - dx, y + half - dy, z - dz, x + dx, y + half + dy, z + dz);
+        } else if(slot() < 3 && boss != null && boss.getStage() == WitherStormStage.B) {
+            updateDestroyerHeadBounds(boss);
         } else if(slot() < 3) {
             double x = posX, y = posY, z = posZ;
             float size = boss == null ? 1F : boss.headSize(slot());
@@ -192,11 +272,27 @@ public class EntityWitherStormPart extends Entity {
                 ? 2.05F * scale() : extent * size * scale();
             setSize(extent * size * scale(), height); setPosition(x, y, z);
         } else if(boss != null) {
-            Vec3 root = boss.tentacleRoot(slot()); double padding = (slot() >= 8 ? 1.4D : 0.7D) * scale();
-            double sag = boss.getStage().hasRaisedTentacle(slot()) ? getDistance(root.xCoord, root.yCoord, root.zCoord) * 0.28D : 0D;
-            boundingBox.setBounds(Math.min(posX, root.xCoord) - padding, Math.min(posY, root.yCoord) - padding - sag, Math.min(posZ, root.zCoord) - padding,
+            boolean destroyer = boss.getStage() == WitherStormStage.B;
+            // The curled Stage B arms only use their striking end for contact, rather than an empty diagonal box.
+            Vec3 root = destroyer ? boss.destroyerArmPosition(slot(), 0.82D) : boss.tentacleRoot(slot());
+            double padding = (destroyer ? 0.45D : slot() >= 8 ? 1.4D : 0.7D) * scale();
+            boundingBox.setBounds(Math.min(posX, root.xCoord) - padding, Math.min(posY, root.yCoord) - padding, Math.min(posZ, root.zCoord) - padding,
                 Math.max(posX, root.xCoord) + padding, Math.max(posY, root.yCoord) + padding, Math.max(posZ, root.zCoord) + padding);
         }
+    }
+    private void updateDestroyerHeadBounds(EntityWitherStorm boss) {
+        double size = boss.headModelScale(slot(), 0F, boss.getStormScale());
+        float yaw = headYaw(1F, boss), pitch = headPitch(1F, boss);
+        // Enclose the shallow crown and the hinged jaw through its full windup.
+        double minY = -1.20D, maxY = 0.875D, minZ = -1.09D, maxZ = 0.69D;
+        Vec3 center = WitherStormMath.headOffset(0D, (minY + maxY) * 0.5D * size, (minZ + maxZ) * 0.5D * size, yaw, pitch);
+        double ax = 13D / 16D * size, ay = (maxY - minY) * 0.5D * size, az = (maxZ - minZ) * 0.5D * size;
+        double s = Math.abs(Math.sin(Math.toRadians(pitch))), c = Math.abs(Math.cos(Math.toRadians(pitch)));
+        double sy = Math.abs(Math.sin(Math.toRadians(yaw))), cy = Math.abs(Math.cos(Math.toRadians(yaw)));
+        double rz = az * c + ay * s;
+        double dx = ax * cy + rz * sy, dy = ay * c + az * s, dz = ax * sy + rz * cy;
+        double x = posX + center.xCoord, y = posY + headPivotHeight(boss) + center.yCoord, z = posZ + center.zCoord;
+        boundingBox.setBounds(x - dx, y - dy, z - dz, x + dx, y + dy, z + dz);
     }
     @Override public boolean canBeCollidedWith() { return !isDead; }
     @Override public boolean canBePushed() { return false; }

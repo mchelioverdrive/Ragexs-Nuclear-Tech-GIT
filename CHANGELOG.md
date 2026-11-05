@@ -371,3 +371,14 @@
 
 - Give Stage B a stepped mantle, smaller front-mounted skulls, two raised curling arms and shorter hanging tentacles.
 - Keep evolved skulls on the body's interpolated shoulders and limit their aiming range. Beam direction and skull rotation use the same limits, so heads hold at the edge of their travel when a target moves behind them.
+
+2026-11-04 21:58 — Fix Wither Storm hurt audio and skull volleys
+
+- Play the existing hurt clip after health loss, with a larger audible radius as the Storm grows and a short delay between cues.
+- Aim and visibly wind up one head at a time. Launch from the rendered mouth along the head's aim, skip invalid shots, and orient the flying skull to its velocity.
+- Limit each volley to one shot per head with 10 ticks between shots. The configurable cooldown starts at 80 ticks and shortens moderately with each phase. The skull range is configurable up to 96 blocks.
+
+2026-11-04 22:37 — Remodel the Wither Storm Destroyer after Story Mode Stage B
+
+- Build a broad, layered mantle with low front skulls, two long curling upper arms, five smaller appendages and floating fragments. Reuse the storm skin and keep the other stages' models.
+- Align each head's glowing eye, hinged grin, skull launch point and selection bounds with its new pose. Animate the Stage B arms from the torso and use the same curves for their tracked contact points.
