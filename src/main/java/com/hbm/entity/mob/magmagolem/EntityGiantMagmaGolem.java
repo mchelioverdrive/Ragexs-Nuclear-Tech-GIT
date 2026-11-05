@@ -46,10 +46,11 @@ import static com.hbm.entity.mob.magmagolem.MagmaGolemPose.*;
 
 public final class EntityGiantMagmaGolem extends EntityMob implements IBossDisplayData, IEntityMultiPart, IEntityAdditionalSpawnData {
     public static final float HEIGHT = 12, WIDTH = 4.65F;
-    private static final int MOTION = 20, ARMS = 21, GAIT = 22, AIM = 23, PHASE = 24, BEAM = 25;
+    private static final int MOTION = 20, ARMS = 21, GAIT = 22, AIM = 23, PHASE = 24, BEAM = 25, SLAM_GROUND = 26;
+    private static final int LANDED_BIT = 1 << 12;
     private static final int MOLTEN = 0, COOLED = 1, MISSING = 2;
     private static final int LEFT_UPPER = 0, LEFT_FIST = 1, RIGHT_UPPER = 2, RIGHT_FIST = 3, LEFT_FOOT = 4, RIGHT_FOOT = 5;
-    private static final byte COOL_LEFT = 71, BREAK_LEFT = 73, IMPACT = 75, QUAKE = 76, LEAP_LAND = 77;
+    private static final byte IMPACT = 75, QUAKE = 76, LEAP_LAND = 77;
     private static final double TAU = Math.PI * 2;
     private static final Action[] ACTIONS = Action.values();
 
@@ -79,7 +80,7 @@ public final class EntityGiantMagmaGolem extends EntityMob implements IBossDispl
 
     @Override protected void entityInit() {
         super.entityInit();
-        for (int slot = MOTION; slot <= BEAM; slot++) dataWatcher.addObject(slot, slot == PHASE ? 1 : 0);
+        for (int slot = MOTION; slot <= SLAM_GROUND; slot++) dataWatcher.addObject(slot, slot == PHASE ? 1 : 0);
     }
 
     @Override protected void applyEntityAttributes() {
@@ -123,7 +124,7 @@ public final class EntityGiantMagmaGolem extends EntityMob implements IBossDispl
     @Override public int getMaxSpawnedInChunk() { return 1; }
 
     public Action action() { return worldObj.isRemote ? ACTIONS[dataWatcher.getWatchableObjectInt(MOTION) & 15] : action; }
-    public int animationAge() { return worldObj.isRemote ? (dataWatcher.getWatchableObjectInt(MOTION) >> 4) & 127 : age; }
+    public int animationAge() { return worldObj.isRemote ? (dataWatcher.getWatchableObjectInt(MOTION) >> 4) & 255 : age; }
     public int phase() { return dataWatcher.getWatchableObjectInt(PHASE); }
     public boolean cooled(int side) { return arm(side) == COOLED; }
     public boolean hasArm(int side) { return arm(side) != MISSING; }
@@ -138,7 +139,7 @@ public final class EntityGiantMagmaGolem extends EntityMob implements IBossDispl
     }
 
     private void syncAction() {
-        dataWatcher.updateObject(MOTION, action.ordinal() | (age << 4) | (landed ? 1 << 11 : 0));
+        dataWatcher.updateObject(MOTION, action.ordinal() | (age << 4) | (landed ? LANDED_BIT : 0));
     }
 
     private void begin(Action next) {
@@ -147,6 +148,7 @@ public final class EntityGiantMagmaGolem extends EntityMob implements IBossDispl
         landed = false;
         landedAt = 0;
         struck.clear();
+        if (next != Action.SLAM) dataWatcher.updateObject(SLAM_GROUND, 0);
         if (next != Action.LEAP) motionX = motionZ = 0;
         syncAction();
     }
@@ -178,13 +180,14 @@ public final class EntityGiantMagmaGolem extends EntityMob implements IBossDispl
             clientEffects();
             return;
         }
-        if (finishing) return;
+        if (!isEntityAlive() || finishing) return;
         updateGait(Math.hypot(posX - x, posZ - z));
         updatePhase();
         updateStance();
         updateParts();
         if (ticksExisted % 40 == 0) pruneSummons();
-        if (ticksExisted % 4 == 0) checkWater();
+        if (slamHold() || ticksExisted % 4 == 0) checkWater();
+        if (finishing) return;
         if (recovery > 0) recovery--;
         if (summonWait > 0) summonWait--;
         for (int i = 0; i < mineDelay.length; i++) if (mineDelay[i] > 0) mineDelay[i]--;
@@ -205,6 +208,16 @@ public final class EntityGiantMagmaGolem extends EntityMob implements IBossDispl
     @Override protected void updateAITasks() {
         // Superclass travel applies gravity and resolves terrain. This encounter supplies its own steering.
         if (action != Action.IDLE && (action != Action.LEAP || age < action.strike || landed)) motionX = motionZ = 0;
+    }
+
+    @Override public void moveEntityWithHeading(float strafe, float forward) {
+        // The terrain contacts are locked to this origin and yaw from windup through recovery.
+        Action active = action();
+        if (active == Action.SLAM || active == Action.DYING) {
+            motionX = motionY = motionZ = 0;
+            return;
+        }
+        super.moveEntityWithHeading(strafe, forward);
     }
 
     private void updatePhase() {
@@ -330,6 +343,8 @@ public final class EntityGiantMagmaGolem extends EntityMob implements IBossDispl
     private boolean selectAttack() {
         double range = Math.hypot(target.posX - posX, target.posZ - posZ);
         boolean low = target.posY < posY + 4 && target.posY > posY - 2.5;
+        boolean canSlam = armed() && low && range <= 10;
+        if (canSlam && previousAttack != Action.SLAM && startSlam()) return true;
         Vec3 mouth = muzzle();
         boolean clear = MagmaGolemTerrain.visible(worldObj, mouth, center(target));
         int roll = rand.nextInt(100);
@@ -337,18 +352,60 @@ public final class EntityGiantMagmaGolem extends EntityMob implements IBossDispl
         if (MagmaGolemConfig.cubeLimit > 0 && summonWait == 0 && summons.size() < MagmaGolemConfig.cubeLimit
                 && range < 23 && roll < 22) next = Action.SUMMON;
         else if (low && range <= 5 && (!armed() || phase() == 3 && roll < 35 || !hasBothArms() && range < 3)) next = Action.STOMP;
-        else if (low && range <= 8 && hasBothArms() && (range < 3.6 || roll < (phase() == 1 ? 27 : 40))) next = Action.SLAM;
         else if (low && range <= 7.5 && armed() && (phase() == 1 || roll < 65)) next = choosePunch();
         else if ((phase() >= 2 || !armed()) && range >= 6 && range <= 20 && low
                 && (roll < 33 || blocked >= 5) && previousAttack != Action.LEAP) next = Action.LEAP;
         else if (clear && phase() >= 2 && range <= 16 && roll < 65 && previousAttack != Action.BREATH) next = Action.BREATH;
         else if (clear && range <= 44) next = Action.FIREBALL;
         else if (low && range <= 7 && armed()) next = choosePunch();
-        else return false;
+        else return canSlam && previousAttack == Action.SLAM && startSlam();
         begin(next);
         playSound(next == Action.FIREBALL || next == Action.BREATH ? "fire.ignite" : "mob.irongolem.hit", 2.7F,
-            next == Action.SLAM || next == Action.LEAP ? 0.48F : 0.78F);
+            next == Action.LEAP ? 0.48F : 0.78F);
         return true;
+    }
+
+    private boolean startSlam() {
+        int ground = findSlamSurface(LEFT) | (findSlamSurface(RIGHT) << 10);
+        if (ground != 0) {
+            dataWatcher.updateObject(SLAM_GROUND, ground);
+            begin(Action.SLAM);
+        }
+        updateParts();
+        if (ground == 0) return false;
+        playSound("mob.irongolem.hit", 2.7F, 0.48F);
+        return true;
+    }
+
+    private int findSlamSurface(int side) {
+        if (!hasArm(side)) return 0;
+        double yaw = Math.toRadians(rotationYaw);
+        double x = posX + slamLateral(side) * Math.cos(yaw) - SLAM_FORWARD * Math.sin(yaw);
+        double z = posZ + slamLateral(side) * Math.sin(yaw) + SLAM_FORWARD * Math.cos(yaw);
+        AxisAlignedBB probe = AxisAlignedBB.getBoundingBox(x - 0.12, posY - 1.01, z - 0.12,
+            x + 0.12, posY + 1.26, z + 0.12);
+        if (!MagmaGolemTerrain.loaded(worldObj, probe)) return 0;
+        double top = Double.NEGATIVE_INFINITY;
+        for (Object candidate : worldObj.func_147461_a(probe)) {
+            AxisAlignedBB surface = (AxisAlignedBB)candidate;
+            if (surface.maxY <= posY + 1.25) top = Math.max(top, surface.maxY);
+        }
+        if (top < posY - 1) return 0;
+        int surface = SLAM_HEIGHT_BIAS + (int)Math.ceil((top - posY) * SLAM_HEIGHT_STEPS);
+        int ground = side == LEFT ? surface : surface << 10;
+        pose.sample(Action.SLAM, Action.SLAM.strike, ticksExisted, stride, 0, aimYaw, aimPitch,
+            hasArm(LEFT), hasArm(RIGHT), phase(), false, ground);
+        AxisAlignedBB fist = fistBox(side).contract(0.01, 0.01, 0.01);
+        return MagmaGolemTerrain.loaded(worldObj, fist) && worldObj.func_147461_a(fist).isEmpty() ? surface : 0;
+    }
+
+    private boolean slamHold() {
+        return action() == Action.SLAM && animationAge() >= Action.SLAM.strike
+            && animationAge() < Action.SLAM.strike + SLAM_HOLD;
+    }
+
+    private boolean slamsWith(int side) {
+        return hasArm(side) && slamSurface(dataWatcher.getWatchableObjectInt(SLAM_GROUND), side) != 0;
     }
 
     private Action choosePunch() {
@@ -365,7 +422,7 @@ public final class EntityGiantMagmaGolem extends EntityMob implements IBossDispl
             return;
         }
         age++;
-        if (targetable(target) && age <= action.strike - 6) faceTarget(6);
+        if (action != Action.SLAM && targetable(target) && age <= action.strike - 6) faceTarget(6);
         if (age == action.strike - 5 && (action == Action.BREATH || action == Action.FIREBALL)) lockMuzzle();
         if (action == Action.LEAP && age == action.strike) launchLeap();
         if (action == Action.LEAP && age > action.strike && !landed && (onGround || isInWater() && age >= action.strike + 6)) {
@@ -384,21 +441,26 @@ public final class EntityGiantMagmaGolem extends EntityMob implements IBossDispl
                 break;
             case SLAM:
                 if (age >= action.strike - 2 && age <= action.strike) {
-                    limbContact(LEFT, 1.35F);
-                    limbContact(RIGHT, 1.35F);
+                    if (slamsWith(LEFT)) limbContact(LEFT, 1.35F);
+                    if (slamsWith(RIGHT)) limbContact(RIGHT, 1.35F);
                 }
                 if (age == action.strike) {
                     groundImpact(QUAKE);
+                    hitShockwave(0, phase() == 1 ? 7 : 11, 0.8F);
                     for (int side = LEFT; side <= RIGHT; side += RIGHT - LEFT) {
-                        AxisAlignedBB hit = fistBox(side);
-                        MagmaGolemTerrain.strike(this, hit.expand(0.35, 0.6, 0.35), 8, !cooled(side));
+                        if (!slamsWith(side)) continue;
+                        AxisAlignedBB hit = fistBox(side).expand(0.35, 0, 0.35);
+                        // Keep the support cell intact, including slabs and other partial blocks.
+                        hit.minY = Math.ceil(hit.minY);
+                        MagmaGolemTerrain.strike(this, hit, 8, !cooled(side));
                     }
                 }
                 if (age >= action.strike && age <= action.strike + 8) {
                     int tick = age - action.strike;
                     int radius = phase() == 1 ? 7 : 11;
-                    shockwave(tick, radius, 0.8F);
-                    if (tick % 2 == 0 && (!cooled(LEFT) || !cooled(RIGHT))) igniteWave(radius * (tick + 1) / 9D);
+                    if (tick % 2 == 0 && (slamsWith(LEFT) && !cooled(LEFT) || slamsWith(RIGHT) && !cooled(RIGHT))) {
+                        igniteWave(radius * (tick + 1) / 9D);
+                    }
                 }
                 break;
             case STOMP:
@@ -460,7 +522,7 @@ public final class EntityGiantMagmaGolem extends EntityMob implements IBossDispl
     }
 
     private AxisAlignedBB fistBox(int side) {
-        return pose.box(side + FOREARM, 0, -3.16, 0.04, 1.22, 1, 1.3, rotationYaw, posX, posY, posZ);
+        return pose.fistBox(side, rotationYaw, posX, posY, posZ);
     }
 
     private void hitBox(AxisAlignedBB box, float scale, boolean fire, double push) {
@@ -487,6 +549,10 @@ public final class EntityGiantMagmaGolem extends EntityMob implements IBossDispl
     private void shockwave(int tick, double radius, float scale) {
         double edge = Math.max(2.7, radius * (tick + 1) / 9);
         double inner = tick == 0 ? 0 : Math.max(0, radius * tick / 9 - 1.5);
+        hitShockwave(inner, edge, scale);
+    }
+
+    private void hitShockwave(double inner, double edge, float scale) {
         AxisAlignedBB area = AxisAlignedBB.getBoundingBox(posX - edge, posY - 1.5, posZ - edge, posX + edge, posY + 2.2, posZ + edge);
         for (Object candidate : worldObj.getEntitiesWithinAABB(EntityLivingBase.class, area)) {
             EntityLivingBase victim = (EntityLivingBase)candidate;
@@ -607,17 +673,30 @@ public final class EntityGiantMagmaGolem extends EntityMob implements IBossDispl
         float time = animationAge() + (worldObj.isRemote && !(active == Action.DOWN && animationAge() >= active.length) ? partial : 0);
         result.sample(active, time, ticksExisted + partial, previousStride + diff * partial,
             previousPace + (pace - previousPace) * partial, aimYaw, aimPitch, hasArm(LEFT), hasArm(RIGHT), phase(),
-            worldObj.isRemote ? (dataWatcher.getWatchableObjectInt(MOTION) & (1 << 11)) != 0 : landed);
+            worldObj.isRemote ? (dataWatcher.getWatchableObjectInt(MOTION) & LANDED_BIT) != 0 : landed,
+            dataWatcher.getWatchableObjectInt(SLAM_GROUND));
     }
 
     private void updateParts() {
         samplePose(pose, 1);
-        setPart(LEFT_UPPER, LEFT + SHOULDER, -1.06, -1.52, -1, 1.06, 0.6, 1);
-        setPart(LEFT_FIST, LEFT + FOREARM, -1.22, -4.16, -1.26, 1.22, 0.16, 1.35);
-        setPart(RIGHT_UPPER, RIGHT + SHOULDER, -1.06, -1.52, -1, 1.06, 0.6, 1);
-        setPart(RIGHT_FIST, RIGHT + FOREARM, -1.22, -4.16, -1.26, 1.22, 0.16, 1.35);
-        setPart(LEFT_FOOT, LEFT + FOOT, -0.9, -0.48, -0.72, 0.9, 0.69, 1.31);
-        setPart(RIGHT_FOOT, RIGHT + FOOT, -0.9, -0.48, -0.72, 0.9, 0.69, 1.31);
+        updateArmParts(LEFT, LEFT_UPPER, LEFT_FIST);
+        updateArmParts(RIGHT, RIGHT_UPPER, RIGHT_FIST);
+        setPart(LEFT_FOOT, pose.box(LEFT + FOOT, 0, 0.105, 0.295, 0.9, 0.585, 1.015, rotationYaw, posX, posY, posZ));
+        setPart(RIGHT_FOOT, pose.box(RIGHT + FOOT, 0, 0.105, 0.295, 0.9, 0.585, 1.015, rotationYaw, posX, posY, posZ));
+    }
+
+    private void updateArmParts(int side, int upper, int lower) {
+        if (!hasArm(side)) {
+            parts[upper].boundingBox.setBounds(posX, posY, posZ, posX, posY, posZ);
+            parts[lower].boundingBox.setBounds(posX, posY, posZ, posX, posY, posZ);
+            return;
+        }
+        // Bounds of the model's shoulder, forearm and fist cuboids, in blocks.
+        setPart(upper, pose.box(side + SHOULDER, 0, -1.25, 0, 19 / 16.0, 30 / 16.0, 19 / 16.0,
+            rotationYaw, posX, posY, posZ));
+        AxisAlignedBB forearm = pose.box(side + FOREARM, 0, -19 / 16.0, 0, 19 / 16.0, 21 / 16.0, 20 / 16.0,
+            rotationYaw, posX, posY, posZ);
+        setPart(lower, forearm.func_111270_a(fistBox(side)));
     }
 
     private void updateStance() {
@@ -626,14 +705,8 @@ public final class EntityGiantMagmaGolem extends EntityMob implements IBossDispl
         if (height != nextHeight) setSize(WIDTH, nextHeight);
     }
 
-    private void setPart(int index, int bone, double minX, double minY, double minZ, double maxX, double maxY, double maxZ) {
+    private void setPart(int index, AxisAlignedBB box) {
         EntityDragonPart part = parts[index];
-        if (index < LEFT_FOOT && !hasArm(index < RIGHT_UPPER ? LEFT : RIGHT)) {
-            part.boundingBox.setBounds(posX, posY, posZ, posX, posY, posZ);
-            return;
-        }
-        AxisAlignedBB box = pose.box(bone, (minX + maxX) * 0.5, (minY + maxY) * 0.5, (minZ + maxZ) * 0.5,
-            (maxX - minX) * 0.5, (maxY - minY) * 0.5, (maxZ - minZ) * 0.5, rotationYaw, posX, posY, posZ);
         part.posX = (box.minX + box.maxX) * 0.5;
         part.posY = (box.minY + box.maxY) * 0.5;
         part.posZ = (box.minZ + box.maxZ) * 0.5;
@@ -669,6 +742,7 @@ public final class EntityGiantMagmaGolem extends EntityMob implements IBossDispl
 
     private void checkWater() {
         if (action == Action.DOWN) {
+            if (ticksExisted % 4 != 0) return;
             if (age < Action.DOWN.length) return;
             boolean wet = MagmaGolemTerrain.wet(worldObj, parts[LEFT_FOOT].boundingBox.expand(0.28, 0.35, 0.28))
                 || MagmaGolemTerrain.wet(worldObj, parts[RIGHT_FOOT].boundingBox.expand(0.28, 0.35, 0.28))
@@ -683,11 +757,12 @@ public final class EntityGiantMagmaGolem extends EntityMob implements IBossDispl
             int part = side == LEFT ? LEFT_UPPER : RIGHT_UPPER;
             boolean wet = MagmaGolemTerrain.wet(worldObj, parts[part + 1].boundingBox)
                 || MagmaGolemTerrain.wet(worldObj, parts[part].boundingBox);
-            cooling[index] = wet ? cooling[index] + 4 : Math.max(0, cooling[index] - 2);
+            if (!wet) continue;
+            cooling[index] += slamHold() ? 1 : 4;
             if (cooling[index] >= MagmaGolemConfig.coolingTicks) {
                 setArm(side, COOLED);
-                worldObj.setEntityState(this, (byte)(COOL_LEFT + index));
-                playSound("random.fizz", 3, 0.69F);
+                Entity arm = parts[part + 1];
+                armFeedback(Vec3.createVectorHelper(arm.posX, arm.posY, arm.posZ), "largesmoke", 18, "random.fizz");
             }
         }
     }
@@ -713,29 +788,55 @@ public final class EntityGiantMagmaGolem extends EntityMob implements IBossDispl
         Vec3 eye = Vec3.createVectorHelper(player.posX, player.boundingBox.minY + player.getEyeHeight(), player.posZ);
         Vec3 look = player.getLookVec();
         double reach = player instanceof EntityPlayerMP ? ((EntityPlayerMP)player).theItemInWorldManager.getBlockReachDistance() : 4.5;
-        MovingObjectPosition hit = part.boundingBox.expand(0.16, 0.16, 0.16)
-            .calculateIntercept(eye, eye.addVector(look.xCoord * reach, look.yCoord * reach, look.zCoord * reach));
+        MovingObjectPosition hit = armIntercept(part, eye, eye.addVector(look.xCoord * reach, look.yCoord * reach, look.zCoord * reach));
         if (hit == null || !MagmaGolemTerrain.visible(worldObj, eye, hit.hitVec)) return false;
         mineDelay[index] = 8;
         armWork[index] += Math.max(2, Math.min(12, Math.round(held.func_150997_a(Blocks.cobblestone))));
         target = player;
-        playSound("dig.stone", 2, 0.72F);
-        if (armWork[index] >= MagmaGolemConfig.armDurability) {
+        boolean broken = armWork[index] >= MagmaGolemConfig.armDurability;
+        armFeedback(hit.hitVec, stoneParticle(), broken ? 28 : 7, "dig.stone");
+        if (broken) {
             setArm(side, MISSING);
             finisher = player.getUniqueID();
-            worldObj.setEntityState(this, (byte)(BREAK_LEFT + index));
             playSound("mob.irongolem.death", 3, 0.75F);
-            if (action == Action.SLAM || action == (side == LEFT ? Action.PUNCH_LEFT : Action.PUNCH_RIGHT)) begin(Action.STAGGER);
-            if (!armed()) {
+            if (action != Action.SLAM && (!armed() || action == (side == LEFT ? Action.PUNCH_LEFT : Action.PUNCH_RIGHT))) {
                 begin(Action.STAGGER);
-                playSound("random.anvil_land", 3, 0.68F);
             }
+            if (!armed()) playSound("random.anvil_land", 3, 0.68F);
             updateParts();
-        } else {
-            worldObj.setEntityState(this, (byte)(80 + index));
         }
         // Vanilla applies the held tool's normal hit durability and multiplayer hit feedback.
         return true;
+    }
+
+    private void armFeedback(Vec3 hit, String particle, int count, String sound) {
+        worldObj.playSoundEffect(hit.xCoord, hit.yCoord, hit.zCoord, sound, 2, 0.72F);
+        if (worldObj instanceof WorldServer) {
+            ((WorldServer)worldObj).func_147487_a(particle, hit.xCoord, hit.yCoord, hit.zCoord, count, 0.25, 0.25, 0.25, 0.14);
+        }
+    }
+
+    public MovingObjectPosition pickPlantedArm(Vec3 eye, Vec3 end, double distance) {
+        if (!isEntityAlive() || !slamHold()) return null;
+        MovingObjectPosition nearest = null;
+        for (int i = 0; i < LEFT_FOOT; i++) {
+            int side = i < RIGHT_UPPER ? LEFT : RIGHT;
+            if (!slamsWith(side) || !cooled(side)) continue;
+            MovingObjectPosition hit = armIntercept(parts[i], eye, end);
+            if (hit == null) continue;
+            double reach = eye.distanceTo(hit.hitVec);
+            if (reach >= distance) continue;
+            nearest = hit;
+            distance = reach;
+        }
+        return nearest;
+    }
+
+    private static MovingObjectPosition armIntercept(Entity part, Vec3 eye, Vec3 end) {
+        AxisAlignedBB box = part.boundingBox.expand(0.1, 0.1, 0.1);
+        if (box.isVecInside(eye)) return new MovingObjectPosition(part, eye);
+        MovingObjectPosition hit = box.calculateIntercept(eye, end);
+        return hit == null ? null : new MovingObjectPosition(part, hit.hitVec);
     }
 
     @Override public boolean attackEntityFrom(DamageSource source, float damage) {
@@ -748,13 +849,7 @@ public final class EntityGiantMagmaGolem extends EntityMob implements IBossDispl
         Entity attacker = source.getEntity();
         if (attacker instanceof EntityGolemMagmaCube && ((EntityGolemMagmaCube)attacker).belongsTo(getUniqueID())) return false;
         if (attacker instanceof EntityLivingBase && targetable((EntityLivingBase)attacker)) target = (EntityLivingBase)attacker;
-        if (action == Action.DOWN || getHealth() <= 1 || damage <= 0) return false;
-        return super.attackEntityFrom(source, Math.min(damage, getHealth() - 1));
-    }
-
-    @Override public void setHealth(float health) {
-        // The water finish is the sole lethal transition during combat.
-        super.setHealth(worldObj != null && !worldObj.isRemote && !finishing ? Math.max(1, health) : health);
+        return damage > 0 && super.attackEntityFrom(source, damage);
     }
 
     void onFootBlast(Explosion explosion) {
@@ -782,36 +877,44 @@ public final class EntityGiantMagmaGolem extends EntityMob implements IBossDispl
     private void finish() {
         if (finishing || action != Action.DOWN || isEntityInvulnerable()) return;
         EntityPlayer player = finisher == null ? null : worldObj.func_152378_a(finisher);
-        finishing = true;
         if (player != null) {
             attackingPlayer = player;
             recentlyHit = 100;
         }
         setHealth(0);
-        super.onDeath(player == null ? DamageSource.drown : DamageSource.causePlayerDamage(player));
-        if (!dead) {
-            finishing = false;
-            setHealth(1);
-            soaked = 0;
-            return;
-        }
-        begin(Action.DYING);
-        playSound("random.fizz", 5, 0.53F);
-        retireLoadedSummons();
+        onDeath(player == null ? DamageSource.drown : DamageSource.causePlayerDamage(player));
+        if (finishing) playSound("random.fizz", 5, 0.53F);
+        else soaked = 0;
     }
 
     @Override public void onDeath(DamageSource source) {
-        // EntityLivingBase's normal damage path must not bypass the encounter finish.
-        if (worldObj.isRemote) super.onDeath(source);
+        if (worldObj.isRemote) {
+            super.onDeath(source);
+            return;
+        }
+        if (finishing) return;
+        finishing = true;
+        super.onDeath(source);
+        if (!dead) {
+            finishing = false;
+            if (getHealth() <= 0) setHealth(1);
+            return;
+        }
+        if (source.getEntity() instanceof EntityPlayer) finisher = source.getEntity().getUniqueID();
+        begin(Action.DYING);
+        updateStance();
+        retireLoadedSummons();
     }
 
     @Override protected void onDeathUpdate() {
-        if (!worldObj.isRemote && finishing) {
+        if (!worldObj.isRemote) {
+            if (!finishing) onDeath(DamageSource.generic);
+            if (!finishing) return;
             age++;
             syncAction();
             if (age < Action.DYING.length) return;
             if (finisher != null) recentlyHit = 1;
-        } else if (worldObj.isRemote && (action() != Action.DYING || animationAge() < Action.DYING.length - 1)) {
+        } else if (action() != Action.DYING || animationAge() < Action.DYING.length - 1) {
             return;
         }
         deathTime = 19;
@@ -872,12 +975,7 @@ public final class EntityGiantMagmaGolem extends EntityMob implements IBossDispl
     }
 
     @Override public void handleHealthUpdate(byte status) {
-        if (status >= COOL_LEFT && status <= BREAK_LEFT + 1 || status == 80 || status == 81) {
-            int side = (status & 1) == (status >= 80 ? 0 : 1) ? LEFT : RIGHT;
-            Vec3 center = pose.point(side + FOREARM, 0, -2, 0, rotationYaw, posX, posY, posZ);
-            boolean coolingEffect = status < BREAK_LEFT;
-            debris(center, coolingEffect ? "largesmoke" : stoneParticle(), coolingEffect ? 18 : status >= 80 ? 7 : 28, 1);
-        } else if (status >= IMPACT && status <= 79) {
+        if (status >= IMPACT && status <= 79) {
             if (status >= 78) {
                 Vec3 foot = pose.point((status == 78 ? LEFT : RIGHT) + FOOT, 0, 0, 0, rotationYaw, posX, posY, posZ);
                 debris(foot, stoneParticle(), 7, 0.8);
@@ -918,6 +1016,10 @@ public final class EntityGiantMagmaGolem extends EntityMob implements IBossDispl
         tag.setBoolean("Down", action == Action.DOWN);
         tag.setBoolean("Finishing", finishing);
         tag.setInteger("FinishAge", age);
+        if (slamHold()) {
+            tag.setInteger("SlamGround", dataWatcher.getWatchableObjectInt(SLAM_GROUND));
+            tag.setInteger("SlamAge", age);
+        }
         if (finisher != null) writeUuid(tag, finisher);
         NBTTagList children = new NBTTagList();
         for (Map.Entry<UUID, Long> child : summons.entrySet()) {
@@ -954,8 +1056,22 @@ public final class EntityGiantMagmaGolem extends EntityMob implements IBossDispl
         if (finishing || tag.getBoolean("Down") && !armed()) {
             begin(finishing ? Action.DYING : Action.DOWN);
             age = MathHelper.clamp_int(tag.getInteger("FinishAge"), 0, action.length - (finishing ? 1 : 0));
-            if (finishing) dead = true;
+            if (finishing) {
+                setHealth(0);
+                dead = true;
+            }
             syncAction();
+        } else if (tag.hasKey("SlamGround") && tag.hasKey("SlamAge")) {
+            int saved = tag.getInteger("SlamGround");
+            int left = slamSurface(saved, LEFT), right = slamSurface(saved, RIGHT);
+            if (left <= SLAM_MAX_SURFACE && right <= SLAM_MAX_SURFACE && (left | right) != 0) {
+                dataWatcher.updateObject(SLAM_GROUND, left | (right << 10));
+                begin(Action.SLAM);
+                // The impact already happened before this hold was saved.
+                age = MathHelper.clamp_int(tag.getInteger("SlamAge"), Action.SLAM.strike + 9,
+                    Action.SLAM.strike + SLAM_HOLD - 1);
+                syncAction();
+            }
         }
         updateStance();
         updateParts();

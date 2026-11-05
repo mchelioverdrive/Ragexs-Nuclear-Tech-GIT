@@ -392,18 +392,18 @@ Attack phases begin at 75%, 50%, 25%, and 10% health. Ordinary body hits deal 28
 
 ## Giant Magma Golem
 
-Startup category `12_mobs.magmaGolem` in `config/hbm.cfg`. The golem saves its health, phase, arm cooling and mining progress, TNT stagger, and final defeat state.
+Startup category `12_mobs.magmaGolem` in `config/hbm.cfg`. The golem saves its health, phase, planted slam state, arm cooling and mining progress, TNT stagger, and final defeat state.
 
 | Settings | Defaults | Behavior |
 | --- | --- | --- |
 | `health`, `meleeDamage`, `rangedDamage` | 600 HP, 24 HP, 12 HP | Maximum health for new bosses and base attack damage. |
 | `movementSpeed`, `attackCooldownTicks` | 0.22 blocks per tick, 38 ticks | Base walking speed and attack recovery. Later phases move and recover faster. |
 | `summonCooldownTicks`, `maxSummonedCubes` | 360 ticks, 8 | Base wave delay and per-boss cap. Set the cap to zero to disable summons. |
-| `waterCoolingTicks`, `armDurability` | 20 ticks, 24 | Water contact needed per arm and mining work per cooled arm. Better pickaxes remove more work per hit. |
+| `waterCoolingTicks`, `armDurability` | 20 ticks, 24 | Cumulative water contact needed per arm and mining work per cooled arm. Better pickaxes remove more work per hit. |
 | `bossGriefing` | true | Terrain damage and ignition also require vanilla `mobGriefing`. |
 | `naturalSpawning` | false | Allows rare natural spawns in clear Overworld plains and deserts. |
 
-Combat changes at 70% and below 35% health. Body damage can bring the golem to 1 HP. The cooled arms, TNT, and water sequence finishes the fight. See [Giant Magma Golem commands](commands.md#rntmagmagolem).
+Combat changes at 70% and below 35% health. Lethal damage or the cooled arms, TNT, and water sequence can end the fight. See [Giant Magma Golem commands](commands.md#rntmagmagolem).
 
 ## Recommended server workflow
 

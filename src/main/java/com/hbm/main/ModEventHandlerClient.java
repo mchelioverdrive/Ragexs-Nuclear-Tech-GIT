@@ -24,6 +24,7 @@ import com.hbm.dim.SkyProviderCelestial;
 import com.hbm.dim.WorldProviderCelestial;
 import com.hbm.dim.orbit.WorldProviderOrbit;
 
+import com.hbm.entity.mob.magmagolem.EntityGiantMagmaGolem;
 import com.hbm.entity.projectile.EntityChopperMine;
 import com.hbm.entity.train.EntityRailCarRidable;
 import com.hbm.extprop.HbmLivingProps;
@@ -125,6 +126,7 @@ import net.minecraft.inventory.Slot;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemArmor;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.ItemPickaxe;
 import net.minecraft.network.play.client.C03PacketPlayer;
 import net.minecraft.network.play.client.C0CPacketInput;
 import net.minecraft.potion.Potion;
@@ -135,6 +137,7 @@ import net.minecraft.util.MathHelper;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Vec3;
+import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.MovingObjectPosition.MovingObjectType;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldProvider;
@@ -644,7 +647,12 @@ public class ModEventHandlerClient {
 	@SubscribeEvent
 	public void clickHandler(MouseEvent event) {
 
-		EntityPlayer player = Minecraft.getMinecraft().thePlayer;
+		Minecraft mc = Minecraft.getMinecraft();
+		EntityPlayer player = mc.thePlayer;
+		if(player == null) return;
+		if(event.buttonstate && event.button - 100 == mc.gameSettings.keyBindAttack.getKeyCode()) {
+			pickMagmaGolemArm(mc);
+		}
 
 		if(player.getHeldItem() != null) {
 
@@ -668,6 +676,27 @@ public class ModEventHandlerClient {
 					item.startActionClient(player.getHeldItem(), player.worldObj, player, false);
 				}
 			}
+		}
+	}
+
+	private void pickMagmaGolemArm(Minecraft mc) {
+		EntityPlayer player = mc.thePlayer;
+		if(player == null || mc.currentScreen != null || mc.renderViewEntity != player
+				|| player.getHeldItem() == null || !(player.getHeldItem().getItem() instanceof ItemPickaxe)) return;
+		// Vanilla skips multipart children when the ray's search box misses the parent body.
+		Vec3 eye = player.getPosition(1);
+		Vec3 look = player.getLookVec();
+		double reach = mc.playerController.extendedReach() ? 6 : 3;
+		Vec3 end = eye.addVector(look.xCoord * reach, look.yCoord * reach, look.zCoord * reach);
+		MovingObjectPosition hit = mc.objectMouseOver;
+		double distance = hit == null || hit.typeOfHit == MovingObjectPosition.MovingObjectType.MISS
+			? reach : Math.min(reach, eye.distanceTo(hit.hitVec));
+		AxisAlignedBB nearby = player.boundingBox.expand(reach + 8, 8, reach + 8);
+		for(Object entity : player.worldObj.getEntitiesWithinAABB(EntityGiantMagmaGolem.class, nearby)) {
+			MovingObjectPosition arm = ((EntityGiantMagmaGolem)entity).pickPlantedArm(eye, end, distance);
+			if(arm == null) continue;
+			mc.objectMouseOver = arm;
+			distance = eye.distanceTo(arm.hitVec);
 		}
 	}
 
@@ -1236,6 +1265,9 @@ public class ModEventHandlerClient {
 	public void onKeyTyped(InputEvent.KeyInputEvent event) {
 
 		Minecraft mc = Minecraft.getMinecraft();
+		if(Keyboard.getEventKeyState() && Keyboard.getEventKey() == mc.gameSettings.keyBindAttack.getKeyCode()) {
+			pickMagmaGolemArm(mc);
+		}
 		if(GeneralConfig.enableKeybindOverlap && (mc.currentScreen == null || mc.currentScreen.allowUserInput)) {
 			boolean state = Keyboard.getEventKeyState();
 			int keyCode = Keyboard.getEventKey();

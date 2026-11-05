@@ -362,7 +362,9 @@ Operators with permission level 2 can summon the Giant Magma Golem in a loaded a
 /summon hbm.giant_magma_golem <x> <y> <z>
 ```
 
-Pour water against each arm until it turns gray, then strike that arm with a pickaxe. Destroy both arms to expose the feet. A primed TNT charge very close to either foot knocks the golem down. Glancing blasts accumulate. Let water reach a foot or the fallen body and keep it wet for about a second to finish the fight. A bucket works on dry ground after the knockdown, and the golem stays down while you fetch water.
+After a ground slam, the golem holds its planted arms still for ten seconds. Place water beside a planted fist so the flow touches the arm. Once that arm turns gray, strike it with a pickaxe. Cooling and mining progress carry over to later slams. The golem can still slam with one arm.
+
+Destroy both arms to expose the feet. A primed TNT charge very close to either foot knocks the golem down, and glancing blasts accumulate. Keep a foot or the fallen body wet for about a second to finish the fight. The golem stays down while you fetch water. Depleting its health also defeats it at any stage.
 
 The arm and TNT sequence follows the [Story Mode Giant Magma Golem encounter](https://minecraftstorymode.fandom.com/wiki/Giant_Magma_Golem). See [Giant Magma Golem configuration](configuration.md#giant-magma-golem).
 

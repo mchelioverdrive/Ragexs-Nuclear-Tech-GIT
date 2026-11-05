@@ -341,3 +341,13 @@
 - Cool and mine each arm independently. Removing both arms exposes the feet to TNT. Once knocked down, the golem can be finished with water from a bucket or the surrounding terrain.
 - Persist encounter progress and add `/rntmagmagolem spawn [x y z]` and server settings. Natural spawning is disabled by default, and boss terrain damage respects `mobGriefing`.
 
+2026-11-04 18:49 — Remodel the Giant Magma Golem after its Story Mode appearance
+
+- Give the boss a gray cobblestone face and chest, recessed glowing eyes, a projecting nose, and oversized molten forearms and fists. Concentrate emissive detail in the eyes and arms, with smaller seams across the chest and feet.
+- Render cooled arms with a separate stone atlas and remove the entire arm when destroyed. Spread the elbows in the resting pose and retain the existing strike poses. Cooling, arm hitboxes, and rendering continue to use the same joints.
+
+2026-11-04 19:19 — Fix Giant Magma Golem slams and defeat
+
+- Land a damaging ground slam with either or both available arms. Hold the terrain contact pose for ten seconds so players can cool and mine each arm independently. Keep the remaining arm planted when the other breaks, and resume saved holds without replaying the impact.
+- Match arm hitboxes to the shared model pose and show stone chips where a pickaxe hits. Retain cooling and mining progress across openings.
+- Start the existing collapse on lethal damage in any phase. The arm removal, TNT knockdown, and water finish remain available.
