@@ -17,6 +17,7 @@ public class EntityWitherStormPart extends Entity {
     private static final double WITHER_MOUTH_Y = -2D / 16D, WITHER_MOUTH_Z = -0.5D;
     public UUID parentId;
     public EntityWitherStorm parent;
+    final WitherStormTentacle tentacle = new WitherStormTentacle(this);
     private int parentChunkX, parentChunkZ;
     private long lastFollowTick = Long.MIN_VALUE;
     private int interpolationTicks;
@@ -28,6 +29,7 @@ public class EntityWitherStormPart extends Entity {
         dataWatcher.addObject(21, Byte.valueOf((byte)0));
         dataWatcher.addObject(22, Float.valueOf(0.35F));
         dataWatcher.addObject(23, Byte.valueOf((byte)0));
+        WitherStormTentacle.init(this);
     }
     public int slot() { return dataWatcher.getWatchableObjectByte(21); }
     public float scale() { return dataWatcher.getWatchableObjectFloat(22); }
@@ -38,6 +40,7 @@ public class EntityWitherStormPart extends Entity {
         if(id != null) entityUniqueID = id;
         dataWatcher.updateObject(20, boss.getEntityId()); dataWatcher.updateObject(21, (byte)slot);
         dataWatcher.updateObject(22, boss.getStormScale());
+        if(slot >= 3 && id == null) tentacle.emerge();
     }
     public EntityWitherStorm parent() {
         if(worldObj.isRemote) {
@@ -60,6 +63,8 @@ public class EntityWitherStormPart extends Entity {
                 rotationPitch += (nextPitch - rotationPitch) / steps;
             }
             EntityWitherStorm boss = parent();
+            if(boss != null && !boss.isPartActive(slot())) return;
+            if(boss != null) boss.trackClientPart(this);
             if(boss != null && (slot() < 3 || boss.getStage().hasPosedTentacles())) {
                 // Match the client anatomy while head rotation still follows the tracked part.
                 Vec3 position = boss.partPosition(slot());
@@ -68,7 +73,7 @@ public class EntityWitherStormPart extends Entity {
             updateBounds(boss);
             return;
         }
-        if(slot() < 0 || slot() > 9 || parentId == null) { setDead(); return; }
+        if(slot() < 0 || slot() > 12 || parentId == null) { setDead(); return; }
         EntityWitherStorm boss = parent();
         if(boss != null && boss.isEntityAlive()) {
             if(!boss.isPartActive(slot())) boss.retirePart(this);
@@ -301,7 +306,9 @@ public class EntityWitherStormPart extends Entity {
         EntityWitherStorm boss = parent();
         if(worldObj.isRemote || boss == null || !boss.isEntityAlive()) return false;
         // One root health pool preserves normal armor, damage events and invulnerability frames.
-        return boss.attackEntityFrom(source, damage * (slot() < 3 ? 1F : 0.5F));
+        boolean hit = boss.attackEntityFrom(source, damage * (slot() < 3 ? 1F : 0.5F));
+        if(hit && slot() >= 3) tentacle.damaged(boss, damage);
+        return hit;
     }
     @Override public void setDead() {
         super.setDead();
@@ -310,9 +317,11 @@ public class EntityWitherStormPart extends Entity {
     @Override protected void writeEntityToNBT(NBTTagCompound n) {
         WitherStormMath.uuid(n, "Parent", parentId); WitherStormMath.uuid(n, "Encounter", parentId);
         n.setInteger("Slot", slot()); n.setInteger("ParentChunkX", parentChunkX); n.setInteger("ParentChunkZ", parentChunkZ);
+        if(slot() >= 3) tentacle.write(n);
     }
     @Override protected void readEntityFromNBT(NBTTagCompound n) {
-        parentId = WitherStormMath.uuid(n, "Parent"); dataWatcher.updateObject(21, (byte)Math.max(0, Math.min(9, n.getInteger("Slot"))));
+        parentId = WitherStormMath.uuid(n, "Parent"); dataWatcher.updateObject(21, (byte)Math.max(0, Math.min(12, n.getInteger("Slot"))));
         parentChunkX = n.getInteger("ParentChunkX"); parentChunkZ = n.getInteger("ParentChunkZ");
+        if(slot() >= 3) tentacle.read(n);
     }
 }

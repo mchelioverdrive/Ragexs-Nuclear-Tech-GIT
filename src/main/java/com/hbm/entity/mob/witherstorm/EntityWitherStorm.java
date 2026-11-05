@@ -37,9 +37,10 @@ import net.minecraftforge.common.ForgeChunkManager.Ticket;
 public class EntityWitherStorm extends EntityFlying implements IBossDisplayData, IMob, IRadiationImmune, IChunkLoader {
     private static final String HURT_SOUND = "hbm:entity.witherStorm.hurt";
     private static final int SKULL_WINDUP_TICKS = 10;
-    private final UUID[] partIds = new UUID[10];
-    private final EntityWitherStormPart[] parts = new EntityWitherStormPart[10];
-    private final int[] partChunksX = new int[10], partChunksZ = new int[10];
+    private final UUID[] partIds = new UUID[13];
+    private final EntityWitherStormPart[] parts = new EntityWitherStormPart[13];
+    private final int[] partChunksX = new int[13], partChunksZ = new int[13];
+    final WitherStormHunt hunt = new WitherStormHunt();
     private final double[] armSample = new double[3];
     private final EntityLivingBase[] targets = new EntityLivingBase[3];
     private final UUID[] targetIds = new UUID[3];
@@ -151,6 +152,7 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
         boolean holdStageB = getPhase().ordinal() <= WitherStormPhase.DESTROYER.ordinal()
             && stageBTicks < WitherStormConfig.minimumStageBTicks;
         updateGrowth(mass, holdStageB);
+        if(getStage().hasTentacles()) heal(Math.min(4F, amount / 100F));
     }
 
     /** Explicit growth commands select the phase immediately. */
@@ -222,6 +224,7 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
             for(int i = 0; i < 3; i++) {
                 if(!validTarget(targets[i])) { targets[i] = null; dataWatcher.updateObject(24 + i, 0); }
             }
+            hunt.refresh(this);
             fly();
             maintainParts();
             updateSkullAttack();
@@ -283,10 +286,10 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
             dataWatcher.updateObject(24 + head, best == null ? 0 : best.getEntityId());
         }
     }
-    private boolean validTarget(Entity e) {
+    boolean validTarget(Entity e) {
         if(pursuit != null && e instanceof EntityPlayer && (!(e instanceof EntityPlayerMP)
             || !WitherStormPursuit.eligible((EntityPlayerMP)e))) return false;
-        return WitherStormMath.targetable(e, worldObj) && getDistanceSqToEntity(e) <= 96D * 96D;
+        return WitherStormMath.targetable(e, worldObj) && getDistanceSqToEntity(e) <= WitherStormHunt.RADIUS * WitherStormHunt.RADIUS;
     }
     private boolean assigned(Entity e, int head) {
         if(skullHead > head && e == skullTarget) return true;
@@ -348,6 +351,8 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
         EntityLivingBase target = null;
         for(EntityLivingBase candidate : targets) if(validTarget(candidate)
             && (target == null || getDistanceSqToEntity(candidate) < getDistanceSqToEntity(target))) target = candidate;
+        // Players own pursuit; local clusters are opportunistic stops along that route.
+        waypoint = hunt.destination(this, waypoint);
         double tx = waypoint != null ? waypoint.xCoord : target == null ? posX : target.posX;
         double tz = waypoint != null ? waypoint.zCoord : target == null ? posZ : target.posZ;
         double dx = tx - posX, dz = tz - posZ, distance = Math.sqrt(dx * dx + dz * dz);
@@ -400,7 +405,7 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
     }
     /** Every slot has one saved UUID. A known unloaded slot is never replaced. */
     private void maintainParts() {
-        for(int i = 0; i < 10; i++) {
+        for(int i = 0; i < parts.length; i++) {
             if(!isPartActive(i)) {
                 if(parts[i] != null) retirePart(parts[i]);
                 continue;
@@ -419,11 +424,26 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
                 }
             }
             parts[i].parent = this;
+            if(i >= 3) parts[i].tentacle.tick(this);
             parts[i].followParent();
             partChunksX[i] = MathHelper.floor_double(parts[i].posX) >> 4; partChunksZ[i] = MathHelper.floor_double(parts[i].posZ) >> 4;
         }
     }
-    public boolean isPartActive(int slot) { return slot < 3 || getStage().hasTentacles(); }
+    public boolean isPartActive(int slot) {
+        return slot >= 0 && slot < parts.length && (slot < 3 || getStage().hasTentacles()
+            && (slot < 10 || getStage() == WitherStormStage.C_BIG));
+    }
+
+    void trackClientPart(EntityWitherStormPart part) {
+        if(worldObj.isRemote && part.slot() >= 0 && part.slot() < parts.length) parts[part.slot()] = part;
+    }
+
+    EntityWitherStormPart tentaclePart(int slot) { return slot >= 3 && slot < parts.length ? parts[slot] : null; }
+
+    boolean heldByOther(Entity entity, int slot) {
+        for(int i = 3; i < parts.length; i++) if(i != slot && parts[i] != null && parts[i].tentacle.holding(entity)) return true;
+        return false;
+    }
 
     void retirePart(EntityWitherStormPart part) {
         int slot = part.slot();
@@ -441,11 +461,10 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
             return Vec3.createVectorHelper(posX + offset.xCoord, posY + offset.yCoord, posZ + offset.zCoord);
         }
         if(getStage().hasPosedTentacles()) return posedArmPosition(slot, 1D);
-        float d = development();
-        double angle = (slot - 3) * Math.PI * 2D / 7D;
-        double wave = Math.sin((worldObj.getTotalWorldTime() + slot * 19) * 0.04D);
-        double length = (slot >= 8 ? 7D : 5D) + d * 11D;
-        return local(Math.cos(angle) * (length + wave) * s, (slot >= 8 ? -2D : -4D - d * 6D) * s, Math.sin(angle) * length * s);
+        double[] point = armSample;
+        genericArmPoint(slot, 1D, worldObj.getTotalWorldTime(), point);
+        applyTentacleAction(slot, 1D, worldObj.getTotalWorldTime(), 1F, s, point);
+        return local(point[0] * s, point[1] * s, point[2] * s);
     }
     public static float commandHeadSize(int slot) { return slot == 1 ? 1F : 0.75F; }
 
@@ -485,11 +504,37 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
     Vec3 posedArmPosition(int slot, double t) {
         double time = worldObj.getTotalWorldTime();
         posedArmPoint(slot, t, time, 1F, armSample);
+        float scale = armScale();
+        return local(armSample[0] * scale, armSample[1] * scale, armSample[2] * scale);
+    }
+
+    float armScale() {
         float size = getStage() == WitherStormStage.B ? WitherStormDestroyerPose.size(development())
             : getStage() == WitherStormStage.C_BIG ? WitherStormBigDevourerPose.size(development())
-            : WitherStormDevourerPose.size(development());
-        float scale = size * getStormScale();
-        return local(armSample[0] * scale, armSample[1] * scale, armSample[2] * scale);
+            : getStage().hasPosedTentacles() ? WitherStormDevourerPose.size(development()) : 1F;
+        return size * getStormScale();
+    }
+
+    void restArmPoint(int slot, double t, double time, double[] out) {
+        if(getStage() == WitherStormStage.B) WitherStormDestroyerPose.armPoint(slot, t, time, out);
+        else if(getStage() == WitherStormStage.C_BIG) WitherStormBigDevourerPose.armPoint(slot, t, time, out);
+        else if(getStage().hasPosedTentacles()) WitherStormDevourerPose.armPoint(slot, t, time, out);
+        else genericArmPoint(slot, t, time, out);
+    }
+
+    private void genericArmPoint(int slot, double t, double time, double[] out) {
+        double angle = (slot - 3) * Math.PI * 2D / 7D, d = development();
+        double rootX = Math.cos(angle) * (1D + d * 5D), rootZ = Math.sin(angle) * (1D + d * 4D);
+        double length = (slot >= 8 ? 7D : 5D) + d * 11D;
+        out[0] = rootX * (1D - t) + Math.cos(angle) * length * t;
+        out[1] = (2D + d * 3D) * (1D - t) + (slot >= 8 ? -2D : -4D - d * 6D) * t;
+        out[2] = rootZ * (1D - t) + Math.sin(angle) * length * t;
+        WitherStormTentacleMotion.idle(slot, t, time, 2D, out);
+    }
+
+    private void applyTentacleAction(int slot, double t, double time, float partial, float scale, double[] out) {
+        EntityWitherStormPart part = tentaclePart(slot);
+        if(part != null && !part.isDead) part.tentacle.pose(this, t, time, partial, scale, out);
     }
 
     public float tentacleActivity(float partial) {
@@ -504,29 +549,13 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
 
     /** Shared by the retained models and server contact points; no client classes or per-sample allocations. */
     public void posedArmPoint(int slot, double t, double time, float partial, double[] out) {
-        if(getStage() == WitherStormStage.B) {
-            WitherStormDestroyerPose.armPoint(slot, t, time, out);
-        } else if(getStage() == WitherStormStage.C_BIG) {
-            WitherStormBigDevourerPose.armPoint(slot, t, time, out);
-        } else {
-            WitherStormDevourerPose.armPoint(slot, t, time, out);
-        }
-        double strength = tentacleActivity(partial);
-        double stroke = WitherStormTentacleMotion.stroke(slot, t, time) * strength;
-        Entity target = worldObj.getEntityByID(headTarget((slot - 3) % 3));
-        if(target != null) {
-            double dx = target.posX - posX, dz = target.posZ - posZ;
-            double yaw = Math.toRadians(rotationYaw), scale = Math.max(1D, getStormScale());
-            out[0] += WitherStormMath.limit((dx * Math.cos(yaw) + dz * Math.sin(yaw)) / scale, 3D) * stroke;
-            out[1] += WitherStormMath.limit((target.posY - posY) / scale, 3D) * stroke;
-            out[2] += WitherStormMath.limit((-dx * Math.sin(yaw) + dz * Math.cos(yaw)) / scale, 3D) * stroke;
-        }
-        out[1] += Math.sin(time * 0.085D + slot * 2.4D - t * 4.5D) * strength * t * t * 1.1D;
+        restArmPoint(slot, t, time, out);
         // Visual terrain gripping never moves the server's contact endpoints.
         double grip = Math.sin(Math.PI * t) * tentacleCapture(partial)
             * Math.sin(time * 0.09D + slot * 2.4D - t * 3D);
         out[1] += grip * 1.4D;
         out[2] -= grip * 1.8D;
+        applyTentacleAction(slot, t, time, partial, armScale(), out);
     }
     public Vec3 mouth(int head) {
         if(parts[head] != null && !parts[head].isDead) return parts[head].mouth(1F);
@@ -632,7 +661,8 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
                 WitherStormMath.pull(e, nearest.xCoord, nearest.yCoord, nearest.zCoord, 0.075D + getPhase().ordinal() * 0.015D);
             boolean touching = best < Math.pow(1.6D * getStormScale(), 2) || boundingBox.intersectsWith(e.boundingBox);
             boolean devouring = false;
-            if(getPhase().ordinal() >= 2) for(int t = 8; t < 10; t++) if(parts[t] != null && parts[t].getDistanceSqToEntity(e) < 16D * getStormScale() * getStormScale()) { touching = true; devouring = true; }
+            if(getPhase().ordinal() >= 2) for(int t = 8; t < 10; t++) if(parts[t] != null && parts[t].tentacle.intact()
+                && parts[t].getDistanceSqToEntity(e) < 16D * getStormScale() * getStormScale()) { touching = true; devouring = true; }
             if(touching && (e instanceof EntityItem || e instanceof EntityFallingBlock)) {
                 int mass = e instanceof EntityItem ? Math.min(64, ((EntityItem)e).getEntityItem().stackSize) : 3;
                 if(e instanceof EntityFallingBlock) ((EntityFallingBlock)e).field_145813_c = false;
@@ -642,15 +672,6 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
                 EntityLivingBase living = (EntityLivingBase)e;
                 boolean hurt = living.attackEntityFrom(DamageSource.causeMobDamage(this), attackStrength() * (devouring ? 2F : 1F));
                 if(hurt && !living.isEntityAlive()) { addMass(Math.max(10, Math.min(200, (int)living.getMaxHealth()))); heal(4F); }
-            }
-            if(ticksExisted % 20 == 0 && e instanceof EntityLivingBase && getPhase() != WitherStormPhase.COMMAND_BLOCK) {
-                for(int t = 3; t < 10; t++) if(parts[t] != null && parts[t].getDistanceSqToEntity(e) < 9D * getStormScale() * getStormScale()) {
-                    if(e.attackEntityFrom(DamageSource.causeMobDamage(this), attackStrength())) {
-                        ((EntityLivingBase)e).addPotionEffect(new PotionEffect(Potion.wither.id, 100, 0));
-                        if(t == 3 || t == 8) playSound("hbm:entity.witherStorm.tentacle", 0.8F, 1F);
-                    }
-                    break;
-                }
             }
         }
     }
@@ -698,7 +719,7 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
         n.setByte("TransformedHeads", dataWatcher.getWatchableObjectByte(29));
         n.setByte("TransformingHeads", dataWatcher.getWatchableObjectByte(31));
         WitherStormMath.uuid(n, "Encounter", getUniqueID());
-        for(int i = 0; i < 10; i++) { WitherStormMath.uuid(n, "Part" + i, partIds[i]); n.setInteger("PartX" + i, partChunksX[i]); n.setInteger("PartZ" + i, partChunksZ[i]); }
+        for(int i = 0; i < parts.length; i++) { WitherStormMath.uuid(n, "Part" + i, partIds[i]); n.setInteger("PartX" + i, partChunksX[i]); n.setInteger("PartZ" + i, partChunksZ[i]); }
         for(int i = 0; i < 3; i++) WitherStormMath.uuid(n, "Target" + i, targetIds[i]);
         n.setInteger("SkullCooldown", skullHead >= 0 ? skullCooldownForPhase() : skullCooldown);
         terrain.write(n);
@@ -723,7 +744,7 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
         registered = n.getBoolean("Registered"); dataWatcher.updateObject(22, (byte)(!n.hasKey("Core") || n.getBoolean("Core") ? 1 : 0));
         lastGrowthSoundMass = n.getInteger("GrowthSoundMass");
         dataWatcher.updateObject(23, Math.max(0, Math.min(80, n.getInteger("Transition")))); roarTimer = Math.max(40, Math.min(500, n.getInteger("RoarTimer")));
-        for(int i = 0; i < 10; i++) { partIds[i] = WitherStormMath.uuid(n, "Part" + i); partChunksX[i] = n.getInteger("PartX" + i); partChunksZ[i] = n.getInteger("PartZ" + i); }
+        for(int i = 0; i < parts.length; i++) { partIds[i] = WitherStormMath.uuid(n, "Part" + i); partChunksX[i] = n.getInteger("PartX" + i); partChunksZ[i] = n.getInteger("PartZ" + i); }
         for(int i = 0; i < 3; i++) targetIds[i] = WitherStormMath.uuid(n, "Target" + i);
         skullCooldown = n.hasKey("SkullCooldown") ? Math.max(0, Math.min(12000, n.getInteger("SkullCooldown"))) : skullCooldownForPhase();
         visualScale = previousVisualScale = getStormScale(); terrain.read(n);

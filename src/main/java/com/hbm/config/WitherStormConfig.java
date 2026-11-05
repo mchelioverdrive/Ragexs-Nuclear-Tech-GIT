@@ -32,7 +32,7 @@ public final class WitherStormConfig {
         attackTicks = integer(config, c, "skullAttackTicks", "Base cooldown after a skull volley. Each phase reduces it by one eighth of the base, with a 40-tick minimum.", 80, 40, 12000);
         skullAttackRange = integer(config, c, "skullAttackRange", "Maximum distance in blocks from both the Storm and the firing mouth to a skull target.", 96, 8, 96);
         maxEncounters = integer(config, c, "maxEncounters", "Maximum encounters across all dimensions, including saved unloaded encounters. Zero disables new summons.", 1, 0, 32);
-        queryBudget = integer(config, c, "entityQueryBudget", "Maximum entity entries examined per cached search; at most 64 candidates retained, refreshed every 20 ticks.", 512, 64, 4096);
+        queryBudget = integer(config, c, "entityQueryBudget", "Maximum entity entries examined per cached head/debris search; at most 64 candidates retained, refreshed every 20 ticks. Player pursuit, mob density and tentacles use a separate local living-entity census.", 512, 64, 4096);
         maxRadius = integer(config, c, "maxConsumptionRadius", "Maximum terrain sweep radius in blocks, independent of growth. Chunks are never force-loaded.", 32, 4, 48);
         double strength = CommonConfig.createConfigDouble(config, c, "skullExplosionStrength", "Non-nuclear impact strength, scaled by phase; bounded to 0-8. Terrain shares blocksPerTick and protection rules.", 2D);
         explosionStrength = (float)(Double.isNaN(strength) || Double.isInfinite(strength) ? 2D : Math.max(0D, Math.min(8D, strength)));

@@ -394,3 +394,9 @@
 - Replace the generic big Devourer mantle with a towering, deep sloped slab of corrupted blocks, three low glowing heads, a heavy curved side arm and nine varied hanging appendages. Share head and neck attachments with tracked parts, beam eyes and projectile mouths; retain the existing growth thresholds and damaged form.
 - Give existing tentacles staggered travelling idle bends, smooth target-driven extension and recoil, and cosmetic terrain-gripping motion using the existing debris packets. Keep the seven gameplay contacts; the extra rear curls are visual geometry. Raise only the big Devourer's terrain clearance to accommodate its longer hanging arms.
 - Lift captured block fragments to an upper-mantle orbit, darken them to purple-black, then draw them inside and expire them. Reuse the bounded client particle batch without adding server entities or awarding growth again.
+
+2026-11-05 17:54 — Give Wither Storm tentacles active combat and opportunistic mob hunting
+
+- Keep players as the primary pursuit target, intercepting the densest mob clusters along the route within the existing 96-block targeting radius. Without a player destination, seek the largest nearby cluster using a complete local living-entity census.
+- Animate server-owned reaches, whips, grabs, crushing grips and slams, including defense against intruders inside the mantle. Share attack endpoints with rendering and hit contacts; activate the big Devourer's three rear arms as gameplay parts.
+- Send tentacle terrain impacts through the existing protected, budgeted consumption queue, including breakable obsidian. Grow new arms, allow severing to release prey, save arm damage and material-fed regrowth, and repair body health as material is consumed. Keep existing growth stages, commands, terrain settings and save identities.

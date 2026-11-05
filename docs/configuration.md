@@ -317,8 +317,8 @@ The `12_mobs.witherstorm` category in `config/hbm.cfg` controls the hostile boss
 | `fearDetectionInterval` | 10 | Ticks between threat scans and escape path attempts. |
 | `passiveFleeSpeed` | 1.5 | Flee speed multiplier for nonhostile mobs. |
 | `hostileFleeSpeed` | 1.7 | Flee speed multiplier for hostile mobs. |
-| `terrainDestruction` | true | Consumption and skull terrain damage also require `mobGriefing`. Neither attack uses nuclear crater or fallout systems. |
-| `blocksPerTick` | 16 | Coordinates examined per encounter per server tick, including rejected/air coordinates and queued skull impacts. Hard limit 256; zero disables terrain processing. |
+| `terrainDestruction` | true | Consumption, skull impacts and tentacle terrain damage also require `mobGriefing`. These attacks do not use nuclear crater or fallout systems. |
+| `blocksPerTick` | 16 | Coordinates examined per encounter per server tick, including rejected/air coordinates and queued skull/tentacle impacts. Hard limit 256; zero disables terrain processing. |
 | `maxConsumptionRadius` | 32 | Growth-scaled sweep radius cap, configurable from 4 to 48 blocks. The resumable sweep does not continually rescan an exhausted stationary volume. |
 | `consumeTileEntities` | false | Explicitly allow destroying machines/containers and their contents. |
 | `protectedBlocks` | chest, ender chest, enchanting table | Registry-name blacklist. |
@@ -326,11 +326,15 @@ The `12_mobs.witherstorm` category in `config/hbm.cfg` controls the hostile boss
 | `skullAttackTicks` | 80 | Base cooldown after a volley. Each later phase subtracts one eighth of the base, to a minimum of 40 ticks. Up to three heads fire once each, with a 10-tick windup per shot. |
 | `skullAttackRange` | 96 | Maximum target distance in blocks from both the Storm and the firing mouth. Accepts 8–96. |
 | `skullExplosionStrength` | 2 | Ordinary area attack strength (0–8), increased by phase. Terrain damage shares the normal processing budget and protections. |
-| `entityQueryBudget` | 512 | Entries examined per 20-tick cached search (64–4096); at most 64 candidates retained. Flight targets players and hostile mobs; nearby other living entities can be consumed. |
+| `entityQueryBudget` | 512 | Entries examined per 20-tick head/debris search (64–4096); at most 64 candidates retained. Player pursuit, mob clusters and tentacles use a separate complete census of living targets within 96 blocks, refreshed every 20 ticks. |
 | `debrisPerTick` | 4 | Maximum consumed-block visual records per encounter per tick (0–16), batched every five ticks. No physical debris is spawned on the server. |
 | `maxClientDebris` | 128 | Client-local active 3D block debris cap across all encounters (0–512). Growth, particle quality and distance control visual density independently of actual consumption. Six metadata-aware faces share the vanilla terrain-atlas particle batch; unsupported block models use textured cube fragments. |
 
 Physical size, damage and reach increase with mass but remain capped. Maximum boss health respects Forge 1.7.10's native 1024 health attribute limit. Heads and tentacles forward damage into that single root health pool. All targeting, pulling, consumption, damage and terrain mutation run on the server thread. Visual debris expires within 50 client ticks. Skulls have a 160-world-tick lifetime and a hard cap of 24 per encounter; root-owned expiry also removes skulls suspended by vanilla's chunk-boundary tick rules. Flight and skull launches retain a loaded-chunk margin instead of requesting terrain. Runtime entity IDs are not persisted as ownership; components save parent/encounter UUIDs and resolve them without loading chunks.
+
+Players remain the primary flight target. While approaching a player or a challenge-mode player waypoint, the Storm can intercept the largest mob cluster ahead within 16 horizontal blocks of that route. It resumes direct pursuit within 24 horizontal blocks of the player and skips clusters already within 12 horizontal blocks of itself. With no player destination, it seeks the largest local cluster. Cluster density counts mobs within a 16-block sphere of each candidate, breaking ties by distance to the Storm; Creative players retain the existing ordinary-encounter targeting behavior and remain immune to consumption.
+
+Tentacles visibly reach, whip, grab, crush and slam using server-controlled poses. They prioritize intruders inside the mantle to defend the Command Block. Strikes can consume obsidian through the existing terrain queue, subject to the same protections, configuration and work budget as other Storm terrain damage. The big Devourer's three rear curls also have tracked gameplay contacts. Tentacles emerge over 60 ticks; sustained damage can sever an arm and release its grip. After the Storm consumes another 120 mass, that arm regrows over 60 ticks. Arm damage and regrowth survive saves; transient grabs release on reload. Consumed material also repairs the Storm's body health, allowing its existing damaged form to recover.
 
 The implementation uses [The Engender Mod's Wither Storm sources](https://github.com/Mrbt0907/The-Engender-Mod/tree/main/src/main/java/net/minecraft/AgeOfMinecraft/entity/tier6) as a behavior reference. RNT supplies original code, model geometry, procedural texture and synthesized sounds. The challenge Storm uses a Forge entity ticket for its immediate flight area, up to nine chunks as allowed by Forge. Recording player waypoints uses positions already available to the server.
 

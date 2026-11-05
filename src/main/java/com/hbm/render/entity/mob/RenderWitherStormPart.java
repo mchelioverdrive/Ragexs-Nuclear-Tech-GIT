@@ -30,7 +30,7 @@ public final class RenderWitherStormPart extends Render {
         EntityWitherStormPart part = (EntityWitherStormPart)entity;
         EntityWitherStorm boss = part.parent();
         Minecraft mc = Minecraft.getMinecraft();
-        if(boss == null || mc.renderViewEntity == null || mc.renderViewEntity.getDistanceSqToEntity(boss) > 256D * 256D) return;
+        if(boss == null || !boss.isPartActive(part.slot()) || mc.renderViewEntity == null || mc.renderViewEntity.getDistanceSqToEntity(boss) > 256D * 256D) return;
         WitherStormStage stage = boss.getStage();
         if(stage == WitherStormStage.A) {
             if(part.slot() < 3) renderCommandHead(boss, part, partial);
