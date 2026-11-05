@@ -87,6 +87,16 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
     @Override public void addPotionEffect(PotionEffect effect) { if(effect.getPotionID() != Potion.wither.id) super.addPotionEffect(effect); }
     public int getGrowth() { return dataWatcher.getWatchableObjectInt(20); }
     public WitherStormPhase getPhase() { return WitherStormPhase.values()[Math.max(0, Math.min(3, dataWatcher.getWatchableObjectByte(21)))]; }
+    public WitherStormStage getStage() {
+        switch(getPhase()) {
+            case COMMAND_BLOCK: return WitherStormStage.A;
+            case DESTROYER: return headTransformed(0) && headTransformed(2) ? WitherStormStage.B : WitherStormStage.A_TRANSFORMED;
+            case DEVOURER:
+                if(development() < 0.775F) return WitherStormStage.C_SMALL;
+                return getHealth() <= getMaxHealth() * 0.25F ? WitherStormStage.C_DAMAGED : WitherStormStage.C_BIG;
+            default: return WitherStormStage.D;
+        }
+    }
     public boolean hasCore() { return dataWatcher.getWatchableObjectByte(22) != 0; }
     public int transitionTicks() { return dataWatcher.getWatchableObjectInt(23); }
     public int headTarget(int head) { return dataWatcher.getWatchableObjectInt(24 + head); }
@@ -97,12 +107,14 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
         return (dataWatcher.getWatchableObjectByte(31) & (1 << head)) == 0 ? 1F
             : Math.max(0F, Math.min(1F, 1F - (transitionTicks() - partial) / 80F));
     }
-    public float headSize(int head) { return headTransformed(head) ? 1.15F + development() * 0.65F : (head == 1 ? 1F : 0.75F); }
+    public float headSize(int head) {
+        if(!headTransformed(head)) return commandHeadSize(head);
+        return getStage() == WitherStormStage.A_TRANSFORMED ? 0.58F : 1.15F + development() * 0.65F;
+    }
     public boolean beamActive(int head) { return isEntityAlive() && headTransformed(head) && (dataWatcher.getWatchableObjectByte(28) & (1 << head)) != 0; }
     private int headsForGrowth(int mass) {
-        // Existing phase thresholds also provide three distinct head milestones.
-        int firstSide = WitherStormConfig.transform + Math.max(1, (WitherStormConfig.devourer - WitherStormConfig.transform) / 2);
-        return (mass >= WitherStormConfig.transform ? 2 : 0) | (mass >= firstSide ? 1 : 0) | (mass > WitherStormConfig.devourer ? 4 : 0);
+        int stageB = WitherStormConfig.transform + Math.max(1, (WitherStormConfig.devourer - WitherStormConfig.transform) / 2);
+        return mass >= stageB ? 7 : mass >= WitherStormConfig.transform ? 2 : 0;
     }
     public float getStormScale() {
         return dataWatcher.getWatchableObjectFloat(27);
@@ -115,7 +127,7 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
         WitherStormPhase before = getPhase(), after = WitherStormPhase.forGrowth(Math.max(0, mass));
         int oldHeads = dataWatcher.getWatchableObjectByte(29), heads = headsForGrowth(mass);
         // Retain saved transformations if configuration thresholds changed after saving.
-        if(mass >= getGrowth()) heads |= oldHeads;
+        if(mass >= getGrowth()) heads = pairSideHeads(heads | oldHeads);
         float oldMax = getMaxHealth(), health = getHealth();
         dataWatcher.updateObject(20, Math.max(0, Math.min(1000000000, mass)));
         dataWatcher.updateObject(21, (byte)after.ordinal());
@@ -173,9 +185,22 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
             }
         }
         float s = getStormScale();
-        boolean commandPhase = getPhase() == WitherStormPhase.COMMAND_BLOCK;
-        float wantedWidth = (commandPhase ? 41F / 16F : 2F + development() * 21F) * s;
-        float wantedHeight = (commandPhase ? 30F / 16F : 3.5F + development() * 10.5F) * s;
+        WitherStormStage stage = getStage();
+        float development = development();
+        float wantedWidth = (stage == WitherStormStage.A ? 41F / 16F
+            : stage == WitherStormStage.A_TRANSFORMED ? 3.9F : 2F + development * 21F) * s;
+        float bodyHeight = 3.5F + development * 10.5F;
+        switch(stage) {
+            case A: bodyHeight = 30F / 16F; break;
+            case A_TRANSFORMED: bodyHeight = 3.89F + Math.max(0F, development - 0.22F) * 3F; break;
+            case C_SMALL:
+            case C_BIG:
+            case D:
+                bodyHeight = 1.6F + development * 5.2F + (1.9F + development * 9F) * 1.895F * stage.crownScale();
+                break;
+            default: break;
+        }
+        float wantedHeight = bodyHeight * s;
         if(width != wantedWidth || height != wantedHeight) {
             // 1.7.10 setSize moves a growing entity toward its old box corner.
             // Keep growth and reload sizing centered on the saved flight position.
@@ -315,8 +340,10 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
     /** Every slot has one saved UUID. A known unloaded slot is never replaced. */
     private void maintainParts() {
         for(int i = 0; i < 10; i++) {
-            boolean active = i < 3 || getPhase() != WitherStormPhase.COMMAND_BLOCK;
-            if(!active) { if(parts[i] != null) parts[i].setDead(); parts[i] = null; continue; }
+            if(!isPartActive(i)) {
+                if(parts[i] != null) retirePart(parts[i]);
+                continue;
+            }
             if(parts[i] == null || parts[i].isDead || WitherStormEncounters.get(worldObj).find(partIds[i], worldObj) != parts[i]) {
                 parts[i] = null;
                 Entity found = WitherStormEncounters.get(worldObj).find(partIds[i], worldObj);
@@ -335,6 +362,17 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
             partChunksX[i] = MathHelper.floor_double(parts[i].posX) >> 4; partChunksZ[i] = MathHelper.floor_double(parts[i].posZ) >> 4;
         }
     }
+    public boolean isPartActive(int slot) { return slot < 3 || getStage().hasTentacles(); }
+
+    void retirePart(EntityWitherStormPart part) {
+        int slot = part.slot();
+        if(part.getUniqueID().equals(partIds[slot])) {
+            parts[slot] = null;
+            partIds[slot] = null;
+        }
+        part.setDead();
+    }
+
     public Vec3 partPosition(int slot) {
         float s = getStormScale();
         if(slot < 3 && getPhase() == WitherStormPhase.COMMAND_BLOCK) {
@@ -343,8 +381,14 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
                 posY + center.yCoord - 0.5F * commandHeadSize(slot) * s, posZ + center.zCoord);
         }
         float d = development();
-        if(slot < 3) return local((slot - 1) * (0.85D + 9D * d) * s,
-            ((slot == 1 ? 2.1D : 1.8D) + d * (slot == 1 ? 3D : 5D)) * s, -(0.05D + 9D * d) * s);
+        if(slot < 3) {
+            if(getStage() == WitherStormStage.A_TRANSFORMED) {
+                return local((slot - 1) * 1.10D * s, (slot == 1 ? 0.92D : 1.275D) * s, (slot == 1 ? -0.54D : 0.0625D) * s);
+            }
+            // The head pivots clear the front of the mantle, even at the broadest stage.
+            return local((slot - 1) * (1.50D + 9D * d) * s,
+                ((slot == 1 ? 2.05D : 2D) + 2D * d) * s, -((slot == 1 ? 2D : 1.8D) + 9D * d) * s);
+        }
         double angle = (slot - 3) * Math.PI * 2D / 7D;
         double wave = Math.sin((worldObj.getTotalWorldTime() + slot * 19) * 0.04D);
         double length = (slot >= 8 ? 7D : 5D) + d * 11D;
@@ -480,7 +524,7 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
         super.readEntityFromNBT(n);
         float savedHealth = getHealth(); restoring = true; setGrowth(n.getInteger("Growth")); restoring = false; setHealth(savedHealth);
         // Legacy saves derive their head state from mass; existing identity and growth remain intact.
-        if(n.hasKey("TransformedHeads")) dataWatcher.updateObject(29, (byte)((n.getByte("TransformedHeads") | headsForGrowth(getGrowth())) & 7));
+        if(n.hasKey("TransformedHeads")) dataWatcher.updateObject(29, (byte)pairSideHeads(n.getByte("TransformedHeads") | headsForGrowth(getGrowth())));
         dataWatcher.updateObject(31, (byte)(n.getByte("TransformingHeads") & dataWatcher.getWatchableObjectByte(29)));
         registered = n.getBoolean("Registered"); dataWatcher.updateObject(22, (byte)(!n.hasKey("Core") || n.getBoolean("Core") ? 1 : 0));
         lastGrowthSoundMass = n.getInteger("GrowthSoundMass");
@@ -492,5 +536,10 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
             startPursuit();
             pursuit.read(n.getCompoundTag("ChallengePursuit"));
         }
+    }
+
+    private static int pairSideHeads(int heads) {
+        // Older saves could record one side as transformed without its partner.
+        return (heads & 5) != 0 ? 7 : heads & 2;
     }
 }

@@ -15,40 +15,32 @@ public final class ModelWitherStormHead extends ModelBase {
         textureWidth = textureHeight = 64;
         ordinary = box(-4, -4, -4, 8, 8, 8, 0, 0);
         sideSkull = box(-3, -3, -3, 6, 6, 6, 32, 0);
+        // Map the large cuboid unwraps inside the tiled storm skin's normalized UV range.
+        textureWidth = textureHeight = 128;
         shell = new ModelRenderer(this, 0, 0);
-        shell.addBox(-13, 9, -15, 26, 16, 26);
-        shell.addBox(-15, 0, -10, 5, 17, 22);
-        shell.addBox(10, 0, -10, 5, 17, 22);
-        // A solid rear skull and side cheeks frame a deep, genuinely open mouth.
-        shell.addBox(-10, 0, 6, 20, 12, 8);
-        brow = box(-15, 22, -17, 30, 6, 11, 0, 32);
-        jaw = box(-13, -4, -24, 26, 5, 26, 0, 32);
-        jaw.setRotationPoint(0, 0, 8);
+        shell.addBox(-12, 9, -15, 24, 16, 24);
+        shell.addBox(-12, 1, -10, 4, 10, 19);
+        shell.addBox(8, 1, -10, 4, 10, 19);
+        shell.addBox(-8, 1, 4, 16, 10, 6);
+        brow = box(-12, 20, -16, 24, 4, 5, 0, 32);
+        jaw = box(-10, -3, -20, 20, 6, 22, 0, 32);
+        jaw.setRotationPoint(0, 0, 6);
         upperTeeth = new ModelRenderer(this, 0, 0);
         lowerTeeth = new ModelRenderer(this, 0, 0);
-        for(int i = 0; i < 7; i++) {
-            upperTeeth.addBox(-12 + i * 4, 5 - (i % 2), -16, 2, 4 + (i % 2), 3);
-            lowerTeeth.addBox(-12 + i * 4, 1, -23, 2, 3 + (i % 2), 3);
+        for(int i = 0; i < 5; i++) {
+            upperTeeth.addBox(-9 + i * 4, 6 - (i % 2), -14, 2, 3 + (i % 2), 2);
+            lowerTeeth.addBox(-9 + i * 4, 2, -19, 2, 2 + (i % 2), 2);
         }
         neck = box(-8, 0, -8, 16, 16, 16, 0, 0);
     }
     private ModelRenderer box(float x, float y, float z, int w, int h, int d, int u, int v) {
         ModelRenderer part = new ModelRenderer(this, u, v); part.addBox(x, y, z, w, h, d); return part;
     }
-    public void renderOrdinary() {
-        renderUpright(ordinary, 0.0625F);
-    }
-    public void renderCommandSkull(boolean center) {
-        renderUpright(center ? ordinary : sideSkull, 0.125F);
-    }
-    private void renderUpright(ModelRenderer skull, float pixel) {
+    public void renderWitherSkull(boolean center) {
         // Vanilla uses downward Y. A half roll keeps the face on -Z and turns it upright.
         GL11.glPushMatrix();
         GL11.glRotatef(180, 0, 0, 1);
-        // A ModelRenderer display list bakes its first render scale.
-        float scale = pixel / 0.0625F;
-        GL11.glScalef(scale, scale, scale);
-        skull.render(0.0625F);
+        (center ? ordinary : sideSkull).render(0.125F);
         GL11.glPopMatrix();
     }
     public void renderHead(float age, boolean beam) {

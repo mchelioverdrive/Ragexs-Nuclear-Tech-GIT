@@ -66,7 +66,7 @@ public class EntityWitherStormPart extends Entity {
         if(slot() < 0 || slot() > 9 || parentId == null) { setDead(); return; }
         EntityWitherStorm boss = parent();
         if(boss != null && boss.isEntityAlive()) {
-            if(slot() >= 3 && boss.getPhase() == WitherStormPhase.COMMAND_BLOCK) setDead();
+            if(!boss.isPartActive(slot())) boss.retirePart(this);
             else followParent();
         }
         else {
@@ -167,7 +167,9 @@ public class EntityWitherStormPart extends Entity {
             double x = posX, y = posY, z = posZ;
             float size = boss == null ? 1F : boss.headSize(slot());
             float extent = boss != null && boss.headTransformed(slot()) ? 2.7F : 1F;
-            setSize(extent * size * scale(), extent * size * scale()); setPosition(x, y, z);
+            float height = boss != null && boss.getStage() == WitherStormStage.A_TRANSFORMED && slot() == 1
+                ? 2.05F * scale() : extent * size * scale();
+            setSize(extent * size * scale(), height); setPosition(x, y, z);
         } else if(boss != null) {
             Vec3 root = boss.tentacleRoot(slot()); double padding = (slot() >= 8 ? 1.4D : 0.7D) * scale();
             boundingBox.setBounds(Math.min(posX, root.xCoord) - padding, Math.min(posY, root.yCoord) - padding, Math.min(posZ, root.zCoord) - padding,

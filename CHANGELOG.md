@@ -356,3 +356,13 @@
 
 - Give the opening phase a compact charcoal skeleton, three independently aimed vanilla Wither skulls, and a fixed Command Block seated in the chest. Align the head joints and hitboxes with the new model.
 - Switch to the existing purple mantle and evolved head sequence at the Destroyer threshold.
+
+2026-11-04 20:32 — Rebuild the evolved Wither Storm silhouette
+
+- Shape the mantle around connected shoulders and an exposed Command Block. Give evolved skulls shorter jaws and subdued teeth while retaining the single eyes and beam origins.
+- Bend and taper the tentacles between their existing attachments. Show outward-facing devourer mouths starting in the Devourer phase.
+
+2026-11-04 20:54 — Follow the Wither Storm's Story Mode progression
+
+- Keep the two ordinary skulls visible during the center head's transformation. At Stage B, transform both side heads together and keep all three clear of the mantle. Bring older two-transformed-head saves forward to the paired form.
+- Grow from the exposed-core Stage A forms into Stage B, then the small, big and damaged Stage C silhouettes and Stage D. Tentacles emerge in Stage B, and the core becomes visible again when Stage C fractures at low health.

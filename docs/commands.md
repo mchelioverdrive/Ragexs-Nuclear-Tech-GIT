@@ -289,9 +289,21 @@ For survival summoning, place a **Fake Command Block** above one soul sand block
 
 Challenge mode starts a 24,000-tick countdown in the Overworld. The command saves a world-specific override. Running `challenge true` during a countdown preserves its progress, and `challenge false` cancels a pending spawn. Once the automatic summon succeeds, the world has used its challenge spawn. The encounter cap applies, so a full cap leaves the spawn pending. The challenge Storm follows sampled trails from eligible Overworld players and continues toward its last recorded position if they leave.
 
-The core remains visible in every form. Damage to heads passes to the boss, and tentacles pass half damage to the same health pool.
+The core is visible in Stage A, Stage A with the transformed head, and damaged Stage C. The mantle covers it in the other forms. Damage to heads passes to the boss, and tentacles pass half damage to the same health pool.
 
-Growth comes from consumed terrain (three mass per block), item stack counts, falling blocks and living victims killed during consumption. Default phases are Command Block below 12,500, Destroyer at 12,500, Devourer above 50,000 and ThunderStorm above 250,000. The central head transforms at 12,500, the first side at the midpoint of the transformation and Devourer thresholds (31,250 by default), and the remaining side above 50,000. Only transformed heads use tractor beams, after their transformation animation finishes. Body volume, necks, head proportions, tentacles and client debris develop with mass. ThunderStorm refreshes ordinary rain/thunder for ten seconds while active in a dimension with a sky. Growth, transformed heads, attack timers, component UUIDs and terrain cursors survive saving; older saves derive head progress from their existing mass. Raising growth preserves completed head transformations, while lowering it explicitly recalculates heads from the configured thresholds. The boss uses loaded terrain only and may stop at unloaded boundaries. See [Wither Storm configuration](configuration.md#wither-storm).
+Growth comes from consumed terrain (three mass per block), item stack counts, falling blocks and living victims killed during consumption. Default phases are Command Block below 12,500, Destroyer at 12,500, Devourer above 50,000 and ThunderStorm above 250,000.
+
+| Appearance | Default progression |
+| --- | --- |
+| Stage A | Below 12,500. Three ordinary skulls. |
+| Stage A (Transformed Head) | At 12,500. The center head transforms, with two ordinary side skulls and early growth behind the exposed core. |
+| Stage B | At 31,250, halfway from Destroyer to Devourer. Both side heads transform and tentacles emerge. |
+| Stage C (Small) | Above 50,000. The mantle develops a taller crown. |
+| Stage C (Big) | At 150,000, halfway from Devourer to ThunderStorm. The crown reaches its full proportions. |
+| Stage C (Damaged) | Stage C (Big) at or below 25% health. The crown fractures and the core is exposed. |
+| Stage D | Above 250,000. The tall mantle reforms with visible purple seams. |
+
+Only transformed heads use tractor beams, after their transformation animation finishes. ThunderStorm refreshes ordinary rain/thunder for ten seconds while active in a dimension with a sky. Growth, transformed heads, attack timers, component UUIDs and terrain cursors survive saving. Older saves with a transformed side head gain its partner. Raising growth preserves completed head transformations, while lowering it recalculates heads from the configured thresholds. The boss uses loaded terrain only and may stop at unloaded boundaries. See [Wither Storm configuration](configuration.md#wither-storm).
 
 ### `/rntsandworm`
 

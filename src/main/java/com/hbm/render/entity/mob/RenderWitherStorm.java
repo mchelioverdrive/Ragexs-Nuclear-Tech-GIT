@@ -1,7 +1,7 @@
 package com.hbm.render.entity.mob;
 
 import com.hbm.entity.mob.witherstorm.EntityWitherStorm;
-import com.hbm.entity.mob.witherstorm.WitherStormPhase;
+import com.hbm.entity.mob.witherstorm.WitherStormStage;
 import com.hbm.render.model.ModelCommandBlockWither;
 import com.hbm.render.model.ModelWitherStorm;
 import cpw.mods.fml.relauncher.Side;
@@ -38,9 +38,14 @@ public final class RenderWitherStorm extends Render {
         GL11.glTranslated(x, y, z); GL11.glRotatef(-(boss.prevRotationYaw + MathHelper.wrapAngleTo180_float(boss.rotationYaw - boss.prevRotationYaw) * partial), 0, 1, 0);
         float scale = boss.renderScale(partial); GL11.glScalef(scale, scale, scale);
         GL11.glEnable(GL11.GL_NORMALIZE);
-        // Development can rise before transformation, so only the phase selects the body.
-        if(boss.getPhase() == WitherStormPhase.COMMAND_BLOCK) renderCommandWither(boss.hasCore());
-        else renderStorm(boss, distance < 96D * 96D);
+        WitherStormStage stage = boss.getStage();
+        if(!stage.hasTentacles()) {
+            if(stage == WitherStormStage.A_TRANSFORMED) {
+                bindTexture(SKIN);
+                model.renderEarlyGrowth(boss.development());
+            }
+            renderCommandWither(boss.hasCore());
+        } else renderStorm(boss, stage);
         GL11.glPopMatrix(); GL11.glPopAttrib();
         long tick = boss.worldObj.getTotalWorldTime();
         if(tick != lastParticles && distance < 96D * 96D && mc.gameSettings.particleSetting != 2) {
@@ -70,21 +75,19 @@ public final class RenderWitherStorm extends Render {
         }
     }
 
-    private void renderStorm(EntityWitherStorm boss, boolean detailed) {
+    private void renderStorm(EntityWitherStorm boss, WitherStormStage stage) {
         bindTexture(SKIN);
         float development = boss.development();
-        model.storm(development, detailed);
-        if(development < 0.55F) { bindTexture(WITHER); model.earlyStormSpine(); }
-        if(boss.hasCore()) {
+        model.renderMantle(development, stage);
+        if(stage == WitherStormStage.C_DAMAGED && boss.hasCore()) {
             GL11.glPushMatrix();
-            // Front of the growing mass: the core stays embedded and readable, never orbiting.
-            GL11.glTranslatef(0, 1.35F + development * 2.8F, -0.18F - development * 8.5F);
-            float core = 0.65F + development * 1.6F; GL11.glScalef(core, core, core);
+            GL11.glTranslatef(0, ModelWitherStorm.coreY(development), ModelWitherStorm.coreZ(development));
+            float core = ModelWitherStorm.coreSize(development);
+            GL11.glScalef(core, core, core);
+            model.renderCoreFrame();
+            GL11.glRotatef(-90F, 0, 1, 0);
             bindTexture(TextureMap.locationBlocksTexture);
             blocks.renderBlockAsItem(Blocks.command_block, 0, 1F);
-            bindTexture(development < 0.22F ? WITHER : SKIN);
-            GL11.glScalef(1.4F, 1.4F, 1.4F); GL11.glTranslatef(0, -1.25F, 0.18F);
-            model.coreFrame();
             GL11.glPopMatrix();
         }
     }
