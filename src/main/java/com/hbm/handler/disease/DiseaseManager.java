@@ -11,7 +11,7 @@ import net.minecraftforge.common.DimensionManager;
 
 public final class DiseaseManager {
 	private static final Map<String, Pathogen> PATHOGENS = new LinkedHashMap<String, Pathogen>();
-	static { register(new Rabies()); }
+	static { register(new Rabies()); register(new DeepRootDisease()); }
 
 	public static void register(Pathogen pathogen) {
 		if(PATHOGENS.containsKey(pathogen.id())) throw new IllegalArgumentException("Duplicate pathogen " + pathogen.id());
@@ -27,7 +27,7 @@ public final class DiseaseManager {
 	public static Pathogen pathogen(String id) { return PATHOGENS.get(id); }
 
 	public static boolean infect(EntityLivingBase host, Pathogen pathogen, String source, String sourceHost) {
-		if(host.worldObj.isRemote || !pathogen.enabled() || !pathogen.supports(host) || !host.isEntityAlive()) return false;
+		if(host.worldObj.isRemote || !pathogen.canInfect(host) || !host.isEntityAlive()) return false;
 		DiseaseHost data = DiseaseHost.get(host);
 		if(data.infections.containsKey(pathogen.id())) return false;
 		data.infections.put(pathogen.id(), pathogen.establish(host, source, sourceHost, now(host)));
@@ -38,7 +38,7 @@ public final class DiseaseManager {
 		if(host.worldObj.isRemote || !host.isEntityAlive()) return;
 		DiseaseHost data = DiseaseHost.get(host);
 		for(Pathogen pathogen : PATHOGENS.values()) pathogen.onHostTick(host, data);
-		// Stagger bounded progression; unloaded hosts catch up before any subsequent transmission.
+		// Stagger symptom updates; each pathogen owns its clock (rabies deadlines, Deep Root loaded ticks).
 		if(data.infections.isEmpty() || (host.ticksExisted + host.getEntityId()) % 20 != 0) return;
 		long now = now(host);
 		for(Infection infection : data.infections.values()) {
@@ -68,6 +68,7 @@ public final class DiseaseManager {
 			DiseaseHost.get(replacement).loadNBTData(tag);
 		} else {
 			pathogen(Rabies.ID).removeEffects(replacement);
+			pathogen(DeepRootDisease.ID).removeEffects(replacement);
 			DiseaseHost.get(replacement).infections.clear();
 		}
 	}

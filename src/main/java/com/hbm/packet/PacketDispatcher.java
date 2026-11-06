@@ -101,6 +101,7 @@ public class PacketDispatcher {
 		wrapper.registerMessage(ColossusControlPacket.Handler.class, ColossusControlPacket.class, i++, Side.SERVER);
 		wrapper.registerMessage(WitherStormSoundPacket.Handler.class, WitherStormSoundPacket.class, i++, Side.CLIENT);
 		wrapper.registerMessage(RestraintPacket.Handler.class, RestraintPacket.class, i++, Side.CLIENT);
+		wrapper.registerMessage(DeepRootVisualPacket.Handler.class, DeepRootVisualPacket.class, i++, Side.CLIENT);
 	}
 	
 }

@@ -8,7 +8,8 @@ import net.minecraft.nbt.NBTTagCompound;
 
 /**
  * Server-thread extension hook on MinecraftForge.EVENT_BUS after 600 captive ticks,
- * retried every 200 ticks while unhandled. No default conversion is installed.
+ * retried every 200 ticks while unhandled. FakePersonSpawning supplies the default
+ * conversion at lowest priority, respecting replacements supplied by integrations.
  * Supply a NEW, unspawned replacement in the carrier's world. The carrier owns
  * spawning it and only consumes its saved villager when that spawn succeeds.
  */

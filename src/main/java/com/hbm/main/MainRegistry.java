@@ -1078,6 +1078,7 @@ public class MainRegistry {
 		MinecraftForge.EVENT_BUS.register(commonHandler);
 		FMLCommonHandler.instance().bus().register(new com.hbm.world.gemini.GeminiInvasionManager());
 		MinecraftForge.EVENT_BUS.register(new com.hbm.world.gemini.WoodcrawlerSpawning());
+		MinecraftForge.EVENT_BUS.register(new com.hbm.world.gemini.FakePersonSpawning());
 		com.hbm.handler.restraint.Restraints restraintEvents = new com.hbm.handler.restraint.Restraints();
 		MinecraftForge.EVENT_BUS.register(restraintEvents);
 		FMLCommonHandler.instance().bus().register(restraintEvents);

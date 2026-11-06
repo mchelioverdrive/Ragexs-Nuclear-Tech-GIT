@@ -26,11 +26,12 @@ import net.minecraft.world.EnumDifficulty;
 import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
 
-public class EntityWoodcrawler extends EntityMob implements IGeminiCreature {
+public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 
 	public static final int WANDER = 0, STALK = 1, CHASE = 2, SEARCH = 3, RETREAT = 4;
 	private NBTTagCompound capturedVillager;
 	private int captiveTicks;
+	private byte fakePersonConversion;
 	private boolean loadedFromNBT;
 	private int strikeDelay, strikeCooldown;
 	private EntityLivingBase strikeTarget;
@@ -139,6 +140,7 @@ public class EntityWoodcrawler extends EntityMob implements IGeminiCreature {
 			if(!villager.writeToNBTOptional(snapshot)) return false;
 			capturedVillager = snapshot;
 			captiveTicks = 0;
+			fakePersonConversion = 0;
 			dataWatcher.updateObject(22, Byte.valueOf((byte) 1));
 			villager.setDead();
 			if(!villager.isDead) { clearCapture(); return false; }
@@ -173,7 +175,7 @@ public class EntityWoodcrawler extends EntityMob implements IGeminiCreature {
 						&& replacement != null && replacement != this && !replacement.isDead && replacement.worldObj == worldObj
 						&& !worldObj.loadedEntityList.contains(replacement)) {
 					replacement.setLocationAndAngles(posX, posY, posZ, rotationYaw, 0);
-					if(worldObj.spawnEntityInWorld(replacement)) clearCapture();
+					if(spawnReplacement(replacement)) clearCapture();
 				}
 			}
 		}
@@ -186,6 +188,23 @@ public class EntityWoodcrawler extends EntityMob implements IGeminiCreature {
 		if(attackAnimationTicks > 0) attackAnimationTicks--;
 		if(worldObj.isRemote) setSize(0.85F, isCrouching() ? 1.8F : 3.1F);
 		super.onUpdate();
+	}
+
+	private boolean spawnReplacement(EntityLiving replacement) {
+		if(!(replacement instanceof EntityFakePerson)) return worldObj.spawnEntityInWorld(replacement);
+		// Do not materialize inside the carrier, a wall, water, or another captive.
+		for(int i = 0; i < 25; i++) {
+			double x = posX + (i % 5 - 2);
+			double z = posZ + (i / 5 - 2);
+			replacement.setLocationAndAngles(x, posY, z, rotationYaw, 0);
+			if(!worldObj.blockExists(MathHelper.floor_double(x), MathHelper.floor_double(posY), MathHelper.floor_double(z))
+					|| !worldObj.getCollidingBoundingBoxes(replacement, replacement.boundingBox).isEmpty()
+					|| !worldObj.checkNoEntityCollision(replacement.boundingBox)
+					|| worldObj.isAnyLiquid(replacement.boundingBox)) continue;
+			// A canceled spawn keeps the captive and its already-rolled decision for the next retry.
+			return worldObj.spawnEntityInWorld(replacement);
+		}
+		return false;
 	}
 
 	@Override
@@ -216,7 +235,16 @@ public class EntityWoodcrawler extends EntityMob implements IGeminiCreature {
 	private void clearCapture() {
 		capturedVillager = null;
 		captiveTicks = 0;
+		fakePersonConversion = 0;
 		dataWatcher.updateObject(22, Byte.valueOf((byte) 0));
+	}
+
+	/** One decision per captive, including across reloads and vetoed/limited spawn retries. */
+	public boolean shouldConvertToFakePerson() {
+		if(worldObj.isRemote || !hasCapturedVillager() || captiveTicks < 600
+				|| !GeminiInvasionManager.canActivityOccur(worldObj)) return false;
+		if(fakePersonConversion == 0) fakePersonConversion = (byte) (rand.nextFloat() < GeminiConfig.fakePersonConversionChance ? 1 : 2);
+		return fakePersonConversion == 1;
 	}
 
 	@Override
@@ -256,6 +284,7 @@ public class EntityWoodcrawler extends EntityMob implements IGeminiCreature {
 		super.writeEntityToNBT(nbt);
 		if(capturedVillager != null) nbt.setTag("WoodcrawlerCaptive", capturedVillager.copy());
 		nbt.setInteger("WoodcrawlerCaptiveTicks", captiveTicks);
+		nbt.setByte("FakePersonConversion", fakePersonConversion);
 	}
 	@Override
 	public void readEntityFromNBT(NBTTagCompound nbt) {
@@ -263,6 +292,7 @@ public class EntityWoodcrawler extends EntityMob implements IGeminiCreature {
 		loadedFromNBT = true;
 		capturedVillager = nbt.hasKey("WoodcrawlerCaptive", 10) ? nbt.getCompoundTag("WoodcrawlerCaptive") : null;
 		captiveTicks = Math.max(0, Math.min(600, nbt.getInteger("WoodcrawlerCaptiveTicks")));
+		fakePersonConversion = (byte) Math.max(0, Math.min(2, nbt.getByte("FakePersonConversion")));
 		dataWatcher.updateObject(22, Byte.valueOf((byte) (hasCapturedVillager() ? 1 : 0)));
 		// Paths, awareness and attack windups are intentionally transient.
 	}

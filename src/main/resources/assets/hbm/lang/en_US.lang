@@ -7589,3 +7589,5 @@ death.attack.rntInjection=%1$s succumbed to a fictional terminal effect.
 
 entity.hbm.woodcrawler.name=Woodcrawler
 entity.woodcrawler.name=Woodcrawler
+entity.hbm.fake_person.name=Fake Person
+entity.fake_person.name=Fake Person

@@ -5,6 +5,8 @@ import com.hbm.handler.disease.DiseaseManager;
 import com.hbm.handler.disease.Infection;
 import com.hbm.handler.disease.Pathogen;
 import com.hbm.handler.disease.Rabies;
+import com.hbm.handler.disease.DeepRootDisease;
+import com.hbm.world.gemini.GeminiInfections;
 
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.ICommandSender;
@@ -18,16 +20,33 @@ import net.minecraft.util.ChatComponentText;
 public final class CommandDisease extends CommandBase {
 	@Override public String getCommandName() { return "ntmdisease"; }
 	@Override public int getRequiredPermissionLevel() { return 2; }
-	@Override public String getCommandUsage(ICommandSender sender) { return "/ntmdisease <inspect|clear> <player|entityId>"; }
+	@Override public String getCommandUsage(ICommandSender sender) { return "/ntmdisease <inspect|clear> <player|entityId> [rabies|deep_root]"; }
 
 	@Override public void processCommand(ICommandSender sender, String[] args) {
-		if(args.length != 2 || !("inspect".equals(args[0]) || "clear".equals(args[0])))
+		if((args.length != 2 && args.length != 3) || !("inspect".equals(args[0]) || "clear".equals(args[0]))
+				|| args.length == 3 && !(Rabies.ID.equals(args[2]) || DeepRootDisease.ID.equals(args[2])))
 			throw new WrongUsageException(getCommandUsage(sender));
 		Entity entity;
 		if(args[1].matches("[0-9]+")) entity = sender.getEntityWorld().getEntityByID(parseIntWithMin(sender, args[1], 0));
 		else entity = getPlayer(sender, args[1]);
 		if(!(entity instanceof EntityLivingBase)) throw new WrongUsageException("Target must be a loaded living entity in the sender's dimension, or an online player.");
 		EntityLivingBase host = (EntityLivingBase) entity;
+		if(args.length == 3 && DeepRootDisease.ID.equals(args[2])) {
+			if("clear".equals(args[0])) {
+				sender.addChatMessage(new ChatComponentText(DiseaseManager.remove(host, DeepRootDisease.ID)
+						? "Deep Root Disease removed; movement restored and growths cleared. Nausea expires shortly."
+						: "No Deep Root Disease record."));
+				return;
+			}
+			Infection deepRoot = DiseaseHost.get(host).infections.get(DeepRootDisease.ID);
+			if(deepRoot == null) sender.addChatMessage(new ChatComponentText("No established Deep Root Disease infection recorded."));
+			else sender.addChatMessage(new ChatComponentText("deep_root: " + deepRoot.stage
+					+ ", active=" + DeepRootDisease.active(host) + ", stageTicks=" + DeepRootDisease.stageTicks(deepRoot)
+					+ ", durationTicks=" + DeepRootDisease.durationTicks(deepRoot)
+					+ ", conversionEligible=" + GeminiInfections.isConversionEligible(host)
+					+ ", conversionImplemented=false, source=" + deepRoot.source + " (" + deepRoot.sourceHost + ")"));
+			return;
+		}
 		if("clear".equals(args[0])) {
 			sender.addChatMessage(new ChatComponentText(DiseaseManager.remove(host, Rabies.ID) ? "Rabies record and fatal commitment removed; disease AI restored. Symptoms expire shortly." : "No rabies record."));
 			return;

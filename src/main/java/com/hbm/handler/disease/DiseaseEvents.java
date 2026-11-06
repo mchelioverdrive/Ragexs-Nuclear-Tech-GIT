@@ -14,6 +14,8 @@ import com.hbm.items.special.ItemHRIG;
 import com.hbm.util.InventoryUtil;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.RabiesVisualPacket;
+import com.hbm.entity.mob.gemini.IDeepRootCarrier;
+import com.hbm.world.gemini.GeminiInfections;
 
 import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
@@ -43,10 +45,22 @@ public final class DiseaseEvents {
 	public void onStartTracking(net.minecraftforge.event.entity.player.PlayerEvent.StartTracking event) {
 		if(!(event.entityPlayer instanceof EntityPlayerMP) || !(event.target instanceof EntityLivingBase)) return;
 		EntityLivingBase host = (EntityLivingBase) event.target;
+		DeepRootDisease.sendVisual(host, (EntityPlayerMP) event.entityPlayer);
 		Infection infection = DiseaseHost.get(host).infections.get(Rabies.ID);
 		if(infection != null) DiseaseManager.pathogen(Rabies.ID).progress(host, infection, DiseaseManager.now(host));
 		if(Rabies.frothing(host, infection))
 			PacketDispatcher.wrapper.sendTo(new RabiesVisualPacket(host.getEntityId(), true), (EntityPlayerMP) event.entityPlayer);
+	}
+
+	@SubscribeEvent
+	public void onLogin(cpw.mods.fml.common.gameevent.PlayerEvent.PlayerLoggedInEvent event) { syncSelf(event.player); }
+	@SubscribeEvent
+	public void onRespawn(cpw.mods.fml.common.gameevent.PlayerEvent.PlayerRespawnEvent event) { syncSelf(event.player); }
+	@SubscribeEvent
+	public void onDimensionChanged(cpw.mods.fml.common.gameevent.PlayerEvent.PlayerChangedDimensionEvent event) { syncSelf(event.player); }
+
+	private static void syncSelf(EntityPlayer player) {
+		if(player instanceof EntityPlayerMP) DeepRootDisease.sendVisual(player, (EntityPlayerMP) player);
 	}
 
 	// Forge 1.7.10 has no post-armor LivingDamageEvent. Read native confirmed wounds instead of
@@ -67,6 +81,7 @@ public final class DiseaseEvents {
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public void onDeath(LivingDeathEvent event) {
 		if(!event.entityLiving.worldObj.isRemote) Rabies.setFrothing(event.entityLiving, false);
+		if(!event.entityLiving.worldObj.isRemote) DiseaseManager.pathogen(DeepRootDisease.ID).removeEffects(event.entityLiving);
 		// Native death clears combat history before Item.hitEntity runs. Retain only this attack's wound.
 		if(!event.entityLiving.worldObj.isRemote && event.source.getEntity() instanceof EntityPlayer) {
 			PendingSample sample = SAMPLES.get((EntityPlayer) event.source.getEntity());
@@ -169,11 +184,13 @@ public final class DiseaseEvents {
 				sample.damage = new PendingBite(event, source);
 		}
 		// Vanilla wolf mob melee is a bite. Other hosts require our explicit marker, never generic melee inference.
-		if(!(event.source instanceof BiteDamageSource)
+		boolean carrier = source instanceof IDeepRootCarrier && "mob".equals(event.source.getDamageType())
+				&& DeepRootDisease.active(event.entityLiving);
+		if(!carrier && !(event.source instanceof BiteDamageSource)
 				&& !(source.getClass() == EntityWolf.class && "mob".equals(event.source.getDamageType()))) return;
-		if(DiseaseHost.get(source).infections.isEmpty()) return;
+		if(!carrier && DiseaseHost.get(source).infections.isEmpty()) return;
 		// Damage attribution alone is not contact: native attack methods can be invoked at arbitrary range.
-		if(!BiteDamageSource.hasContact(source, event.entityLiving)) return;
+		if(carrier ? !GeminiInfections.hasContact(source, event.entityLiving) : !BiteDamageSource.hasContact(source, event.entityLiving)) return;
 		BITES.add(new PendingBite(event, source));
 	}
 
@@ -198,8 +215,11 @@ public final class DiseaseEvents {
 		BATS.clear();
 		for(PendingBite bite : BITES) {
 			if(bite.wounded()) {
-				DiseaseManager.bitten(bite.source, bite.event.entityLiving);
-				RabiesBehavior.confirmedBite(bite.source, bite.event.entityLiving);
+				GeminiInfections.transmitWound(bite.source, bite.event.entityLiving);
+				if(bite.diseaseBite) {
+					DiseaseManager.bitten(bite.source, bite.event.entityLiving);
+					RabiesBehavior.confirmedBite(bite.source, bite.event.entityLiving);
+				}
 			}
 		}
 		BITES.clear(); // No retained entities, unload callbacks, forced chunk loads, or off-thread world mutations.
@@ -220,10 +240,13 @@ public final class DiseaseEvents {
 		final LivingHurtEvent event;
 		final EntityLivingBase source;
 		final CombatEntry previous;
+		final boolean diseaseBite;
 
 		PendingBite(LivingHurtEvent event, EntityLivingBase source) {
 			this.event = event;
 			this.source = source;
+			diseaseBite = event.source instanceof BiteDamageSource
+					|| source.getClass() == EntityWolf.class && "mob".equals(event.source.getDamageType());
 			List<CombatEntry> entries = entries(event.entityLiving);
 			previous = entries.isEmpty() ? null : entries.get(entries.size() - 1);
 		}

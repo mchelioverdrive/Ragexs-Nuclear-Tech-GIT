@@ -26,6 +26,8 @@ public final class DiseaseHost implements IExtendedEntityProperties {
 	long nextSwallowingMessage; // Transient symptom feedback; never part of infection/save data.
 	public boolean rabiesFrothing; // Only visual eligibility is synchronized; never saved with infection records.
 	public int nextRabiesFroth; // Client emission deadline, in host ticks; no per-particle packets.
+	public int deepRootVisualStage; // 0 = inactive; otherwise stage ordinal + 1. Never infection authority.
+	public boolean deepRootSpasm;
 
 	public static DiseaseHost get(EntityLivingBase host) {
 		DiseaseHost data = (DiseaseHost) host.getExtendedProperties(KEY);

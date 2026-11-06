@@ -7,6 +7,8 @@ public interface Pathogen {
 	String id();
 	boolean enabled();
 	boolean supports(EntityLivingBase host);
+	/** Additional establishment gates; host compatibility alone need not authorize infection. */
+	default boolean canInfect(EntityLivingBase host) { return enabled() && supports(host); }
 	void onHostTick(EntityLivingBase host, DiseaseHost data);
 	Infection establish(EntityLivingBase host, String source, String sourceHost, long now);
 	void progress(EntityLivingBase host, Infection infection, long now);
