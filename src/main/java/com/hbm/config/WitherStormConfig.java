@@ -11,6 +11,7 @@ public final class WitherStormConfig {
     public static int transform = 12500, devourer = 50000, thunder = 250000;
     public static int minimumStageBTicks = 24000;
     public static int blocksPerTick = 16, debrisPerTick = 4, maxDebris = 128;
+    public static int maxVortexFragments = 2000;
     public static int attackTicks = 80, maxEncounters = 1, queryBudget = 512, maxRadius = 32;
     public static int skullAttackRange = 96;
     public static float explosionStrength = 2F;
@@ -29,6 +30,7 @@ public final class WitherStormConfig {
         blocksPerTick = integer(config, c, "blocksPerTick", "Maximum terrain coordinates examined per encounter per server tick, including skull impacts. Zero disables consumption.", 16, 0, 256);
         debrisPerTick = integer(config, c, "debrisPerTick", "Maximum visual debris records per encounter per tick; batched every five ticks. No server debris entities.", 4, 0, 16);
         maxDebris = integer(config, c, "maxClientDebris", "Maximum live Wither Storm debris particles per client, across all encounters.", 128, 0, 512);
+        maxVortexFragments = integer(config, c, "maxVortexFragments", "Maximum visible decorative Stage D vortex fragments per Storm. Client-only; reduced by distance, particle and graphics settings. Zero hides the vortex.", 2000, 0, 8192);
         attackTicks = integer(config, c, "skullAttackTicks", "Base cooldown after a skull volley. Each phase reduces it by one eighth of the base, with a 40-tick minimum.", 80, 40, 12000);
         skullAttackRange = integer(config, c, "skullAttackRange", "Maximum distance in blocks from both the Storm and the firing mouth to a skull target.", 96, 8, 96);
         maxEncounters = integer(config, c, "maxEncounters", "Maximum encounters across all dimensions, including saved unloaded encounters. Zero disables new summons.", 1, 0, 32);

@@ -43,6 +43,9 @@ public final class WitherStormTerrain {
             }
             // Rejected/air/unloaded coordinates spend the same budget as successful removals.
             // Skull craters share this budget rather than adding synchronous explosion work.
+            int downwardReach = radius * 2;
+            if(boss.getStage() == WitherStormStage.D) downwardReach = Math.max(downwardReach,
+                MathHelper.ceiling_double_int(30D * WitherStormThunderstormPose.size(boss.development()) * boss.getStormScale() + 8D));
             for(int work = 0; work < WitherStormConfig.blocksPerTick; work++) {
                 if(!impacts.isEmpty()) { processImpact(); continue; }
                 int side = radius * 2 + 1;
@@ -52,7 +55,7 @@ public final class WitherStormTerrain {
                 if(dx * dx + dz * dz > radius * radius || !WitherStormMath.areaLoaded(world, x, z, 1)) { column++; scanY = -1; continue; }
                 Chunk chunk = world.getChunkProvider().provideChunk(x >> 4, z >> 4);
                 if(scanY < 0) scanY = Math.min(Math.min(254, anchorY + radius), chunk.getHeightValue(x & 15, z & 15) - 1);
-                if(scanY < Math.max(1, anchorY - radius * 2)) { column++; scanY = -1; continue; }
+                if(scanY < Math.max(1, anchorY - downwardReach)) { column++; scanY = -1; continue; }
                 consume(x, scanY--, z);
             }
         } else impacts.clear();

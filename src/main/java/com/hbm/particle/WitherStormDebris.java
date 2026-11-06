@@ -7,6 +7,8 @@ import com.hbm.entity.mob.witherstorm.WitherStormDevourerPose;
 import com.hbm.entity.mob.witherstorm.WitherStormBigDevourerPose;
 import com.hbm.entity.mob.witherstorm.WitherStormMath;
 import com.hbm.entity.mob.witherstorm.WitherStormStage;
+import com.hbm.entity.mob.witherstorm.WitherStormThunderstormPose;
+import com.hbm.render.entity.mob.WitherStormVortex;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.Block;
@@ -39,6 +41,8 @@ public final class WitherStormDebris extends EntityFX {
     private final float size;
     private final int tint, light;
     private final DestroyerDebris destroyer;
+    private final boolean thunderstorm;
+    private final int vortexRing;
     private final double angle, sweep, hoverLift;
     private final double[] crown = new double[4];
     private boolean counted = true;
@@ -47,6 +51,8 @@ public final class WitherStormDebris extends EntityFX {
         super(world, x, y, z);
         this.boss = boss; startX = posX; startY = posY; startZ = posZ;
         this.destroyer = destroyer;
+        thunderstorm = boss.getStage() == WitherStormStage.D;
+        vortexRing = rand.nextInt(2);
         spin = (rand.nextBoolean() ? 1 : -1) * (0.035D + rand.nextDouble() * 0.065D);
         phase = rand.nextDouble() * Math.PI * 2D;
         angle = phase;
@@ -54,6 +60,7 @@ public final class WitherStormDebris extends EntityFX {
         hoverLift = rand.nextDouble() * 3D;
         // Lift, hover/corrupt, then sink. This effect never changes world blocks or growth.
         particleMaxAge = 88 + rand.nextInt(25);
+        if(thunderstorm) particleMaxAge = 180 + rand.nextInt(41);
         if(destroyer != null) {
             destroyer.active++;
             destroyer.lastBirth = boss.ticksExisted;
@@ -151,6 +158,11 @@ public final class WitherStormDebris extends EntityFX {
         if(++particleAge >= particleMaxAge || boss.isDead || Minecraft.getMinecraft().theWorld != worldObj) { setDead(); return; }
         if(worldObj.getEntityByID(boss.getEntityId()) != boss) { setDead(); return; }
         double t = (double)particleAge / particleMaxAge;
+        if(thunderstorm) {
+            if(boss.getStage() != WitherStormStage.D || !boss.isEntityAlive()) { setDead(); return; }
+            vortexPosition(t);
+            return;
+        }
         upperBody();
         double drift = smooth((t - 0.43D) / 0.35D);
         double bearing = angle + sweep * drift;
@@ -164,6 +176,22 @@ public final class WitherStormDebris extends EntityFX {
         double ty = boss.posY + localY * scale;
         double tz = boss.posZ + (localX * Math.sin(yaw) + localZ * Math.cos(yaw)) * scale;
         double lift = smooth(t / 0.43D);
+        setPosition(startX + (tx - startX) * lift, startY + (ty - startY) * lift, startZ + (tz - startZ) * lift);
+    }
+
+    private void vortexPosition(double t) {
+        double time = worldObj.getTotalWorldTime();
+        WitherStormVortex.orbit(vortexRing, angle + time * WitherStormVortex.speed(vortexRing), hoverLift - 1.5D, time, crown);
+        double sink = smooth((t - 0.72D) / 0.28D);
+        double yaw = Math.toRadians(boss.rotationYaw);
+        double scale = boss.getStormScale() * WitherStormThunderstormPose.size(boss.development());
+        // Match the visible world-axis rings, then end inside the actual rotating upper mantle.
+        double innerX = -3D * Math.cos(yaw) - 10D * Math.sin(yaw);
+        double innerZ = -3D * Math.sin(yaw) + 10D * Math.cos(yaw);
+        double tx = boss.posX + (crown[0] + (innerX - crown[0]) * sink) * scale;
+        double ty = boss.posY + (crown[1] + (33D - crown[1]) * sink) * scale;
+        double tz = boss.posZ + (crown[2] + (innerZ - crown[2]) * sink) * scale;
+        double lift = smooth(t / 0.32D);
         setPosition(startX + (tx - startX) * lift, startY + (ty - startY) * lift, startZ + (tz - startZ) * lift);
     }
 
@@ -197,7 +225,7 @@ public final class WitherStormDebris extends EntityFX {
     @Override public void renderParticle(Tessellator tess, float partial, float rx, float ry, float rz, float ux, float uz) {
         double age = particleAge + partial, t = age / particleMaxAge;
         double shrink = 1D - smooth((t - 0.88D) / 0.12D);
-        float corruption = (float)smooth((t - 0.43D) / 0.30D);
+        float corruption = (float)smooth((t - (thunderstorm ? 0.20D : 0.43D)) / 0.30D);
         double a = phase + age * spin, b = phase * 0.7D + age * spin * 0.63D;
         double ca = Math.cos(a), sa = Math.sin(a), cb = Math.cos(b), sb = Math.sin(b);
         double px = prevPosX + (posX - prevPosX) * partial - interpPosX;

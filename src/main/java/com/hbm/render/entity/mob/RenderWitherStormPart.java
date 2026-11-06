@@ -5,6 +5,7 @@ import com.hbm.entity.mob.witherstorm.EntityWitherStormPart;
 import com.hbm.entity.mob.witherstorm.WitherStormDestroyerPose;
 import com.hbm.entity.mob.witherstorm.WitherStormDevourerPose;
 import com.hbm.entity.mob.witherstorm.WitherStormBigDevourerPose;
+import com.hbm.entity.mob.witherstorm.WitherStormThunderstormPose;
 import com.hbm.entity.mob.witherstorm.WitherStormMath;
 import com.hbm.entity.mob.witherstorm.WitherStormStage;
 import com.hbm.render.model.ModelWitherStormHead;
@@ -30,8 +31,9 @@ public final class RenderWitherStormPart extends Render {
         EntityWitherStormPart part = (EntityWitherStormPart)entity;
         EntityWitherStorm boss = part.parent();
         Minecraft mc = Minecraft.getMinecraft();
-        if(boss == null || !boss.isPartActive(part.slot()) || mc.renderViewEntity == null || mc.renderViewEntity.getDistanceSqToEntity(boss) > 256D * 256D) return;
+        if(boss == null || !boss.isPartActive(part.slot()) || mc.renderViewEntity == null) return;
         WitherStormStage stage = boss.getStage();
+        if(mc.renderViewEntity.getDistanceSqToEntity(boss) > (stage == WitherStormStage.D ? 512D * 512D : 256D * 256D)) return;
         if(stage == WitherStormStage.A) {
             if(part.slot() < 3) renderCommandHead(boss, part, partial);
             return;
@@ -188,6 +190,7 @@ public final class RenderWitherStormPart extends Render {
         Vec3 root = destroyer ? WitherStormDestroyerPose.neckRoot(slot, development, bodyScale, bodyYaw)
             : stage == WitherStormStage.C_SMALL ? WitherStormDevourerPose.neckRoot(slot, development, bodyScale, bodyYaw)
             : stage == WitherStormStage.C_BIG ? WitherStormBigDevourerPose.neckRoot(slot, development, bodyScale, bodyYaw)
+            : stage == WitherStormStage.D ? WitherStormThunderstormPose.neckRoot(slot, development, bodyScale, bodyYaw)
             : early ? WitherStormMath.headOffset(0, 1.82D * bodyScale, 0.12D * bodyScale, bodyYaw, 0)
             : WitherStormMath.headOffset((slot - 1) * (0.75D + development * 7D) * bodyScale,
                 (2.05D + development * 3.5D) * bodyScale, (-0.3D - development * 7D) * bodyScale, bodyYaw, 0);
@@ -203,6 +206,7 @@ public final class RenderWitherStormPart extends Render {
             float width = bodyScale * (destroyer ? 3.35F * WitherStormDestroyerPose.size(development)
                 : stage == WitherStormStage.C_SMALL ? 2.05F * WitherStormDevourerPose.size(development)
                 : stage == WitherStormStage.C_BIG ? 2.7F * WitherStormBigDevourerPose.size(development)
+                : stage == WitherStormStage.D ? 3.5F * WitherStormThunderstormPose.size(development)
                 : early ? 0.42F : 0.52F + development * 2.65F) * (1F - 0.22F * i);
             GL11.glScalef(width, (float)(length / 3D + bodyScale * 0.16D), width);
             head.renderNeckSegment(); GL11.glPopMatrix();

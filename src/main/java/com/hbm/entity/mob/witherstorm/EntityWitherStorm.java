@@ -125,6 +125,7 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
             case B: return WitherStormDestroyerPose.headSize(head, development());
             case C_SMALL: return WitherStormDevourerPose.headSize(head, development());
             case C_BIG: return WitherStormBigDevourerPose.headSize(head, development());
+            case D: return WitherStormThunderstormPose.headSize(head, development());
             default: return 1.15F + development() * 0.65F;
         }
     }
@@ -250,8 +251,11 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
             case A_TRANSFORMED: bodyHeight = 3.89F + Math.max(0F, development - 0.22F) * 3F; break;
             case B: bodyHeight = 1.6F + development * 5.2F + (1.9F + development * 9F) * 0.77F; break;
             case C_SMALL:
-            case D:
                 bodyHeight = 1.6F + development * 5.2F + (1.9F + development * 9F) * 1.895F * stage.crownScale();
+                break;
+            case D:
+                bodyHeight = 65F * WitherStormThunderstormPose.size(development);
+                wantedWidth = 47F * WitherStormThunderstormPose.size(development) * s;
                 break;
             case C_BIG:
                 bodyHeight = 46F * WitherStormBigDevourerPose.size(development);
@@ -386,6 +390,8 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
         // The big Devourer's hanging arms extend below its root; keep their tips above the terrain.
         if(getStage() == WitherStormStage.C_BIG)
             clearance = Math.max(clearance, 27D * WitherStormBigDevourerPose.size(development()) * getStormScale());
+        if(getStage() == WitherStormStage.D)
+            clearance = Math.max(clearance, 30D * WitherStormThunderstormPose.size(development()) * getStormScale());
         double targetY = waypoint != null ? waypoint.yCoord : pursuing ? target.posY : ground;
         double ty = Math.min(pursuit == null ? 200 : 275, Math.max(ground + clearance,
             pursuing ? Math.min(ground + 24D, targetY + 12D) : ground + clearance));
@@ -484,6 +490,8 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
                 return WitherStormDevourerPose.headBase(slot, d, scale, yaw);
             case C_BIG:
                 return WitherStormBigDevourerPose.headBase(slot, d, scale, yaw);
+            case D:
+                return WitherStormThunderstormPose.headBase(slot, d, scale, yaw);
             default:
                 return WitherStormMath.headOffset((slot - 1) * (1.50D + 9D * d) * scale,
                     ((slot == 1 ? 2.05D : 2D) + 2D * d) * scale, -((slot == 1 ? 3.53D : 3.28D) + 9D * d) * scale, yaw, 0F);
@@ -511,6 +519,7 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
     float armScale() {
         float size = getStage() == WitherStormStage.B ? WitherStormDestroyerPose.size(development())
             : getStage() == WitherStormStage.C_BIG ? WitherStormBigDevourerPose.size(development())
+            : getStage() == WitherStormStage.D ? WitherStormThunderstormPose.size(development())
             : getStage().hasPosedTentacles() ? WitherStormDevourerPose.size(development()) : 1F;
         return size * getStormScale();
     }
@@ -518,6 +527,7 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
     void restArmPoint(int slot, double t, double time, double[] out) {
         if(getStage() == WitherStormStage.B) WitherStormDestroyerPose.armPoint(slot, t, time, out);
         else if(getStage() == WitherStormStage.C_BIG) WitherStormBigDevourerPose.armPoint(slot, t, time, out);
+        else if(getStage() == WitherStormStage.D) WitherStormThunderstormPose.armPoint(slot, t, time, out);
         else if(getStage().hasPosedTentacles()) WitherStormDevourerPose.armPoint(slot, t, time, out);
         else genericArmPoint(slot, t, time, out);
     }

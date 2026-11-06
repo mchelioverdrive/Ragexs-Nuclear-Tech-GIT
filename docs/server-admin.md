@@ -89,6 +89,8 @@ Operational advice:
 
 ## Performance notes
 
+The Thunderstorm (Stage D) Wither Storm draws its debris vortex entirely on the client. In each client's `config/hbm.cfg`, `12_mobs.witherStorm.maxVortexFragments` caps decorative fragments per Storm (default 2,000; range 0–8,192). Distance, particle settings and Fast graphics reduce this count while retaining all five rings. Zero hides the vortex. Captured terrain fragments retain the separate `maxClientDebris` limit; neither visual setting changes server block removal or growth.
+
 High-load systems include explosions, fallout, atmosphere processing, worldgen, reactors, machines, and large item/fluid networks. Useful settings to review:
 
 - `1.42_threadedAtmospheres` for atmosphere performance.

@@ -8,6 +8,7 @@ import com.hbm.render.model.ModelWitherStorm;
 import com.hbm.render.model.ModelWitherStormDestroyer;
 import com.hbm.render.model.ModelWitherStormDevourer;
 import com.hbm.render.model.ModelWitherStormBigDevourer;
+import com.hbm.render.model.ModelWitherStormThunderstorm;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.client.Minecraft;
@@ -29,6 +30,8 @@ public final class RenderWitherStorm extends Render {
     private final ModelWitherStormDestroyer destroyer = new ModelWitherStormDestroyer();
     private final ModelWitherStormDevourer devourer = new ModelWitherStormDevourer();
     private final ModelWitherStormBigDevourer bigDevourer = new ModelWitherStormBigDevourer();
+    private final ModelWitherStormThunderstorm thunderstorm = new ModelWitherStormThunderstorm();
+    private final WitherStormVortex vortex = new WitherStormVortex();
     private final ModelCommandBlockWither commandModel = new ModelCommandBlockWither();
     private final RenderBlocks blocks = new RenderBlocks();
     private long lastParticles = Long.MIN_VALUE;
@@ -37,7 +40,8 @@ public final class RenderWitherStorm extends Render {
         EntityWitherStorm boss = (EntityWitherStorm)entity;
         Minecraft mc = Minecraft.getMinecraft();
         double distance = mc.renderViewEntity == null ? 0 : mc.renderViewEntity.getDistanceSqToEntity(boss);
-        if(distance > 256D * 256D) return;
+        WitherStormStage stage = boss.getStage();
+        if(distance > (stage == WitherStormStage.D ? 512D * 512D : 256D * 256D)) return;
         BossStatus.setBossStatus(boss, true);
         GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_CURRENT_BIT | GL11.GL_LIGHTING_BIT);
         GL11.glPushMatrix();
@@ -45,7 +49,6 @@ public final class RenderWitherStorm extends Render {
         GL11.glTranslated(x, y, z); GL11.glRotatef(-boss.bodyYaw(partial), 0, 1, 0);
         float scale = boss.renderScale(partial); GL11.glScalef(scale, scale, scale);
         GL11.glEnable(GL11.GL_NORMALIZE);
-        WitherStormStage stage = boss.getStage();
         if(stage.hasPosedTentacles()) {
             bindTexture(SKIN);
             GL11.glPushAttrib(GL11.GL_TEXTURE_BIT);
@@ -53,6 +56,7 @@ public final class RenderWitherStorm extends Render {
             double time = boss.worldObj.getTotalWorldTime() + (double)partial;
             if(stage == WitherStormStage.B) destroyer.render(boss, time, partial, distance < 96D * 96D);
             else if(stage == WitherStormStage.C_BIG) bigDevourer.render(boss, time, partial);
+            else if(stage == WitherStormStage.D) thunderstorm.render(boss, time, partial, distance < 192D * 192D);
             else devourer.render(boss, time, partial);
             GL11.glPopAttrib();
         } else if(!stage.hasTentacles()) {
@@ -63,6 +67,7 @@ public final class RenderWitherStorm extends Render {
             renderCommandWither(boss.hasCore());
         } else renderStorm(boss, stage);
         GL11.glPopMatrix(); GL11.glPopAttrib();
+        if(stage == WitherStormStage.D) vortex.render(boss, x, y, z, partial, distance);
         if(stage == WitherStormStage.B && distance < 96D * 96D) WitherStormDebris.fillDestroyer(boss);
         long tick = boss.worldObj.getTotalWorldTime();
         if(tick != lastParticles && distance < 96D * 96D && mc.gameSettings.particleSetting != 2) {

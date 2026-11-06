@@ -400,3 +400,10 @@
 - Keep players as the primary pursuit target, intercepting the densest mob clusters along the route within the existing 96-block targeting radius. Without a player destination, seek the largest nearby cluster using a complete local living-entity census.
 - Animate server-owned reaches, whips, grabs, crushing grips and slams, including defense against intruders inside the mantle. Share attack endpoints with rendering and hit contacts; activate the big Devourer's three rear arms as gameplay parts.
 - Send tentacle terrain impacts through the existing protected, budgeted consumption queue, including breakable obsidian. Grow new arms, allow severing to release prey, save arm damage and material-fed regrowth, and repair body health as material is consumed. Keep existing growth stages, commands, terrain settings and save identities.
+
+2026-11-05 18:31 — Rebuild Thunderstorm as Story Mode Stage D
+
+- Give Stage D its own massive, deep, curved mantle of layered corrupted blocks, recessed branching purple fractures with emissive variation, and three small low-mounted glowing heads. Share head attachments, eye and mouth transforms with tracking, tractor beams and skull attacks; retain the earlier stages' models.
+- Curve and taper all seven Thunderstorm tentacles with independent travelling bends and the existing server-driven reach, grip and slam poses. Match their tracked contacts and terrain clearance to the new anatomy, and keep the budgeted absorption sweep within reach of the ground at maximum growth.
+- Draw five enormous, tilted, turbulent debris rings independently of body rotation using a bounded client-only cube batch. Preserve gaps, varied fragments, inward streams and subtle purple motes. Default to 2,000 visible decorative fragments, with configurable limits, frustum culling and distance/graphics reductions; no decorative server entities or growth rewards.
+- Route existing absorption records through an inner-ring orbit, gradual corruption and final upper-body absorption. Preserve weather, progression, terrain budgets, commands and encounter save identities.

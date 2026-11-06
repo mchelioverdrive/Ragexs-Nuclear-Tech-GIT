@@ -59,7 +59,6 @@ public final class ModelWitherStorm extends ModelBase {
             mass(-width * 0.08F, y + crown * 1.03F, z + depth * 0.17F, width * 0.76F, crown * 0.68F, depth * 0.78F);
             mass(-width * 0.16F, y + crown * 1.40F, z + depth * 0.13F, width * 0.62F, crown * 0.56F, depth * 0.63F);
             mass(-width * 0.25F, y + crown * 1.70F, z + depth * 0.10F, width * 0.45F, crown * 0.39F, depth * 0.49F);
-            if(stage == WitherStormStage.D) fissures(width, height, depth, y, z, false);
         }
     }
 
