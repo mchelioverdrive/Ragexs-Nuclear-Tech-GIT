@@ -316,6 +316,10 @@ public class EntityMappings {
 		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityNaturesMockery.class, "natures_mockery", id++, MainRegistry.instance, 96, 2, true);
 		addMob(com.hbm.entity.mob.gemini.EntityNaturesMockery.class, "natures_mockery", 0x75342E, 0xC36A60);
 
+		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityGardener.class, "gardener", id++, MainRegistry.instance, 96, 2, true);
+		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityGardenerTentacle.class, "gardener_tentacle", id++, MainRegistry.instance, 96, 2, false);
+		addMob(com.hbm.entity.mob.gemini.EntityGardener.class, "gardener", 0x59332E, 0xD7C584);
+
 		for(Quartet<Class<? extends Entity>, String, Integer, Integer> entry : mobMappings) {
 			EntityRegistry.registerGlobalEntityID(entry.getW(), entry.getX(), EntityRegistry.findGlobalUniqueEntityId(), entry.getY(), entry.getZ());
 		}

@@ -69,6 +69,11 @@ public final class EntityNaturesMockery extends EntityMob implements IGeminiCrea
         double dx = x - rootX, dy = y - rootY, dz = z - rootZ;
         return dx * dx + dy * dy + dz * dz <= GeminiConfig.mockeryRadius * GeminiConfig.mockeryRadius;
     }
+    /** Nest support uses the existing colony/growth system, without creating a new breeding population. */
+    public void seedGardenerColony(double x, double y, double z) {
+        sterile = true; rooted = true; rootX = x; rootY = y; rootZ = z;
+        nutrition = 20; dataWatcher.updateObject(21, Integer.valueOf(20));
+    }
     private boolean prey(EntityLivingBase target) {
         return target != null && target != this && target.worldObj == worldObj && target.isEntityAlive()
                 && target.addedToChunk && target.ridingEntity == null && target.riddenByEntity == null

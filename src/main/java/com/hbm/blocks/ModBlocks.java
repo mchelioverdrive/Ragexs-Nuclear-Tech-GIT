@@ -1399,6 +1399,7 @@ public class ModBlocks {
 
 	public static Block flesh_block;
 	public static Block mockery_growth;
+	public static Block gardener_flesh;
 	public static Block charred_flesh_block;
 	public static Block carbonized_flesh_block;
 	//public static Fluid flesh_fluid;
@@ -2734,6 +2735,7 @@ public class ModBlocks {
 		concrete_liquid = new GenericFiniteFluid(liquidConcrete, Material.rock, "concrete_liquid", "concrete_liquid_flowing").setQuantaPerBlock(4).setBlockName("concrete_liquid").setResistance(500F);
 
 		mockery_growth = new BlockMockeryGrowth().setBlockName("mockery_growth").setBlockTextureName(RefStrings.MODID + ":fleshv2");
+		gardener_flesh = new BlockGardenerFlesh().setBlockName("gardener_flesh").setBlockTextureName(RefStrings.MODID + ":fleshv2").setCreativeTab(MainRegistry.blockTab);
 		flesh_block = new MeltedFlesh(Material.snow).setBlockName("flesh_block").setStepSound(Block.soundTypeGravel).setCreativeTab(MainRegistry.blockTab).setHardness(0.1F).setLightOpacity(0).setBlockTextureName(RefStrings.MODID + ":meltedFlesh");
 		charred_flesh_block = new MeltedFlesh(Material.snow).setBlockName("charred_flesh_block").setStepSound(Block.soundTypeGravel).setCreativeTab(MainRegistry.blockTab).setHardness(0.1F).setLightOpacity(0).setBlockTextureName(RefStrings.MODID + ":charredFlesh");
 		carbonized_flesh_block = new MeltedFlesh(Material.snow).setBlockName("carbonized_flesh_block").setStepSound(Block.soundTypeGravel).setCreativeTab(MainRegistry.blockTab).setHardness(0.1F).setLightOpacity(0).setBlockTextureName(RefStrings.MODID + ":carbonizedFlesh");
@@ -2779,6 +2781,7 @@ public class ModBlocks {
 
 	private static void registerBlock() {
 		GameRegistry.registerBlock(mockery_growth, mockery_growth.getUnlocalizedName());
+		GameRegistry.registerBlock(gardener_flesh, gardener_flesh.getUnlocalizedName());
 		GameRegistry.registerBlock(guillotine, ItemBlockBase.class, guillotine.getUnlocalizedName());
 		GameRegistry.registerBlock(brazen_bull, ItemBlockBase.class, brazen_bull.getUnlocalizedName());
 		GameRegistry.registerBlock(electric_chair, ItemBlockBase.class, electric_chair.getUnlocalizedName());

@@ -7594,3 +7594,6 @@ entity.fake_person.name=Fake Person
 entity.hbm.natures_mockery.name=Nature's Mockery
 entity.natures_mockery.name=Nature's Mockery
 tile.mockery_growth.name=Organic Offshoot
+entity.hbm.gardener.name=Gardener
+entity.gardener.name=Gardener
+tile.gardener_flesh.name=Gardener Nest Tissue

@@ -1081,6 +1081,10 @@ public class MainRegistry {
 		MinecraftForge.EVENT_BUS.register(new com.hbm.world.gemini.FakePersonSpawning());
 		MinecraftForge.EVENT_BUS.register(new com.hbm.world.gemini.MockerySpawning());
 		MinecraftForge.EVENT_BUS.register(new com.hbm.world.gemini.MockeryEvents());
+		com.hbm.world.gemini.GardenerNests.Events gardenerEvents = new com.hbm.world.gemini.GardenerNests.Events();
+		MinecraftForge.EVENT_BUS.register(gardenerEvents);
+		MinecraftForge.TERRAIN_GEN_BUS.register(gardenerEvents);
+		FMLCommonHandler.instance().bus().register(gardenerEvents);
 		com.hbm.handler.restraint.Restraints restraintEvents = new com.hbm.handler.restraint.Restraints();
 		MinecraftForge.EVENT_BUS.register(restraintEvents);
 		FMLCommonHandler.instance().bus().register(restraintEvents);

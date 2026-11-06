@@ -25,6 +25,11 @@ public final class GeminiConfig {
 	public static int mockerySpreadLimit = 64;
 	public static int mockeryMaxActive = 16;
 	public static int mockeryOffshootLimit = 2;
+	public static boolean gardenerEnabled = true;
+	public static int gardenerNestChance = 8;
+	public static int gardenerNestLimit = 32;
+	public static int gardenerSupportLimit = 4;
+	public static int gardenerBlocksPerSlam = 12;
 
 	private GeminiConfig() { }
 
@@ -67,6 +72,17 @@ public final class GeminiConfig {
 		mockeryOffshootLimit = config.getInt("offshootLimit", mockery, 2, 0, 2,
 				"Lifetime offspring per original Mockery, requiring growth 40/80. Offspring cannot reproduce. Zero disables budding.");
 		String disease = CATEGORY + ".deepRoot";
+		String gardener = CATEGORY + ".gardener";
+		gardenerEnabled = config.getBoolean("enabled", gardener, true,
+				"Enable rooted underground Gardeners and incremental cave nests after Mars. Disabled saved bosses remain dormant.");
+		gardenerNestChance = config.getInt("nestChance", gardener, 8, 1, 10000,
+				"One-in-N roll per active Overworld minute for up to eight loaded cave columns. No chunk loading or offline catch-up.");
+		gardenerNestLimit = config.getInt("nestLimit", gardener, 32, 0, 64,
+				"World lifetime nest limit, including abandoned partial nests and defeated bosses. Zero disables new nests; saved jobs can finish. Nests stay 256 blocks apart.");
+		gardenerSupportLimit = config.getInt("supportLimit", gardener, 4, 0, 16,
+				"Lifetime successful sterile Nature's Mockery summons per Gardener. Also respects Mockery and disease admission settings.");
+		gardenerBlocksPerSlam = config.getInt("blocksPerSlam", gardener, 12, 0, 32,
+				"Maximum natural/tissue block removals per major slam inside the nest. Four coordinates per tick; respects mobGriefing and protection events.");
 		deepRootEnabled = config.getBoolean("enabled", disease, true,
 				"Enable Deep Root Disease after Mars in the Overworld. Disabling pauses saved progress and removes its symptoms; no offline or unloaded catch-up.");
 		String[] stages = {"exposure", "roots", "contraction", "bulbs", "sprouts"};

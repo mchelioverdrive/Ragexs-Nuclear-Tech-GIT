@@ -16,7 +16,8 @@ import net.minecraftforge.event.world.BlockEvent;
 public final class MockeryGrowth {
     private MockeryGrowth() { }
     public static boolean suitableGround(Block block) {
-        return block == Blocks.dirt || block == Blocks.grass || block == Blocks.sand || block == Blocks.stone;
+        return block == Blocks.dirt || block == Blocks.grass || block == Blocks.sand || block == Blocks.stone
+                || block == ModBlocks.gardener_flesh;
     }
 
     /** Exactly one candidate and at most one placement per call; never replace even replaceable plants. */
