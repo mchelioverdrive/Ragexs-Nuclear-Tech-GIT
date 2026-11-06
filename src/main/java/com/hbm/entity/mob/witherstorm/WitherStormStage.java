@@ -18,10 +18,10 @@ public enum WitherStormStage {
         switch(this) {
             case A: return 32;
             case A_TRANSFORMED: return 64;
-            case B: return 128;
-            case C_SMALL: return 256;
-            case C_BIG: case C_DAMAGED: return 512;
-            default: return 1024;
+            case B: return 256;
+            case C_SMALL: return 1024;
+            case C_BIG: case C_DAMAGED: return 2048;
+            default: return 4096;
         }
     }
     public boolean hasTentacles() { return ordinal() >= B.ordinal(); }

@@ -422,3 +422,10 @@
 - Project fading purple tractor-beam light onto visible terrain along the actual beam ray without modifying world lighting. Send finite boss sound cues to distant listeners with gradual attenuation and duplicate suppression.
 - Render flaming projectiles with the vanilla Wither Skull mesh and texture. Apply server-owned fire damage, ignition and protected, budgeted terrain impacts without item drops.
 - Base Stage A on the actual vanilla Wither model, attaching an open rib cage and visible command block to its animated spine. Align ordinary head contacts and launch points with vanilla proportions; keep transformed and later-stage models and progression.
+
+2026-11-05 23:35 — Restore Wither Storm terrain coverage and stage-scaled consumption
+
+- Replace center-height cubes with world-aligned, resumable sections that discover each column from above, include transparent upper structures, and peel bounded depths before revisiting lower layers. Retain progress while moving, cover partial edge sections, skip empty chunk storage, and periodically rediscover rebuilt or previously protected blocks.
+- Scale the feeding footprint with the mantle, heads and intact tentacle endpoints. Share flight clearance with vertical feeding reach and anchor columns to their own surfaces so elevated Devourers consume buildings and ground beneath them. Keep beam-focused feeding and queued skull/tentacle impacts on the same protected removal path.
+- Count successful removals separately from configurable scan steps and elapsed time. Raise stage removal ceilings to 32/64/256/1024/2048/2048/4096 and new-config defaults to 4096 removals and a 48-block radius; retain existing explicit caps. Preserve growth rewards, item suppression, bedrock/block/tile protections and mobGriefing.
+- Sample visual fragments across actual consumed positions independently of removal throughput. Preserve upper-body lift, hover, blackening, absorption and the existing vortex, without physical debris entities. Restart disposable scan cursors on load while retaining saved mass and queued impact compatibility.

@@ -10,10 +10,10 @@ public final class WitherStormConfig {
     private WitherStormConfig() { }
     public static int transform = 12500, devourer = 50000, thunder = 250000;
     public static int minimumStageBTicks = 24000;
-    public static int blocksPerTick = 1024, debrisPerTick = 4, maxDebris = 128;
-    public static int terrainMicros = 2000;
+    public static int blocksPerTick = 4096, debrisPerTick = 4, maxDebris = 128;
+    public static int terrainMicros = 2000, terrainChecksPerTick = 16384;
     public static int maxVortexFragments = 2000;
-    public static int attackTicks = 80, maxEncounters = 1, queryBudget = 512, maxRadius = 32;
+    public static int attackTicks = 80, maxEncounters = 1, queryBudget = 512, maxRadius = 48;
     public static int skullAttackRange = 96;
     public static float explosionStrength = 2F;
     public static boolean terrain = true, tileEntities = false, protectedBlocks = false, survivalSummon = true;
@@ -28,7 +28,8 @@ public final class WitherStormConfig {
         devourer = integer(config, c, "devourerGrowth", "Enter Devourer above this mass; must exceed transformGrowth.", 50000, transform + 1, 200000000);
         thunder = integer(config, c, "thunderStormGrowth", "Enter ThunderStorm above this mass; must exceed devourerGrowth.", 250000, devourer + 1, 500000000);
         minimumStageBTicks = integer(config, c, "minimumStageBTicks", "Minimum active ticks in Stage B before automatic evolution. The growth threshold still applies. Zero disables the timer.", 24000, 0, Integer.MAX_VALUE);
-        blocksPerTick = integer(config, c, "blocksPerTick", "Maximum terrain coordinates examined per encounter per server tick, including skull impacts. Stage limits rise from 32 to 1024; zero disables consumption. Existing explicit limits remain authoritative.", 1024, 0, 4096);
+        blocksPerTick = integer(config, c, "blocksPerTick", "Maximum blocks successfully consumed per encounter per server tick, including skull and tentacle impacts. Stage limits: 32, 64, 256, 1024, 2048, 2048, 4096. Zero disables consumption; existing explicit limits remain authoritative.", 4096, 0, 4096);
+        terrainChecksPerTick = integer(config, c, "terrainChecksPerTick", "Maximum terrain scan steps per encounter per tick, including air, protection checks, skipped empty sections and impacts. Separate from successful block removals; elapsed time also limits work.", 16384, 64, 65536);
         terrainMicros = integer(config, c, "terrainProcessingMicros", "Maximum elapsed terrain-processing time per encounter per tick in microseconds. A single block callback can exceed this limit.", 2000, 100, 10000);
         debrisPerTick = integer(config, c, "debrisPerTick", "Maximum visual debris records per encounter per tick; batched every five ticks. No server debris entities.", 4, 0, 16);
         maxDebris = integer(config, c, "maxClientDebris", "Maximum live Wither Storm debris particles per client, across all encounters.", 128, 0, 512);
@@ -37,7 +38,7 @@ public final class WitherStormConfig {
         skullAttackRange = integer(config, c, "skullAttackRange", "Maximum distance in blocks from both the Storm and the firing mouth to a skull target.", 96, 8, 96);
         maxEncounters = integer(config, c, "maxEncounters", "Maximum encounters across all dimensions, including saved unloaded encounters. Zero disables new summons.", 1, 0, 32);
         queryBudget = integer(config, c, "entityQueryBudget", "Maximum entity entries examined per cached head/debris search; at most 64 candidates retained, refreshed every 20 ticks. Player pursuit, mob density and tentacles use a separate local living-entity census.", 512, 64, 4096);
-        maxRadius = integer(config, c, "maxConsumptionRadius", "Maximum terrain sweep radius in blocks, independent of growth. Chunks are never force-loaded.", 32, 4, 48);
+        maxRadius = integer(config, c, "maxConsumptionRadius", "Maximum body/head/tentacle-scaled horizontal feeding radius. Does not limit vertical reach from flight altitude. Chunks are never force-loaded; existing explicit caps remain authoritative.", 48, 4, 48);
         double strength = CommonConfig.createConfigDouble(config, c, "skullExplosionStrength", "Non-nuclear impact strength, scaled by phase; bounded to 0-8. Terrain shares blocksPerTick and protection rules.", 2D);
         explosionStrength = (float)(Double.isNaN(strength) || Double.isInfinite(strength) ? 2D : Math.max(0D, Math.min(8D, strength)));
         terrain = CommonConfig.createConfigBool(config, c, "terrainDestruction", "Allow consumption and skull terrain damage; also requires mobGriefing.", true);

@@ -401,12 +401,7 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
             if(WitherStormMath.loaded(worldObj, x, z)) ground = Math.max(ground, worldObj.getChunkProvider().provideChunk(MathHelper.floor_double(x) >> 4,
                 MathHelper.floor_double(z) >> 4).getHeightValue(MathHelper.floor_double(x) & 15, MathHelper.floor_double(z) & 15));
         }
-        double clearance = getPhase() == WitherStormPhase.COMMAND_BLOCK ? 7D : 15D;
-        // The big Devourer's hanging arms extend below its root; keep their tips above the terrain.
-        if(getStage() == WitherStormStage.C_BIG)
-            clearance = Math.max(clearance, 27D * WitherStormBigDevourerPose.size(development()) * getStormScale());
-        if(getStage() == WitherStormStage.D)
-            clearance = Math.max(clearance, 30D * WitherStormThunderstormPose.size(development()) * getStormScale());
+        double clearance = terrainClearance();
         double targetY = waypoint != null ? waypoint.yCoord : pursuing ? target.posY : ground;
         double ty = Math.min(pursuit == null ? 200 : 275, Math.max(ground + clearance,
             pursuing ? Math.min(ground + 24D, targetY + 12D) : ground + clearance));
@@ -475,6 +470,16 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
             partIds[slot] = null;
         }
         part.setDead();
+    }
+
+    /** Shared by flight and feeding so model clearance cannot strand terrain below the scan. */
+    double terrainClearance() {
+        double clearance = getPhase() == WitherStormPhase.COMMAND_BLOCK ? 7D : 15D;
+        if(getStage() == WitherStormStage.C_BIG)
+            clearance = Math.max(clearance, 27D * WitherStormBigDevourerPose.size(development()) * getStormScale());
+        if(getStage() == WitherStormStage.D)
+            clearance = Math.max(clearance, 30D * WitherStormThunderstormPose.size(development()) * getStormScale());
+        return clearance;
     }
 
     public Vec3 partPosition(int slot) {
