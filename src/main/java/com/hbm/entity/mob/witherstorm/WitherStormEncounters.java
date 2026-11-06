@@ -26,7 +26,10 @@ public final class WitherStormEncounters extends WorldSavedData {
     private boolean challengeActive, challengeCompleted;
     private long challengeStart;
     private long retryAt;
-    final WitherStormPursuit.Trails playerTrails = new WitherStormPursuit.Trails();
+    private final Map<Integer, WitherStormPursuit.Trails> trails = new HashMap<>();
+    WitherStormPursuit.Trails playerTrails(World world) {
+        return trails.computeIfAbsent(world.provider.dimensionId, id -> new WitherStormPursuit.Trails());
+    }
     public WitherStormEncounters() { super(NAME); }
     public WitherStormEncounters(String name) { super(name); }
 
@@ -78,7 +81,7 @@ public final class WitherStormEncounters extends WorldSavedData {
             challengeStart = world.getTotalWorldTime();
             retryAt = challengeStart;
         }
-        if(!challengeCompleted) playerTrails.clear();
+        if(!challengeCompleted) trails.clear();
         markDirty();
     }
 
@@ -98,7 +101,7 @@ public final class WitherStormEncounters extends WorldSavedData {
     void tickChallenge(World world) {
         updateChallenge(world);
         if(!challengeActive || challengeCompleted) return;
-        playerTrails.sample(world);
+        playerTrails(world).sample(world);
         long now = world.getTotalWorldTime();
         if(remaining(world) != 0 || now < retryAt || !room()) return;
         boolean online = false;
@@ -162,7 +165,7 @@ public final class WitherStormEncounters extends WorldSavedData {
         Entity e = loaded.get(id);
         return e != null && !e.isDead && e.worldObj == world && WitherStormMath.loaded(world, e.posX, e.posZ) ? e : null;
     }
-    public void unload(World world) { loaded.values().removeIf(e -> e.worldObj == world); }
+    public void unload(World world) { loaded.values().removeIf(e -> e.worldObj == world); trails.remove(world.provider.dimensionId); }
     public boolean remove(UUID id) {
         if(encounters.remove(id) == null) return false;
         Entity e = loaded.remove(id);

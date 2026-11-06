@@ -160,7 +160,7 @@ public class EntityWitherStormPart extends Entity {
         return slot() < 3 && boss != null && boss.getPhase() == WitherStormPhase.COMMAND_BLOCK;
     }
     private double headPivotHeight(EntityWitherStorm boss) {
-        return isCommandHead(boss) ? 0.5D * EntityWitherStorm.commandHeadSize(slot()) * boss.getStormScale() : 0.6D * scale();
+        return isCommandHead(boss) ? 0.25D * EntityWitherStorm.commandHeadSize(slot()) * boss.getStormScale() : 0.6D * scale();
     }
 
     private double skullMouthHeight(EntityWitherStorm boss) {
@@ -210,8 +210,11 @@ public class EntityWitherStormPart extends Entity {
         // The compact skeleton's center skull can look down through its own chest.
         // Test in body space because the root's world AABB also encloses empty space.
         Vec3 start = bossLocal(boss, mouth);
-        AxisAlignedBB chest = AxisAlignedBB.getBoundingBox(-0.57D, 0, -1.04D, 0.57D, 1.76D, 0.33D);
-        AxisAlignedBB shoulders = AxisAlignedBB.getBoundingBox(-1.23D, 1.10D, -0.16D, 1.23D, 1.76D, 0.36D);
+        boolean vanilla = boss.getStage() == WitherStormStage.A;
+        AxisAlignedBB chest = vanilla ? AxisAlignedBB.getBoundingBox(-0.5D, 0.3D, -0.875D, 0.5D, 1.15D, 0.25D)
+            : AxisAlignedBB.getBoundingBox(-0.57D, 0, -1.04D, 0.57D, 1.76D, 0.33D);
+        AxisAlignedBB shoulders = vanilla ? AxisAlignedBB.getBoundingBox(-0.625D, 1.06D, -0.032D, 0.625D, 1.26D, 0.16D)
+            : AxisAlignedBB.getBoundingBox(-1.23D, 1.10D, -0.16D, 1.23D, 1.76D, 0.36D);
         return !chest.isVecInside(start) && chest.calculateIntercept(start, end) == null
             && !shoulders.isVecInside(start) && shoulders.calculateIntercept(start, end) == null;
     }
@@ -229,7 +232,7 @@ public class EntityWitherStormPart extends Entity {
             return headPoint(partial, boss, skullMouthHeight(boss) * size, skullMouthDepth(boss) * size);
         }
         boolean commandHead = isCommandHead(boss);
-        double size = commandHead ? EntityWitherStorm.commandHeadSize(slot()) * boss.getStormScale()
+        double size = commandHead ? 0.5D * EntityWitherStorm.commandHeadSize(slot()) * boss.getStormScale()
             : boss == null ? scale() : scale() * boss.headSize(slot());
         Vec3 offset = WitherStormMath.headOffset(0, 0, -(boss != null && !commandHead && boss.headTransformed(slot()) ? 1.65D : 0.51D) * size,
             headYaw(partial, boss), headPitch(partial, boss));
@@ -247,7 +250,7 @@ public class EntityWitherStormPart extends Entity {
     private Vec3 headPoint(float partial, EntityWitherStorm boss, double y, double z) {
         Vec3 offset = WitherStormMath.headOffset(0, y, z, headYaw(partial, boss), headPitch(partial, boss));
         return Vec3.createVectorHelper(lastTickPosX + (posX - lastTickPosX) * partial + offset.xCoord,
-            lastTickPosY + (posY - lastTickPosY) * partial + scale() * 0.6D + offset.yCoord,
+            lastTickPosY + (posY - lastTickPosY) * partial + headPivotHeight(boss) + offset.yCoord,
             lastTickPosZ + (posZ - lastTickPosZ) * partial + offset.zCoord);
     }
     private void updateBounds(EntityWitherStorm boss) {

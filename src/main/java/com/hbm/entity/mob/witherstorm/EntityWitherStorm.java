@@ -62,7 +62,7 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
     private boolean restoring;
     private double roamX, roamZ;
     private int roamTicks;
-    private WitherStormPursuit pursuit;
+    private WitherStormPursuit pursuit = new WitherStormPursuit();
     private Ticket flightTicket;
     private ChunkCoordIntPair flightChunk;
 
@@ -145,7 +145,7 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
         }
     }
     public float headModelScale(int head, float partial, float bodyScale) {
-        if(getStage() == WitherStormStage.A) return bodyScale;
+        if(getStage() == WitherStormStage.A) return bodyScale * 0.5F;
         float size = bodyScale * headSize(head);
         return headTransformed(head) ? size * WitherStormMath.HEAD_SCALE * (0.45F + 0.55F * headDevelopment(head, partial)) : size;
     }
@@ -258,11 +258,11 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
         float s = getStormScale();
         WitherStormStage stage = getStage();
         float development = development();
-        float wantedWidth = (stage == WitherStormStage.A ? 41F / 16F
+        float wantedWidth = (stage == WitherStormStage.A ? 24F / 16F
             : stage == WitherStormStage.A_TRANSFORMED ? 3.9F : 2F + development * 21F) * s;
         float bodyHeight = 3.5F + development * 10.5F;
         switch(stage) {
-            case A: bodyHeight = 30F / 16F; break;
+            case A: bodyHeight = 28F / 16F; break;
             case A_TRANSFORMED: bodyHeight = 3.89F + Math.max(0F, development - 0.22F) * 3F; break;
             case B: bodyHeight = 1.6F + development * 5.2F + (1.9F + development * 9F) * 0.77F; break;
             case C_SMALL:
@@ -321,16 +321,16 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
         if(targetIds[head] != null && targetIds[head].equals(e.getUniqueID())) d *= 0.6D;
         return d;
     }
-    void startPursuit() { pursuit = new WitherStormPursuit(); }
+    void startPursuit() { if(pursuit == null) pursuit = new WitherStormPursuit(); }
 
     void startFlightTicket() {
-        if(pursuit != null && worldObj.provider.dimensionId == 0 && flightTicket == null)
+        if(pursuit != null && flightTicket == null)
             init(ForgeChunkManager.requestTicket(MainRegistry.instance, worldObj, ForgeChunkManager.Type.ENTITY));
     }
 
     @Override public void init(Ticket ticket) {
         if(ticket == null) return;
-        if(isDead || pursuit == null || worldObj.provider.dimensionId != 0 || flightTicket != null || ticket.getChunkListDepth() < 1) {
+        if(isDead || pursuit == null || flightTicket != null || ticket.getChunkListDepth() < 1) {
             ForgeChunkManager.releaseTicket(ticket);
             return;
         }
@@ -361,10 +361,10 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
     private void fly() {
         double margin = Math.max(34D, 19 * getStormScale() + 3);
         Vec3 waypoint = null;
-        if(pursuit != null && worldObj.provider.dimensionId == 0) {
+        if(pursuit != null) {
             if(flightTicket == null && ticksExisted % 200 == 1) startFlightTicket();
             keepFlightChunks();
-            waypoint = pursuit.destination(this, WitherStormEncounters.get(worldObj).playerTrails);
+            waypoint = pursuit.destination(this, WitherStormEncounters.get(worldObj).playerTrails(worldObj));
             if(flightTicket != null) margin = 0D;
         }
         EntityLivingBase target = null;
@@ -459,6 +459,8 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
         if(worldObj.isRemote && part.slot() >= 0 && part.slot() < parts.length) parts[part.slot()] = part;
     }
 
+    public EntityWitherStormPart headPart(int slot) { return slot >= 0 && slot < 3 ? parts[slot] : null; }
+
     EntityWitherStormPart tentaclePart(int slot) { return slot >= 3 && slot < parts.length ? parts[slot] : null; }
 
     boolean heldByOther(Entity entity, int slot) {
@@ -495,7 +497,7 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
         switch(getStage()) {
             case A:
                 Vec3 center = commandHeadOffset(slot, yaw, scale);
-                return Vec3.createVectorHelper(center.xCoord, center.yCoord - 0.5F * commandHeadSize(slot) * scale, center.zCoord);
+                return Vec3.createVectorHelper(center.xCoord, center.yCoord - 0.25F * commandHeadSize(slot) * scale, center.zCoord);
             case A_TRANSFORMED:
                 return WitherStormMath.headOffset((slot - 1) * 1.10D * scale,
                     (slot == 1 ? 0.92D : 1.275D) * scale, (slot == 1 ? -1.23D : -0.27D) * scale, yaw, 0F);
@@ -515,6 +517,10 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
 
     /** Shared skull centers for the shoulder joints, part positions and client rendering. */
     public static Vec3 commandHeadOffset(int slot, float yaw, float scale) {
+        return WitherStormMath.headOffset((slot - 1) * 9D * scale / 16D,
+            (slot == 1 ? 24D : 21D) * scale / 16D, slot == 1 ? 0D : -scale / 16D, yaw, 0);
+    }
+    public static Vec3 legacyCommandHeadOffset(int slot, float yaw, float scale) {
         return WitherStormMath.headOffset((slot - 1) * scale,
             (slot == 1 ? 34D : 30D) * scale / 16D, (slot == 1 ? -3.5D : 1D) * scale / 16D, yaw, 0);
     }
@@ -587,7 +593,7 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
         if(getPhase() == WitherStormPhase.COMMAND_BLOCK) {
             float scale = getStormScale();
             Vec3 center = commandHeadOffset(head, rotationYaw, scale);
-            Vec3 front = WitherStormMath.headOffset(0, 0, -0.51D * commandHeadSize(head) * scale, rotationYaw, 0);
+            Vec3 front = WitherStormMath.headOffset(0, 0, -0.255D * commandHeadSize(head) * scale, rotationYaw, 0);
             return Vec3.createVectorHelper(posX + center.xCoord + front.xCoord, posY + center.yCoord, posZ + center.zCoord + front.zCoord);
         }
         Vec3 v = partPosition(head);
@@ -655,7 +661,7 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
             || !WitherStormMath.areaLoaded(worldObj, spawn.xCoord, spawn.zCoord, 34)) return;
         EntityWitherStormSkull skull = new EntityWitherStormSkull(worldObj);
         skull.launch(this, spawn, direction);
-        if(worldObj.spawnEntityInWorld(skull)) worldObj.playSoundEffect(mouth.xCoord, mouth.yCoord, mouth.zCoord, "hbm:entity.witherStorm.shoot", 1F, 1F);
+        if(worldObj.spawnEntityInWorld(skull)) broadcastSound("hbm:entity.witherStorm.shoot", 1F, 1F, mouth.xCoord, mouth.yCoord, mouth.zCoord);
         else skull.setDead();
     }
     private void interact() {
@@ -707,7 +713,7 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
         long tick = worldObj.getTotalWorldTime();
         if(hit && isEntityAlive() && getHealth() < health && tick >= nextHurtSoundTick) {
             nextHurtSoundTick = tick + 12;
-            super.playSound(HURT_SOUND, 3F + 3F * development(), getSoundPitch());
+            broadcastSound(HURT_SOUND, 1.5F, getSoundPitch(), posX, posY, posZ);
         }
         return hit;
     }
@@ -715,7 +721,16 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
     @Override protected String getHurtSound() { return HURT_SOUND; }
     @Override public void playSound(String sound, float volume, float pitch) {
         // Both vanilla's damage handler and the client's hurt animation call this.
-        if(!HURT_SOUND.equals(sound)) super.playSound(sound, volume, pitch);
+        if(!HURT_SOUND.equals(sound)) {
+            if(sound.startsWith("hbm:entity.witherStorm.")) broadcastSound(sound, volume, pitch, posX, posY, posZ);
+            else if(!worldObj.isRemote) super.playSound(sound, volume, pitch);
+        }
+    }
+    public void broadcastSound(String sound, float volume, float pitch, double x, double y, double z) {
+        if(worldObj.isRemote) return;
+        com.hbm.packet.PacketDispatcher.wrapper.sendToAllAround(
+            new com.hbm.packet.toclient.WitherStormSoundPacket(getEntityId(), sound, volume, pitch, x, y, z),
+            new cpw.mods.fml.common.network.NetworkRegistry.TargetPoint(worldObj.provider.dimensionId, x, y, z, 768D));
     }
     @Override protected String getDeathSound() { return "hbm:entity.witherStorm.death"; }
     @Override protected float getSoundVolume() { return 1.5F; }

@@ -18,20 +18,17 @@ final class WitherStormHunt {
     private long nextRefresh;
     private long nextSelection;
     private EntityLivingBase center;
-    private EntityPlayer player;
 
     @SuppressWarnings("unchecked")
     void refresh(EntityWitherStorm boss) {
         long now = boss.worldObj.getTotalWorldTime();
         if(now < nextRefresh) return;
         nextRefresh = now + 20;
-        living.clear(); cells.clear(); center = null; player = null; nextSelection = 0;
+        living.clear(); cells.clear(); center = null; nextSelection = 0;
         List<EntityLivingBase> found = boss.worldObj.getEntitiesWithinAABB(EntityLivingBase.class,
             boss.boundingBox.expand(RADIUS, RADIUS, RADIUS));
         for(EntityLivingBase entity : found) {
             if(!boss.validTarget(entity)) continue;
-            if(entity instanceof EntityPlayer && (player == null || boss.getDistanceSqToEntity(entity) < boss.getDistanceSqToEntity(player)))
-                player = (EntityPlayer)entity;
             if(!WitherStormMath.edible(entity, boss.worldObj)) continue;
             living.add(entity);
             if(entity instanceof EntityPlayer) continue;
@@ -43,22 +40,21 @@ final class WitherStormHunt {
     }
 
     Vec3 destination(EntityWitherStorm boss, Vec3 trail) {
-        Vec3 priority = boss.validTarget(player) ? Vec3.createVectorHelper(player.posX, player.posY, player.posZ) : trail;
-        if(priority != null && boss.getDistanceSq(priority.xCoord, boss.posY, priority.zCoord) < 24D * 24D) return priority;
+        // Recorded player pursuit always owns flight, independent of local attack targets.
+        if(trail != null) return trail;
         if(boss.worldObj.getTotalWorldTime() >= nextSelection) {
             nextSelection = boss.worldObj.getTotalWorldTime() + 20;
-            selectCluster(boss, priority);
+            selectCluster(boss);
         }
-        Vec3 cluster = clusterPosition(boss);
-        return cluster == null ? priority : cluster;
+        return clusterPosition(boss);
     }
 
-    private void selectCluster(EntityWitherStorm boss, Vec3 priority) {
+    private void selectCluster(EntityWitherStorm boss) {
         center = null;
         int largest = 0;
         double nearest = Double.POSITIVE_INFINITY;
         for(EntityLivingBase entity : living) {
-            if(entity instanceof EntityPlayer || !boss.validTarget(entity) || !alongRoute(boss, entity, priority)) continue;
+            if(entity instanceof EntityPlayer || !boss.validTarget(entity)) continue;
             int count = 0, x = cell(entity.posX), y = cell(entity.posY), z = cell(entity.posZ);
             for(int dx = -1; dx <= 1; dx++) for(int dy = -1; dy <= 1; dy++) for(int dz = -1; dz <= 1; dz++) {
                 List<EntityLivingBase> bucket = cells.get(key(x + dx, y + dy, z + dz));
@@ -81,18 +77,6 @@ final class WitherStormHunt {
             x += entity.posX; y += entity.posY; z += entity.posZ; count++;
         }
         return count == 0 ? null : Vec3.createVectorHelper(x / count, y / count, z / count);
-    }
-
-    private static boolean alongRoute(EntityWitherStorm boss, EntityLivingBase entity, Vec3 priority) {
-        if(priority == null) return true;
-        double dx = priority.xCoord - boss.posX, dz = priority.zCoord - boss.posZ;
-        double length = dx * dx + dz * dz;
-        double ex = entity.posX - boss.posX, ez = entity.posZ - boss.posZ;
-        double progress = length < 1D ? 0D : (ex * dx + ez * dz) / length;
-        // Only intercept groups ahead, close to the player's route. Never reverse course or linger below the Storm.
-        double lateralX = ex - progress * dx, lateralZ = ez - progress * dz;
-        return progress > 0D && progress < 1D && ex * ex + ez * ez > 12D * 12D
-            && lateralX * lateralX + lateralZ * lateralZ <= 16D * 16D;
     }
 
     private static int cell(double value) { return MathHelper.floor_double(value / CLUSTER_RADIUS); }

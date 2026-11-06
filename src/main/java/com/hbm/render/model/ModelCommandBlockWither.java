@@ -17,7 +17,7 @@ public final class ModelCommandBlockWither extends ModelBase {
         torso.addBox(-9, 9, -2, 18, 16, 5);
 
         for(int slot = 0; slot < 3; slot++) {
-            Vec3 pivot = EntityWitherStorm.commandHeadOffset(slot, 0F, 16F);
+            Vec3 pivot = EntityWitherStorm.legacyCommandHeadOffset(slot, 0F, 16F);
             if(slot == 1) {
                 torso.addBox(-3, (float)pivot.yCoord - 8, (float)pivot.zCoord - 2, 6, 8, 10);
             } else {

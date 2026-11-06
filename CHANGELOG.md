@@ -414,3 +414,11 @@
 - Replace first-render voxel generation with a premerged mantle asset and a separate distant mesh. Keep the curved silhouette and emissive fractures, and leave earlier stage models unchanged.
 - Cache vortex fragment properties and sector geometry at four detail levels. Retain all five rotating, turbulent rings, inward streams, central motes and the existing configurable fragment cap; zero fully disables decorative vortex rendering.
 - Batch all visible animated tentacles using shared segment templates and distance detail levels. Cull the mantle, arms, heads and vortex sectors by their bounds while preserving the existing poses, captures, attacks, absorption budgets and save identities.
+
+2026-11-05 21:45 — Repair Wither Storm pursuit, feeding, beams, audio and opening form
+
+- Enable existing player-trail pursuit for every Storm in its dimension, select the nearest eligible player with switching hysteresis, join the nearest forward segment when switching players, and retain destinations through lost visibility, expired waypoints and temporary absence. Keep local attack targets from overriding navigation.
+- Replace exhausted vertical sweeps with resumable adjacent sections, scaling section size and coordinate allowance by stage. Share configurable coordinate and elapsed-time limits with protected skull and tentacle impacts; retain explicit existing limits and award growth only for removed blocks.
+- Project fading purple tractor-beam light onto visible terrain along the actual beam ray without modifying world lighting. Send finite boss sound cues to distant listeners with gradual attenuation and duplicate suppression.
+- Render flaming projectiles with the vanilla Wither Skull mesh and texture. Apply server-owned fire damage, ignition and protected, budgeted terrain impacts without item drops.
+- Base Stage A on the actual vanilla Wither model, attaching an open rib cage and visible command block to its animated spine. Align ordinary head contacts and launch points with vanilla proportions; keep transformed and later-stage models and progression.

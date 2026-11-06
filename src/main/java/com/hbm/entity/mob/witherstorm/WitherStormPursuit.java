@@ -46,11 +46,12 @@ final class WitherStormPursuit {
                 if(!(value instanceof EntityPlayerMP)) continue;
                 EntityPlayerMP player = (EntityPlayerMP)value;
                 if(!eligible(player) || player.worldObj != world) continue;
-                if(player.getUniqueID().equals(target)) { selected = player; break; }
+                if(player.getUniqueID().equals(target)) selected = player;
                 double distance = boss.getDistanceSqToEntity(player);
                 if(distance < best) { nearest = player; best = distance; }
             }
-            if(selected == null && nearest != null) {
+            // A challenger must be at least four blocks (or 5%) closer to prevent boundary thrashing.
+            if(nearest != null && (selected == null || Math.sqrt(best) + Math.max(4D, Math.sqrt(best) * 0.05D) < boss.getDistanceToEntity(selected))) {
                 selected = nearest;
                 target = selected.getUniqueID();
                 route.clear();
@@ -59,8 +60,9 @@ final class WitherStormPursuit {
             }
             if(selected != null) {
                 ArrayDeque<Waypoint> history = trails.history.get(target);
+                long start = importedThrough == Long.MIN_VALUE && history != null ? routeStart(boss, history) : Long.MIN_VALUE;
                 if(history != null) for(Waypoint point : history) {
-                    if(point.tick > importedThrough) {
+                    if(point.tick >= start && point.tick > importedThrough) {
                         append(route, point);
                         importedThrough = point.tick;
                     }
@@ -70,12 +72,38 @@ final class WitherStormPursuit {
                     lastKnown = new Waypoint(now, selected.posX, selected.posY, selected.posZ);
             }
         }
-        while(!route.isEmpty() && horizontalDistanceSq(boss, route.peekFirst().position) <= WAYPOINT_RADIUS_SQ) {
-            Waypoint reached = route.removeFirst();
-            ArrayDeque<Waypoint> history = trails.history.get(target);
-            if(history != null) while(history.size() > 1 && history.peekFirst().tick <= reached.tick) history.removeFirst();
+        while(!route.isEmpty() && (horizontalDistanceSq(boss, route.peekFirst().position) <= WAYPOINT_RADIUS_SQ
+            || route.peekFirst().tick < now - 2400L)) {
+            route.removeFirst();
+            // Each boss advances its own cursor; shared player history belongs to all encounters.
+        }
+        for(Object value : world.playerEntities) if(value instanceof EntityPlayerMP) {
+            EntityPlayerMP player = (EntityPlayerMP)value;
+            if(player.getUniqueID().equals(target) && player.worldObj == world && eligible(player)) {
+                lastKnown = new Waypoint(now, player.posX, player.posY, player.posZ);
+                break;
+            }
         }
         return !route.isEmpty() ? route.peekFirst().position : lastKnown == null ? null : lastKnown.position;
+    }
+
+    /** Join the nearest segment heading toward the player, rather than replaying their entire old trail. */
+    private static long routeStart(EntityWitherStorm boss, ArrayDeque<Waypoint> history) {
+        Waypoint previous = null;
+        long start = Long.MIN_VALUE;
+        double best = Double.POSITIVE_INFINITY;
+        for(Waypoint point : history) {
+            Vec3 a = previous == null ? point.position : previous.position, b = point.position;
+            double dx = b.xCoord - a.xCoord, dz = b.zCoord - a.zCoord, length = dx * dx + dz * dz;
+            double t = length < 0.001D ? 1D : Math.max(0D, Math.min(1D,
+                ((boss.posX - a.xCoord) * dx + (boss.posZ - a.zCoord) * dz) / length));
+            double ex = boss.posX - a.xCoord - t * dx, ez = boss.posZ - a.zCoord - t * dz;
+            double distance = ex * ex + ez * ez;
+            // Favor the newer segment when a player crosses their earlier path.
+            if(distance <= best) { best = distance; start = point.tick; }
+            previous = point;
+        }
+        return start;
     }
 
     private static double horizontalDistanceSq(EntityWitherStorm boss, Vec3 point) {
@@ -100,7 +128,7 @@ final class WitherStormPursuit {
             for(Object value : world.playerEntities) {
                 if(!(value instanceof EntityPlayerMP)) continue;
                 EntityPlayerMP player = (EntityPlayerMP)value;
-                if(!eligible(player)) continue;
+                if(!eligible(player) || player.worldObj != world) continue;
                 UUID id = player.getUniqueID();
                 eligible.add(id);
                 ArrayDeque<Waypoint> points = history.computeIfAbsent(id, key -> new ArrayDeque<>());
@@ -125,6 +153,7 @@ final class WitherStormPursuit {
     }
 
     void read(NBTTagCompound nbt) {
+        route.clear(); lastKnown = null; nextRefresh = 0;
         target = WitherStormMath.uuid(nbt, "Player");
         importedThrough = nbt.getLong("ImportedThrough");
         if(nbt.hasKey("LastKnown", 10)) lastKnown = Waypoint.read(nbt.getCompoundTag("LastKnown"));

@@ -37,6 +37,7 @@ public final class RenderWitherStorm extends Render {
     private final ModelWitherStormThunderstorm thunderstorm = new ModelWitherStormThunderstorm();
     private final WitherStormVortex vortex = new WitherStormVortex();
     private final Frustrum stormCamera = new Frustrum();
+    private final com.hbm.render.model.ModelStoryModeWither initialModel = new com.hbm.render.model.ModelStoryModeWither();
     private final ModelCommandBlockWither commandModel = new ModelCommandBlockWither();
     private final RenderBlocks blocks = new RenderBlocks();
     private long lastParticles = Long.MIN_VALUE;
@@ -72,6 +73,9 @@ public final class RenderWitherStorm extends Render {
                 x + RenderManager.renderPosX,y + RenderManager.renderPosY,z + RenderManager.renderPosZ);
             else devourer.render(boss, time, partial);
             GL11.glPopAttrib();
+        } else if(stage == WitherStormStage.A) {
+            bindTexture(WITHER);
+            initialModel.renderWithCore(boss, partial);
         } else if(!stage.hasTentacles()) {
             if(stage == WitherStormStage.A_TRANSFORMED) {
                 bindTexture(SKIN);

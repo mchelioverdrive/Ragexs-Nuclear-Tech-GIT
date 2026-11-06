@@ -10,7 +10,8 @@ public final class WitherStormConfig {
     private WitherStormConfig() { }
     public static int transform = 12500, devourer = 50000, thunder = 250000;
     public static int minimumStageBTicks = 24000;
-    public static int blocksPerTick = 16, debrisPerTick = 4, maxDebris = 128;
+    public static int blocksPerTick = 1024, debrisPerTick = 4, maxDebris = 128;
+    public static int terrainMicros = 2000;
     public static int maxVortexFragments = 2000;
     public static int attackTicks = 80, maxEncounters = 1, queryBudget = 512, maxRadius = 32;
     public static int skullAttackRange = 96;
@@ -27,7 +28,8 @@ public final class WitherStormConfig {
         devourer = integer(config, c, "devourerGrowth", "Enter Devourer above this mass; must exceed transformGrowth.", 50000, transform + 1, 200000000);
         thunder = integer(config, c, "thunderStormGrowth", "Enter ThunderStorm above this mass; must exceed devourerGrowth.", 250000, devourer + 1, 500000000);
         minimumStageBTicks = integer(config, c, "minimumStageBTicks", "Minimum active ticks in Stage B before automatic evolution. The growth threshold still applies. Zero disables the timer.", 24000, 0, Integer.MAX_VALUE);
-        blocksPerTick = integer(config, c, "blocksPerTick", "Maximum terrain coordinates examined per encounter per server tick, including skull impacts. Zero disables consumption.", 16, 0, 256);
+        blocksPerTick = integer(config, c, "blocksPerTick", "Maximum terrain coordinates examined per encounter per server tick, including skull impacts. Stage limits rise from 32 to 1024; zero disables consumption. Existing explicit limits remain authoritative.", 1024, 0, 4096);
+        terrainMicros = integer(config, c, "terrainProcessingMicros", "Maximum elapsed terrain-processing time per encounter per tick in microseconds. A single block callback can exceed this limit.", 2000, 100, 10000);
         debrisPerTick = integer(config, c, "debrisPerTick", "Maximum visual debris records per encounter per tick; batched every five ticks. No server debris entities.", 4, 0, 16);
         maxDebris = integer(config, c, "maxClientDebris", "Maximum live Wither Storm debris particles per client, across all encounters.", 128, 0, 512);
         maxVortexFragments = integer(config, c, "maxVortexFragments", "Maximum visible decorative Stage D vortex fragments per Storm. Client-only; reduced by distance, particle and graphics settings. Zero hides the vortex.", 2000, 0, 8192);

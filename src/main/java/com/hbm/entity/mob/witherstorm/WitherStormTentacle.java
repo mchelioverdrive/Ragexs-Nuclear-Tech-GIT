@@ -122,7 +122,7 @@ final class WitherStormTentacle {
         }
         if(age == 24 || age == 64) {
             boss.terrain.impact(end.xCoord, end.yCoord, end.zCoord, 2F);
-            boss.worldObj.playSoundEffect(end.xCoord, end.yCoord, end.zCoord, "hbm:entity.witherStorm.tentacle", 1.2F, age == 64 ? 0.8F : 1F);
+            boss.broadcastSound("hbm:entity.witherStorm.tentacle", 1.2F, age == 64 ? 0.8F : 1F, end.xCoord, end.yCoord, end.zCoord);
         }
         previousTip = end;
     }

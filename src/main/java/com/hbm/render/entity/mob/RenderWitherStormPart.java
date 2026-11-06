@@ -37,9 +37,9 @@ public final class RenderWitherStormPart extends Render {
         WitherStormStage stage = boss.getStage();
         if(mc.renderViewEntity.getDistanceSqToEntity(boss) > (stage == WitherStormStage.D ? 512D * 512D : 256D * 256D)) return;
         if(stage == WitherStormStage.A) {
-            if(part.slot() < 3) renderCommandHead(boss, part, partial);
             return;
         }
+        WitherStormBeamLight.render(part, boss, partial);
         // The articulated arms are posed and drawn with the interpolated torso.
         if(part.slot() >= 3 && (!stage.hasTentacles() || stage.hasPosedTentacles())) return;
         Vec3 renderedBase = null;
@@ -178,28 +178,6 @@ public final class RenderWitherStormPart extends Render {
         GL11.glRotatef((float)Math.toDegrees(Math.atan2(Math.sqrt(x * x + z * z), y)), 1, 0, 0);
     }
 
-    private void renderCommandHead(EntityWitherStorm boss, EntityWitherStormPart part, float partial) {
-        float scale = boss.renderScale(partial);
-        float bodyYaw = boss.bodyYaw(partial);
-        Vec3 center = EntityWitherStorm.commandHeadOffset(part.slot(), bodyYaw, scale);
-        GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_CURRENT_BIT);
-        GL11.glPushMatrix();
-        // Use the torso's interpolated transform so network updates cannot separate the skulls from their joints.
-        GL11.glTranslated(
-            boss.lastTickPosX + (boss.posX - boss.lastTickPosX) * partial - RenderManager.renderPosX + center.xCoord,
-            boss.lastTickPosY + (boss.posY - boss.lastTickPosY) * partial - RenderManager.renderPosY + center.yCoord,
-            boss.lastTickPosZ + (boss.posZ - boss.lastTickPosZ) * partial - RenderManager.renderPosZ + center.zCoord);
-        GL11.glRotatef(-part.headYaw(partial, boss), 0, 1, 0);
-        GL11.glRotatef(part.headPitch(partial, boss), 1, 0, 0);
-        float skull = boss.headModelScale(part.slot(), partial, scale);
-        GL11.glScalef(skull, skull, skull);
-        GL11.glEnable(GL11.GL_NORMALIZE);
-        bindTexture(RenderWitherStorm.WITHER);
-        if(part.skullWindingUp()) GL11.glColor4f(1F, 0.55F, 1F, 1F);
-        head.renderWitherSkull(part.slot() == 1);
-        GL11.glPopMatrix();
-        GL11.glPopAttrib();
-    }
     /** Offset from the interpolated part position, in the same space as doRender. */
     private Vec3 headPoint(double y, double z, float scale, float pivotHeight, float yaw, float pitch) {
         Vec3 offset = WitherStormMath.headOffset(0, y * scale, z * scale, yaw, pitch);

@@ -99,6 +99,7 @@ public class PacketDispatcher {
 		wrapper.registerMessage(SandwormPosePacket.Handler.class, SandwormPosePacket.class, i++, Side.CLIENT);
 		wrapper.registerMessage(ColossusAttachmentPacket.Handler.class, ColossusAttachmentPacket.class, i++, Side.CLIENT);
 		wrapper.registerMessage(ColossusControlPacket.Handler.class, ColossusControlPacket.class, i++, Side.SERVER);
+		wrapper.registerMessage(WitherStormSoundPacket.Handler.class, WitherStormSoundPacket.class, i++, Side.CLIENT);
 	}
 	
 }
