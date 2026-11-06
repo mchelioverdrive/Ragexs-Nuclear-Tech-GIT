@@ -35,32 +35,21 @@ public final class RenderWitherStormPart extends Render {
         Minecraft mc = Minecraft.getMinecraft();
         if(boss == null || !boss.isPartActive(part.slot()) || mc.renderViewEntity == null) return;
         WitherStormStage stage = boss.getStage();
-        if(mc.renderViewEntity.getDistanceSqToEntity(boss) > (stage == WitherStormStage.D ? 512D * 512D : 256D * 256D)) return;
+        if(!boss.isInRangeToRenderDist(mc.renderViewEntity.getDistanceSqToEntity(boss))) return;
         if(stage == WitherStormStage.A) {
             return;
         }
         WitherStormBeamLight.render(part, boss, partial);
         // The articulated arms are posed and drawn with the interpolated torso.
         if(part.slot() >= 3 && (!stage.hasTentacles() || stage.hasPosedTentacles())) return;
+        if(!RenderWitherStorm.visible(headCamera, boss, partial,
+            boss.lastTickPosX + (boss.posX - boss.lastTickPosX) * partial,
+            boss.lastTickPosY + (boss.posY - boss.lastTickPosY) * partial,
+            boss.lastTickPosZ + (boss.posZ - boss.lastTickPosZ) * partial)) return;
         Vec3 renderedBase = null;
         if(stage == WitherStormStage.D) {
             float scale = boss.renderScale(partial);
             renderedBase = boss.headPartOffset(part.slot(),boss.bodyYaw(partial),scale);
-            double wx = boss.lastTickPosX+(boss.posX-boss.lastTickPosX)*partial+renderedBase.xCoord;
-            double wy = boss.lastTickPosY+(boss.posY-boss.lastTickPosY)*partial+renderedBase.yCoord;
-            double wz = boss.lastTickPosZ+(boss.posZ-boss.lastTickPosZ)*partial+renderedBase.zCoord;
-            double radius = boss.headModelScale(part.slot(),partial,scale)*2D+scale*4D;
-            headCamera.setPosition(RenderManager.renderPosX,RenderManager.renderPosY,RenderManager.renderPosZ);
-            if(!headCamera.isBoxInFrustum(wx-radius,wy-radius,wz-radius,wx+radius,wy+radius,wz+radius)) {
-                Entity target = boss.worldObj.getEntityByID(boss.headTarget(part.slot()));
-                if(!boss.beamActive(part.slot()) || !WitherStormMath.targetable(target,boss.worldObj)) return;
-                double tx = target.lastTickPosX+(target.posX-target.lastTickPosX)*partial;
-                double ty = target.lastTickPosY+(target.posY-target.lastTickPosY)*partial+target.height*0.5D;
-                double tz = target.lastTickPosZ+(target.posZ-target.lastTickPosZ)*partial;
-                // The eye can be outside the view while its tractor beam crosses the screen.
-                if(!headCamera.isBoxInFrustum(Math.min(wx,tx)-radius,Math.min(wy,ty)-radius,Math.min(wz,tz)-radius,
-                    Math.max(wx,tx)+radius,Math.max(wy,ty)+radius,Math.max(wz,tz)+radius)) return;
-            }
         }
         GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_CURRENT_BIT | GL11.GL_DEPTH_BUFFER_BIT | GL11.GL_LIGHTING_BIT);
         GL11.glPushMatrix(); bindTexture(RenderWitherStorm.SKIN);

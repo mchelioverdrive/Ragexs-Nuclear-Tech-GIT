@@ -47,14 +47,8 @@ public final class RenderWitherStorm extends Render {
         Minecraft mc = Minecraft.getMinecraft();
         double distance = mc.renderViewEntity == null ? 0 : mc.renderViewEntity.getDistanceSqToEntity(boss);
         WitherStormStage stage = boss.getStage();
-        if(distance > (stage == WitherStormStage.D ? 512D * 512D : 256D * 256D)) return;
-        if(stage == WitherStormStage.D) {
-            ClippingHelperImpl.getInstance();
-            stormCamera.setPosition(RenderManager.renderPosX,RenderManager.renderPosY,RenderManager.renderPosZ);
-            double s = boss.renderScale(partial) * WitherStormThunderstormPose.size(boss.development());
-            double wx = x + RenderManager.renderPosX, wy = y + RenderManager.renderPosY, wz = z + RenderManager.renderPosZ;
-            if(!stormCamera.isBoxInFrustum(wx-165D*s,wy-100D*s,wz-165D*s,wx+165D*s,wy+80D*s,wz+165D*s)) return;
-        }
+        if(!boss.isInRangeToRenderDist(distance) || !visible(stormCamera, boss, partial,
+            x + RenderManager.renderPosX, y + RenderManager.renderPosY, z + RenderManager.renderPosZ)) return;
         BossStatus.setBossStatus(boss, true);
         GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_CURRENT_BIT | GL11.GL_LIGHTING_BIT);
         GL11.glPushMatrix();
@@ -93,6 +87,18 @@ public final class RenderWitherStorm extends Render {
             for(int i = 0; i < count; i++) boss.worldObj.spawnParticle("largesmoke", boss.posX + (boss.worldObj.rand.nextDouble() - 0.5D) * boss.width,
                 boss.posY + boss.worldObj.rand.nextDouble() * boss.height, boss.posZ + (boss.worldObj.rand.nextDouble() - 0.5D) * boss.width, 0, 0.04D, 0);
         }
+    }
+
+    /** Render-only bounds include raised/attacking arms, heads and the world-axis Stage D rings.
+     * Keep the much smaller gameplay box and vanilla's loaded-origin-chunk guard intact. */
+    static boolean visible(Frustrum camera, EntityWitherStorm boss, float partial, double x, double y, double z) {
+        ClippingHelperImpl.getInstance();
+        camera.setPosition(RenderManager.renderPosX, RenderManager.renderPosY, RenderManager.renderPosZ);
+        WitherStormStage stage = boss.getStage();
+        double scale = Math.max(boss.renderScale(partial), boss.getStormScale());
+        double radius = stage == WitherStormStage.D ? 180D * scale * WitherStormThunderstormPose.size(boss.development())
+            : stage.hasTentacles() ? Math.max(128D, 80D * scale) : 8D * scale;
+        return camera.isBoxInFrustum(x - radius, y - radius, z - radius, x + radius, y + radius, z + radius);
     }
 
     /** Lift the existing near-black skin so the new relief reads at a distance. Keep the lightmap active. */

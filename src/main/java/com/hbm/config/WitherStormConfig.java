@@ -15,6 +15,7 @@ public final class WitherStormConfig {
     public static int maxVortexFragments = 2000;
     public static int attackTicks = 80, maxEncounters = 1, queryBudget = 512, maxRadius = 48;
     public static int skullAttackRange = 96;
+    public static int maxVisibilityDistance = 1024, idleWanderingRadius = 64;
     public static float explosionStrength = 2F;
     public static boolean terrain = true, tileEntities = false, protectedBlocks = false, survivalSummon = true;
     public static boolean challengeMode = false;
@@ -36,8 +37,10 @@ public final class WitherStormConfig {
         maxVortexFragments = integer(config, c, "maxVortexFragments", "Maximum visible decorative Stage D vortex fragments per Storm. Client-only; reduced by distance, particle and graphics settings. Zero hides the vortex.", 2000, 0, 8192);
         attackTicks = integer(config, c, "skullAttackTicks", "Base cooldown after a skull volley. Each phase reduces it by one eighth of the base, with a 40-tick minimum.", 80, 40, 12000);
         skullAttackRange = integer(config, c, "skullAttackRange", "Maximum distance in blocks from both the Storm and the firing mouth to a skull target.", 96, 8, 96);
+        maxVisibilityDistance = integer(config, c, "maxVisibilityDistance", "Maximum Storm render/tracking distance in blocks, scaled down for earlier stages. Use matching client/server settings. Normal watched/loaded chunks, fog and camera clipping still apply; never loads chunks for visibility.", 1024, 64, 4096);
+        idleWanderingRadius = integer(config, c, "idleWanderingRadius", "Maximum horizontal distance of an idle flight destination. Only loaded, terrain-cleared routes are chosen. Zero disables wandering. Eligible players anywhere in the dimension interrupt wandering.", 64, 0, 256);
         maxEncounters = integer(config, c, "maxEncounters", "Maximum encounters across all dimensions, including saved unloaded encounters. Zero disables new summons.", 1, 0, 32);
-        queryBudget = integer(config, c, "entityQueryBudget", "Maximum entity entries examined per cached head/debris search; at most 64 candidates retained, refreshed every 20 ticks. Player pursuit, mob density and tentacles use a separate local living-entity census.", 512, 64, 4096);
+        queryBudget = integer(config, c, "entityQueryBudget", "Maximum entity entries examined per cached head/debris search; at most 64 candidates retained, refreshed every 20 ticks. Player pursuit scans the dimension's player list; tentacles use a separate local living-entity census.", 512, 64, 4096);
         maxRadius = integer(config, c, "maxConsumptionRadius", "Maximum body/head/tentacle-scaled horizontal feeding radius. Does not limit vertical reach from flight altitude. Chunks are never force-loaded; existing explicit caps remain authoritative.", 48, 4, 48);
         double strength = CommonConfig.createConfigDouble(config, c, "skullExplosionStrength", "Non-nuclear impact strength, scaled by phase; bounded to 0-8. Terrain shares blocksPerTick and protection rules.", 2D);
         explosionStrength = (float)(Double.isNaN(strength) || Double.isInfinite(strength) ? 2D : Math.max(0D, Math.min(8D, strength)));

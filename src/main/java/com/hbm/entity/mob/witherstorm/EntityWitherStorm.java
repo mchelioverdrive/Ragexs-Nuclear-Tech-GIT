@@ -60,8 +60,8 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
     private long visualCaptureUntil;
     private float visualCapture, previousVisualCapture;
     private boolean restoring;
-    private double roamX, roamZ;
-    private int roamTicks;
+    private double roamX, roamZ, roamGround;
+    private int roamTicks, roamDelay, roamCheck;
     private WitherStormPursuit pursuit = new WitherStormPursuit();
     private Ticket flightTicket;
     private ChunkCoordIntPair flightChunk;
@@ -158,6 +158,23 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
         return dataWatcher.getWatchableObjectFloat(27);
     }
     public float renderScale(float partial) { return previousVisualScale + (visualScale - previousVisualScale) * partial; }
+    /** Shared by the root, attachments and native server trackers, independent of hitbox size. */
+    public double visibilityDistance() {
+        double range;
+        switch(getStage()) {
+            case A: range = 256D; break;
+            case A_TRANSFORMED: range = 384D; break;
+            case B: range = 512D; break;
+            case C_SMALL: range = 640D; break;
+            case C_BIG: case C_DAMAGED: range = 768D; break;
+            default: range = 1024D; break;
+        }
+        return Math.min(WitherStormConfig.maxVisibilityDistance, range * (0.75D + 0.25D * getStormScale() / 2.8D));
+    }
+    @Override public boolean isInRangeToRenderDist(double distance) {
+        double range = visibilityDistance();
+        return distance <= range * range;
+    }
     public float bodyYaw(float partial) {
         return prevRotationYaw + MathHelper.wrapAngleTo180_float(rotationYaw - prevRotationYaw) * partial;
     }
@@ -243,6 +260,12 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
             hunt.refresh(this);
             fly();
             maintainParts();
+            if(ticksExisted % 20 == 1) {
+                double range = visibilityDistance();
+                WitherStormTracking.refresh(this, range);
+                for(EntityWitherStormPart part : parts) if(part != null && !part.isDead)
+                    WitherStormTracking.refresh(part, range + getDistanceToEntity(part));
+            }
             updateSkullAttack();
             interact();
             terrain.tick();
@@ -367,30 +390,12 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
             waypoint = pursuit.destination(this, WitherStormEncounters.get(worldObj).playerTrails(worldObj));
             if(flightTicket != null) margin = 0D;
         }
-        EntityLivingBase target = null;
-        for(EntityLivingBase candidate : targets) if(validTarget(candidate)
-            && (target == null || getDistanceSqToEntity(candidate) < getDistanceSqToEntity(target))) target = candidate;
-        // Players own pursuit; local clusters are opportunistic stops along that route.
-        waypoint = hunt.destination(this, waypoint);
-        double tx = waypoint != null ? waypoint.xCoord : target == null ? posX : target.posX;
-        double tz = waypoint != null ? waypoint.zCoord : target == null ? posZ : target.posZ;
+        boolean pursuing = waypoint != null;
+        if(pursuing) { roamTicks = roamDelay = roamCheck = 0; }
+        else wander(margin);
+        double tx = pursuing ? waypoint.xCoord : roamTicks > 0 ? roamX : posX;
+        double tz = pursuing ? waypoint.zCoord : roamTicks > 0 ? roamZ : posZ;
         double dx = tx - posX, dz = tz - posZ, distance = Math.sqrt(dx * dx + dz * dz);
-        boolean pursuing = waypoint != null || target != null && (distance < 1D || WitherStormMath.areaLoaded(worldObj,
-            posX + dx / distance * Math.min(12D, distance), posZ + dz / distance * Math.min(12D, distance), margin));
-        if(!pursuing) {
-            double rx = roamX - posX, rz = roamZ - posZ;
-            if(--roamTicks <= 0 || rx * rx + rz * rz < 36D || !WitherStormMath.areaLoaded(worldObj, roamX, roamZ, margin)) {
-                roamX = posX; roamZ = posZ; roamTicks = 40;
-                for(int i = 0; i < 8; i++) {
-                    double angle = rand.nextDouble() * Math.PI * 2D, range = 12D + rand.nextDouble() * 16D;
-                    double x = posX + Math.cos(angle) * range, z = posZ + Math.sin(angle) * range;
-                    if(!WitherStormMath.areaLoaded(worldObj, x, z, margin)) continue;
-                    roamX = x; roamZ = z; roamTicks = 160 + rand.nextInt(80); break;
-                }
-            }
-            tx = roamX; tz = roamZ;
-        } else roamTicks = 0;
-        dx = tx - posX; dz = tz - posZ; distance = Math.sqrt(dx * dx + dz * dz);
         double ground = posY - 12;
         if(WitherStormMath.loaded(worldObj, posX, posZ)) {
             Chunk chunk = worldObj.getChunkProvider().provideChunk(MathHelper.floor_double(posX) >> 4, MathHelper.floor_double(posZ) >> 4);
@@ -401,23 +406,86 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
             if(WitherStormMath.loaded(worldObj, x, z)) ground = Math.max(ground, worldObj.getChunkProvider().provideChunk(MathHelper.floor_double(x) >> 4,
                 MathHelper.floor_double(z) >> 4).getHeightValue(MathHelper.floor_double(x) & 15, MathHelper.floor_double(z) & 15));
         }
+        if(!pursuing && roamTicks > 0) ground = Math.max(ground, roamGround);
         double clearance = terrainClearance();
-        double targetY = waypoint != null ? waypoint.yCoord : pursuing ? target.posY : ground;
+        double targetY = pursuing ? waypoint.yCoord : ground;
         double ty = Math.min(pursuit == null ? 200 : 275, Math.max(ground + clearance,
             pursuing ? Math.min(ground + 24D, targetY + 12D) : ground + clearance));
         double speed = getPhase() == WitherStormPhase.COMMAND_BLOCK ? 0.22D : 0.32D;
-        boolean advance = distance > (waypoint == null ? 6 : 2) && (waypoint == null || posY > ground + 2D);
+        boolean advance = distance > (pursuing ? 2D : Math.min(4D, WitherStormConfig.idleWanderingRadius * 0.25D))
+            && (pursuing ? posY > ground + 2D : posY >= ground + clearance - 2D);
         motionX = WitherStormMath.limit(motionX * 0.92D + (advance ? dx / distance * 0.025D : 0), speed);
         motionZ = WitherStormMath.limit(motionZ * 0.92D + (advance ? dz / distance * 0.025D : 0), speed);
         motionY = WitherStormMath.limit(motionY * 0.9D + (ty - posY) * 0.004D, 0.24D);
         // Missing saved attachments still wait for their chunks; they do not own flight.
         double nextX = posX + motionX, nextZ = posZ + motionZ;
         if(!WitherStormMath.areaLoaded(worldObj, nextX, nextZ, margin)) {
-            if(flightTicket == null) { motionX = motionZ = 0; roamTicks = 0; }
+            if(!pursuing || flightTicket == null) { motionX = motionZ = 0; if(!pursuing && roamTicks > 0) pauseWandering(); }
             else ((WorldServer)worldObj).theChunkProviderServer.loadChunk(MathHelper.floor_double(nextX) >> 4, MathHelper.floor_double(nextZ) >> 4);
         }
         if(distance > 2) rotationYaw += MathHelper.wrapAngleTo180_float((float)(Math.atan2(dx, -dz) * 180D / Math.PI) - rotationYaw) * 0.04F;
         renderYawOffset = rotationYaw; rotationYawHead = rotationYaw;
+    }
+
+    private void pauseWandering() {
+        roamTicks = 0;
+        roamDelay = 20 + rand.nextInt(41);
+    }
+
+    /** Idle destinations and corridor checks are disposable; persistent growth/pursuit is untouched. */
+    private void wander(double margin) {
+        int radius = WitherStormConfig.idleWanderingRadius;
+        if(radius == 0) { roamTicks = 0; return; }
+        if(roamTicks > 0) {
+            double dx = roamX - posX, dz = roamZ - posZ;
+            double arrival = Math.min(4D, radius * 0.25D);
+            if(--roamTicks <= 0 || dx * dx + dz * dz <= arrival * arrival) pauseWandering();
+            else if(--roamCheck <= 0) {
+                roamCheck = 20;
+                double ground = wanderingGround(roamX, roamZ, margin);
+                if(!Double.isFinite(ground)) pauseWandering();
+                else roamGround = ground;
+            }
+            return;
+        }
+        if(roamDelay > 0) { roamDelay--; return; }
+        // Prefer the current heading, then try other headings and shorter loaded legs.
+        for(int i = 0; i < 8; i++) {
+            double angle = Math.toRadians(rotationYaw) - Math.PI / 2D
+                + (rand.nextDouble() - 0.5D) * (i < 3 ? Math.PI : Math.PI * 2D);
+            double range = radius * (0.35D + rand.nextDouble() * 0.65D) * Math.pow(0.72D, i);
+            double x = posX + Math.cos(angle) * range, z = posZ + Math.sin(angle) * range;
+            double ground = wanderingGround(x, z, margin);
+            if(!Double.isFinite(ground)) continue;
+            roamX = x; roamZ = z; roamGround = ground; roamCheck = 20;
+            // Include time to climb above a hill before advancing horizontally.
+            roamTicks = 200 + (int)(range * 16D + Math.max(0D, ground + terrainClearance() - posY) * 12D);
+            return;
+        }
+        pauseWandering();
+    }
+
+    /** Conservative height-map corridor, bounded to 65 steps and three columns per step. */
+    private double wanderingGround(double x, double z, double margin) {
+        double dx = x - posX, dz = z - posZ, distance = Math.sqrt(dx * dx + dz * dz);
+        int steps = Math.max(1, MathHelper.ceiling_double_int(distance / 4D));
+        double halfWidth = Math.max(2D, width * 0.5D);
+        double sideX = distance < 0.001D ? halfWidth : -dz / distance * halfWidth;
+        double sideZ = distance < 0.001D ? 0D : dx / distance * halfWidth;
+        double ground = 0D;
+        for(int i = 0; i <= steps; i++) {
+            double cx = posX + dx * i / steps, cz = posZ + dz * i / steps;
+            if(!WitherStormMath.areaLoaded(worldObj, cx, cz, margin)) return Double.NaN;
+            for(int side = -1; side <= 1; side++) {
+                double sx = cx + sideX * side, sz = cz + sideZ * side;
+                // Large mantles can overhang the local flight ticket. Inspect all known sides
+                // without loading their chunks; the route's center must always be loaded.
+                if(!WitherStormMath.loaded(worldObj, sx, sz)) continue;
+                Chunk chunk = worldObj.getChunkProvider().provideChunk(MathHelper.floor_double(sx) >> 4, MathHelper.floor_double(sz) >> 4);
+                ground = Math.max(ground, chunk.getHeightValue(MathHelper.floor_double(sx) & 15, MathHelper.floor_double(sz) & 15));
+            }
+        }
+        return ground + terrainClearance() > 275D ? Double.NaN : ground;
     }
     /** Every slot has one saved UUID. A known unloaded slot is never replaced. */
     private void maintainParts() {
@@ -442,6 +510,12 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
             parts[i].parent = this;
             if(i >= 3) parts[i].tentacle.tick(this);
             parts[i].followParent();
+            // The root can move a part whose own tick is suspended near a loaded boundary.
+            // Keep native tracking/chunk saves at its actual position without ticking it twice.
+            if(!parts[i].addedToChunk || parts[i].chunkCoordX != MathHelper.floor_double(parts[i].posX) >> 4
+                || parts[i].chunkCoordY != MathHelper.clamp_int(MathHelper.floor_double(parts[i].posY) >> 4, 0, 15)
+                || parts[i].chunkCoordZ != MathHelper.floor_double(parts[i].posZ) >> 4)
+                worldObj.updateEntityWithOptionalForce(parts[i], false);
             partChunksX[i] = MathHelper.floor_double(parts[i].posX) >> 4; partChunksZ[i] = MathHelper.floor_double(parts[i].posZ) >> 4;
         }
     }

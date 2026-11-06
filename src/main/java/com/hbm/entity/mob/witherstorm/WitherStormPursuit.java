@@ -37,19 +37,23 @@ final class WitherStormPursuit {
     Vec3 destination(EntityWitherStorm boss, Trails trails) {
         World world = boss.worldObj;
         long now = world.getTotalWorldTime();
-        if(now >= nextRefresh) {
+        EntityPlayerMP selected = null, nearest = null;
+        double best = Double.POSITIVE_INFINITY;
+        // The player list is small and already visited each tick for the precise fallback.
+        // Validate/acquire immediately; route sampling and healthy target switches stay throttled.
+        for(Object value : world.playerEntities) {
+            if(!(value instanceof EntityPlayerMP)) continue;
+            EntityPlayerMP player = (EntityPlayerMP)value;
+            if(!eligible(player) || player.worldObj != world) continue;
+            if(player.getUniqueID().equals(target)) selected = player;
+            double distance = boss.getDistanceSqToEntity(player);
+            if(distance < best) { nearest = player; best = distance; }
+        }
+        // Retain saved trails for reconnection, but an absent player must not own idle flight.
+        if(nearest == null) { nextRefresh = now; return null; }
+        if(now >= nextRefresh || selected == null) {
             nextRefresh = now + SAMPLE_INTERVAL;
             trails.sample(world);
-            EntityPlayerMP selected = null, nearest = null;
-            double best = Double.POSITIVE_INFINITY;
-            for(Object value : world.playerEntities) {
-                if(!(value instanceof EntityPlayerMP)) continue;
-                EntityPlayerMP player = (EntityPlayerMP)value;
-                if(!eligible(player) || player.worldObj != world) continue;
-                if(player.getUniqueID().equals(target)) selected = player;
-                double distance = boss.getDistanceSqToEntity(player);
-                if(distance < best) { nearest = player; best = distance; }
-            }
             // A challenger must be at least four blocks (or 5%) closer to prevent boundary thrashing.
             if(nearest != null && (selected == null || Math.sqrt(best) + Math.max(4D, Math.sqrt(best) * 0.05D) < boss.getDistanceToEntity(selected))) {
                 selected = nearest;
@@ -77,13 +81,7 @@ final class WitherStormPursuit {
             route.removeFirst();
             // Each boss advances its own cursor; shared player history belongs to all encounters.
         }
-        for(Object value : world.playerEntities) if(value instanceof EntityPlayerMP) {
-            EntityPlayerMP player = (EntityPlayerMP)value;
-            if(player.getUniqueID().equals(target) && player.worldObj == world && eligible(player)) {
-                lastKnown = new Waypoint(now, player.posX, player.posY, player.posZ);
-                break;
-            }
-        }
+        if(selected != null) lastKnown = new Waypoint(now, selected.posX, selected.posY, selected.posZ);
         return !route.isEmpty() ? route.peekFirst().position : lastKnown == null ? null : lastKnown.position;
     }
 

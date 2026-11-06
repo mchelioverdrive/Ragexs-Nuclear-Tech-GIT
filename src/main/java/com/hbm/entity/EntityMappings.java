@@ -280,8 +280,8 @@ public class EntityMappings {
 		}
 
 		// Append IDs so existing tracked entity mappings remain stable.
-		EntityRegistry.registerModEntity(com.hbm.entity.mob.witherstorm.EntityWitherStorm.class, "wither_storm", id++, MainRegistry.instance, 256, 3, true);
-		EntityRegistry.registerModEntity(com.hbm.entity.mob.witherstorm.EntityWitherStormPart.class, "wither_storm_part", id++, MainRegistry.instance, 256, 3, false);
+		EntityRegistry.registerModEntity(com.hbm.entity.mob.witherstorm.EntityWitherStorm.class, "wither_storm", id++, MainRegistry.instance, com.hbm.config.WitherStormConfig.maxVisibilityDistance, 3, true);
+		EntityRegistry.registerModEntity(com.hbm.entity.mob.witherstorm.EntityWitherStormPart.class, "wither_storm_part", id++, MainRegistry.instance, com.hbm.config.WitherStormConfig.maxVisibilityDistance + 512, 3, false);
 		EntityRegistry.registerModEntity(com.hbm.entity.mob.witherstorm.EntityWitherStormSkull.class, "wither_storm_skull", id++, MainRegistry.instance, 128, 3, true);
 		EntityRegistry.registerModEntity(com.hbm.entity.mob.sandworm.EntitySandworm.class, "sandworm", id++, MainRegistry.instance, 256, 5, false);
 		EntityRegistry.registerModEntity(com.hbm.entity.mob.sandworm.EntityBrain.class, "worm_brain", id++, MainRegistry.instance, 96, 3, false);

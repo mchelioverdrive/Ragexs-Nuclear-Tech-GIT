@@ -24,6 +24,16 @@ public class EntityWitherStormPart extends Entity {
     private double nextX, nextY, nextZ;
     private float nextYaw, nextPitch;
     public EntityWitherStormPart(World world) { super(world); noClip = true; isImmuneToFire = true; ignoreFrustumCheck = true; setSize(2, 2); }
+    @Override @SideOnly(Side.CLIENT) public boolean isInRangeToRender3d(double x, double y, double z) {
+        EntityWitherStorm boss = parent();
+        return boss != null && boss.isInRangeToRender3d(x, y, z);
+    }
+    @Override @SideOnly(Side.CLIENT) public boolean isInRangeToRenderDist(double distance) {
+        EntityWitherStorm boss = parent();
+        if(boss == null) return false;
+        double range = boss.visibilityDistance() + boss.getDistanceToEntity(this);
+        return distance <= range * range;
+    }
     @Override protected void entityInit() {
         dataWatcher.addObject(20, Integer.valueOf(0));
         dataWatcher.addObject(21, Byte.valueOf((byte)0));
