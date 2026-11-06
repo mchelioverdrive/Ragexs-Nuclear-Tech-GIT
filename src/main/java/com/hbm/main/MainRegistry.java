@@ -1076,6 +1076,7 @@ public class MainRegistry {
 		ModEventHandler commonHandler = new ModEventHandler();
 		FMLCommonHandler.instance().bus().register(commonHandler);
 		MinecraftForge.EVENT_BUS.register(commonHandler);
+		FMLCommonHandler.instance().bus().register(new com.hbm.world.gemini.GeminiInvasionManager());
 		com.hbm.handler.restraint.Restraints restraintEvents = new com.hbm.handler.restraint.Restraints();
 		MinecraftForge.EVENT_BUS.register(restraintEvents);
 		FMLCommonHandler.instance().bus().register(restraintEvents);
@@ -1190,6 +1191,7 @@ public class MainRegistry {
 		config.load();
 
 		GeneralConfig.loadFromConfig(config);
+		com.hbm.config.GeminiConfig.loadFromConfig(config);
 		com.hbm.config.RestraintConfig.loadFromConfig(config);
 		WorldConfig.loadFromConfig(config);
 		MachineConfig.loadFromConfig(config);

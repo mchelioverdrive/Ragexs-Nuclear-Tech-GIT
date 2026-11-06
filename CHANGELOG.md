@@ -442,3 +442,9 @@
 - Relocate moved attachments through native chunk bookkeeping when their own tick is suspended near a loaded boundary, keeping tracking and saved chunk membership aligned without double-ticking or loading more terrain.
 - Cull against conservative render bounds covering the full model, raised/attacking arms, heads and Stage D vortex instead of attachment-sized bounds. Preserve hitboxes, shaders, lighting, beams, animations and existing distant Stage D detail reductions.
 - Wander when no eligible player is present, even if saved pursuit trails or local mobs remain. Choose bounded loaded flight legs within a configurable 64-block radius, check terrain corridors periodically, climb before crossing hills, retain stage speeds/clearances and pause randomly between destinations. Player availability immediately restores normal trail pursuit without resetting saved encounter state; feeding, tentacle combat and destruction continue during idle flight.
+
+2026-11-06 02:41 — Add the persistent Mars gate and Gemini invasion scheduler
+
+- Record the shared `geminiMarsVisited` milestone only for server players actually arriving in the existing Mars/Duna dimension, checking its configured ID, provider and registered celestial identity. Preserve the milestone across player lifecycle changes, server restarts and disabled invasions without changing space travel.
+- Add an Overworld-owned Forge world save and a shared server-side activity gate for future Gemini creatures, infections, structures and events. Old worlds remain locked until an actual Mars arrival is observed.
+- Add configurable invasion enablement and randomized 20–40 minute event opportunity intervals. Persist the countdown, pause while disabled or without Overworld players, and dispatch one synchronous extension event per interval without unlock bursts or offline catch-up. This foundation adds no Gemini mobs or event effects.
