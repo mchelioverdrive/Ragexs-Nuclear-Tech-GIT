@@ -67,6 +67,7 @@ import net.minecraftforge.fluids.FluidContainerRegistry;
 import net.minecraftforge.fluids.FluidStack;
 
 public class ModItems {
+	public static Item handcuffs, straight_jacket, tranquilizer_syringe, tranquilizer_dart, injection_terminal;
 
 
 
@@ -3020,8 +3021,17 @@ public class ModItems {
 	//public static Item mysteryshovel;
 	public static Item memory;
 
+	private static void initializeRestraintItems() {
+		handcuffs = new com.hbm.items.special.ItemRestraint(true).setUnlocalizedName("handcuffs").setCreativeTab(MainRegistry.controlTab).setTextureName("hbm:handcuffs");
+		straight_jacket = new com.hbm.items.special.ItemRestraint(true).setUnlocalizedName("straight_jacket").setCreativeTab(MainRegistry.controlTab).setTextureName("hbm:straight_jacket");
+		tranquilizer_syringe = new com.hbm.items.special.ItemRestraint(false).setUnlocalizedName("tranquilizer_syringe").setCreativeTab(MainRegistry.consumableTab).setTextureName("hbm:tranquilizer_syringe");
+		tranquilizer_dart = new com.hbm.items.weapon.ItemTranquilizerDart().setUnlocalizedName("tranquilizer_dart").setCreativeTab(MainRegistry.weaponTab).setTextureName("hbm:tranquilizer_dart");
+		injection_terminal = new com.hbm.items.special.ItemRestraint(false).setUnlocalizedName("injection_terminal").setCreativeTab(MainRegistry.consumableTab).setTextureName("hbm:injection_terminal");
+	}
+
 	public static void initializeItem()
 	{
+		initializeRestraintItems();
 		//redstone_sword = new RedstoneSword(ToolMaterial.STONE).setUnlocalizedName("redstone_sword").setCreativeTab(CreativeTabs.tabCombat).setTextureName(RefStrings.MODID + ":redstone_sword");
 		//big_sword = new BigSword(ToolMaterial.EMERALD).setUnlocalizedName("big_sword").setCreativeTab(CreativeTabs.tabCombat).setTextureName(RefStrings.MODID + ":big_sword");
 		//butter_sword = new BSword(ToolMaterial.WOOD).setUnlocalizedName("butter_sword").setCreativeTab(CreativeTabs.tabCombat).setTextureName(RefStrings.MODID + ":budder_sword");
@@ -7354,7 +7364,16 @@ public class ModItems {
 		MinecraftForge.EVENT_BUS.register(BucketHandler.INSTANCE);
 	}
 
+	private static void registerRestraintItems() {
+		GameRegistry.registerItem(handcuffs, handcuffs.getUnlocalizedName());
+		GameRegistry.registerItem(straight_jacket, straight_jacket.getUnlocalizedName());
+		GameRegistry.registerItem(tranquilizer_syringe, tranquilizer_syringe.getUnlocalizedName());
+		GameRegistry.registerItem(tranquilizer_dart, tranquilizer_dart.getUnlocalizedName());
+		GameRegistry.registerItem(injection_terminal, injection_terminal.getUnlocalizedName());
+	}
+
 	private static void registerItem() {
+		registerRestraintItems();
 		//Weapons
 		//GameRegistry.registerItem(redstone_sword, redstone_sword.getUnlocalizedName());
 		//GameRegistry.registerItem(big_sword, big_sword.getUnlocalizedName());

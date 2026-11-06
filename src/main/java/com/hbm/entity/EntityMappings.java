@@ -47,6 +47,7 @@ public class EntityMappings {
 	public static List<Quartet<Class<? extends Entity>, String, Integer, Integer>> mobMappings = new ArrayList();
 
 	public static void writeMappings() {
+		addEntity(EntityTranquilizerDart.class, "entity_tranquilizer_dart", 64);
 
 		addEntity(EntityRocket.class, "entity_rocket", 250);
 		addEntity(EntityGrenadeGeneric.class, "entity_grenade_generic", 250);

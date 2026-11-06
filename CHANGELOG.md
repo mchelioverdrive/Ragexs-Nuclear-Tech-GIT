@@ -422,3 +422,9 @@
 - Project fading purple tractor-beam light onto visible terrain along the actual beam ray without modifying world lighting. Send finite boss sound cues to distant listeners with gradual attenuation and duplicate suppression.
 - Render flaming projectiles with the vanilla Wither Skull mesh and texture. Apply server-owned fire damage, ignition and protected, budgeted terrain impacts without item drops.
 - Base Stage A on the actual vanilla Wither model, attaching an open rib cage and visible command block to its animated spine. Align ordinary head contacts and launch points with vanilla proportions; keep transformed and later-stage models and progression.
+
+2026-11-05 23:59 — Add shared humanoid restraints, sedation and four interactive devices
+
+- Add persistent handcuffs, lead-based escorting, removable straight jackets and bounded fictional tranquilizer onset, unconsciousness and recovery. Keep the original entities and restore suspended native AI tasks on release; exclude bosses and oversized entities, with player support explicitly disabled by default.
+- Add a multiblock guillotine, fuel-heated bronze bull, RNT-powered electric chair and consumable injection table. Share UUID/token occupancy validation, server-owned positioning and damage, deliberate manual confirmation, release interlocks and unload/reload cleanup.
+- Add native textured 3D models with moving blades, hatches, restraints and injectors, biped/villager captive poses, bounded electrical/heat effects, existing RNT sound cues, crafting recipes and English descriptions. Add server configuration for support, duration, damage and device behavior.

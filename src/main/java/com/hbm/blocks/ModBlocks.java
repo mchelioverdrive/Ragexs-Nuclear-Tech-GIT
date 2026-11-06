@@ -41,6 +41,7 @@ import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
 
 public class ModBlocks {
+	public static Block guillotine, brazen_bull, electric_chair, injection_table;
 
 	public static void mainRegistry() {
 		initializeBlock();
@@ -1443,6 +1444,10 @@ public class ModBlocks {
 	public static Material materialGas = new MaterialGas();
 
 	private static void initializeBlock() {
+		guillotine = new com.hbm.blocks.machine.BlockRestraintDevice(com.hbm.blocks.machine.BlockRestraintDevice.Kind.GUILLOTINE).setBlockName("guillotine").setCreativeTab(MainRegistry.machineTab).setBlockTextureName("hbm:restraint_guillotine");
+		brazen_bull = new com.hbm.blocks.machine.BlockRestraintDevice(com.hbm.blocks.machine.BlockRestraintDevice.Kind.BULL).setBlockName("brazen_bull").setCreativeTab(MainRegistry.machineTab).setBlockTextureName("hbm:restraint_bull");
+		electric_chair = new com.hbm.blocks.machine.BlockRestraintDevice(com.hbm.blocks.machine.BlockRestraintDevice.Kind.CHAIR).setBlockName("electric_chair").setCreativeTab(MainRegistry.machineTab).setBlockTextureName("hbm:restraint_chair");
+		injection_table = new com.hbm.blocks.machine.BlockRestraintDevice(com.hbm.blocks.machine.BlockRestraintDevice.Kind.TABLE).setBlockName("injection_table").setCreativeTab(MainRegistry.machineTab).setBlockTextureName("hbm:restraint_table");
 
 		event_tester = new TestEventTester(Material.iron).setBlockName("event_tester").setCreativeTab(MainRegistry.partsTab).setHardness(2.5F).setResistance(0.0F).setBlockTextureName(RefStrings.MODID + ":event_tester");
 		obj_tester = new TestObjTester(Material.iron).setBlockName("obj_tester").setCreativeTab(MainRegistry.partsTab).setHardness(2.5F).setResistance(10.0F);
@@ -2771,6 +2776,10 @@ public class ModBlocks {
 	}
 
 	private static void registerBlock() {
+		GameRegistry.registerBlock(guillotine, ItemBlockBase.class, guillotine.getUnlocalizedName());
+		GameRegistry.registerBlock(brazen_bull, ItemBlockBase.class, brazen_bull.getUnlocalizedName());
+		GameRegistry.registerBlock(electric_chair, ItemBlockBase.class, electric_chair.getUnlocalizedName());
+		GameRegistry.registerBlock(injection_table, ItemBlockBase.class, injection_table.getUnlocalizedName());
 		//Test
 		GameRegistry.registerBlock(event_tester, event_tester.getUnlocalizedName());
 		GameRegistry.registerBlock(obj_tester, obj_tester.getUnlocalizedName());
