@@ -61,7 +61,7 @@ public final class GeminiInfections {
 		return true;
 	}
 
-	/** Eligibility only. No target entity, conversion handler, replacement or death is implemented here. */
+	/** Eligibility only; MockerySpawning owns checked replacement from the loaded-host callback. */
 	public static boolean isConversionEligible(EntityLivingBase victim) {
 		if(victim instanceof EntityPlayer || !loaded(victim) || !DeepRootDisease.active(victim)) return false;
 		Infection infection = DiseaseHost.get(victim).infections.get(DeepRootDisease.ID);

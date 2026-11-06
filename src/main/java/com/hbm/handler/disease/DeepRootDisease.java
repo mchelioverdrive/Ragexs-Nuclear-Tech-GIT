@@ -90,6 +90,10 @@ public final class DeepRootDisease implements Pathogen {
 		// Only actual loaded living updates count. Queries, tracking, offline time and reloads add no elapsed time.
 		infection.details.setLong("stageTicks", Math.min(Long.MAX_VALUE - 1L, stageTicks(infection)) + 1L);
 		progress(host, infection, 0L);
+		// Queries and inspection APIs never convert; only this loaded-host callback may spawn.
+		if(stage(infection) == Stage.TERMINAL && !(host instanceof EntityPlayer)
+				&& (host.ticksExisted + host.getEntityId()) % 100 == 0
+				&& com.hbm.world.gemini.MockerySpawning.convert(host)) return;
 		Stage stage = stage(infection);
 		long phase = stageTicks(infection) % 200L;
 		boolean spasm = stage.ordinal() >= Stage.CONTRACTION.ordinal() && stageTicks(infection) >= 200L && phase < 6L;

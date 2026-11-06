@@ -7591,3 +7591,6 @@ entity.hbm.woodcrawler.name=Woodcrawler
 entity.woodcrawler.name=Woodcrawler
 entity.hbm.fake_person.name=Fake Person
 entity.fake_person.name=Fake Person
+entity.hbm.natures_mockery.name=Nature's Mockery
+entity.natures_mockery.name=Nature's Mockery
+tile.mockery_growth.name=Organic Offshoot
