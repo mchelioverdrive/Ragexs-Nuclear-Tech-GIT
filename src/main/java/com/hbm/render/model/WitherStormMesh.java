@@ -1,6 +1,12 @@
 package com.hbm.render.model;
 
 import java.nio.FloatBuffer;
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.util.zip.GZIPInputStream;
+import net.minecraft.client.Minecraft;
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.client.renderer.culling.Frustrum;
 import net.minecraft.client.renderer.GLAllocation;
 import net.minecraft.client.renderer.Tessellator;
 import org.lwjgl.opengl.GL11;
@@ -12,6 +18,77 @@ final class WitherStormMesh {
     static final int[] DZ = {0, 0, 0, 0, 1, -1};
 
     private WitherStormMesh() {}
+
+    static boolean visible(Frustrum camera, double wx, double wy, double wz, double scale, double cosine, double sine,
+                           double minX, double minY, double minZ, double maxX, double maxY, double maxZ) {
+        double cx = (minX + maxX) * 0.5D, cy = (minY + maxY) * 0.5D, cz = (minZ + maxZ) * 0.5D;
+        double hx = (maxX - minX) * 0.5D, hy = (maxY - minY) * 0.5D, hz = (maxZ - minZ) * 0.5D;
+        double x = wx + (cx * cosine - cz * sine) * scale, y = wy + cy * scale, z = wz + (cx * sine + cz * cosine) * scale;
+        double dx = (Math.abs(cosine) * hx + Math.abs(sine) * hz) * scale;
+        double dz = (Math.abs(sine) * hx + Math.abs(cosine) * hz) * scale;
+        return camera.isBoxInFrustum(x - dx, y - hy * scale, z - dz, x + dx, y + hy * scale, z + dz);
+    }
+
+    /** Premerged Stage D surfaces: no voxel generation, interior faces or runtime greedy meshing. */
+    static int[] loadThunderstorm() {
+        int[] lists = new int[4];
+        ResourceLocation resource = new ResourceLocation("hbm", "models/wither_storm_stage_d.mesh.gz");
+        try(DataInputStream in = new DataInputStream(new GZIPInputStream(
+            Minecraft.getMinecraft().getResourceManager().getResource(resource).getInputStream()))) {
+            if(in.readInt() != 0x57534431 || in.readInt() != 2) throw new IOException("Invalid Stage D mesh header");
+            for(int lod = 0; lod < 2; lod++) {
+                float cell = in.readFloat();
+                int ox = in.readInt(), oy = in.readInt(), oz = in.readInt(), count = in.readInt();
+                if(!Float.isFinite(cell) || cell <= 0F || cell > 2F || count < 0 || count > 100000)
+                    throw new IOException("Invalid Stage D mesh size");
+                byte[] faces = new byte[count * 7];
+                in.readFully(faces);
+                for(int i = 0; i < faces.length; i += 7)
+                    if((faces[i] & 255) >= 6 || (faces[i+1] & 255) < 1 || (faces[i+1] & 255) > 9
+                        || faces[i+5] == 0 || faces[i+6] == 0) throw new IOException("Invalid Stage D face");
+                for(int pass = 0; pass < 2; pass++) {
+                    lists[lod * 2 + pass] = begin();
+                    for(int i = 0; i < faces.length; i += 7) {
+                        int f = faces[i] & 255, material = faces[i + 1] & 255;
+                        if((material == 1) != (pass == 0)) continue;
+                        int axis = f >> 1, u = (axis + 1) % 3, v = (axis + 2) % 3;
+                        double x = ((faces[i + 2] & 255) - ox) * cell;
+                        double y = ((faces[i + 3] & 255) - oy) * cell;
+                        double z = ((faces[i + 4] & 255) - oz) * cell;
+                        double w = (faces[i + 5] & 255) * cell, h = (faces[i + 6] & 255) * cell;
+                        mergedFace(f, material, x, y, z, u == 0 ? w : v == 0 ? h : 0,
+                            u == 1 ? w : v == 1 ? h : 0, u == 2 ? w : v == 2 ? h : 0,
+                            (axis < 2 ? h : w) / cell * 0.25D, (axis < 2 ? w : h) / cell * 0.25D);
+                    }
+                    end();
+                }
+            }
+        } catch(IOException e) { throw new IllegalStateException("Could not load the retained Stage D mesh", e); }
+        return lists;
+    }
+
+    private static void mergedFace(int f, int material, double x, double y, double z, double w, double h, double d,
+                                   double uvWidth, double uvHeight) {
+        final int[][] corners = FACE_CORNERS;
+        Tessellator t = Tessellator.instance;
+        if(material > 1) {
+            float intensity = 0.55F + (material - 2) * 0.06F;
+            t.setColorOpaque_F(0.61F * intensity, 0.12F * intensity, intensity);
+            x += DX[f] * 0.003D; y += DY[f] * 0.003D; z += DZ[f] * 0.003D;
+        } else {
+            float shade = 0.95F * (f == 3 ? 0.77F : f == 0 ? 0.84F : f == 5 ? 0.93F : 1F);
+            t.setColorOpaque_F(shade, shade, shade);
+        }
+        t.setNormal(DX[f], DY[f], DZ[f]);
+        for(int j = 0; j < 4; j++) {
+            int c = corners[f][j];
+            double a = x + (c & 1) * w, b = y + ((c >> 1) & 1) * h, e = z + ((c >> 2) & 1) * d;
+            if(material > 1) t.addVertex(a, b, e);
+            else t.addVertexWithUV(a, b, e, j == 0 || j == 3 ? 0 : uvWidth, j < 2 ? uvHeight : 0);
+        }
+    }
+
+    private static final int[][] FACE_CORNERS = {{5,1,3,7}, {0,4,6,2}, {6,7,3,2}, {0,1,5,4}, {4,5,7,6}, {1,0,2,3}};
 
     static int compileHull(boolean[][][] hull, int ox, int oy, int oz) {
         int list = begin();

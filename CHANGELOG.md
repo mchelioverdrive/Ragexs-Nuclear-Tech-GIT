@@ -407,3 +407,10 @@
 - Curve and taper all seven Thunderstorm tentacles with independent travelling bends and the existing server-driven reach, grip and slam poses. Match their tracked contacts and terrain clearance to the new anatomy, and keep the budgeted absorption sweep within reach of the ground at maximum growth.
 - Draw five enormous, tilted, turbulent debris rings independently of body rotation using a bounded client-only cube batch. Preserve gaps, varied fragments, inward streams and subtle purple motes. Default to 2,000 visible decorative fragments, with configurable limits, frustum culling and distance/graphics reductions; no decorative server entities or growth rewards.
 - Route existing absorption records through an inner-ring orbit, gradual corruption and final upper-body absorption. Preserve weather, progression, terrain budgets, commands and encounter save identities.
+
+2026-11-05 19:55 — Fix Stage D frame stalls and retain its rendering geometry
+
+- Skip empty chunk sections in Stage D's full-size fluid checks instead of visiting every air block on both client and server. Preserve material bounds, the water loaded-area guard, vanilla water entry/current behavior and lava contact detection.
+- Replace first-render voxel generation with a premerged mantle asset and a separate distant mesh. Keep the curved silhouette and emissive fractures, and leave earlier stage models unchanged.
+- Cache vortex fragment properties and sector geometry at four detail levels. Retain all five rotating, turbulent rings, inward streams, central motes and the existing configurable fragment cap; zero fully disables decorative vortex rendering.
+- Batch all visible animated tentacles using shared segment templates and distance detail levels. Cull the mantle, arms, heads and vortex sectors by their bounds while preserving the existing poses, captures, attacks, absorption budgets and save identities.

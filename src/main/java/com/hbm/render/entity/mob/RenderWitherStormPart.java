@@ -17,6 +17,7 @@ import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.entity.Render;
 import net.minecraft.client.renderer.entity.RenderManager;
+import net.minecraft.client.renderer.culling.Frustrum;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Vec3;
@@ -26,6 +27,7 @@ import org.lwjgl.opengl.GL11;
 public final class RenderWitherStormPart extends Render {
     private final ModelWitherStormHead head = new ModelWitherStormHead();
     private final ModelWitherStormTentacle tentacle = new ModelWitherStormTentacle();
+    private final Frustrum headCamera = new Frustrum();
     @Override protected ResourceLocation getEntityTexture(Entity e) { return RenderWitherStorm.SKIN; }
     @Override public void doRender(Entity entity, double x, double y, double z, float yaw, float partial) {
         EntityWitherStormPart part = (EntityWitherStormPart)entity;
@@ -40,6 +42,26 @@ public final class RenderWitherStormPart extends Render {
         }
         // The articulated arms are posed and drawn with the interpolated torso.
         if(part.slot() >= 3 && (!stage.hasTentacles() || stage.hasPosedTentacles())) return;
+        Vec3 renderedBase = null;
+        if(stage == WitherStormStage.D) {
+            float scale = boss.renderScale(partial);
+            renderedBase = boss.headPartOffset(part.slot(),boss.bodyYaw(partial),scale);
+            double wx = boss.lastTickPosX+(boss.posX-boss.lastTickPosX)*partial+renderedBase.xCoord;
+            double wy = boss.lastTickPosY+(boss.posY-boss.lastTickPosY)*partial+renderedBase.yCoord;
+            double wz = boss.lastTickPosZ+(boss.posZ-boss.lastTickPosZ)*partial+renderedBase.zCoord;
+            double radius = boss.headModelScale(part.slot(),partial,scale)*2D+scale*4D;
+            headCamera.setPosition(RenderManager.renderPosX,RenderManager.renderPosY,RenderManager.renderPosZ);
+            if(!headCamera.isBoxInFrustum(wx-radius,wy-radius,wz-radius,wx+radius,wy+radius,wz+radius)) {
+                Entity target = boss.worldObj.getEntityByID(boss.headTarget(part.slot()));
+                if(!boss.beamActive(part.slot()) || !WitherStormMath.targetable(target,boss.worldObj)) return;
+                double tx = target.lastTickPosX+(target.posX-target.lastTickPosX)*partial;
+                double ty = target.lastTickPosY+(target.posY-target.lastTickPosY)*partial+target.height*0.5D;
+                double tz = target.lastTickPosZ+(target.posZ-target.lastTickPosZ)*partial;
+                // The eye can be outside the view while its tractor beam crosses the screen.
+                if(!headCamera.isBoxInFrustum(Math.min(wx,tx)-radius,Math.min(wy,ty)-radius,Math.min(wz,tz)-radius,
+                    Math.max(wx,tx)+radius,Math.max(wy,ty)+radius,Math.max(wz,tz)+radius)) return;
+            }
+        }
         GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_CURRENT_BIT | GL11.GL_DEPTH_BUFFER_BIT | GL11.GL_LIGHTING_BIT);
         GL11.glPushMatrix(); bindTexture(RenderWitherStorm.SKIN);
         GL11.glEnable(GL11.GL_NORMALIZE);
@@ -55,7 +77,7 @@ public final class RenderWitherStormPart extends Render {
             float headYaw = part.headYaw(partial, boss), headPitch = part.headPitch(partial, boss);
             float skull = boss.headModelScale(part.slot(), partial, scale);
             float pivotHeight = scale * 0.6F;
-            Vec3 base = boss.headPartOffset(part.slot(), bodyYaw, scale);
+            Vec3 base = renderedBase != null ? renderedBase : boss.headPartOffset(part.slot(), bodyYaw, scale);
             // Independent part packets supply aim, while the torso supplies the render position.
             x = boss.lastTickPosX + (boss.posX - boss.lastTickPosX) * partial + base.xCoord;
             y = boss.lastTickPosY + (boss.posY - boss.lastTickPosY) * partial + base.yCoord;

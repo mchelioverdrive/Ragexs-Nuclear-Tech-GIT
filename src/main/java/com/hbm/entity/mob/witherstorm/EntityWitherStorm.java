@@ -8,6 +8,7 @@ import com.hbm.entity.logic.IChunkLoader;
 import com.hbm.main.MainRegistry;
 import api.hbm.entity.IRadiationImmune;
 import net.minecraft.entity.Entity;
+import net.minecraft.block.material.Material;
 import net.minecraft.entity.EntityFlying;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.EnumCreatureAttribute;
@@ -94,6 +95,20 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
     @Override protected void despawnEntity() { }
     @Override public boolean canBePushed() { return false; }
     @Override public boolean canBreatheUnderwater() { return true; }
+    @Override public boolean handleWaterMovement() {
+        if(getStage() == WitherStormStage.D && !WitherStormFluidCheck.contains(worldObj,
+            boundingBox.expand(0D, -0.4000000059604645D, 0D).contract(0.001D, 0.001D, 0.001D), Material.water, true)) {
+            inWater = false;
+            return false;
+        }
+        // Keep vanilla currents, entry effects and fluid state when water is actually present.
+        return super.handleWaterMovement();
+    }
+    @Override public boolean handleLavaMovement() {
+        return getStage() == WitherStormStage.D ? WitherStormFluidCheck.contains(worldObj,
+            boundingBox.expand(-0.10000000149011612D, -0.4000000059604645D, -0.10000000149011612D), Material.lava, false)
+            : super.handleLavaMovement();
+    }
     @Override public EnumCreatureAttribute getCreatureAttribute() { return EnumCreatureAttribute.UNDEAD; }
     @Override public void addPotionEffect(PotionEffect effect) { if(effect.getPotionID() != Potion.wither.id) super.addPotionEffect(effect); }
     public int getGrowth() { return dataWatcher.getWatchableObjectInt(20); }
