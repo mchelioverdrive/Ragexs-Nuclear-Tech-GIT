@@ -435,3 +435,9 @@
 - Add persistent handcuffs, lead-based escorting, removable straight jackets and bounded fictional tranquilizer onset, unconsciousness and recovery. Keep the original entities and restore suspended native AI tasks on release; exclude bosses and oversized entities, with player support explicitly disabled by default.
 - Add a multiblock guillotine, fuel-heated bronze bull, RNT-powered electric chair and consumable injection table. Share UUID/token occupancy validation, server-owned positioning and damage, deliberate manual confirmation, release interlocks and unload/reload cleanup.
 - Add native textured 3D models with moving blades, hatches, restraints and injectors, biped/villager captive poses, bounded electrical/heat effects, existing RNT sound cues, crafting recipes and English descriptions. Add server configuration for support, duration, damage and device behavior.
+
+2026-11-06 02:41 — Add the persistent Mars gate and Gemini invasion scheduler
+
+- Record the shared `geminiMarsVisited` milestone only for server players actually arriving in the existing Mars/Duna dimension, checking its configured ID, provider and registered celestial identity. Preserve the milestone across player lifecycle changes, server restarts and disabled invasions without changing space travel.
+- Add an Overworld-owned Forge world save and a shared server-side activity gate for future Gemini creatures, infections, structures and events. Old worlds remain locked until an actual Mars arrival is observed.
+- Add configurable invasion enablement and randomized 20–40 minute event opportunity intervals. Persist the countdown, pause while disabled or without Overworld players, and dispatch one synchronous extension event per interval without unlock bursts or offline catch-up. This foundation adds no Gemini mobs or event effects.

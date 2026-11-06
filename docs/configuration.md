@@ -42,6 +42,7 @@ The main config is generated from these source categories:
 | `18_pollution` | Pollution behavior where applicable. |
 | `19_weapons` | Weapon balance and behavior settings. |
 | `20_rabies` | Rabies enable flag, infected bat entries, per-bite transmission, disease timing, roaming/pursuit, optional water behavior and modded mammal allowlist. |
+| `21_gemini` | Mars-gated Gemini invasion enable flag and randomized event opportunity intervals. |
 | `528` | 528-mode progression/balance controls. |
 | `LESS BULLSHIT MODE` | Easier progression recipe and safety controls; forced off while 528 mode is enabled. |
 
@@ -56,6 +57,14 @@ The main config is generated from these source categories:
 | `1.43_serverSafety` | `false` | Enables automated entity culling behavior described by the config comment. |
 | `1.99_enableExpensiveMode` | `false` | Enables expensive-mode balance. |
 | `6.XX_enableChunkLoading` | `true` | Allows procedural explosions to keep the central chunk loaded. |
+
+### Gemini invasion foundation
+
+`21_gemini.enabled` defaults to `true`. All Gemini activity is gated by the world-level `geminiMarsVisited` milestone, recorded only when a server player is actually in Mars's existing Duna dimension. Crafting, launching a rocket, visiting another planet, and orbiting Mars do not qualify. A real arrival by dimension transfer, login or respawn qualifies. The milestone is shared by all players and survives death, disconnection and server restarts, including visits made while invasions are disabled. Worlds without a saved milestone remain locked until a qualifying arrival is observed; earlier visits cannot be inferred from old saves.
+
+`minEventIntervalSeconds=1200` and `maxEventIntervalSeconds=2400` choose an inclusive random delay of 20–40 minutes at 20 TPS before the first and each subsequent event opportunity. Each setting accepts 1–86400 seconds; the maximum is raised to the minimum when necessary. The countdown advances on the server only while enabled and Overworld players are present. It is saved in Overworld `data/GeminiInvasion.dat`, alongside `geminiMarsVisited`, and resumes after restart without catching up offline events. Existing countdowns retain their remaining delay when interval settings change; new intervals use the new values.
+
+This foundation adds no Gemini creatures, infections, structures or event effects. Future producers must use `GeminiInvasionManager.canActivityOccur(world)` before spawning, spreading, generating or updating activity; the initial gate permits only the Overworld. Scheduled integrations can subscribe to `GeminiInvasionManager.InvasionEvent` on `MinecraftForge.EVENT_BUS`, dispatched synchronously on the server thread after the gate and delay. Subscribers should select one bounded event per opportunity; deferred work must check the gate again when executed. Setting `enabled=false` prevents event dispatch and activity eligibility and pauses the countdown without removing the milestone.
 
 ### Rabies
 
