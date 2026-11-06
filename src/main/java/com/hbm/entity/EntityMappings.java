@@ -305,6 +305,11 @@ public class EntityMappings {
 		if (com.hbm.config.MagmaGolemConfig.natural) EntityRegistry.addSpawn(com.hbm.entity.mob.magmagolem.EntityGiantMagmaGolem.class,
 			1, 1, 1, EnumCreatureType.monster, BiomeGenBase.plains, BiomeGenBase.desert);
 
+		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityWoodcrawler.class, "woodcrawler", id++, MainRegistry.instance, 96, 3, true);
+		addMob(com.hbm.entity.mob.gemini.EntityWoodcrawler.class, "woodcrawler", 0x30281F, 0xD8C88A);
+		if(com.hbm.config.GeminiConfig.woodcrawlerSpawnWeight > 0) addSpawn(com.hbm.entity.mob.gemini.EntityWoodcrawler.class,
+				com.hbm.config.GeminiConfig.woodcrawlerSpawnWeight, 1, 1, EnumCreatureType.monster, BiomeDictionary.getBiomesForType(Type.FOREST));
+
 		for(Quartet<Class<? extends Entity>, String, Integer, Integer> entry : mobMappings) {
 			EntityRegistry.registerGlobalEntityID(entry.getW(), entry.getX(), EntityRegistry.findGlobalUniqueEntityId(), entry.getY(), entry.getZ());
 		}

@@ -8,6 +8,11 @@ public final class GeminiConfig {
 	public static boolean enabled = true;
 	public static int minEventIntervalSeconds = 1200;
 	public static int maxEventIntervalSeconds = 2400;
+	public static int woodcrawlerDetectionRange = 32;
+	public static int woodcrawlerStalkSeconds = 6;
+	public static int woodcrawlerMemorySeconds = 20;
+	public static int woodcrawlerSpawnWeight = 2;
+	public static int woodcrawlerMaxLoaded = 8;
 
 	private GeminiConfig() { }
 
@@ -22,5 +27,15 @@ public final class GeminiConfig {
 			maxEventIntervalSeconds = minEventIntervalSeconds;
 			config.get(CATEGORY, "maxEventIntervalSeconds", 2400).set(maxEventIntervalSeconds);
 		}
+		woodcrawlerDetectionRange = config.getInt("woodcrawlerDetectionRange", CATEGORY, 32, 8, 48,
+				"Woodcrawler player/villager detection radius in blocks. Also bounds native path searches.");
+		woodcrawlerStalkSeconds = config.getInt("woodcrawlerStalkSeconds", CATEGORY, 6, 1, 30,
+				"Minimum silent stalking time before a Woodcrawler can sprint and attack.");
+		woodcrawlerMemorySeconds = config.getInt("woodcrawlerMemorySeconds", CATEGORY, 20, 2, 60,
+				"How long a Woodcrawler remembers the last observed target position after losing sight.");
+		woodcrawlerSpawnWeight = config.getInt("woodcrawlerSpawnWeight", CATEGORY, 2, 0, 20,
+				"Forest monster spawn weight after Mars. Zero disables both natural and invasion Woodcrawler spawns.");
+		woodcrawlerMaxLoaded = config.getInt("woodcrawlerMaxLoaded", CATEGORY, 8, 0, 64,
+				"Maximum loaded Woodcrawlers for admitting new spawns in the Overworld. Zero disables new spawns; saved creatures are retained.");
 	}
 }

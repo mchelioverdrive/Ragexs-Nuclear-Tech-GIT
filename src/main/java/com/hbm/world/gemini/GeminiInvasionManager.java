@@ -15,7 +15,7 @@ import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.common.MinecraftForge;
 
-/** Server-thread entry point for all future Gemini spawns, spread, generation and events. */
+/** Server-thread entry point for Gemini spawns, spread, generation and events. */
 public final class GeminiInvasionManager {
 
 	/** A milestone query, independent of the invasion enable setting and current dimension. */
@@ -103,8 +103,8 @@ public final class GeminiInvasionManager {
 
 	/**
 	 * One gated, synchronous Overworld opportunity on MinecraftForge.EVENT_BUS.
-	 * Future subscribers should choose a single bounded event rather than launch
-	 * every event type. No creatures, infections or structures are added here.
+	 * Subscribers should choose a single bounded event rather than launch
+	 * every event type. WoodcrawlerSpawning supplies a bounded forest encounter.
 	 * Deferred work must recheck canActivityOccur when it actually executes.
 	 */
 	public static final class InvasionEvent extends Event {
