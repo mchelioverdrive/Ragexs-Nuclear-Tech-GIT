@@ -15,6 +15,7 @@ Learn how RTM works. These pages describe current default systems; NEI, placed-m
 | [Manufacturing](gameplay/manufacturing.md) | Casting, forming, joining, electronics and assembly |
 | [Nuclear industry](gameplay/nuclear_industry.md) | Fuel, reactor support, enrichment and waste |
 | [Construction recipes](construction-recipes.md) | Workshop structures and furniture |
+| [Restraints and sedation](gameplay/restraints.md) | Humanoid capture, escorting, fictional effects and device controls |
 | [Space travel](space-travel.md) | Rockets, survival and stations |
 | [Changes from HBM](upstream-changes.md) | RTM's scope and gameplay differences |
 

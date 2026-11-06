@@ -66,6 +66,7 @@ public class CraftingManager {
 		ArmorRecipes.register();
 		WeaponRecipes.register();
 		ConsumableRecipes.register();
+		RestraintRecipes.register();
 		PowderRecipes.register();
 
 		GameRegistry.addRecipe(new RBMKFuelCraftingHandler());

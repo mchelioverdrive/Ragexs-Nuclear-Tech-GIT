@@ -51,6 +51,7 @@ public class TileMappings {
 	public static List<Class<? extends IConfigurableMachine>> configurables = new ArrayList<Class<? extends IConfigurableMachine>>();
 
 	public static void writeMappings() {
+		put(TileEntityRestraintDevice.class, "tileentity_restraint_device");
 		put(TileEntityDiFurnace.class, "tilentity_diFurnace");
 		put(TileEntityMachineBlastFurnace.class, "tileentity_machine_blast_furnace");
 		put(TileEntityObjTester.class, "tilentity_objtester");

@@ -429,3 +429,9 @@
 - Scale the feeding footprint with the mantle, heads and intact tentacle endpoints. Share flight clearance with vertical feeding reach and anchor columns to their own surfaces so elevated Devourers consume buildings and ground beneath them. Keep beam-focused feeding and queued skull/tentacle impacts on the same protected removal path.
 - Count successful removals separately from configurable scan steps and elapsed time. Raise stage removal ceilings to 32/64/256/1024/2048/2048/4096 and new-config defaults to 4096 removals and a 48-block radius; retain existing explicit caps. Preserve growth rewards, item suppression, bedrock/block/tile protections and mobGriefing.
 - Sample visual fragments across actual consumed positions independently of removal throughput. Preserve upper-body lift, hover, blackening, absorption and the existing vortex, without physical debris entities. Restart disposable scan cursors on load while retaining saved mass and queued impact compatibility.
+
+2026-11-05 23:59 — Add shared humanoid restraints, sedation and four interactive devices
+
+- Add persistent handcuffs, lead-based escorting, removable straight jackets and bounded fictional tranquilizer onset, unconsciousness and recovery. Keep the original entities and restore suspended native AI tasks on release; exclude bosses and oversized entities, with player support explicitly disabled by default.
+- Add a multiblock guillotine, fuel-heated bronze bull, RNT-powered electric chair and consumable injection table. Share UUID/token occupancy validation, server-owned positioning and damage, deliberate manual confirmation, release interlocks and unload/reload cleanup.
+- Add native textured 3D models with moving blades, hatches, restraints and injectors, biped/villager captive poses, bounded electrical/heat effects, existing RNT sound cues, crafting recipes and English descriptions. Add server configuration for support, duration, damage and device behavior.

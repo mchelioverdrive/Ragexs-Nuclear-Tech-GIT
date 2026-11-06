@@ -1076,6 +1076,9 @@ public class MainRegistry {
 		ModEventHandler commonHandler = new ModEventHandler();
 		FMLCommonHandler.instance().bus().register(commonHandler);
 		MinecraftForge.EVENT_BUS.register(commonHandler);
+		com.hbm.handler.restraint.Restraints restraintEvents = new com.hbm.handler.restraint.Restraints();
+		MinecraftForge.EVENT_BUS.register(restraintEvents);
+		FMLCommonHandler.instance().bus().register(restraintEvents);
 		com.hbm.handler.disease.DiseaseEvents diseaseEvents = new com.hbm.handler.disease.DiseaseEvents();
 		MinecraftForge.EVENT_BUS.register(diseaseEvents);
 		FMLCommonHandler.instance().bus().register(diseaseEvents);
@@ -1187,6 +1190,7 @@ public class MainRegistry {
 		config.load();
 
 		GeneralConfig.loadFromConfig(config);
+		com.hbm.config.RestraintConfig.loadFromConfig(config);
 		WorldConfig.loadFromConfig(config);
 		MachineConfig.loadFromConfig(config);
 		BombConfig.loadFromConfig(config);
