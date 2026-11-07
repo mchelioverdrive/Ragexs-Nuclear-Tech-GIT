@@ -37,14 +37,20 @@ public final class GeminiWorldSavedData extends WorldSavedData {
 	}
 
 	void recordMarsVisit() {
-		if(geminiMarsVisited) return;
-		geminiMarsVisited = true;
-		phase = 1;
-		phaseTicks = 0;
+		setMarsVisited(true);
+	}
+
+	void setMarsVisited(boolean visited) {
+		if(geminiMarsVisited == visited) return;
+		geminiMarsVisited = visited;
+		if(visited && phase == 0) {
+			phase = 1;
+			phaseTicks = 0;
+		}
 		markDirty();
 	}
 
-	int getPhase() { return phase; }
+	int getPhase() { return geminiMarsVisited ? phase : 0; }
 
 	/** Loaded, enabled Overworld time only; never infer elapsed time from /time or wall clocks. */
 	void advancePhase() {
@@ -73,7 +79,8 @@ public final class GeminiWorldSavedData extends WorldSavedData {
 		// Missing keys in existing worlds mean locked and not yet scheduled.
 		geminiMarsVisited = nbt.getBoolean("geminiMarsVisited");
 		// Existing Mars-unlocked saves enter phase 1, rather than unlocking every threat.
-		phase = geminiMarsVisited ? Math.max(1, Math.min(4, nbt.getInteger("phase"))) : 0;
+		// A command-locked world retains its progression for a later unlock.
+		phase = Math.max(geminiMarsVisited ? 1 : 0, Math.min(4, nbt.getInteger("phase")));
 		phaseTicks = Math.max(0L, Math.min(24000L * 10000L, nbt.getLong("phaseTicks")));
 		eventSecondsRemaining = Math.max(0, nbt.getInteger("eventSecondsRemaining"));
 	}

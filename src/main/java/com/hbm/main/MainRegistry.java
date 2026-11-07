@@ -1172,6 +1172,7 @@ public class MainRegistry {
 		event.registerServerCommand(new CommandSatellites());
 		event.registerServerCommand(new CommandRadiation());
 		event.registerServerCommand(new CommandDisease());
+		event.registerServerCommand(new CommandVisitedMars());
 		event.registerServerCommand(new CommandStations());
 		event.registerServerCommand(new CommandEnableNukes());
 		event.registerServerCommand(new CommandEnableRedstoneGroundNukes());

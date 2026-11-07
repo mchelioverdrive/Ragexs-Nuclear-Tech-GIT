@@ -24,6 +24,14 @@ public final class GeminiInvasionManager {
 		return data != null && data.hasMarsVisited();
 	}
 
+	/** Administrative server-thread toggle; retain phase progress and the event countdown. */
+	public static boolean setMarsVisited(World world, boolean visited) {
+		GeminiWorldSavedData data = GeminiWorldSavedData.get(world);
+		if(data == null) return false;
+		data.setMarsVisited(visited);
+		return true;
+	}
+
 	/**
 	 * Every future activity producer must check this on the server thread before mutating
 	 * the world, including ongoing infection/mob callbacks and structure generation.
