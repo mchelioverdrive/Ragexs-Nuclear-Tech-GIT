@@ -494,3 +494,8 @@
 - Scale natural Woodcrawler admission, scheduled encounters and Gardener discovery by phase. Share loaded Gemini membership and combined/species admission caps across conversions, support summons, buds, nests, camps, eggs and commands, without repeated general world population scans. Pause capped boss jobs without exhausting retries; let unloaded nests yield to loaded jobs.
 - Preserve saved creatures, Woodcrawler captive snapshots, infection records and structure reservations when disabled or reconfigured. Pause hostile activity, transmission, growth and generation through canonical server-side phase gates. Distinguish chunk loads from new NBT-bearing spawns, retain UUID safeguards, and keep entity/resource IDs and Mars travel unchanged.
 - Add bounded local phase-3 coordination, faction damage exclusions, capped detailed prey/feeding scans and shared organic-contact throttling. Retain existing disease handling, colony radii, placement budgets, sterile offspring, boss behavior and protection callbacks.
+
+2026-11-06 19:40 — Complete Gemini creature spawn eggs
+
+- Register vanilla-style spawn eggs for Woodcrawler, Fake Person, Nature's Mockery, Gardener and The Wretch before their mod entity registrations; Forge previously rejected the first four as already registered, and The Wretch had no egg entry. Preserve existing FML save names, network entity IDs and legacy egg allocation order; omit multipart hit regions.
+- Initialize and save egg-spawned Wretch territory independently of generated camps so its egg can admit a functional boss. Preserve phase-4, enablement, difficulty and loaded population checks, camp reservations and camp-only terrain damage. Existing saved camp bosses retain their original ownership rules.

@@ -220,7 +220,7 @@ public final class WretchCamps extends WorldSavedData {
         @SubscribeEvent(priority = EventPriority.LOWEST) public void join(EntityJoinWorldEvent event) {
             if(event.world.isRemote || !(event.entity instanceof EntityWretch)) return;
             EntityWretch boss = (EntityWretch) event.entity;
-            if(!boss.addedToChunk && (!owns(boss) || !active(event.world)
+            if(!boss.addedToChunk && ((!boss.isEggSpawned() && !owns(boss)) || !active(event.world)
                     || !GeminiPopulation.canAdmit(event.world, EntityWretch.class, boss, GeminiConfig.wretchMaxLoaded)))
                 event.setCanceled(true);
         }

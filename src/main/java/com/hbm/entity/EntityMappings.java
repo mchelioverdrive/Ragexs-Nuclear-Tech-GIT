@@ -30,6 +30,7 @@ import com.hbm.entity.train.EntityRailCarBase.BoundingBoxDummyEntity;
 import com.hbm.entity.train.EntityRailCarRidable.SeatDummyEntity;
 import com.hbm.entity.train.*;
 import com.hbm.main.MainRegistry;
+import com.hbm.lib.RefStrings;
 import com.hbm.util.Tuple.Quartet;
 
 import cpw.mods.fml.common.registry.EntityRegistry;
@@ -305,26 +306,34 @@ public class EntityMappings {
 		if (com.hbm.config.MagmaGolemConfig.natural) EntityRegistry.addSpawn(com.hbm.entity.mob.magmagolem.EntityGiantMagmaGolem.class,
 			1, 1, 1, EnumCreatureType.monster, BiomeGenBase.plains, BiomeGenBase.desert);
 
-		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityWoodcrawler.class, "woodcrawler", id++, MainRegistry.instance, 96, 3, true);
-		addMob(com.hbm.entity.mob.gemini.EntityWoodcrawler.class, "woodcrawler", 0x30281F, 0xD8C88A);
-		if(com.hbm.config.GeminiConfig.woodcrawlerSpawnWeight > 0) addSpawn(com.hbm.entity.mob.gemini.EntityWoodcrawler.class,
-				com.hbm.config.GeminiConfig.woodcrawlerSpawnWeight, 1, 1, EnumCreatureType.monster, BiomeDictionary.getBiomesForType(Type.FOREST));
-
-		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityFakePerson.class, "fake_person", id++, MainRegistry.instance, 96, 3, true);
-		addMob(com.hbm.entity.mob.gemini.EntityFakePerson.class, "fake_person", 0x806B50, 0xAAB68A);
-
-		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityNaturesMockery.class, "natures_mockery", id++, MainRegistry.instance, 96, 2, true);
-		addMob(com.hbm.entity.mob.gemini.EntityNaturesMockery.class, "natures_mockery", 0x75342E, 0xC36A60);
-
-		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityGardener.class, "gardener", id++, MainRegistry.instance, 96, 2, true);
-		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityGardenerTentacle.class, "gardener_tentacle", id++, MainRegistry.instance, 96, 2, false);
-		addMob(com.hbm.entity.mob.gemini.EntityGardener.class, "gardener", 0x59332E, 0xD7C584);
-		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityWretch.class, "wretch", id++, MainRegistry.instance, 128, 2, true);
-		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityWretchPart.class, "wretch_part", id++, MainRegistry.instance, 128, 2, false);
-
+		// Keep legacy egg allocation first, then register Gemini eggs before their mod entities.
+		// Forge rejects global egg registration once registerModEntity has named the class.
 		for(Quartet<Class<? extends Entity>, String, Integer, Integer> entry : mobMappings) {
 			EntityRegistry.registerGlobalEntityID(entry.getW(), entry.getX(), EntityRegistry.findGlobalUniqueEntityId(), entry.getY(), entry.getZ());
 		}
+
+		registerGeminiEgg(com.hbm.entity.mob.gemini.EntityWoodcrawler.class, "woodcrawler", 0x30281F, 0xD8C88A);
+		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityWoodcrawler.class, "woodcrawler", id++, MainRegistry.instance, 96, 3, true);
+		if(com.hbm.config.GeminiConfig.woodcrawlerSpawnWeight > 0) addSpawn(com.hbm.entity.mob.gemini.EntityWoodcrawler.class,
+				com.hbm.config.GeminiConfig.woodcrawlerSpawnWeight, 1, 1, EnumCreatureType.monster, BiomeDictionary.getBiomesForType(Type.FOREST));
+
+		registerGeminiEgg(com.hbm.entity.mob.gemini.EntityFakePerson.class, "fake_person", 0x806B50, 0xAAB68A);
+		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityFakePerson.class, "fake_person", id++, MainRegistry.instance, 96, 3, true);
+
+		registerGeminiEgg(com.hbm.entity.mob.gemini.EntityNaturesMockery.class, "natures_mockery", 0x75342E, 0xC36A60);
+		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityNaturesMockery.class, "natures_mockery", id++, MainRegistry.instance, 96, 2, true);
+
+		registerGeminiEgg(com.hbm.entity.mob.gemini.EntityGardener.class, "gardener", 0x59332E, 0xD7C584);
+		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityGardener.class, "gardener", id++, MainRegistry.instance, 96, 2, true);
+		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityGardenerTentacle.class, "gardener_tentacle", id++, MainRegistry.instance, 96, 2, false);
+		registerGeminiEgg(com.hbm.entity.mob.gemini.EntityWretch.class, "wretch", 0x49372D, 0xB86B63);
+		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityWretch.class, "wretch", id++, MainRegistry.instance, 128, 2, true);
+		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityWretchPart.class, "wretch_part", id++, MainRegistry.instance, 128, 2, false);
+	}
+
+	private static void registerGeminiEgg(Class<? extends Entity> clazz, String name, int color1, int color2) {
+		// Match the existing FML save name instead of renaming already-saved creatures.
+		EntityRegistry.registerGlobalEntityID(clazz, RefStrings.MODID + "." + name, EntityRegistry.findGlobalUniqueEntityId(), color1, color2);
 	}
 
 	private static void addEntity(Class<? extends Entity> clazz, String name, int trackingRange) {

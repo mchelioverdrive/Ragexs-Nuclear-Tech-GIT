@@ -10,6 +10,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityCreature;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.IEntityLivingData;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.boss.IBossDisplayData;
 import net.minecraft.entity.monster.IMob;
@@ -32,7 +33,7 @@ public final class EntityWretch extends EntityCreature implements IMob, IBossDis
     private final EntityWretchPart[] parts = new EntityWretchPart[5]; // two segments per arm, head
     private final Set<UUID> struck = new HashSet<UUID>();
     private int homeX, homeY, homeZ;
-    private boolean campBound, fromSave;
+    private boolean campBound, eggSpawned, fromSave;
     private int attackTicks, cooldown = 80, feedCooldown = 300, escapeTicks, lastAttack = SWIPE;
     private float interruptDamage;
     private EntityPlayer captive;
@@ -68,13 +69,22 @@ public final class EntityWretch extends EntityCreature implements IMob, IBossDis
     @Override protected float getSoundPitch() { return 0.55F; }
     public boolean wasLoaded() { return fromSave; }
     public boolean hasCamp() { return campBound; }
+    public boolean isEggSpawned() { return eggSpawned; }
     public int campX() { return homeX; }
     public int campY() { return homeY; }
     public int campZ() { return homeZ; }
-    public void bindCamp(UUID id, int x, int y, int z) { entityUniqueID = id; homeX = x; homeY = y; homeZ = z; campBound = true; }
+    public void bindCamp(UUID id, int x, int y, int z) { entityUniqueID = id; homeX = x; homeY = y; homeZ = z; campBound = true; eggSpawned = false; }
+    @Override public IEntityLivingData onSpawnWithEgg(IEntityLivingData data) {
+        data = super.onSpawnWithEgg(data);
+        if(!worldObj.isRemote && !campBound) {
+            eggSpawned = true;
+            homeX = MathHelper.floor_double(posX); homeY = MathHelper.floor_double(posY); homeZ = MathHelper.floor_double(posZ);
+        }
+        return data;
+    }
     public boolean inTerritory(double x, double z, double radius) {
         double dx = x - homeX - 0.5D, dz = z - homeZ - 0.5D;
-        return campBound && dx * dx + dz * dz <= radius * radius;
+        return (campBound || eggSpawned) && dx * dx + dz * dz <= radius * radius;
     }
     public int state() { return dataWatcher.getWatchableObjectByte(20); }
     public float stateTime(float partial) { return Math.max(0, (int) worldObj.getTotalWorldTime() - dataWatcher.getWatchableObjectInt(21) + partial); }
@@ -85,7 +95,7 @@ public final class EntityWretch extends EntityCreature implements IMob, IBossDis
     public int attackArm() { return dataWatcher.getWatchableObjectByte(27); }
     public int phase() { return dataWatcher.getWatchableObjectByte(28); }
     private boolean active() {
-        return isEntityAlive() && WretchCamps.active(worldObj) && WretchCamps.owns(this)
+        return isEntityAlive() && WretchCamps.active(worldObj) && (eggSpawned || WretchCamps.owns(this))
                 && GardenerNests.loaded(worldObj, boundingBox.expand(9, 1, 9));
     }
     private void stop() {
@@ -382,12 +392,14 @@ public final class EntityWretch extends EntityCreature implements IMob, IBossDis
     @Override public void writeEntityToNBT(NBTTagCompound nbt) {
         super.writeEntityToNBT(nbt);
         nbt.setBoolean("WretchCamp", campBound); nbt.setInteger("CampX", homeX); nbt.setInteger("CampY", homeY); nbt.setInteger("CampZ", homeZ);
+        nbt.setBoolean("WretchEggSpawned", eggSpawned);
         nbt.setInteger("WretchCooldown", cooldown); nbt.setInteger("FeedCooldown", feedCooldown); nbt.setInteger("LastAttack", lastAttack);
         // In-flight attacks/captures are transient. Vanilla NBT owns health, attributes and position.
     }
     @Override public void readEntityFromNBT(NBTTagCompound nbt) {
         super.readEntityFromNBT(nbt); fromSave = true;
         campBound = nbt.getBoolean("WretchCamp"); homeX = nbt.getInteger("CampX"); homeY = nbt.getInteger("CampY"); homeZ = nbt.getInteger("CampZ");
+        eggSpawned = !campBound && nbt.getBoolean("WretchEggSpawned");
         cooldown = Math.max(80, MathHelper.clamp_int(nbt.getInteger("WretchCooldown"), 0, 200));
         feedCooldown = Math.max(200, MathHelper.clamp_int(nbt.getInteger("FeedCooldown"), 0, 600));
         lastAttack = MathHelper.clamp_int(nbt.getInteger("LastAttack"), SWIPE, GRAB);
