@@ -13,6 +13,6 @@ public final class BlockGardenerFlesh extends Block {
     public BlockGardenerFlesh() { super(Material.clay); setHardness(1.2F); setResistance(3F); setStepSound(soundTypeGravel); }
     @Override public void onEntityWalking(World world, int x, int y, int z, Entity entity) {
         if(!world.isRemote && entity instanceof EntityLivingBase && entity.ticksExisted % 20 == 0 && GardenerNests.active(world))
-            GeminiInfections.expose((EntityLivingBase) entity, "gardener_nest", "gardener");
+            GeminiInfections.exposeContact((EntityLivingBase) entity, "gardener_nest", "gardener");
     }
 }

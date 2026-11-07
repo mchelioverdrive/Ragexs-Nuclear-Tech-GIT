@@ -12,6 +12,8 @@ public final class GeminiWorldSavedData extends WorldSavedData {
 	private static final String DATA_NAME = "GeminiInvasion";
 	private boolean geminiMarsVisited;
 	private int eventSecondsRemaining;
+	private int phase;
+	private long phaseTicks;
 
 	public GeminiWorldSavedData(String name) {
 		super(name);
@@ -37,6 +39,23 @@ public final class GeminiWorldSavedData extends WorldSavedData {
 	void recordMarsVisit() {
 		if(geminiMarsVisited) return;
 		geminiMarsVisited = true;
+		phase = 1;
+		phaseTicks = 0;
+		markDirty();
+	}
+
+	int getPhase() { return phase; }
+
+	/** Loaded, enabled Overworld time only; never infer elapsed time from /time or wall clocks. */
+	void advancePhase() {
+		if(!geminiMarsVisited || phase >= 4) return;
+		phaseTicks += 20L;
+		int days = phase == 1 ? com.hbm.config.GeminiConfig.phase2DelayDays
+				: phase == 2 ? com.hbm.config.GeminiConfig.phase3DelayDays : com.hbm.config.GeminiConfig.phase4DelayDays;
+		if(phaseTicks >= Math.max(1L, days) * 24000L) {
+			phase++;
+			phaseTicks = 0L; // One transition at most; each phase has its own full delay.
+		}
 		markDirty();
 	}
 
@@ -53,12 +72,17 @@ public final class GeminiWorldSavedData extends WorldSavedData {
 	public void readFromNBT(NBTTagCompound nbt) {
 		// Missing keys in existing worlds mean locked and not yet scheduled.
 		geminiMarsVisited = nbt.getBoolean("geminiMarsVisited");
+		// Existing Mars-unlocked saves enter phase 1, rather than unlocking every threat.
+		phase = geminiMarsVisited ? Math.max(1, Math.min(4, nbt.getInteger("phase"))) : 0;
+		phaseTicks = Math.max(0L, Math.min(24000L * 10000L, nbt.getLong("phaseTicks")));
 		eventSecondsRemaining = Math.max(0, nbt.getInteger("eventSecondsRemaining"));
 	}
 
 	@Override
 	public void writeToNBT(NBTTagCompound nbt) {
 		nbt.setBoolean("geminiMarsVisited", geminiMarsVisited);
+		nbt.setInteger("phase", phase);
+		nbt.setLong("phaseTicks", phaseTicks);
 		nbt.setInteger("eventSecondsRemaining", eventSecondsRemaining);
 	}
 }

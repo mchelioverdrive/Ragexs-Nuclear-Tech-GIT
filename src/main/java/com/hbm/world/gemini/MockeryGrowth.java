@@ -23,7 +23,7 @@ public final class MockeryGrowth {
     /** Exactly one candidate and at most one placement per call; never replace even replaceable plants. */
     public static boolean place(EntityNaturesMockery mob, int x, int y, int z) {
         World world = mob.worldObj;
-        if(!MockerySpawning.active(world) || !world.getGameRules().getGameRuleBooleanValue("mobGriefing")
+        if(!GeminiInvasionManager.canActivityOccur(world, 3) || !MockerySpawning.active(world) || !world.getGameRules().getGameRuleBooleanValue("mobGriefing")
                 || y < 1 || y > 254 || !mob.withinColony(x + 0.5D, y, z + 0.5D)
                 || !world.blockExists(x, y, z) || world.getBlock(x, y, z) != Blocks.air
                 || world.getTileEntity(x, y, z) != null || world.getTileEntity(x, y - 1, z) != null) return false;

@@ -14,7 +14,6 @@ import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
 import net.minecraft.block.Block;
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
@@ -49,7 +48,7 @@ public final class GardenerNests extends WorldSavedData {
 
     public GardenerNests(String name) { super(name); }
     public static boolean active(World world) {
-        return GeminiConfig.gardenerEnabled && GeminiInvasionManager.canActivityOccur(world)
+        return GeminiConfig.gardenerEnabled && GeminiInvasionManager.canActivityOccur(world, 3)
                 && world.difficultySetting != EnumDifficulty.PEACEFUL;
     }
     public static boolean loaded(World world, AxisAlignedBB box) {
@@ -114,7 +113,8 @@ public final class GardenerNests extends WorldSavedData {
             if(!event.world.isRemote && event.entity instanceof EntityGardener) {
                 EntityGardener boss = (EntityGardener) event.entity;
                 // Saved bosses remain dormant across config changes; new eggs/commands cannot bypass Mars.
-                if(!boss.wasLoaded() && !active(event.world)) event.setCanceled(true);
+                if(!boss.addedToChunk && (!active(event.world) || !GeminiPopulation.canAdmit(event.world,
+                        EntityGardener.class, boss, GeminiConfig.gardenerMaxLoaded))) event.setCanceled(true);
             }
         }
         @SubscribeEvent
@@ -132,7 +132,7 @@ public final class GardenerNests extends WorldSavedData {
         for(Iterator<Nest> it = nests.iterator(); it.hasNext();) {
             Nest nest = it.next();
             if(nest.phase >= 3) continue;
-            if(!loaded(world, nest.bounds().expand(2, 0, 2))) return; // Pause the saved cursor; never acquire a chunk ticket.
+            if(!loaded(world, nest.bounds().expand(2, 0, 2))) continue; // Unloaded jobs must not starve other loaded nests.
             if(nest.phase == 0 && nest.cursor == 0 && overlapsStructure(world, nest)) { it.remove(); markDirty(); return; }
             for(int work = 0; work < 32 && nest.phase < 2; work++) {
                 int index = nest.cursor;
@@ -162,7 +162,8 @@ public final class GardenerNests extends WorldSavedData {
         if(nests.size() >= GeminiConfig.gardenerNestLimit) return;
         if(--searchTicks > 0) { if(searchTicks % 20 == 0) markDirty(); return; }
         searchTicks = 1200; markDirty();
-        if(world.rand.nextInt(GeminiConfig.gardenerNestChance) != 0) return;
+        if(world.rand.nextInt(GeminiConfig.gardenerNestChance) != 0
+                || world.rand.nextInt(100) >= GeminiInvasionManager.encounterPercent(world)) return;
         EntityPlayer player = (EntityPlayer) world.playerEntities.get(world.rand.nextInt(world.playerEntities.size()));
         if(!player.isEntityAlive()) return;
         // Eight loaded columns and at most 32 vertical cells per column per minute-long opportunity.
@@ -220,8 +221,8 @@ public final class GardenerNests extends WorldSavedData {
         return false;
     }
     private void spawn(WorldServer world, Nest nest) {
-        for(Object entry : world.loadedEntityList) if(entry instanceof EntityGardener
-                && ((Entity) entry).getUniqueID().equals(nest.boss)) { nest.phase = 3; return; }
+        if(GeminiPopulation.find(world, nest.boss) != null) { nest.phase = 3; return; }
+        if(!GeminiPopulation.canAdmit(world, EntityGardener.class, null, GeminiConfig.gardenerMaxLoaded)) return;
         if(!world.getEntitiesWithinAABB(EntityPlayer.class, nest.bounds()).isEmpty()) return;
         EntityGardener boss = new EntityGardener(world);
         boss.setNestIdentity(nest.boss); boss.anchor(nest.x + 0.5D, nest.y, nest.z + 0.5D);

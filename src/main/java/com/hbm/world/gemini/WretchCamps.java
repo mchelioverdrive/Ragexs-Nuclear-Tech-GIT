@@ -13,7 +13,6 @@ import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
 import net.minecraft.block.Block;
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
@@ -41,7 +40,7 @@ public final class WretchCamps extends WorldSavedData {
     public WretchCamps(String name) { super(name); }
 
     public static boolean active(World world) {
-        return GeminiConfig.wretchEnabled && GeminiInvasionManager.canActivityOccur(world)
+        return GeminiConfig.wretchEnabled && GeminiInvasionManager.canActivityOccur(world, 4)
                 && world.difficultySetting != EnumDifficulty.PEACEFUL;
     }
     private static WretchCamps get(World world) {
@@ -159,9 +158,10 @@ public final class WretchCamps extends WorldSavedData {
         for(Camp c : camps) {
             if(c.state != 1 || !GardenerNests.loaded(world, AxisAlignedBB.getBoundingBox(c.x - 10, 0, c.z - 10, c.x + 11, 256, c.z + 11))
                     || world.getClosestPlayer(c.x, c.y, c.z, 64D) == null) continue;
-            for(Object entry : world.loadedEntityList) if(entry instanceof EntityWretch && ((Entity) entry).getUniqueID().equals(c.boss)) {
+            if(GeminiPopulation.find(world, c.boss) != null) {
                 c.state = 2; markDirty(); return;
             }
+            if(!GeminiPopulation.canAdmit(world, EntityWretch.class, null, GeminiConfig.wretchMaxLoaded)) return;
             EntityWretch boss = new EntityWretch(world);
             boss.bindCamp(c.boss, c.x, c.y, c.z);
             boss.setLocationAndAngles(c.x + 0.5D, c.y, c.z + 0.5D, world.rand.nextFloat() * 360F, 0);
@@ -220,11 +220,9 @@ public final class WretchCamps extends WorldSavedData {
         @SubscribeEvent(priority = EventPriority.LOWEST) public void join(EntityJoinWorldEvent event) {
             if(event.world.isRemote || !(event.entity instanceof EntityWretch)) return;
             EntityWretch boss = (EntityWretch) event.entity;
-            if(!owns(boss) || (!boss.wasLoaded() && !active(event.world))) { event.setCanceled(true); return; }
-            for(Object entry : event.world.loadedEntityList) if(entry instanceof EntityWretch && entry != boss
-                    && !((Entity) entry).isDead && ((Entity) entry).getUniqueID().equals(boss.getUniqueID())) {
-                event.setCanceled(true); return;
-            }
+            if(!boss.addedToChunk && (!owns(boss) || !active(event.world)
+                    || !GeminiPopulation.canAdmit(event.world, EntityWretch.class, boss, GeminiConfig.wretchMaxLoaded)))
+                event.setCanceled(true);
         }
         @SubscribeEvent(priority = EventPriority.LOWEST) public void place(BlockEvent.PlaceEvent event) {
             if(event.world.isRemote || event.world.provider.dimensionId != 0 || event.isCanceled()) return;

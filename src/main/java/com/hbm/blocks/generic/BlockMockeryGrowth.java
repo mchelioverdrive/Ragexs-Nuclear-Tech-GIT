@@ -26,6 +26,6 @@ public final class BlockMockeryGrowth extends BlockBush {
     @Override public int colorMultiplier(IBlockAccess world, int x, int y, int z) { return getBlockColor(); }
     @Override public void onEntityCollidedWithBlock(World world, int x, int y, int z, Entity entity) {
         if(!world.isRemote && entity instanceof EntityLivingBase && entity.ticksExisted % 20 == 0 && MockerySpawning.active(world))
-            GeminiInfections.expose((EntityLivingBase) entity, "mockery_growth", "natures_mockery");
+            GeminiInfections.exposeContact((EntityLivingBase) entity, "mockery_growth", "natures_mockery");
     }
 }

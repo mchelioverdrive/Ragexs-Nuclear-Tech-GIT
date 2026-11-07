@@ -77,6 +77,7 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 				stalkTicks = 0;
 				retreatTicks = 0;
 				sawTarget = mob.canEntityBeSeen(target);
+				if(sawTarget) com.hbm.world.gemini.GeminiPopulation.alert(mob, target);
 			}
 		}
 		if(target == null) {

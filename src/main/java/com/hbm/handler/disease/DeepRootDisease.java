@@ -47,7 +47,7 @@ public final class DeepRootDisease implements Pathogen {
 	}
 
 	@Override public boolean canInfect(EntityLivingBase host) {
-		return enabled() && supports(host) && GeminiInvasionManager.canActivityOccur(host.worldObj);
+		return enabled() && supports(host) && GeminiInvasionManager.canActivityOccur(host.worldObj, 2);
 	}
 
 	public static boolean active(EntityLivingBase host) {

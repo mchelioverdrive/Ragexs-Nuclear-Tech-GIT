@@ -6,6 +6,10 @@ public final class GeminiConfig {
 
 	public static final String CATEGORY = "21_gemini";
 	public static boolean enabled = true;
+	public static int phase2DelayDays = 3, phase3DelayDays = 5, phase4DelayDays = 7;
+	public static final int[] phaseEncounterPercent = {25, 50, 75, 100};
+	public static int maxLoadedCreatures = 32;
+	public static int gardenerMaxLoaded = 2, wretchMaxLoaded = 1;
 	public static int minEventIntervalSeconds = 1200;
 	public static int maxEventIntervalSeconds = 2400;
 	public static int woodcrawlerDetectionRange = 32;
@@ -40,8 +44,19 @@ public final class GeminiConfig {
 	public static void loadFromConfig(Configuration config) {
 		enabled = config.getBoolean("enabled", CATEGORY, true,
 				"Enable Gemini activity after a player visits Mars (Duna). Disabling pauses scheduling; the world keeps its Mars milestone.");
+		phase2DelayDays = config.getInt("phase2DelayDays", CATEGORY, 3, 1, 10000,
+				"Minecraft days in phase 1 before infection unlocks. One day is 24000 enabled Overworld ticks with players present.");
+		phase3DelayDays = config.getInt("phase3DelayDays", CATEGORY, 5, 1, 10000,
+				"Additional active Minecraft days in phase 2 before underground nests, organic spread and coordination unlock.");
+		phase4DelayDays = config.getInt("phase4DelayDays", CATEGORY, 7, 1, 10000,
+				"Additional active Minecraft days in phase 3 before Wretch camps unlock. Unlocked phases never regress.");
+		for(int i = 0; i < 4; i++) phaseEncounterPercent[i] = config.getInt("phase" + (i + 1) + "EncounterPercent",
+				CATEGORY, new int[] {25, 50, 75, 100}[i], 1, 100,
+				"Percent of Woodcrawler natural spawn attempts admitted. Event intervals scale by phase-1 percent / current percent; existing countdowns are retained.");
+		maxLoadedCreatures = config.getInt("maxLoadedCreatures", CATEGORY, 32, 0, 256,
+				"Combined loaded Gemini creature admission cap, excluding disposable boss parts. Zero stops new admissions; saved creatures are always retained.");
 		minEventIntervalSeconds = config.getInt("minEventIntervalSeconds", CATEGORY, 1200, 1, 86400,
-				"Minimum active Overworld seconds before the first and each subsequent Gemini event opportunity (20 ticks per second).");
+				"Minimum phase-1 active Overworld seconds between Gemini event opportunities. Later phases scale by relative encounter percent (20 ticks per second).");
 		maxEventIntervalSeconds = config.getInt("maxEventIntervalSeconds", CATEGORY, 2400, 1, 86400,
 				"Maximum interval in active Overworld seconds. Raised to the minimum if smaller. Scheduling pauses without Overworld players.");
 		if(maxEventIntervalSeconds < minEventIntervalSeconds) {
@@ -78,16 +93,20 @@ public final class GeminiConfig {
 		String disease = CATEGORY + ".deepRoot";
 		String wretch = CATEGORY + ".wretch";
 		wretchEnabled = config.getBoolean("enabled", wretch, true,
-				"Enable The Wretch and new woodland camps after Mars. Saved bosses become dormant when disabled.");
+				"Enable The Wretch and new woodland camps in phase 4. Saved bosses become dormant when disabled.");
+		wretchMaxLoaded = config.getInt("maxLoaded", wretch, 1, 0, 16,
+				"Loaded Wretch admission cap. Waiting camps pause at the cap without consuming retries; saved bosses are retained.");
 		wretchHealth = config.getFloat("health", wretch, 900F, 100F, 1024F,
 				"Maximum health of newly spawned Wretches. Existing bosses retain their saved health attributes.");
 		wretchCampChance = config.getInt("campChance", wretch, 256, 0, 100000,
-				"One-in-N chance per newly populated post-Mars forest chunk, before clearing and 512-block spacing checks. Zero disables new camps. No retrogen; at most 256 lifetime camps per world.");
+				"One-in-N chance per newly populated phase-4 forest chunk, before clearing and 512-block spacing checks. Zero disables new camps. No retrogen; at most 256 lifetime camps per world.");
 		wretchTerrainDestruction = config.getBoolean("terrainDestruction", wretch, true,
 				"Allow bounded Wretch slams and pursuit to damage natural terrain inside its camp territory. Respects mobGriefing, claims, tiles and player construction.");
 		String gardener = CATEGORY + ".gardener";
 		gardenerEnabled = config.getBoolean("enabled", gardener, true,
-				"Enable rooted underground Gardeners and incremental cave nests after Mars. Disabled saved bosses remain dormant.");
+				"Enable rooted underground Gardeners and incremental cave nests in phase 3. Disabled saved bosses remain dormant.");
+		gardenerMaxLoaded = config.getInt("maxLoaded", gardener, 2, 0, 16,
+				"Loaded Gardener admission cap. Completed nests wait at the cap without consuming retries; saved bosses are retained.");
 		gardenerNestChance = config.getInt("nestChance", gardener, 8, 1, 10000,
 				"One-in-N roll per active Overworld minute for up to eight loaded cave columns. No chunk loading or offline catch-up.");
 		gardenerNestLimit = config.getInt("nestLimit", gardener, 32, 0, 64,
@@ -97,7 +116,7 @@ public final class GeminiConfig {
 		gardenerBlocksPerSlam = config.getInt("blocksPerSlam", gardener, 12, 0, 32,
 				"Maximum natural/tissue block removals per major slam inside the nest. Four coordinates per tick; respects mobGriefing and protection events.");
 		deepRootEnabled = config.getBoolean("enabled", disease, true,
-				"Enable Deep Root Disease after Mars in the Overworld. Disabling pauses saved progress and removes its symptoms; no offline or unloaded catch-up.");
+				"Enable Deep Root Disease from phase 2 in the Overworld. Disabling pauses saved progress and removes its symptoms; no offline or unloaded catch-up.");
 		String[] stages = {"exposure", "roots", "contraction", "bulbs", "sprouts"};
 		int[] defaults = {300, 600, 600, 600, 600};
 		for(int i = 0; i < stages.length; i++)

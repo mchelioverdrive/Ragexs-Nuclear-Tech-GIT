@@ -137,6 +137,7 @@ public final class EntityWretch extends EntityCreature implements IMob, IBossDis
             if(player(p) && distance < best && visible(p, 32)) { best = distance; nearest = p; }
         }
         setAttackTarget(nearest);
+        if(nearest != null && ticksExisted % 20 == 1) com.hbm.world.gemini.GeminiPopulation.alert(this, nearest);
     }
     private void aim(EntityLivingBase target) {
         double dx = target.posX - posX, dz = target.posZ - posZ;
@@ -300,7 +301,9 @@ public final class EntityWretch extends EntityCreature implements IMob, IBossDis
                 || type == EntitySheep.class || type == EntityChicken.class;
     }
     private boolean findMeal() {
+        int examined = 0;
         for(Object entry : worldObj.getEntitiesWithinAABB(EntityAnimal.class, boundingBox.expand(4, 2, 4))) {
+            if(++examined > 32) break;
             EntityLivingBase candidate = (EntityLivingBase) entry;
             if(eligibleMeal(candidate) && visible(candidate, 4.5D)) { meal = candidate; aim(meal); return true; }
         }

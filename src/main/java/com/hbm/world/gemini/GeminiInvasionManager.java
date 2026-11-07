@@ -30,8 +30,23 @@ public final class GeminiInvasionManager {
 	 * This initial implementation confines activity to the Overworld.
 	 */
 	public static boolean canActivityOccur(World world) {
+		return canActivityOccur(world, 1);
+	}
+
+	public static boolean canActivityOccur(World world, int requiredPhase) {
 		return GeminiConfig.enabled && world instanceof WorldServer && !world.isRemote
-				&& world.provider.dimensionId == 0 && hasMarsVisited(world);
+				&& world.provider.dimensionId == 0 && getPhase(world) >= requiredPhase;
+	}
+
+	/** Saved unlock state, independent of enablement. */
+	public static int getPhase(World world) {
+		GeminiWorldSavedData data = GeminiWorldSavedData.get(world);
+		return data == null ? 0 : data.getPhase();
+	}
+
+	public static int encounterPercent(World world) {
+		int phase = getPhase(world);
+		return phase < 1 ? 0 : GeminiConfig.phaseEncounterPercent[Math.min(phase, 4) - 1];
 	}
 
 	private static void recordArrival(EntityPlayer player) {
@@ -79,6 +94,7 @@ public final class GeminiInvasionManager {
 
 		WorldServer overworld = (WorldServer) event.world;
 		GeminiWorldSavedData data = GeminiWorldSavedData.get(overworld);
+		data.advancePhase();
 		int remaining = data.getEventSecondsRemaining();
 		if(remaining == 0) {
 			scheduleNext(overworld, data);
@@ -98,7 +114,9 @@ public final class GeminiInvasionManager {
 	private static void scheduleNext(WorldServer world, GeminiWorldSavedData data) {
 		int min = GeminiConfig.minEventIntervalSeconds;
 		int max = GeminiConfig.maxEventIntervalSeconds;
-		data.setEventSecondsRemaining(min + world.rand.nextInt(max - min + 1));
+		int interval = min + world.rand.nextInt(max - min + 1);
+		data.setEventSecondsRemaining((int) Math.max(1L, interval * (long) GeminiConfig.phaseEncounterPercent[0]
+				/ Math.max(1, encounterPercent(world))));
 	}
 
 	/**

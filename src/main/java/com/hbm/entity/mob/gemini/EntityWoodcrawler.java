@@ -158,7 +158,12 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 			if(!GeminiInvasionManager.canActivityOccur(worldObj) || worldObj.difficultySetting == EnumDifficulty.PEACEFUL) {
 				getNavigator().clearPathEntity();
 				setAttackTarget(null);
-				setDead();
+				strikeDelay = strikeCooldown = attackAnimationTicks = 0;
+				strikeTarget = null;
+				setHuntState(WANDER);
+				setClimbing(false);
+				motionX = motionY = motionZ = 0;
+				// Preserve the creature and lossless captive snapshot while dormant.
 				return;
 			}
 			if(strikeCooldown > 0) strikeCooldown--;
@@ -277,7 +282,8 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 	public float getEyeHeight() { return height * 0.78F; }
 	@Override
 	public boolean attackEntityFrom(DamageSource source, float damage) {
-		return !worldObj.isRemote && GeminiInvasionManager.canActivityOccur(worldObj) && super.attackEntityFrom(source, damage);
+		return !worldObj.isRemote && !(source.getEntity() instanceof IGeminiCreature)
+				&& GeminiInvasionManager.canActivityOccur(worldObj) && super.attackEntityFrom(source, damage);
 	}
 	@Override
 	public void writeEntityToNBT(NBTTagCompound nbt) {

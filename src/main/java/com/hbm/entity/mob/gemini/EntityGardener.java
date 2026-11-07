@@ -107,7 +107,9 @@ public final class EntityGardener extends EntityLiving implements IMob, IBossDis
     private void findTarget() {
         EntityLivingBase closest = null;
         double best = Double.MAX_VALUE;
+        int examined = 0;
         for(Object entry : worldObj.getEntitiesWithinAABB(EntityLivingBase.class, boundingBox.expand(18, 6, 18))) {
+            if(++examined > 32) break;
             EntityLivingBase target = (EntityLivingBase) entry;
             if(!reach(target, target instanceof EntityPlayer ? 18D : 8D)) continue;
             double score = getDistanceSqToEntity(target) + (target instanceof EntityPlayer ? 0 : 400D);
@@ -115,6 +117,7 @@ public final class EntityGardener extends EntityLiving implements IMob, IBossDis
         }
         setAttackTarget(closest);
         dataWatcher.updateObject(20, closest == null ? -1 : closest.getEntityId());
+        if(closest != null) com.hbm.world.gemini.GeminiPopulation.alert(this, closest);
     }
     private void aim(EntityLivingBase target, boolean ground) {
         double dx = target.posX - posX, dz = target.posZ - posZ;

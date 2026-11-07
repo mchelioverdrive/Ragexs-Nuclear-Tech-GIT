@@ -1089,6 +1089,9 @@ public class MainRegistry {
 		MinecraftForge.EVENT_BUS.register(wretchEvents);
 		FMLCommonHandler.instance().bus().register(wretchEvents);
 		GameRegistry.registerWorldGenerator(new com.hbm.world.gemini.WretchCamps.Generator(), 100);
+		com.hbm.world.gemini.GeminiPopulation geminiPopulation = new com.hbm.world.gemini.GeminiPopulation();
+		MinecraftForge.EVENT_BUS.register(geminiPopulation);
+		FMLCommonHandler.instance().bus().register(geminiPopulation);
 		com.hbm.handler.restraint.Restraints restraintEvents = new com.hbm.handler.restraint.Restraints();
 		MinecraftForge.EVENT_BUS.register(restraintEvents);
 		FMLCommonHandler.instance().bus().register(restraintEvents);

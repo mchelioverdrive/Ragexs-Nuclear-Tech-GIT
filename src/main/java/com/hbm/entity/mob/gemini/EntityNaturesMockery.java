@@ -95,6 +95,9 @@ public final class EntityNaturesMockery extends EntityMob implements IGeminiCrea
     }
 
     @Override public void onUpdate() {
+        if(!worldObj.isRemote && !MockerySpawning.active(worldObj)) {
+            release(); motionX = motionY = motionZ = 0; return;
+        }
         prevExtension = extension;
         extension += ((dataWatcher.getWatchableObjectInt(20) >= 0 ? 1F : 0F) - extension) * 0.16F;
         motionX = motionZ = 0;
@@ -120,7 +123,8 @@ public final class EntityNaturesMockery extends EntityMob implements IGeminiCrea
             int z = MathHelper.floor_double(rootZ) + rand.nextInt(radius * 2 + 1) - radius;
             int y = MathHelper.floor_double(rootY) + rand.nextInt(5) - 2;
             if(placed < GeminiConfig.mockerySpreadLimit && MockeryGrowth.place(this, x, y, z)) placed++;
-            if(!sterile && buds < GeminiConfig.mockeryOffshootLimit && getGrowth() >= 40 * (buds + 1)
+            if(com.hbm.world.gemini.GeminiInvasionManager.canActivityOccur(worldObj, 3)
+                    && !sterile && buds < GeminiConfig.mockeryOffshootLimit && getGrowth() >= 40 * (buds + 1)
                     && rand.nextInt(4) == 0) bud(x, y, z);
         }
         if(ticksExisted % 240 == 0 && rand.nextBoolean()) {
@@ -136,7 +140,9 @@ public final class EntityNaturesMockery extends EntityMob implements IGeminiCrea
     private void findPrey() {
         EntityLivingBase closest = null;
         double distance = 25D;
+        int examined = 0;
         for(Object entry : worldObj.getEntitiesWithinAABB(EntityLivingBase.class, boundingBox.expand(5, 3, 5))) {
+            if(++examined > 32) break;
             EntityLivingBase target = (EntityLivingBase) entry;
             if(target.getEntityData().getLong("MockeryEscapeUntil") > worldObj.getTotalWorldTime()
                     || target.getEntityData().hasKey("MockeryCaptor") || !reach(target)) continue;
@@ -153,7 +159,9 @@ public final class EntityNaturesMockery extends EntityMob implements IGeminiCrea
         EntityLivingBase target = tendrilTarget();
         if(target == null || !captive.equals(target.getUniqueID())) {
             target = null;
+            int examined = 0;
             for(Object entry : worldObj.getEntitiesWithinAABB(EntityLivingBase.class, boundingBox.expand(5, 3, 5))) {
+                if(++examined > 32) break;
                 EntityLivingBase candidate = (EntityLivingBase) entry;
                 if(captive.equals(candidate.getUniqueID())) { target = candidate; break; }
             }
@@ -226,6 +234,10 @@ public final class EntityNaturesMockery extends EntityMob implements IGeminiCrea
         phrase = net.minecraft.util.EnumChatFormatting.getTextWithoutFormattingCodes(text).replaceAll("[\\p{Cntrl}]", "");
         if(phrase.length() > 48) phrase = phrase.substring(0, 48);
         phraseTicks = phrase.isEmpty() ? 0 : 1200;
+    }
+    @Override public boolean attackEntityFrom(DamageSource source, float damage) {
+        return !worldObj.isRemote && MockerySpawning.active(worldObj) && !(source.getEntity() instanceof IGeminiCreature)
+                && super.attackEntityFrom(source, damage);
     }
     @Override public void onDeath(DamageSource source) { if(!worldObj.isRemote) release(); super.onDeath(source); }
     @Override public void setDead() { if(!worldObj.isRemote) release(); super.setDead(); }

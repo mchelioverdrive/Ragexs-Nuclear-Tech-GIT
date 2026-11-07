@@ -6,7 +6,6 @@ import com.hbm.entity.mob.gemini.EntityWoodcrawler;
 import cpw.mods.fml.common.eventhandler.Event;
 import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.EnumDifficulty;
@@ -26,18 +25,14 @@ public final class WoodcrawlerSpawning {
 	public static boolean canSpawn(World world, EntityWoodcrawler candidate) {
 		if(!GeminiInvasionManager.canActivityOccur(world) || GeminiConfig.woodcrawlerSpawnWeight == 0
 				|| GeminiConfig.woodcrawlerMaxLoaded == 0 || world.difficultySetting == EnumDifficulty.PEACEFUL) return false;
-		int count = 0;
-		for(Object entry : world.loadedEntityList) {
-			if(entry instanceof EntityWoodcrawler && entry != candidate && !((Entity) entry).isDead
-					&& ++count >= GeminiConfig.woodcrawlerMaxLoaded) return false;
-		}
-		return true;
+		return GeminiPopulation.canAdmit(world, EntityWoodcrawler.class, candidate, GeminiConfig.woodcrawlerMaxLoaded);
 	}
 
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public void onCheckSpawn(LivingSpawnEvent.CheckSpawn event) {
 		if(event.entityLiving instanceof EntityWoodcrawler && (!canSpawn(event.world, (EntityWoodcrawler) event.entityLiving)
-				|| !isForest(event.world, MathHelper.floor_float(event.x), MathHelper.floor_float(event.z)))) {
+				|| !isForest(event.world, MathHelper.floor_float(event.x), MathHelper.floor_float(event.z))
+				|| event.world.rand.nextInt(100) >= GeminiInvasionManager.encounterPercent(event.world))) {
 			event.setResult(Event.Result.DENY);
 		}
 	}
@@ -46,9 +41,7 @@ public final class WoodcrawlerSpawning {
 	public void onJoin(EntityJoinWorldEvent event) {
 		if(event.world.isRemote || !(event.entity instanceof EntityWoodcrawler)) return;
 		EntityWoodcrawler mob = (EntityWoodcrawler) event.entity;
-		// Saved carriers must be admitted so their captive can be restored if the gate is closed.
-		if(!GeminiInvasionManager.canActivityOccur(event.world) && !mob.hasCapturedVillager()) event.setCanceled(true);
-		else if(!mob.wasLoadedFromNBT() && !canSpawn(event.world, mob)) event.setCanceled(true);
+		if(!mob.addedToChunk && !canSpawn(event.world, mob)) event.setCanceled(true);
 	}
 
 	@SubscribeEvent

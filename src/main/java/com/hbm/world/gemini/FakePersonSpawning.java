@@ -19,12 +19,7 @@ public final class FakePersonSpawning {
 	public static boolean canSpawn(World world, EntityFakePerson candidate) {
 		if(!GeminiInvasionManager.canActivityOccur(world) || world.difficultySetting == EnumDifficulty.PEACEFUL
 				|| GeminiConfig.fakePersonMaxLoaded == 0) return false;
-		int count = 0;
-		for(Object entry : world.loadedEntityList) {
-			if(entry instanceof EntityFakePerson && entry != candidate && !((Entity) entry).isDead
-					&& ++count >= GeminiConfig.fakePersonMaxLoaded) return false;
-		}
-		return true;
+		return GeminiPopulation.canAdmit(world, EntityFakePerson.class, candidate, GeminiConfig.fakePersonMaxLoaded);
 	}
 
 	@SubscribeEvent(priority = EventPriority.LOWEST)
@@ -45,17 +40,16 @@ public final class FakePersonSpawning {
 		if(event.world.isRemote || !(event.entity instanceof EntityFakePerson)) return;
 		EntityFakePerson mob = (EntityFakePerson) event.entity;
 		// Chunk loads already have membership; fresh spawns (even /summon with NBT) do not.
-		if(!GeminiInvasionManager.canActivityOccur(event.world) || event.world.difficultySetting == EnumDifficulty.PEACEFUL
-				|| !mob.addedToChunk && !canSpawn(event.world, mob)) {
+		if(!mob.addedToChunk && !canSpawn(event.world, mob)) {
 			event.setCanceled(true);
 			return;
 		}
-		// Conversions retain the victim's identity. Reject a second living copy.
-		for(Object entry : event.world.loadedEntityList) {
+		// A conversion must not duplicate a restored villager's identity. This is an admission-only
+		// check, never a ticking population search; Gemini duplicates use the shared registry.
+		if(!mob.addedToChunk) for(Object entry : event.world.loadedEntityList) {
 			Entity other = (Entity) entry;
 			if(other != mob && !other.isDead && mob.getUniqueID().equals(other.getUniqueID())) {
-				event.setCanceled(true);
-				return;
+				event.setCanceled(true); return;
 			}
 		}
 	}

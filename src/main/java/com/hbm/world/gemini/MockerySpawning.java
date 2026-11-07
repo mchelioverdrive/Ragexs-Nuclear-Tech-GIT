@@ -15,17 +15,13 @@ import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 /** All new admissions, including eggs and terminal conversions, share this boundary. */
 public final class MockerySpawning {
     public static boolean active(World world) {
-        return GeminiInvasionManager.canActivityOccur(world) && GeminiConfig.deepRootEnabled
+        return GeminiInvasionManager.canActivityOccur(world, 2) && GeminiConfig.deepRootEnabled
                 && world.difficultySetting != EnumDifficulty.PEACEFUL;
     }
 
     public static boolean canSpawn(World world, EntityNaturesMockery candidate) {
         if(!active(world) || GeminiConfig.mockeryMaxActive == 0) return false;
-        int count = 0;
-        for(Object entry : world.loadedEntityList)
-            if(entry instanceof EntityNaturesMockery && entry != candidate && !((Entity) entry).isDead
-                    && ++count >= GeminiConfig.mockeryMaxActive) return false;
-        return true;
+        return GeminiPopulation.canAdmit(world, EntityNaturesMockery.class, candidate, GeminiConfig.mockeryMaxActive);
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)

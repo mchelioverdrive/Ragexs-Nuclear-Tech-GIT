@@ -23,6 +23,15 @@ public final class GeminiInfections {
 		return loaded(victim) && DiseaseManager.infect(victim, DiseaseManager.pathogen(DeepRootDisease.ID), source, sourceHost);
 	}
 
+	/** Overlapping nest/growth cells share one establishment check per host per second. */
+	public static boolean exposeContact(EntityLivingBase victim, String source, String sourceHost) {
+		if(!loaded(victim)) return false;
+		DiseaseHost data = DiseaseHost.get(victim);
+		if(victim.ticksExisted < data.nextGeminiContactTick || data.infections.containsKey(DeepRootDisease.ID)) return false;
+		data.nextGeminiContactTick = victim.ticksExisted + 20;
+		return expose(victim, source, sourceHost);
+	}
+
 	/**
 	 * Call once per confirmed, uncanceled wound whose contact was validated at hit time.
 	 * Never call for proximity or a pre-armor hurt event alone. Knockback may separate the pair before confirmation.
