@@ -197,7 +197,7 @@ public class ClientProxy extends ServerProxy {
 	public void registerTileEntitySpecialRenderer() {
 		com.hbm.render.tileentity.RenderRestraintDevice restraintRenderer = new com.hbm.render.tileentity.RenderRestraintDevice();
 		ClientRegistry.bindTileEntitySpecialRenderer(com.hbm.tileentity.machine.TileEntityRestraintDevice.class, restraintRenderer);
-		for(net.minecraft.block.Block block : new net.minecraft.block.Block[] {ModBlocks.guillotine, ModBlocks.brazen_bull, ModBlocks.electric_chair, ModBlocks.injection_table})
+		for(net.minecraft.block.Block block : new net.minecraft.block.Block[] {ModBlocks.guillotine, ModBlocks.brazen_bull, ModBlocks.electric_chair, ModBlocks.injection_table, ModBlocks.hanging_station})
 			net.minecraftforge.client.MinecraftForgeClient.registerItemRenderer(Item.getItemFromBlock(block), restraintRenderer);
 		registerClientEventHandler(new com.hbm.render.entity.RestraintClient());
 		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.projectile.EntityTranquilizerDart.class, new net.minecraft.client.renderer.entity.RenderSnowball(ModItems.tranquilizer_dart));

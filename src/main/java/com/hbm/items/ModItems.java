@@ -68,6 +68,7 @@ import net.minecraftforge.fluids.FluidStack;
 
 public class ModItems {
 	public static Item handcuffs, straight_jacket, tranquilizer_syringe, tranquilizer_dart, injection_terminal;
+	public static Item noose;
 
 
 
@@ -3027,6 +3028,7 @@ public class ModItems {
 		tranquilizer_syringe = new com.hbm.items.special.ItemRestraint(false).setUnlocalizedName("tranquilizer_syringe").setCreativeTab(MainRegistry.consumableTab).setTextureName("hbm:tranquilizer_syringe");
 		tranquilizer_dart = new com.hbm.items.weapon.ItemTranquilizerDart().setUnlocalizedName("tranquilizer_dart").setCreativeTab(MainRegistry.weaponTab).setTextureName("hbm:tranquilizer_dart");
 		injection_terminal = new com.hbm.items.special.ItemRestraint(false).setUnlocalizedName("injection_terminal").setCreativeTab(MainRegistry.consumableTab).setTextureName("hbm:injection_terminal");
+		noose = new com.hbm.items.special.ItemRestraint(true).setUnlocalizedName("noose").setCreativeTab(MainRegistry.controlTab).setTextureName("hbm:noose");
 	}
 
 	public static void initializeItem()
@@ -10313,6 +10315,7 @@ public class ModItems {
 		GameRegistry.registerItem(bob_nuclear, bob_nuclear.getUnlocalizedName());
 		//GameRegistry.registerItem(mysteryshovel, mysteryshovel.getUnlocalizedName());
 		GameRegistry.registerItem(memory, memory.getUnlocalizedName());
+		GameRegistry.registerItem(noose, noose.getUnlocalizedName());
 	}
 
 	public static void addRemap(String unloc, Item item, Enum sub) {

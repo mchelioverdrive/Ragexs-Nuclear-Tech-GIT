@@ -23,12 +23,13 @@ import net.minecraft.util.MathHelper;
 import net.minecraft.util.Vec3;
 import net.minecraftforge.common.util.ForgeDirection;
 
-/** Four devices, one occupancy protocol. The entity UUID and per-placement token must agree on both ends. */
+/** Shared occupancy protocol. The entity UUID and per-placement token must agree on both ends. */
 public class TileEntityRestraintDevice extends TileEntityMachineBase implements IEnergyReceiverMK2 {
     public UUID token = UUID.randomUUID(), captive;
     public boolean active, locked;
     public int temperature = 20, burnTicks, cycle;
     public long energyQuanta;
+    public float captiveHeight = 1.8F;
     private int missingTicks, cachedEntity = -1;
     private UUID armedBy;
     private long armedUntil;
@@ -44,13 +45,15 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
         return getBlockType() instanceof BlockRestraintDevice ? ((BlockRestraintDevice) getBlockType()).kind : Kind.GUILLOTINE;
     }
     @Override public String getName() { return "container.restraint_device"; }
-    @Override public int getInventoryStackLimit() { return 16; }
+    @Override public int getInventoryStackLimit() { return kind() == Kind.HANGING ? 1 : 16; }
     @Override public boolean isItemValidForSlot(int slot, ItemStack stack) {
-        return slot == 0 && stack != null && (kind() == Kind.TABLE ? stack.getItem() == ModItems.injection_terminal
+        return slot == 0 && stack != null && (kind() == Kind.HANGING ? stack.getItem() == ModItems.noose : kind() == Kind.TABLE ? stack.getItem() == ModItems.injection_terminal
                 : kind() == Kind.BULL && TileEntityFurnace.getItemBurnTime(stack) > 0 && !stack.getItem().hasContainerItem(stack));
     }
     @Override public int[] getAccessibleSlotsFromSide(int side) { return kind() == Kind.BULL || kind() == Kind.TABLE ? new int[] {0} : new int[0]; }
-    @Override public boolean canExtractItem(int slot, ItemStack stack, int side) { return !active; }
+    @Override public boolean canExtractItem(int slot, ItemStack stack, int side) { return !active && (kind() != Kind.HANGING || captive == null); }
+
+    public boolean hasNoose() { return kind() == Kind.HANGING && isItemValidForSlot(0, slots[0]); }
 
     public boolean owns(EntityLivingBase e) {
         RestraintState s = RestraintState.get(e);
@@ -75,13 +78,15 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
                 || !Restraints.compatible(e) || e.worldObj != worldObj || e.ridingEntity != null || e.riddenByEntity != null
                 || e.getDistanceSq(xCoord + 0.5, yCoord + 0.5, zCoord + 0.5) > 36) return false;
         RestraintState s = RestraintState.get(e);
-        if(s.occupied() || !(s.cuffs || s.asleep > 0) || kind() == Kind.BULL && (temperature > RestraintConfig.bullSafeTemperature || e.height > 2.1F)) return false;
+        if(s.occupied() || !(s.cuffs || s.jacket || s.asleep > 0) || kind() == Kind.HANGING && !hasNoose()
+                || kind() == Kind.BULL && (temperature > RestraintConfig.bullSafeTemperature || e.height > 2.1F)) return false;
         captive = e.getUniqueID(); cachedEntity = e.getEntityId(); missingTicks = 0;
+        captiveHeight = e.height;
         s.device = true; s.deviceToken = token; s.dimension = worldObj.provider.dimensionId;
         s.x = xCoord; s.y = yCoord; s.z = zCoord; s.escort = null;
         armedBy = null;
         position(e); Restraints.changed(e); sync();
-        sound("hbm:door.lever", 0.7F);
+        sound(kind() == Kind.HANGING ? "step.cloth" : "hbm:door.lever", 0.7F);
         return true;
     }
 
@@ -98,6 +103,7 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
     public void position(EntityLivingBase e) {
         if(owns(e)) cachedEntity = e.getEntityId();
         Vec3 p = local(0, kind() == Kind.TABLE ? 0.92 : kind() == Kind.BULL ? 0.65 : kind() == Kind.CHAIR ? 0.02 : 0.25, 0);
+        if(kind() == Kind.HANGING) p = hangingPosition(active ? cycle : 0);
         e.setPosition(p.xCoord, p.yCoord, p.zCoord);
         e.rotationYaw = e.rotationYawHead = e.renderYawOffset = -yaw();
         e.rotationPitch = 0;
@@ -105,6 +111,10 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
         RestraintState s = RestraintState.get(e);
         s.anchorX = p.xCoord; s.anchorY = p.yCoord; s.anchorZ = p.zCoord; s.anchored = true;
     }
+
+    public static float hangingDrop(float time) { return Math.min(1F, Math.max(0F, time / 12F)) * 0.55F; }
+    public static float hangingSway(float time) { return (float) Math.sin(time * 0.18F) * Math.min(1F, time / 12F) * 0.06F; }
+    public Vec3 hangingPosition(float time) { return local(hangingSway(time), 1 - hangingDrop(time), 0); }
 
     public boolean release(boolean forced) {
         if(worldObj.isRemote || !forced && (active || locked || temperature > RestraintConfig.bullSafeTemperature)) return false;
@@ -146,10 +156,12 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
         if(held != null && isItemValidForSlot(0, held) && !active) {
             if(slots[0] == null || slots[0].isItemEqual(held) && ItemStack.areItemStackTagsEqual(slots[0], held) && slots[0].stackSize < getInventoryStackLimit()) {
                 if(slots[0] == null) { slots[0] = held.copy(); slots[0].stackSize = 1; } else ++slots[0].stackSize;
-                Restraints.consume(player, held); sync(); return true;
+                Restraints.consume(player, held); sync();
+                if(kind() == Kind.HANGING) sound("step.cloth", 0.6F);
+                return true;
             }
         }
-        if(held != null && held.getItem() == net.minecraft.init.Items.lead && captive == null) {
+        if((held == null && !player.isSneaking() || held != null && held.getItem() == net.minecraft.init.Items.lead) && captive == null) {
             List<EntityLivingBase> nearby = worldObj.getEntitiesWithinAABB(EntityLivingBase.class,
                     AxisAlignedBB.getBoundingBox(xCoord - 5, yCoord - 3, zCoord - 5, xCoord + 6, yCoord + 4, zCoord + 6));
             EntityLivingBase selected = null;
@@ -160,8 +172,11 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
                     selected = e; distance = e.getDistanceSqToEntity(player);
                 }
             }
-            if(selected == null || !capture(selected)) Restraints.message(player, "restraint.no_captive");
-            return true;
+            if(selected != null) {
+                if(!capture(selected)) Restraints.message(player, "restraint.no_captive");
+                return true;
+            }
+            if(held != null) { Restraints.message(player, "restraint.no_captive"); return true; }
         }
         if(held != null) { Restraints.message(player, "restraint.controls"); return true; }
         if(player.isSneaking()) {
@@ -189,6 +204,7 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
     private void activate(EntityPlayer player) {
         EntityLivingBase e = occupant();
         if(active || e == null || kind() == Kind.BULL && !locked || kind() == Kind.CHAIR && energyQuanta < RestraintConfig.chairQuantaPerTick * 20L
+                || kind() == Kind.HANGING && !hasNoose()
                 || kind() == Kind.TABLE && !isItemValidForSlot(0, slots[0]) || kind() == Kind.TABLE && RestraintState.get(e).terminal > 0
                 || kind() == Kind.BULL && burnTicks <= 0 && !isItemValidForSlot(0, slots[0])) {
             Restraints.message(player, "restraint.not_ready"); return;
@@ -207,7 +223,7 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
             s.terminal = RestraintConfig.injectionTicks; s.terminalElapsed = 0; Restraints.changed(e);
         }
         setActive(true); sync();
-        sound(kind() == Kind.GUILLOTINE ? "hbm:block.pressOperate" : kind() == Kind.TABLE ? "random.fizz" : "hbm:door.lever", 0.8F);
+        sound(kind() == Kind.HANGING ? "random.door_open" : kind() == Kind.GUILLOTINE ? "hbm:block.pressOperate" : kind() == Kind.TABLE ? "random.fizz" : "hbm:door.lever", 0.8F);
     }
 
     private void status(EntityPlayer player) {
@@ -268,6 +284,14 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
                     if(cycle % 20 == 0) { e.attackEntityFrom(Restraints.ELECTRIC, RestraintConfig.electricDamage); sound("hbm:weapon.sparkShoot", 0.35F); }
                 }
             } else if(kind() == Kind.TABLE) { if(cycle >= 40 || e == null) setActive(false); }
+            else if(kind() == Kind.HANGING) {
+                if(cycle == 12) sound("step.cloth", 0.8F);
+                if(cycle >= 80 && e != null) {
+                    e.attackEntityFrom(Restraints.HANGING, Math.max(10000F, e.getMaxHealth() * 2F));
+                    // Respect damage cancellation/immunity, returning a surviving captive to the idle platform.
+                    setActive(false); sync();
+                }
+            }
         }
         if(kind() == Kind.BULL) {
             if(active && locked && e != null) {
@@ -283,13 +307,15 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
                 if(active) sound("fire.fire", 0.6F);
             }
         }
+        if(kind() == Kind.HANGING && e != null && e.isEntityAlive() && owns(e)) position(e);
         if(active || temperature > 20 || burnTicks > 0) markDirty();
         networkPackNTIfDirty(64);
     }
 
     public float animationCycle(float partial) {
         if(!active) return 0;
-        return Math.min(kind() == Kind.GUILLOTINE ? 45 : 100000, clientCycle + Math.max(0L, worldObj.getTotalWorldTime() - clientCycleAt) + partial);
+        return Math.min(kind() == Kind.HANGING ? 80 : kind() == Kind.GUILLOTINE ? 45 : 100000,
+                clientCycle + Math.max(0L, worldObj.getTotalWorldTime() - clientCycleAt) + partial);
     }
     private void stopAudio() { if(dischargeAudio != null) { dischargeAudio.stopSound(); dischargeAudio = null; } }
     @Override public void onChunkUnload() { stopAudio(); super.onChunkUnload(); }
@@ -298,11 +324,16 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
         super.serialize(b); b.writeBoolean(active); b.writeBoolean(locked); b.writeInt(temperature); b.writeInt(cycle); b.writeLong(energyQuanta);
         b.writeBoolean(captive != null);
         if(captive != null) { b.writeLong(captive.getMostSignificantBits()); b.writeLong(captive.getLeastSignificantBits()); }
+        if(kind() == Kind.HANGING) { b.writeBoolean(hasNoose()); b.writeFloat(captiveHeight); }
     }
     @Override public void deserialize(ByteBuf b) {
         super.deserialize(b); boolean wasActive = active;
         active = b.readBoolean(); locked = b.readBoolean(); temperature = b.readInt(); cycle = b.readInt(); energyQuanta = b.readLong();
         captive = b.readBoolean() ? new UUID(b.readLong(), b.readLong()) : null;
+        if(kind() == Kind.HANGING) {
+            boolean noose = b.readBoolean(); captiveHeight = b.readFloat();
+            slots[0] = noose ? new ItemStack(ModItems.noose) : null;
+        }
         if(!clientInitialized) {
             previousHatch = hatch = locked ? 0F : 1F;
             previousStraps = straps = captive == null ? 0F : 1F;
@@ -316,6 +347,7 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
         n.setString("restraintToken", token.toString()); if(captive != null) n.setString("captive", captive.toString());
         n.setBoolean("active", active); n.setBoolean("locked", locked);
         n.setInteger("temperature", temperature); n.setInteger("burnTicks", burnTicks); n.setInteger("cycle", cycle);
+        n.setFloat("captiveHeight", captiveHeight);
         EnergyUnits.writeEnergyQuanta(n, energyQuanta);
     }
     @Override public void readFromNBT(NBTTagCompound n) {
@@ -325,6 +357,7 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
         active = n.getBoolean("active"); locked = n.getBoolean("locked");
         temperature = Math.max(20, Math.min(RestraintConfig.bullMaxTemperature, n.getInteger("temperature")));
         burnTicks = Math.max(0, n.getInteger("burnTicks")); cycle = Math.max(0, n.getInteger("cycle"));
+        captiveHeight = n.hasKey("captiveHeight") ? MathHelper.clamp_float(n.getFloat("captiveHeight"), 1.3F, 2.5F) : 1.8F;
         energyQuanta = Math.max(0, EnergyUnits.readEnergyQuanta(n, "power")); cachedEntity = -1;
     }
     @Override public boolean canConnect(ForgeDirection dir) { return kind() == Kind.CHAIR && dir != ForgeDirection.UNKNOWN; }

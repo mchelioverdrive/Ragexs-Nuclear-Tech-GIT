@@ -68,7 +68,7 @@ public final class RestraintClient {
         ItemStack held;
     }
     private static boolean rigid(RestraintState state) {
-        return state.anchored && (state.device || state.escort == null && (state.asleep > 0 || state.cuffs));
+        return state.anchored && state.device;
     }
     @SubscribeEvent public void entityTick(LivingUpdateEvent event) {
         if(!event.entity.worldObj.isRemote) return;
@@ -81,6 +81,14 @@ public final class RestraintClient {
         for(Iterator<EntityLivingBase> it = anchored.values().iterator(); it.hasNext();) {
             EntityLivingBase entity = it.next(); RestraintState state = RestraintState.get(entity);
             if(entity.worldObj != Minecraft.getMinecraft().theWorld || entity.isDead || !rigid(state)) { it.remove(); continue; }
+            if(state.dimension == entity.worldObj.provider.dimensionId && entity.worldObj.blockExists(state.x, state.y, state.z)) {
+                TileEntity tile = entity.worldObj.getTileEntity(state.x, state.y, state.z);
+                if(tile instanceof TileEntityRestraintDevice && ((TileEntityRestraintDevice) tile).kind() == Kind.HANGING) {
+                    TileEntityRestraintDevice device = (TileEntityRestraintDevice) tile;
+                    net.minecraft.util.Vec3 p = device.hangingPosition(device.animationCycle(0));
+                    state.anchorX = p.xCoord; state.anchorY = p.yCoord; state.anchorZ = p.zCoord;
+                }
+            }
             // Match the server anchor after local gravity, without changing the authoritative hitbox or AI.
             entity.setPosition(state.anchorX, state.anchorY, state.anchorZ);
             entity.prevPosX = entity.lastTickPosX = entity.posX;

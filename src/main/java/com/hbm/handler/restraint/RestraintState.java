@@ -102,6 +102,11 @@ public final class RestraintState implements IExtendedEntityProperties {
     }
 
     @Override public void saveNBTData(NBTTagCompound n) { if(active()) n.setTag(KEY, write()); else n.removeTag(KEY); }
-    @Override public void loadNBTData(NBTTagCompound n) { read(n.getCompoundTag(KEY)); }
+    @Override public void loadNBTData(NBTTagCompound n) {
+        read(n.getCompoundTag(KEY));
+        // Grabs belong to a live session; retain escort in network snapshots, never across entity reloads.
+        escort = null;
+        if(!device) anchored = false;
+    }
     @Override public void init(Entity entity, World world) { }
 }

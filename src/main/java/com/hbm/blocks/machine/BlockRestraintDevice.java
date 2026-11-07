@@ -16,13 +16,25 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class BlockRestraintDevice extends BlockDummyable implements ITooltipProvider {
-    public enum Kind { GUILLOTINE, BULL, CHAIR, TABLE }
+    public enum Kind { GUILLOTINE, BULL, CHAIR, TABLE, HANGING }
     public final Kind kind;
     public BlockRestraintDevice(Kind kind) {
-        super(kind == Kind.GUILLOTINE ? Material.wood : Material.iron);
+        super(kind == Kind.GUILLOTINE || kind == Kind.HANGING ? Material.wood : Material.iron);
         this.kind = kind;
         setHardness(4F); setResistance(15F);
-        if(kind == Kind.GUILLOTINE) {
+        if(kind == Kind.HANGING) {
+            setStepSound(soundTypeWood);
+            // Raised deck surrounds a real opening; the separately animated trapdoor fills its center.
+            bounding.add(AxisAlignedBB.getBoundingBox(-1.4, 0.8, -1.4, -0.55, 1, 1.4));
+            bounding.add(AxisAlignedBB.getBoundingBox(0.55, 0.8, -1.4, 1.4, 1, 1.4));
+            bounding.add(AxisAlignedBB.getBoundingBox(-0.55, 0.8, -1.4, 0.55, 1, -0.55));
+            bounding.add(AxisAlignedBB.getBoundingBox(-0.55, 0.8, 0.55, 0.55, 1, 1.4));
+            for(int side : new int[] {-1, 1}) {
+                bounding.add(AxisAlignedBB.getBoundingBox(side * 1.1 - 0.12, 0, -0.15, side * 1.1 + 0.12, 4.8, 0.15));
+            }
+            bounding.add(AxisAlignedBB.getBoundingBox(-1.3, 4.55, -0.2, 1.3, 4.8, 0.2));
+            bounding.add(AxisAlignedBB.getBoundingBox(-0.5, 0, 1, 0.5, 0.4, 1.5));
+        } else if(kind == Kind.GUILLOTINE) {
             bounding.add(AxisAlignedBB.getBoundingBox(-1.4, 0, -1.4, 1.4, 0.2, 1.4));
             bounding.add(AxisAlignedBB.getBoundingBox(-1.1, 0.2, -0.2, -0.85, 3.8, 0.2));
             bounding.add(AxisAlignedBB.getBoundingBox(0.85, 0.2, -0.2, 1.1, 3.8, 0.2));
@@ -36,6 +48,7 @@ public class BlockRestraintDevice extends BlockDummyable implements ITooltipProv
         else bounding.add(AxisAlignedBB.getBoundingBox(-0.48, 0, -0.48, 0.48, 0.55, 0.48));
     }
     @Override public int[] getDimensions() {
+        if(kind == Kind.HANGING) return new int[] {4, 0, 1, 1, 1, 1};
         if(kind == Kind.GUILLOTINE) return new int[] {3, 0, 1, 1, 1, 1};
         if(kind == Kind.BULL) return new int[] {3, 0, 2, 2, 1, 1};
         if(kind == Kind.TABLE) return new int[] {1, 0, 1, 1, 1, 1};
@@ -48,12 +61,16 @@ public class BlockRestraintDevice extends BlockDummyable implements ITooltipProv
     }
     @Override public void addCollisionBoxesToList(World world, int x, int y, int z, AxisAlignedBB entityBox, List list, net.minecraft.entity.Entity entity) {
         super.addCollisionBoxesToList(world, x, y, z, entityBox, list, entity);
-        if(kind != Kind.BULL) return;
+        if(kind != Kind.BULL && kind != Kind.HANGING) return;
         int[] core = findCore(world, x, y, z);
         if(core == null) return;
         TileEntity tile = world.getTileEntity(core[0], core[1], core[2]);
-        if(!(tile instanceof TileEntityRestraintDevice) || !((TileEntityRestraintDevice) tile).locked) return;
-        AxisAlignedBB hatch = getAABBRotationOffset(AxisAlignedBB.getBoundingBox(-0.9, 0.6, 1.3, 0.9, 2.75, 1.5),
+        if(!(tile instanceof TileEntityRestraintDevice)) return;
+        TileEntityRestraintDevice device = (TileEntityRestraintDevice) tile;
+        if(kind == Kind.BULL && !device.locked || kind == Kind.HANGING && device.active) return;
+        AxisAlignedBB hatch = getAABBRotationOffset(kind == Kind.HANGING
+                ? AxisAlignedBB.getBoundingBox(-0.55, 0.8, -0.55, 0.55, 1, 0.55)
+                : AxisAlignedBB.getBoundingBox(-0.9, 0.6, 1.3, 0.9, 2.75, 1.5),
                 core[0] + 0.5, core[1], core[2] + 0.5, ForgeDirection.getOrientation(world.getBlockMetadata(core[0], core[1], core[2]) - offset).getRotation(ForgeDirection.UP));
         if(entityBox.intersectsWith(hatch)) list.add(hatch);
     }

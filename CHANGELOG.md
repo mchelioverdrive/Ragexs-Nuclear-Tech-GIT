@@ -537,3 +537,9 @@
 
 - Root all six Ocean Gardener legs inside the lower body and keep their attachment points fixed through idle sway, walking, attacks and disabled-limb poses. Use a feet-based origin and a narrow full-height collision box for the approximately 32-block-tall silhouette; migrate legacy positions and anchors while preserving health and limb state.
 - Remove water requirements from activity, prey eligibility and travel clearance. Retain the existing territorial steering and capture system, add supported land movement and native stepping, and preserve slow underwater altitude correction, solid-limb obstruction checks, wandering, Mars/difficulty gates and natural deep-ocean admission. Retain saved natural residents after they move onto land. Shared hooks leave Underground Gardener behavior unchanged.
+
+2026-11-07 03:47 — Add hanging stations and restore restrained entity transport
+
+- Add a craftable Noose and wooden Hanging Station multiblock with an attached rope, opening trapdoor, synchronized drop/sway and a four-second server-owned execution sequence. Reuse captive UUID/placement-token ownership, safe pre-activation release, loaded-tick NBT persistence and existing device confirmation controls; retain native damage cancellation and player-restraint opt-in.
+- Share empty-hand/lead grab toggling across handcuffs and straight jackets. Suspend wandering and combat while preserving native collision, pushing, gravity and collision-tested dragging. Remove free-entity position anchors, prevent grab theft, and clear session grabs on release, death, logout, dimension changes, excessive distance and entity reload.
+- Transfer grabbed jacketed or cuffed captives into all five execution devices, clearing the grab while retaining restraints. Preserve existing registry names, registration order, device packet layouts and saved device tokens. Add English item/control descriptions and reuse wooden-door and cloth sounds for the station and rope.

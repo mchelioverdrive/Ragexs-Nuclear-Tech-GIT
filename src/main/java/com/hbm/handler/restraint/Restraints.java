@@ -51,6 +51,7 @@ public final class Restraints {
     public static final DamageSource INJECTION = new DamageSource("rntInjection").setDamageBypassesArmor();
     public static final DamageSource BLADE = new DamageSource("rntBlade").setDamageBypassesArmor();
     public static final DamageSource ELECTRIC = new DamageSource("rntElectric").setDamageBypassesArmor();
+    public static final DamageSource HANGING = new DamageSource("rntHanging").setDamageBypassesArmor().setDamageIsAbsolute();
 
     public static boolean compatible(EntityLivingBase e) {
         if(!RestraintConfig.enabled || !e.isEntityAlive() || e instanceof IBossDisplayData
@@ -76,7 +77,7 @@ public final class Restraints {
     public static void changed(EntityLivingBase e) {
         if(e.worldObj.isRemote) return;
         RestraintState s = RestraintState.get(e);
-        s.controlAI(e, RestraintConfig.enabled && (s.cuffs || s.device || s.asleep > 0));
+        s.controlAI(e, RestraintConfig.enabled && s.bound());
         updateSpeed(e, s);
         ((net.minecraft.world.WorldServer) e.worldObj).getEntityTracker().func_151247_a(e, PacketDispatcher.wrapper.getPacketFrom(new RestraintPacket(e)));
         if(e instanceof EntityPlayerMP) PacketDispatcher.wrapper.sendTo(new RestraintPacket(e), (EntityPlayerMP) e);
@@ -85,8 +86,8 @@ public final class Restraints {
     private static void updateSpeed(EntityLivingBase e, RestraintState s) {
         IAttributeInstance attribute = e.getEntityAttribute(SharedMonsterAttributes.movementSpeed);
         if(attribute == null) return;
-        double amount = !RestraintConfig.enabled ? 0 : s.device || s.asleep > 0 || s.cuffs && escort(e, s) == null ? -1
-                : s.onset > 0 ? -0.75 : s.jacket ? -0.55 : 0;
+        // Stop voluntary travel without cancelling collision impulses, gravity or native forced movement.
+        double amount = !RestraintConfig.enabled ? 0 : s.bound() ? -1 : s.onset > 0 ? -0.75 : 0;
         AttributeModifier previous = attribute.getModifier(SPEED);
         if(previous != null && previous.getAmount() == amount) return;
         if(previous != null) attribute.removeModifier(previous);
@@ -142,30 +143,16 @@ public final class Restraints {
                 hold(e, s);
             }
         }
-        s.controlAI(e, s.cuffs || s.device || s.asleep > 0);
+        s.controlAI(e, s.bound());
         updateSpeed(e, s);
         EntityPlayer leader = escort(e, s);
-        boolean escorting = leader != null;
-        if(escorting) {
-            s.anchored = false;
-            if(s.asleep > 0 || e instanceof EntityPlayer) {
-                double dx = leader.posX - e.posX, dz = leader.posZ - e.posZ;
-                double distance = Math.sqrt(dx * dx + dz * dz);
-                if(distance > 1.5) {
-                    double step = Math.min(0.18, distance - 1.5);
-                    if(e.worldObj.getCollidingBoundingBoxes(e, e.boundingBox.getOffsetBoundingBox(dx / distance * step, 0, dz / distance * step)).isEmpty())
-                        e.setPosition(e.posX + dx / distance * step, e.posY, e.posZ + dz / distance * step);
-                }
-            } else if(e instanceof EntityLiving && e.ticksExisted % 10 == 0) {
-                EntityLiving mob = (EntityLiving) e;
-                if(e.getDistanceSqToEntity(leader) > 2.25) mob.getNavigator().tryMoveToEntityLiving(leader, s.jacket ? 0.6 : 0.85);
-                else mob.getNavigator().clearPathEntity();
-            }
-        } else if(s.cuffs || s.asleep > 0) hold(e, s);
-        if(s.device || s.asleep > 0 || s.cuffs && !escorting) {
-            e.motionX = e.motionY = e.motionZ = 0;
-            e.fallDistance = 0;
+        if(s.escort != null && leader == null) { s.escort = null; sync = true; }
+        if(!s.device) s.anchored = false;
+        if(s.bound()) {
             e.setJumping(false); e.moveForward = e.moveStrafing = 0;
+            if(e instanceof EntityLiving) ((EntityLiving) e).getNavigator().clearPathEntity();
+        }
+        if(s.device || leader != null) {
             Map<Integer, UUID> worldAnchors = anchors.get(e.worldObj);
             if(worldAnchors == null) { worldAnchors = new HashMap<Integer, UUID>(); anchors.put(e.worldObj, worldAnchors); }
             worldAnchors.put(e.getEntityId(), e.getUniqueID());
@@ -174,12 +161,14 @@ public final class Restraints {
     }
 
     private static EntityPlayer escort(EntityLivingBase e, RestraintState s) {
-        EntityPlayer leader = s.escort == null || s.device ? null : e.worldObj.func_152378_a(s.escort);
-        return leader != null && leader.isEntityAlive() && leader.getHeldItem() != null && leader.getHeldItem().getItem() == Items.lead
+        EntityPlayer leader = s.escort == null || s.device || !s.bound() || e.ridingEntity != null || e.riddenByEntity != null
+                ? null : e.worldObj.func_152378_a(s.escort);
+        return leader != null && leader != e && leader.worldObj == e.worldObj && leader.isEntityAlive()
+                && e.worldObj.playerEntities.contains(leader) && !blocked(leader)
                 && leader.getDistanceSqToEntity(e) < 100 ? leader : null;
     }
 
-    /** Pin after native physics, retaining normal damage immunity, death, fire and status-effect ticking. */
+    /** Apply device anchors or collision-aware dragging after native physics. */
     @SubscribeEvent public void endTick(TickEvent.WorldTickEvent event) {
         if(event.phase != TickEvent.Phase.END || event.world.isRemote) return;
         Map<Integer, UUID> entries = anchors.get(event.world);
@@ -190,12 +179,45 @@ public final class Restraints {
             if(!(entity instanceof EntityLivingBase) || !entity.getUniqueID().equals(entry.getValue()) || !entity.isEntityAlive()) { it.remove(); continue; }
             EntityLivingBase e = (EntityLivingBase) entity;
             RestraintState s = RestraintState.get(e);
-            if(!RestraintConfig.enabled || !(s.device || s.asleep > 0 || s.cuffs && escort(e, s) == null)) { it.remove(); continue; }
-            hold(e, s);
-            e.motionX = e.motionY = e.motionZ = 0; e.fallDistance = 0;
+            if(!RestraintConfig.enabled) { it.remove(); continue; }
+            if(s.device) {
+                hold(e, s);
+                e.motionX = e.motionY = e.motionZ = 0; e.fallDistance = 0;
+            } else {
+                EntityPlayer leader = escort(e, s);
+                if(leader == null) { it.remove(); continue; }
+                double dx = leader.posX - e.posX, dz = leader.posZ - e.posZ;
+                double distance = Math.sqrt(dx * dx + dz * dz);
+                if(distance > 1.6) {
+                    double step = Math.min(0.32, (distance - 1.6) * 0.25);
+                    boolean grounded = e.onGround;
+                    // moveEntity preserves native stepping, walls, collision and gravity. Never teleport through obstructions.
+                    e.moveEntity(dx / distance * step, 0, dz / distance * step);
+                    if(grounded && e.isCollidedHorizontally && leader.posY > e.posY + 0.5) e.motionY = 0.42;
+                    // A player's own client is excluded from ordinary tracker position packets.
+                    if(e instanceof EntityPlayerMP && ((EntityPlayerMP) e).playerNetServerHandler != null)
+                        e.setPositionAndUpdate(e.posX, e.posY, e.posZ);
+                    e.velocityChanged = true;
+                }
+            }
         }
     }
     @SubscribeEvent public void unload(net.minecraftforge.event.world.WorldEvent.Unload event) { anchors.remove(event.world); }
+
+    private static void releaseOwned(EntityPlayer player, World world) {
+        if(world == null || world.isRemote) return;
+        for(Object entry : world.loadedEntityList) if(entry instanceof EntityLivingBase) {
+            EntityLivingBase e = (EntityLivingBase) entry;
+            RestraintState s = RestraintState.get(e);
+            if(player.getUniqueID().equals(s.escort)) { s.escort = null; s.anchored = false; changed(e); }
+        }
+    }
+    @SubscribeEvent public void logout(cpw.mods.fml.common.gameevent.PlayerEvent.PlayerLoggedOutEvent event) {
+        releaseOwned(event.player, event.player.worldObj);
+    }
+    @SubscribeEvent public void dimension(cpw.mods.fml.common.gameevent.PlayerEvent.PlayerChangedDimensionEvent event) {
+        releaseOwned(event.player, net.minecraftforge.common.DimensionManager.getWorld(event.fromDim));
+    }
 
     private static void hold(EntityLivingBase e, RestraintState s) {
         if(!s.anchored) { s.anchorX = e.posX; s.anchorY = e.posY; s.anchorZ = e.posZ; s.anchored = true; }
@@ -235,10 +257,17 @@ public final class Restraints {
         event.setCanceled(true);
         if(player.worldObj.isRemote || player.getDistanceSqToEntity(e) > 36 || !compatible(e)) return;
         if(s.occupied()) { message(player, "restraint.in_device"); return; }
+        EntityPlayer owner = escort(e, s);
+        if(owner != null && owner != player) { message(player, "restraint.escort_busy"); return; }
+        if((held == null || held.getItem() == Items.lead) && !player.isSneaking() && s.bound()) {
+            s.escort = owner == player ? null : player.getUniqueID();
+            s.anchored = false; changed(e); message(player, s.escort == null ? "restraint.escort_stop" : "restraint.escort");
+            return;
+        }
         if(held == null && player.isSneaking()) {
             if(s.jacket) { s.jacket = false; give(player, new ItemStack(ModItems.straight_jacket)); }
             else if(s.cuffs) { s.cuffs = false; s.escort = null; give(player, new ItemStack(ModItems.handcuffs)); }
-            s.anchored = false;
+            s.anchored = false; if(!s.bound()) s.escort = null;
             changed(e); return;
         }
         if(held == null) return;
@@ -247,9 +276,6 @@ public final class Restraints {
             s.cuffs = true; s.anchored = false; consume(player, held); changed(e);
         } else if(held.getItem() == ModItems.straight_jacket && !s.jacket && (s.cuffs || s.asleep > 0)) {
             s.jacket = true; consume(player, held); changed(e);
-        } else if(held.getItem() == Items.lead && (s.cuffs || s.asleep > 0 || s.jacket)) {
-            s.escort = player.getUniqueID().equals(s.escort) ? null : player.getUniqueID();
-            s.anchored = false; changed(e); message(player, s.escort == null ? "restraint.escort_stop" : "restraint.escort");
         } else if(held.getItem() == ModItems.tranquilizer_syringe && sedate(e)) {
             consume(player, held); give(player, new ItemStack(ModItems.syringe_empty));
             e.worldObj.playSoundAtEntity(e, "random.fizz", 0.4F, 1.5F);
@@ -286,6 +312,7 @@ public final class Restraints {
     @SubscribeEvent(priority = EventPriority.LOWEST) public void death(LivingDeathEvent event) {
         EntityLivingBase e = event.entityLiving;
         if(e.worldObj.isRemote || event.isCanceled()) return;
+        if(e instanceof EntityPlayer) releaseOwned((EntityPlayer) e, e.worldObj);
         RestraintState s = RestraintState.get(e);
         if(s.occupied() && s.dimension == e.worldObj.provider.dimensionId && e.worldObj.blockExists(s.x, s.y, s.z)) {
             TileEntity tile = e.worldObj.getTileEntity(s.x, s.y, s.z);

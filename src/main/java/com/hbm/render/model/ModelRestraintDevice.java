@@ -18,6 +18,7 @@ public final class ModelRestraintDevice extends ModelBase {
             case BULL: bull(); break;
             case CHAIR: chair(); break;
             case TABLE: table(); break;
+            case HANGING: hanging(); break;
         }
     }
 
@@ -102,6 +103,25 @@ public final class ModelRestraintDevice extends ModelBase {
         metal(-14, 12, -8, 3, 2, 16); metal(11, 12, -8, 3, 2, 16);
     }
 
+    private void hanging() {
+        timber(-22, 13, -22, 13, 3, 44); timber(9, 13, -22, 13, 3, 44);
+        timber(-9, 13, -22, 18, 3, 13); timber(-9, 13, 9, 18, 3, 13);
+        for(int x : new int[] {-20, 16}) {
+            timber(x, 0, -3, 4, 77, 6);
+            timber(x - 1, 0, -18, 6, 13, 5); timber(x - 1, 0, 13, 6, 13, 5);
+        }
+        timber(-22, 73, -3, 44, 4, 6);
+        for(int side : new int[] {-1, 1}) {
+            ModelRenderer brace = new ModelRenderer(this, 0, 0);
+            brace.setRotationPoint(side * 17, 58, 0); brace.rotateAngleZ = side * 0.65F;
+            brace.addBox(-1, 0, -2, 2, 21, 4); frame.addChild(brace);
+        }
+        timber(-8, 0, 16, 16, 6, 8); timber(-8, 6, 16, 16, 7, 4);
+        hatch.setRotationPoint(-9, 13, 0);
+        box(hatch, 0, 0, 0, 0, -9, 18, 3, 18);
+        metal(-20, 16, -4, 4, 2, 1); metal(16, 16, -4, 4, 2, 1);
+    }
+
     public void render(float cycle, float hatchAmount, float restraintAmount, boolean active) {
         frame.render(0.0625F);
         blade.rotationPointY = 47 - (active ? cycle < 5 ? cycle / 5F * 19 : cycle < 12 ? 19 : Math.max(0, (45 - cycle) / 33F * 19) : 0);
@@ -111,6 +131,11 @@ public final class ModelRestraintDevice extends ModelBase {
         injector.rotationPointX = active ? (float) -Math.sin(Math.min(1, cycle / 30F) * Math.PI) * 4 : 0;
         if(kind == Kind.GUILLOTINE) blade.render(0.0625F);
         if(kind == Kind.BULL) hatch.render(0.0625F);
+        if(kind == Kind.HANGING) {
+            hatch.rotateAngleY = 0;
+            hatch.rotateAngleZ = active ? -Math.min(1F, cycle / 12F) * 1.4F : 0;
+            hatch.render(0.0625F);
+        }
         if(kind == Kind.TABLE) injector.render(0.0625F);
         straps.render(0.0625F);
     }

@@ -21,5 +21,7 @@ public final class RestraintRecipes {
         GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.brazen_bull), "BBB", "BFB", "BSB", 'B', "ingotBronze", 'F', Blocks.furnace, 'S', ModItems.plate_steel));
         GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.electric_chair), " WC", "SWS", "SRS", 'W', "plankWood", 'C', ModItems.wire_copper, 'R', Items.redstone, 'S', ModItems.plate_steel));
         GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.injection_table), "WWW", "SCS", "S S", 'W', Blocks.wool, 'S', ModItems.plate_steel, 'C', ModItems.syringe_empty));
+        GameRegistry.addRecipe(new ShapelessOreRecipe(new ItemStack(ModItems.noose), Items.lead, Items.string));
+        GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.hanging_station), "LLL", "L L", "PPP", 'L', "logWood", 'P', "plankWood"));
     }
 }
