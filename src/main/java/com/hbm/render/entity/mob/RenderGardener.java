@@ -3,6 +3,7 @@ package com.hbm.render.entity.mob;
 import com.hbm.entity.mob.gemini.EntityGardener;
 import com.hbm.entity.mob.gemini.GardenerPose;
 import com.hbm.render.model.ModelGardener;
+import com.hbm.render.model.ModelOceanGardener;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.entity.Render;
 import net.minecraft.entity.Entity;
@@ -13,8 +14,9 @@ import org.lwjgl.opengl.GL11;
 
 /** Thick articulated tubes follow the authoritative collision skeleton, including windup and collapse. */
 public final class RenderGardener extends Render {
-    private static final ResourceLocation TEXTURE = new ResourceLocation("hbm:textures/blocks/fleshv2.png");
+    private static final ResourceLocation TEXTURE = new ResourceLocation("hbm:textures/blocks/worm_flesh.png");
     private final ModelGardener model = new ModelGardener();
+    private final ModelGardener oceanModel = new ModelOceanGardener();
     public RenderGardener() { shadowSize = 2F; }
     @Override protected ResourceLocation getEntityTexture(Entity entity) { return TEXTURE; }
     @Override public void doRender(Entity entity, double x, double y, double z, float yaw, float partial) {
@@ -26,7 +28,7 @@ public final class RenderGardener extends Render {
         try {
             GL11.glTranslated(x, y, z);
             bindTexture(TEXTURE); GL11.glDisable(GL11.GL_CULL_FACE);
-            model.renderBody(boss, partial);
+            (boss.isOcean() ? oceanModel : model).renderBody(boss, partial);
             double bx = boss.lastTickPosX + (boss.posX - boss.lastTickPosX) * partial;
             double by = boss.lastTickPosY + (boss.posY - boss.lastTickPosY) * partial;
             double bz = boss.lastTickPosZ + (boss.posZ - boss.lastTickPosZ) * partial;
@@ -34,9 +36,19 @@ public final class RenderGardener extends Render {
             Tessellator tess = Tessellator.instance;
             tess.startDrawingQuads();
             for(int arm = 0; arm < GardenerPose.ARMS; arm++) {
-                tess.setColorOpaque_F(boss.armDisabled(arm) ? 0.35F : 0.66F, 0.23F, 0.22F);
+                tess.setColorOpaque_F(boss.armDisabled(arm) ? 0.15F : 0.27F, 0.20F, 0.17F);
                 for(int segment = 0; segment < GardenerPose.SEGMENTS; segment++)
                     tube(tess, GardenerPose.point(boss, arm, segment, partial), GardenerPose.point(boss, arm, segment + 1, partial), GardenerPose.RADIUS);
+                // Fine forks add the skeletal silhouette without independent decorative entities.
+                Vec3 root = GardenerPose.point(boss, arm, 2, partial), tip = GardenerPose.point(boss, arm, 4, partial);
+                double dx = tip.xCoord - root.xCoord, dz = tip.zCoord - root.zCoord;
+                double length = Math.max(1D, Math.sqrt(dx * dx + dz * dz));
+                for(int fork = -1; fork <= 1; fork += 2) {
+                    Vec3 bend = root.addVector(dx * 0.45D - dz / length * fork * 1.4D,
+                            boss.isOcean() ? -4D : -1.3D, dz * 0.45D + dx / length * fork * 1.4D);
+                    Vec3 end = bend.addVector(dx * 0.25D, boss.isOcean() ? -4.5D : -1.1D, dz * 0.25D);
+                    tube(tess, root, bend, 0.10D); tube(tess, bend, end, 0.055D);
+                }
             }
             tess.draw();
         } finally { GL11.glPopMatrix(); GL11.glPopAttrib(); }

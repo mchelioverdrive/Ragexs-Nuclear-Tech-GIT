@@ -2,56 +2,88 @@ package com.hbm.render.model;
 
 import com.hbm.entity.mob.gemini.EntityGardener;
 import net.minecraft.client.model.ModelBase;
-import net.minecraft.client.model.ModelRenderer;
-import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.client.renderer.OpenGlHelper;
+import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.entity.Entity;
 import org.lwjgl.opengl.GL11;
 
-/** Upright world-space mesh: layered root bulb, lobes and a single swiveling eye. */
-public final class ModelGardener extends ModelBase {
-    private final ModelRenderer bulb, crown, eye, iris, pupil;
-    private final ModelRenderer[] lobes = new ModelRenderer[9];
-    public ModelGardener() {
-        textureWidth = textureHeight = 16;
-        bulb = part(-24, 0, -22, 48, 20, 44);
-        crown = part(-19, 12, -18, 38, 31, 36);
-        eye = part(-12, -10, -12, 24, 20, 18);
-        iris = part(-6, -7, -13, 12, 14, 2);
-        pupil = part(-2, -6, -14, 4, 12, 2);
-        for(int i = 0; i < lobes.length; i++) {
-            lobes[i] = part(-4, -4, -4, 8, 8 + i % 3 * 3, 8);
-            double angle = i * Math.PI * 2 / lobes.length;
-            lobes[i].setRotationPoint((float) Math.cos(angle) * 20, 15 + i % 3 * 5, (float) Math.sin(angle) * 18);
-            lobes[i].rotateAngleZ = (float) Math.cos(angle) * 0.45F;
-        }
-    }
-    private ModelRenderer part(float x, float y, float z, int w, int h, int d) {
-        ModelRenderer part = new ModelRenderer(this, 0, 0); part.addBox(x, y, z, w, h, d); return part;
-    }
+/** Ring-built organic carapace and a circular, full-bright eye; no cuboid torso or eye. */
+public class ModelGardener extends ModelBase {
+    private static final double[][] BODY = {{0.8, 0.7}, {2.6, 2.4}, {3.8, 3.0}, {4.7, 2.8}, {5.5, 1.9}, {6.6, 1.25}, {7.6, 0.15}};
+    protected double[][] rings() { return BODY; }
+    protected double depth() { return 0.72D; }
+    protected double eyeHeight() { return 6.8D; }
+    protected double eyeRadius() { return 0.95D; }
     public void renderBody(EntityGardener boss, float partial) {
-        float age = boss.isAwake() ? boss.ticksExisted + partial : 0;
-        GL11.glColor4f(0.58F, 0.26F, 0.24F, 1);
-        bulb.render(0.0625F); crown.render(0.0625F);
-        for(int i = 0; i < lobes.length; i++) {
-            lobes[i].rotateAngleX = (float) Math.sin(age * 0.045D + i) * 0.12F;
-            lobes[i].render(0.0625F);
+        GL11.glPushMatrix();
+        GL11.glTranslated(0, boss.bodyShift(partial), 0);
+        double[][] rings = rings();
+        Tessellator tess = Tessellator.instance;
+        tess.startDrawingQuads();
+        for(int row = 0; row < rings.length - 1; row++) for(int side = 0; side < 16; side++) {
+            double angle = side * Math.PI / 8D, next = (side + 1) * Math.PI / 8D;
+            float tone = 0.72F + (float) Math.sin(side * 2.8D + row * 3.1D) * 0.12F;
+            tess.setColorOpaque_F(0.29F * tone, 0.22F * tone, 0.19F * tone);
+            bodyVertex(tess, rings, row, angle, side / 4D);
+            bodyVertex(tess, rings, row + 1, angle, side / 4D);
+            bodyVertex(tess, rings, row + 1, next, (side + 1) / 4D);
+            bodyVertex(tess, rings, row, next, (side + 1) / 4D);
         }
-        EntityLivingBase target = boss.eyeTarget();
-        double yaw = Math.sin(age * 0.012D) * 0.3D, pitch = 0D;
+        tess.draw();
+        renderEye(boss, partial);
+        GL11.glPopMatrix();
+    }
+    private void bodyVertex(Tessellator tess, double[][] rings, int row, double angle, double u) {
+        double fold = 1D + Math.sin(angle * 5D + row * 1.4D) * 0.085D;
+        tess.setNormal((float) Math.cos(angle), 0.2F, (float) Math.sin(angle));
+        tess.addVertexWithUV(Math.cos(angle) * rings[row][1] * fold,
+                rings[row][0], Math.sin(angle) * rings[row][1] * depth() * fold, u, row * 0.65D);
+    }
+    private void renderEye(EntityGardener boss, float partial) {
+        Entity target = boss.eyeTarget();
+        double age = boss.isAwake() ? boss.worldObj.getTotalWorldTime() + partial : 0;
+        double yaw = Math.sin(age * 0.009D) * 0.6D, pitch = 0;
         if(target != null) {
-            double dx = target.posX - boss.posX, dz = target.posZ - boss.posZ;
-            double dy = target.posY + target.getEyeHeight() - boss.posY - 2.75D;
+            double dx = target.lastTickPosX + (target.posX - target.lastTickPosX) * partial
+                    - boss.lastTickPosX - (boss.posX - boss.lastTickPosX) * partial;
+            double dz = target.lastTickPosZ + (target.posZ - target.lastTickPosZ) * partial
+                    - boss.lastTickPosZ - (boss.posZ - boss.lastTickPosZ) * partial;
+            double dy = target.lastTickPosY + (target.posY - target.lastTickPosY) * partial + target.height * 0.7D
+                    - boss.lastTickPosY - (boss.posY - boss.lastTickPosY) * partial - eyeHeight();
             yaw = Math.atan2(-dx, -dz);
             pitch = Math.atan2(dy, Math.sqrt(dx * dx + dz * dz));
         }
+        float lightX = OpenGlHelper.lastBrightnessX, lightY = OpenGlHelper.lastBrightnessY;
+        GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT | GL11.GL_CURRENT_BIT | GL11.GL_LIGHTING_BIT);
         GL11.glPushMatrix();
-        GL11.glTranslated(0, 2.75D, 0);
-        GL11.glRotated(Math.toDegrees(yaw), 0, 1, 0);
-        GL11.glRotated(Math.toDegrees(pitch), 1, 0, 0);
-        GL11.glDisable(GL11.GL_TEXTURE_2D);
-        GL11.glColor4f(0.88F, 0.84F, 0.63F, 1); eye.render(0.0625F);
-        GL11.glColor4f(0.57F, 0.38F, 0.12F, 1); iris.render(0.0625F);
-        GL11.glColor4f(0.025F, 0.015F, 0.015F, 1); pupil.render(0.0625F);
-        GL11.glEnable(GL11.GL_TEXTURE_2D);
-        GL11.glPopMatrix();
+        try {
+            GL11.glTranslated(0, eyeHeight(), 0);
+            GL11.glRotated(Math.toDegrees(yaw), 0, 1, 0);
+            GL11.glRotated(Math.toDegrees(pitch), 1, 0, 0);
+            GL11.glTranslated(0, 0, -eyeRadius() - 0.35D);
+            GL11.glDisable(GL11.GL_TEXTURE_2D); GL11.glDisable(GL11.GL_LIGHTING);
+            GL11.glShadeModel(GL11.GL_SMOOTH);
+            OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240, 240);
+            disc(eyeRadius(), false);
+            GL11.glEnable(GL11.GL_BLEND); GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE);
+            GL11.glDisable(GL11.GL_ALPHA_TEST);
+            GL11.glDepthMask(false);
+            GL11.glTranslated(0, 0, -0.015D);
+            disc(eyeRadius() * 2.2D, true);
+        } finally {
+            OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, lightX, lightY);
+            GL11.glPopMatrix(); GL11.glPopAttrib();
+        }
+    }
+    private static void disc(double radius, boolean halo) {
+        GL11.glBegin(GL11.GL_TRIANGLE_FAN);
+        GL11.glColor4f(1F, 0.98F, 0.76F, halo ? 0.3F : 1F);
+        GL11.glVertex3d(0, 0, halo ? 0 : -0.15D);
+        GL11.glColor4f(1F, 0.78F, 0.28F, halo ? 0F : 1F);
+        for(int side = 0; side <= 48; side++) {
+            double angle = side * Math.PI / 24D;
+            GL11.glVertex3d(Math.cos(angle) * radius, Math.sin(angle) * radius, 0);
+        }
+        GL11.glEnd();
     }
 }

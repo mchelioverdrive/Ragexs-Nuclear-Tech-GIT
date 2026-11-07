@@ -10,6 +10,7 @@ import java.util.UUID;
 import com.hbm.blocks.ModBlocks;
 import com.hbm.config.GeminiConfig;
 import com.hbm.entity.mob.gemini.EntityGardener;
+import com.hbm.entity.mob.gemini.EntityOceanGardener;
 import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
@@ -39,7 +40,7 @@ import net.minecraftforge.event.world.BlockEvent;
 /** Post-unlock cave colonization, independent of and additive to the existing world generator. */
 public final class GardenerNests extends WorldSavedData {
     private static final String NAME = "GeminiGardenerNests";
-    private static final int WIDTH = 19, HEIGHT = 11, VOLUME = WIDTH * WIDTH * HEIGHT;
+    private static final int WIDTH = 29, HEIGHT = 15, VOLUME = WIDTH * WIDTH * HEIGHT;
     private static final Set<String> STRUCTURES = new LinkedHashSet<String>(Arrays.asList(
             "Mineshaft", "Stronghold", "Village", "Temple", "NTMFeatures", "RTMLegacyStructures"));
     private static boolean structureLimitExceeded;
@@ -110,11 +111,11 @@ public final class GardenerNests extends WorldSavedData {
         }
         @SubscribeEvent(priority = EventPriority.LOWEST)
         public void join(EntityJoinWorldEvent event) {
-            if(!event.world.isRemote && event.entity instanceof EntityGardener) {
+            if(!event.world.isRemote && event.entity instanceof EntityGardener && !(event.entity instanceof EntityOceanGardener)) {
                 EntityGardener boss = (EntityGardener) event.entity;
                 // Natural bosses retain progression/caps; manually initialized creatures are independent.
-                if(!boss.addedToChunk && !GeminiSpawning.manualAdmission(boss) && (!active(event.world) || !GeminiPopulation.canAdmit(event.world,
-                        EntityGardener.class, boss, GeminiConfig.gardenerMaxLoaded))) event.setCanceled(true);
+                if(!boss.addedToChunk && ((!GeminiSpawning.manualAdmission(boss) && (!active(event.world) || !GeminiPopulation.canAdmit(event.world,
+                        EntityGardener.class, boss, GeminiConfig.gardenerMaxLoaded))) || !boss.hasSpawnSpace())) event.setCanceled(true);
             }
         }
         @SubscribeEvent
@@ -136,9 +137,9 @@ public final class GardenerNests extends WorldSavedData {
             if(nest.phase == 0 && nest.cursor == 0 && overlapsStructure(world, nest)) { it.remove(); markDirty(); return; }
             for(int work = 0; work < 32 && nest.phase < 2; work++) {
                 int index = nest.cursor;
-                int dx = index % WIDTH - 9, dz = index / WIDTH % WIDTH - 9, dy = index / (WIDTH * WIDTH) - 2;
+                int dx = index % WIDTH - 14, dz = index / WIDTH % WIDTH - 14, dy = index / (WIDTH * WIDTH) - 2;
                 int x = nest.x + dx, y = nest.y + dy, z = nest.z + dz;
-                if(!safe(world, x, y, z, nest.phase == 1)) {
+                if(!safe(world, x, y, z, true)) {
                     if(nest.phase == 0) it.remove(); else nest.phase = 4;
                     markDirty(); return;
                 }
@@ -172,7 +173,7 @@ public final class GardenerNests extends WorldSavedData {
             int radius = 28 + world.rand.nextInt(29);
             int x = MathHelper.floor_double(player.posX + Math.cos(angle) * radius);
             int z = MathHelper.floor_double(player.posZ + Math.sin(angle) * radius);
-            if(!loaded(world, AxisAlignedBB.getBoundingBox(x - 11, 0, z - 11, x + 12, 64, z + 12)) || tooClose(x, z)) continue;
+            if(!loaded(world, AxisAlignedBB.getBoundingBox(x - 17, 0, z - 17, x + 18, 64, z + 18)) || tooClose(x, z)) continue;
             for(int y = 42; y >= 12; y--) {
                 if(world.getBlock(x, y, z) != Blocks.air || !natural(world.getBlock(x, y - 1, z))
                         || !world.getBlock(x, y - 1, z).getMaterial().blocksMovement()
@@ -192,20 +193,20 @@ public final class GardenerNests extends WorldSavedData {
     }
     private static Block desired(int dx, int dy, int dz) {
         int radius = dx * dx + dz * dz;
-        if(dy == -1 && radius <= 64) return ModBlocks.gardener_flesh;
+        if(dy == -1 && radius <= 196) return ModBlocks.gardener_flesh;
         // Six radial runs of infectious growth lead out across the organic floor.
         double angle = Math.atan2(dz, dx);
-        if(dy == 0 && radius >= 16 && radius <= 60
+        if(dy == 0 && radius >= 25 && radius <= 180
                 && (Math.abs(Math.sin(angle * 3D)) < 0.32D || (dx * 3 + dz * 5) % 13 == 0)) return ModBlocks.mockery_growth;
-        if(dy >= 0 && dy <= 6 && radius <= 64 - dy * dy) return Blocks.air;
-        if(dy >= 1 && dy <= 7 && radius > 64 - dy * dy && radius <= 76 - dy * dy
+        if(dy >= 0 && dy <= 11 && radius <= 196 - dy * dy) return Blocks.air;
+        if(dy >= 1 && dy <= 12 && radius > 196 - dy * dy && radius <= 211 - dy * dy
                 && ((dx + dz) & 1) == 0) return ModBlocks.gardener_flesh;
         return null;
     }
     /** Registered vanilla and NTM starts protect their full saved bounds, even when not presently populated. */
     private static boolean overlapsStructure(World world, Nest nest) {
         if(structureLimitExceeded) return true;
-        StructureBoundingBox area = new StructureBoundingBox(nest.x - 11, nest.y - 3, nest.z - 11, nest.x + 11, nest.y + 10, nest.z + 11);
+        StructureBoundingBox area = new StructureBoundingBox(nest.x - 16, nest.y - 3, nest.z - 16, nest.x + 16, nest.y + 14, nest.z + 16);
         int examined = 0;
         for(String name : STRUCTURES) {
             MapGenStructureData structures = (MapGenStructureData) world.perWorldStorage.loadData(MapGenStructureData.class, name);
@@ -226,7 +227,7 @@ public final class GardenerNests extends WorldSavedData {
         if(!world.getEntitiesWithinAABB(EntityPlayer.class, nest.bounds()).isEmpty()) return;
         EntityGardener boss = new EntityGardener(world);
         boss.setNestIdentity(nest.boss); boss.anchor(nest.x + 0.5D, nest.y, nest.z + 0.5D);
-        if(world.getCollidingBoundingBoxes(boss, boss.boundingBox).isEmpty() && !world.isAnyLiquid(boss.boundingBox)
+        if(boss.hasSpawnSpace()
                 && world.spawnEntityInWorld(boss)) nest.phase = 3;
         else if(++nest.retries >= 12) nest.phase = 4;
     }
@@ -235,7 +236,7 @@ public final class GardenerNests extends WorldSavedData {
         UUID boss = UUID.randomUUID();
         int phase, cursor, retries; // validate, build, spawn, complete, abandoned
         Nest(int x, int y, int z) { this.x = x; this.y = y; this.z = z; }
-        AxisAlignedBB bounds() { return AxisAlignedBB.getBoundingBox(x - 9, y - 2, z - 9, x + 10, y + 9, z + 10); }
+        AxisAlignedBB bounds() { return AxisAlignedBB.getBoundingBox(x - 14, y - 2, z - 14, x + 15, y + 13, z + 15); }
     }
     @Override public void readFromNBT(NBTTagCompound nbt) {
         nests.clear(); searchTicks = MathHelper.clamp_int(nbt.getInteger("SearchTicks"), 1, 1200);
@@ -247,6 +248,8 @@ public final class GardenerNests extends WorldSavedData {
             nest.phase = MathHelper.clamp_int(tag.getInteger("Phase"), 0, 4);
             nest.cursor = MathHelper.clamp_int(tag.getInteger("Cursor"), 0, VOLUME - 1);
             nest.retries = MathHelper.clamp_int(tag.getInteger("Retries"), 0, 12);
+            // Restart unfinished legacy jobs through full expanded validation; never respawn completed bosses.
+            if(tag.getInteger("Layout") < 2 && nest.phase < 3) { nest.phase = 0; nest.cursor = 0; nest.retries = 0; }
             try { nest.boss = UUID.fromString(tag.getString("Boss")); } catch(IllegalArgumentException ignored) { }
             nests.add(nest);
         }
@@ -258,6 +261,7 @@ public final class GardenerNests extends WorldSavedData {
             NBTTagCompound tag = new NBTTagCompound();
             tag.setInteger("X", nest.x); tag.setInteger("Y", nest.y); tag.setInteger("Z", nest.z);
             tag.setInteger("Phase", nest.phase); tag.setInteger("Cursor", nest.cursor); tag.setInteger("Retries", nest.retries);
+            tag.setInteger("Layout", 2);
             tag.setString("Boss", nest.boss.toString()); list.appendTag(tag);
         }
         nbt.setTag("Nests", list);

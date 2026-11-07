@@ -35,6 +35,8 @@ public final class GeminiConfig {
 	public static int gardenerNestLimit = 32;
 	public static int gardenerSupportLimit = 4;
 	public static int gardenerBlocksPerSlam = 12;
+	public static boolean oceanGardenerEnabled = true;
+	public static int oceanGardenerMaxLoaded = 1, oceanGardenerChance = 32;
 	public static boolean wretchEnabled = true;
 	public static float wretchHealth = 900F;
 	public static int wretchCampChance = 256;
@@ -118,6 +120,13 @@ public final class GeminiConfig {
 				"Lifetime successful sterile Nature's Mockery summons per Gardener. Also respects Mockery and disease admission settings.");
 		gardenerBlocksPerSlam = config.getInt("blocksPerSlam", gardener, 12, 0, 32,
 				"Maximum natural/tissue block removals per major slam inside the nest. Four coordinates per tick; respects mobGriefing and protection events.");
+		String ocean = CATEGORY + ".oceanGardener";
+		oceanGardenerEnabled = config.getBoolean("enabled", ocean, true,
+				"Enable rare phase-3 Ocean Gardeners in loaded deep Overworld oceans after Mars. Saved residents remain dormant when disabled.");
+		oceanGardenerMaxLoaded = config.getInt("maxLoaded", ocean, 1, 0, 16,
+				"Loaded natural Ocean Gardener cap, separate from underground Gardeners. Manual eggs bypass caps after Mars; saved residents remain.");
+		oceanGardenerChance = config.getInt("encounterChance", ocean, 32, 1, 10000,
+				"One-in-N roll per active minute before phase probability and four loaded deep-water probes. Territories stay 512 blocks apart, with 128 lifetime reservations.");
 		deepRootEnabled = config.getBoolean("enabled", disease, true,
 				"Enable Deep Root Disease from phase 2 in the Overworld. Disabling pauses saved progress and removes its symptoms; no offline or unloaded catch-up.");
 		String[] stages = {"exposure", "roots", "contraction", "bulbs", "sprouts"};

@@ -324,12 +324,14 @@ public class EntityMappings {
 		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityNaturesMockery.class, "natures_mockery", id++, MainRegistry.instance, 96, 2, true);
 
 		registerGeminiEgg(com.hbm.entity.mob.gemini.EntityGardener.class, "gardener", 0x59332E, 0xD7C584);
-		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityGardener.class, "gardener", id++, MainRegistry.instance, 96, 2, true);
-		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityGardenerTentacle.class, "gardener_tentacle", id++, MainRegistry.instance, 96, 2, false);
+		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityGardener.class, "gardener", id++, MainRegistry.instance, 192, 2, true);
+		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityGardenerTentacle.class, "gardener_tentacle", id++, MainRegistry.instance, 192, 2, false);
 		registerGeminiEgg(com.hbm.entity.mob.gemini.EntityWretch.class, "wretch", 0x49372D, 0xB86B63);
 		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityWretch.class, "wretch", id++, MainRegistry.instance, 128, 2, true);
 		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityWretchPart.class, "wretch_part", id++, MainRegistry.instance, 128, 2, false);
 		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityWoodcrawlerCocoon.class, "woodcrawler_cocoon", id++, MainRegistry.instance, 96, 20, false);
+		registerGeminiEgg(com.hbm.entity.mob.gemini.EntityOceanGardener.class, "ocean_gardener", 0x161C20, 0xF6E7A0);
+		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityOceanGardener.class, "ocean_gardener", id++, MainRegistry.instance, 192, 2, true);
 	}
 
 	private static void registerGeminiEgg(Class<? extends Entity> clazz, String name, int color1, int color2) {

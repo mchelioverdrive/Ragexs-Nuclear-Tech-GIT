@@ -27,13 +27,15 @@ public final class EntityGardenerTentacle extends Entity {
         EntityGardener boss = owner();
         if(boss == null) return;
         AxisAlignedBB box = boss.segmentBox(slot());
-        setPosition((box.minX + box.maxX) * 0.5D, box.minY, (box.minZ + box.maxZ) * 0.5D);
+        // Index tall hanging segments by their center rather than their distant lower endpoint.
+        setPosition((box.minX + box.maxX) * 0.5D, (box.minY + box.maxY) * 0.5D, (box.minZ + box.maxZ) * 0.5D);
         boundingBox.setBounds(box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ);
     }
     @Override public void onUpdate() {
         super.onUpdate();
         EntityGardener boss = owner();
-        if(boss == null || !boss.isEntityAlive() || !boss.addedToChunk || !GardenerNests.loaded(worldObj, boundingBox.expand(1, 0, 1))) {
+        if(boss == null || !boss.isEntityAlive() || !boss.addedToChunk || worldObj.getEntityByID(boss.getEntityId()) != boss
+                || !GardenerNests.loaded(worldObj, boundingBox.expand(1, 0, 1))) {
             if(!worldObj.isRemote || ticksExisted > 100) setDead();
             return;
         }

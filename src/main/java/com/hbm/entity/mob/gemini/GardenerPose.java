@@ -9,35 +9,47 @@ public final class GardenerPose {
     public static final double RADIUS = 0.28D;
     private GardenerPose() { }
 
+    private static final double[] RADIAL = {2.9, 5.8, 8.8, 10.5, 13.2};
+    private static final double[] HEIGHT = {4.3, 8.8, 7.6, 2.7, 0.35};
+    private static final double[] ANGLE = {0.15, 1.10, 2.25, 3.28, 4.24, 5.43};
+
     public static Vec3 point(EntityGardener boss, int arm, int joint, float partial) {
-        double t = joint / (double) SEGMENTS;
-        double angle = arm * Math.PI * 2D / ARMS;
+        if(boss.isOcean()) return OceanGardenerPose.point(boss, arm, joint, partial);
+        double t = joint / (double) SEGMENTS, angle = ANGLE[arm];
         double age = boss.isAwake() ? boss.worldObj.getTotalWorldTime() + partial : 0;
-        double sx = Math.cos(angle) * 1.45D, sz = Math.sin(angle) * 1.45D;
-        double ex = Math.cos(angle) * 5.2D, ez = Math.sin(angle) * 5.2D;
-        double ey = 0.5D + Math.sin(age * 0.045D + arm) * 0.15D;
-        double arch = 0.6D;
+        double cycle = age * 0.075D + arm * Math.PI + (arm / 2) * 0.8D;
+        double stride = Math.sin(cycle) * boss.crawlAmount(partial);
+        double radius = RADIAL[joint] * (1D + (arm % 3 - 1) * 0.035D);
+        double x = Math.cos(angle) * radius, z = Math.sin(angle) * radius;
+        double y = HEIGHT[joint] + boss.bodyShift(partial) * (1D - t);
+        x -= Math.sin(angle) * stride * t * 0.7D;
+        z += Math.cos(angle) * stride * t * 0.7D;
+        y += Math.max(0, Math.cos(cycle)) * boss.crawlAmount(partial) * t * 0.8D;
+        double sway = Math.sin(age * 0.025D + arm * 1.7D - joint * 0.8D) * 0.18D * t;
+        x += Math.sin(angle) * sway; z -= Math.cos(angle) * sway;
         if(arm == boss.attackArm() && boss.state() != EntityGardener.IDLE) {
             double time = boss.stateTime(partial);
-            double blend = boss.state() == EntityGardener.REACH ? Math.min(1D, time / 24D) : 1D;
-            ex += (boss.aimX() - ex) * blend;
-            ez += (boss.aimZ() - ez) * blend;
-            ey += (boss.aimY() - ey) * blend;
-            if(boss.state() == EntityGardener.SLAM) {
-                // Wind up for a second, then drive the tip into the sampled floor.
-                ey += Math.sin(Math.min(1D, time / 26D) * Math.PI) * 3D;
-                arch = 1.5D;
+            double blend = boss.state() == EntityGardener.REACH ? Math.min(1D, time / 24D)
+                    : boss.state() == EntityGardener.RECOVER ? Math.max(0D, 1D - time / 24D) : 1D;
+            double bend = t * t * blend;
+            Vec3 aim = boss.limbAim(partial);
+            x += (aim.xCoord - Math.cos(angle) * RADIAL[4]) * bend;
+            z += (aim.zCoord - Math.sin(angle) * RADIAL[4]) * bend;
+            y += (aim.yCoord - HEIGHT[4]) * bend;
+            if(joint == SEGMENTS) {
+                // Remove idle/gait offsets at full extension so the visible tip meets the real captive.
+                x = x * (1D - blend) + aim.xCoord * blend;
+                y = y * (1D - blend) + aim.yCoord * blend;
+                z = z * (1D - blend) + aim.zCoord * blend;
             }
+            if(boss.state() == EntityGardener.SLAM)
+                y += Math.sin(Math.min(1D, time / 26D) * Math.PI) * 4D * t;
         }
-        if(boss.armDisabled(arm)) { ex = sx * 1.3D; ez = sz * 1.3D; ey = 0.25D; arch = 0.1D; }
-        double bend = Math.sin(t * Math.PI);
-        double sway = Math.sin(age * 0.055D + arm * 1.7D + t * 4D) * 0.16D * bend;
-        double x = boss.lastTickPosX + (boss.posX - boss.lastTickPosX) * partial;
-        double y = boss.lastTickPosY + (boss.posY - boss.lastTickPosY) * partial;
-        double z = boss.lastTickPosZ + (boss.posZ - boss.lastTickPosZ) * partial;
-        return Vec3.createVectorHelper(x + sx + (ex - sx) * t - Math.sin(angle) * sway,
-                y + 1.7D * (1D - t) + ey * t + bend * arch,
-                z + sz + (ez - sz) * t + Math.cos(angle) * sway);
+        if(boss.armDisabled(arm)) { x *= 1D - 0.55D * t; z *= 1D - 0.55D * t; y = 4.3D * (1D - t) + 0.3D; }
+        double bx = boss.lastTickPosX + (boss.posX - boss.lastTickPosX) * partial;
+        double by = boss.lastTickPosY + (boss.posY - boss.lastTickPosY) * partial;
+        double bz = boss.lastTickPosZ + (boss.posZ - boss.lastTickPosZ) * partial;
+        return Vec3.createVectorHelper(bx + x, by + y, bz + z);
     }
 
     public static AxisAlignedBB bounds(Vec3 a, Vec3 b, double radius) {

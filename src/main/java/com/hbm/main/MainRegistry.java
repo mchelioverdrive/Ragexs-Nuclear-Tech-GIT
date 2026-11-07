@@ -1085,6 +1085,9 @@ public class MainRegistry {
 		MinecraftForge.EVENT_BUS.register(gardenerEvents);
 		MinecraftForge.TERRAIN_GEN_BUS.register(gardenerEvents);
 		FMLCommonHandler.instance().bus().register(gardenerEvents);
+		com.hbm.world.gemini.OceanGardenerSpawning.Events oceanGardenerEvents = new com.hbm.world.gemini.OceanGardenerSpawning.Events();
+		MinecraftForge.EVENT_BUS.register(oceanGardenerEvents);
+		FMLCommonHandler.instance().bus().register(oceanGardenerEvents);
 		com.hbm.world.gemini.WretchCamps.Events wretchEvents = new com.hbm.world.gemini.WretchCamps.Events();
 		MinecraftForge.EVENT_BUS.register(wretchEvents);
 		FMLCommonHandler.instance().bus().register(wretchEvents);

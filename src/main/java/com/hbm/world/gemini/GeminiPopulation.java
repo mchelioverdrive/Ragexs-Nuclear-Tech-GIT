@@ -42,7 +42,7 @@ public final class GeminiPopulation {
         for(EntityLiving mob : members.values()) {
             if(mob == candidate || mob.isDead || mob.worldObj != world) continue;
             // Newly admitted entities count immediately, before spawnEntityInWorld adds them to a chunk.
-            if(++total >= GeminiConfig.maxLoadedCreatures || type.isInstance(mob) && ++same >= limit) return false;
+            if(++total >= GeminiConfig.maxLoadedCreatures || (type == EntityGardener.class ? mob.getClass() == type : type.isInstance(mob)) && ++same >= limit) return false;
         }
         return true;
     }
@@ -51,6 +51,7 @@ public final class GeminiPopulation {
         if(mob instanceof EntityWoodcrawler) return GeminiConfig.woodcrawlerMaxLoaded;
         if(mob instanceof EntityFakePerson) return GeminiConfig.fakePersonMaxLoaded;
         if(mob instanceof EntityNaturesMockery) return GeminiConfig.mockeryMaxActive;
+        if(mob instanceof EntityOceanGardener) return GeminiConfig.oceanGardenerMaxLoaded;
         if(mob instanceof EntityGardener) return GeminiConfig.gardenerMaxLoaded;
         if(mob instanceof EntityWretch) return GeminiConfig.wretchMaxLoaded;
         return 0;

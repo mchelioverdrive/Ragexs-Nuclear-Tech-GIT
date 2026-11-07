@@ -900,6 +900,7 @@ public class ClientProxy extends ServerProxy {
 		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.mob.gemini.EntityFakePerson.class, new com.hbm.render.entity.mob.RenderFakePerson());
 		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.mob.gemini.EntityNaturesMockery.class, new com.hbm.render.entity.mob.RenderNaturesMockery());
 		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.mob.gemini.EntityGardener.class, new com.hbm.render.entity.mob.RenderGardener());
+		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.mob.gemini.EntityOceanGardener.class, new com.hbm.render.entity.mob.RenderGardener());
 		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.mob.gemini.EntityGardenerTentacle.class, new RenderEmpty());
 		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.mob.gemini.EntityWretch.class, new com.hbm.render.entity.mob.RenderWretch());
 		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.mob.gemini.EntityWretchPart.class, new RenderEmpty());
