@@ -3,6 +3,8 @@ package com.hbm.render.entity.mob;
 import com.hbm.entity.mob.gemini.EntityWretch;
 import com.hbm.render.model.ModelWretch;
 import net.minecraft.client.renderer.entity.Render;
+import net.minecraft.client.renderer.entity.RenderManager;
+import net.minecraft.client.renderer.culling.Frustrum;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.boss.BossStatus;
 import net.minecraft.util.MathHelper;
@@ -13,11 +15,14 @@ import org.lwjgl.opengl.GL12;
 public final class RenderWretch extends Render {
     private static final ResourceLocation TEXTURE = new ResourceLocation("hbm:textures/blocks/fleshv2.png");
     private final ModelWretch model = new ModelWretch();
-    public RenderWretch() { shadowSize = 2.2F; }
+    private final Frustrum frustum = new Frustrum();
+    public RenderWretch() { shadowSize = 2.6F; }
     @Override protected ResourceLocation getEntityTexture(Entity entity) { return TEXTURE; }
     @Override public void doRender(Entity entity, double x, double y, double z, float yaw, float partial) {
         EntityWretch boss = (EntityWretch) entity;
         if(boss.isInvisible()) return;
+        frustum.setPosition(RenderManager.renderPosX, RenderManager.renderPosY, RenderManager.renderPosZ);
+        if(!frustum.isBoundingBoxInFrustum(boss.visualBounds())) return;
         if(boss.isEntityAlive() && boss.isAwake()) BossStatus.setBossStatus(boss, true);
         GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_CURRENT_BIT | GL11.GL_TEXTURE_BIT | GL11.GL_LIGHTING_BIT);
         GL11.glPushMatrix();

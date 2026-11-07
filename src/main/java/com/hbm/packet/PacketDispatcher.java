@@ -102,6 +102,7 @@ public class PacketDispatcher {
 		wrapper.registerMessage(WitherStormSoundPacket.Handler.class, WitherStormSoundPacket.class, i++, Side.CLIENT);
 		wrapper.registerMessage(RestraintPacket.Handler.class, RestraintPacket.class, i++, Side.CLIENT);
 		wrapper.registerMessage(DeepRootVisualPacket.Handler.class, DeepRootVisualPacket.class, i++, Side.CLIENT);
+		wrapper.registerMessage(WretchAnatomyPacket.Handler.class, WretchAnatomyPacket.class, i++, Side.CLIENT);
 	}
 	
 }

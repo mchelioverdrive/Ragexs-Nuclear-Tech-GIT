@@ -57,6 +57,7 @@ public final class MockerySpawning {
     /** Spawn first: canceled/obstructed conversions leave the original host and its infection intact. */
     public static boolean convert(EntityLivingBase host) {
         if(host instanceof EntityPlayer || !GeminiInfections.isConversionEligible(host) || !canSpawn(host.worldObj, null)
+                || com.hbm.entity.mob.gemini.EntityWretch.isCaptured(host)
                 || host.ridingEntity != null || host.riddenByEntity != null) return false;
         EntityNaturesMockery mob = new EntityNaturesMockery(host.worldObj);
         mob.setLocationAndAngles(host.posX, host.boundingBox.minY, host.posZ, host.rotationYaw, 0);

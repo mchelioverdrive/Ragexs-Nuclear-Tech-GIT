@@ -7609,3 +7609,4 @@ tile.gardener_flesh.name=Gardener Nest Tissue
 entity.hbm.wretch.name=The Wretch
 entity.wretch.name=The Wretch
 wretch.capture.escape=The Wretch has caught you! Sneak briefly to slip free, or strike its arms to interrupt the grab.
+wretch.capture.released=You slip free of the Wretch's grasp.

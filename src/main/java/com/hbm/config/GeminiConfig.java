@@ -41,6 +41,14 @@ public final class GeminiConfig {
 	public static float wretchHealth = 900F;
 	public static int wretchCampChance = 256;
 	public static boolean wretchTerrainDestruction = true;
+	public static int wretchDetectionRange = 96, wretchHearingRange = 128, wretchTerritoryRadius = 128;
+	public static int wretchMemorySeconds = 120, wretchSearchSeconds = 60, wretchQuietSeconds = 240;
+	public static int wretchStalkMinSeconds = 20, wretchStalkMaxSeconds = 60;
+	public static float wretchWakeThreshold = 12F, wretchStalkSpeed = 0.055F, wretchHuntSpeed = 0.24F, wretchChargeSpeed = 0.48F;
+	public static boolean wretchPlayerStructureDamage = false, wretchGeneratedStructureDamage = true, wretchMultipleNatural = false;
+	public static int wretchNaturalLimit = 4, wretchBlocksPerStrike = 4, wretchBlocksPerTick = 2;
+	public static boolean wretchAssimilation = true, wretchLivestockFeeding = false, wretchHealthAggression = false;
+	public static int wretchVoiceSeconds = 45;
 
 	private GeminiConfig() { }
 
@@ -106,8 +114,31 @@ public final class GeminiConfig {
 		wretchCampChance = config.getInt("campChance", wretch, 256, 0, 100000,
 				"One-in-N chance per newly populated phase-4 forest chunk, before clearing and 512-block spacing checks. Zero disables new camps. No retrogen; at most 256 lifetime camps per world.");
 		wretchTerrainDestruction = config.getBoolean("terrainDestruction", wretch, true,
-				"Allow bounded Wretch slams and pursuit to damage natural terrain inside its camp territory. Respects mobGriefing, claims, tiles and player construction.");
+				"Allow contact-limited, provoked Wretch strikes inside its saved territory. Respects mobGriefing, Forge protection events, tiles and construction permissions, including manual Wretches.");
+		wretchDetectionRange = config.getInt("detectionRange", wretch, 96, 32, 160, "Visual detection radius in blocks. Sight requires a loaded, unobstructed ray; this is not a path-search radius.");
+		wretchHearingRange = config.getInt("hearingRange", wretch, 128, 32, 192, "Maximum disturbance hearing radius. Ordinary movement has a much shorter audible range than explosions.");
+		wretchTerritoryRadius = config.getInt("territoryRadius", wretch, 128, 48, 256, "Patrol/pursuit radius around the saved camp or egg origin. No chunk tickets or forced loading.");
+		wretchMemorySeconds = config.getInt("memorySeconds", wretch, 120, 20, 600, "Loaded seconds to retain a target's last confirmed position. Hidden players are not tracked through walls.");
+		wretchSearchSeconds = config.getInt("searchSeconds", wretch, 60, 10, 300, "Maximum loaded seconds per search without a useful new sighting or disturbance.");
+		wretchQuietSeconds = config.getInt("quietSeconds", wretch, 240, 60, 3600, "Quiet loaded seconds before returning home and sleeping. Disabled activity pauses the controller.");
+		wretchStalkMinSeconds = config.getInt("stalkMinSeconds", wretch, 20, 5, 300, "Minimum unprovoked stalking time before aggression can turn into hunting.");
+		wretchStalkMaxSeconds = config.getInt("stalkMaxSeconds", wretch, 60, 5, 600, "Upper bound for randomized unprovoked stalking intervals; raised to the minimum if necessary.");
+		wretchStalkMaxSeconds = Math.max(wretchStalkMinSeconds, wretchStalkMaxSeconds);
+		wretchWakeThreshold = config.getFloat("wakeThreshold", wretch, 12F, 2F, 100F, "Attention needed to awaken. Nearby groups accumulate attention; combat and explosions contribute more than footsteps.");
+		wretchStalkSpeed = config.getFloat("stalkSpeed", wretch, 0.055F, 0.02F, 0.15F, "Slow stalking speed in blocks per tick before native collision resolution.");
+		wretchHuntSpeed = config.getFloat("huntSpeed", wretch, 0.24F, 0.15F, 0.4F, "Active pursuit speed in blocks per tick, independent of health phases.");
+		wretchChargeSpeed = config.getFloat("chargeSpeed", wretch, 0.48F, 0.3F, 0.7F, "Maximum charge speed in blocks per tick. Acceleration, turning and collision checks still apply.");
+		wretchPlayerStructureDamage = config.getBoolean("playerStructureDamage", wretch, false, "Explicit permission to damage player construction. False protects recorded placement columns and unclassified constructed blocks; claims and tiles are always protected.");
+		wretchGeneratedStructureDamage = config.getBoolean("generatedStructureDamage", wretch, true, "Permit suitable constructed blocks inside verified vanilla village building components, unless player placements or claims protect them. Unknown/legacy construction remains protected by default.");
+		wretchBlocksPerStrike = config.getInt("blocksPerStrike", wretch, 4, 0, 16, "Maximum removals per animated strike. Zero disables structural removal.");
+		wretchBlocksPerTick = config.getInt("blocksPerTick", wretch, 2, 1, 4, "Maximum block removals per Wretch per tick; candidate examination is separately bounded.");
+		wretchMultipleNatural = config.getBoolean("multipleNaturalWretches", wretch, false, "Gameplay option, not confirmed lore: permit more than one lifetime natural boss in this world. Existing saved encounters are never deleted.");
+		wretchNaturalLimit = config.getInt("naturalWretchLimit", wretch, 4, 1, 16, "Lifetime natural encounter limit when multipleNaturalWretches is enabled. Otherwise one. Defeated encounters consume a reservation, preventing replacement respawns; eggs bypass this limit.");
 		String gardener = CATEGORY + ".gardener";
+		wretchAssimilation = config.getBoolean("assimilation", wretch, true, "Allow interruptible humanoid assimilation. Successful kills use native death/drop rules; completed visual remains are bounded and saved. Disabled captures retain the legacy throw outcome.");
+		wretchLivestockFeeding = config.getBoolean("livestockFeeding", wretch, false, "Optional noncanonical livestock feeding/healing. Never interrupts a human encounter; named, juvenile, leashed, breeding and saddled animals remain protected.");
+		wretchHealthAggression = config.getBoolean("healthBasedAggression", wretch, false, "Optional gameplay aggression/damage modifiers at 65% and 30% health. The mature appearance does not transform; disturbances and hunting drive behavior regardless.");
+		wretchVoiceSeconds = config.getInt("ambientVoiceSeconds", wretch, 45, 0, 600, "Minimum seconds between rare distorted human-like ambient vocalizations, randomized up to three times this interval. Zero disables ambient voices, not action sounds. No claim about individual victims' agency.");
 		gardenerEnabled = config.getBoolean("enabled", gardener, true,
 				"Enable natural underground Gardeners and incremental cave nests in phase 3. Disabled saved natural bosses remain dormant; manual spawn eggs bypass this setting.");
 		gardenerMaxLoaded = config.getInt("maxLoaded", gardener, 2, 0, 16,
