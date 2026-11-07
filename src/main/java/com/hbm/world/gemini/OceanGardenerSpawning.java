@@ -54,9 +54,9 @@ public final class OceanGardenerSpawning extends WorldSavedData {
         public void join(EntityJoinWorldEvent event) {
             if(event.world.isRemote || !(event.entity instanceof EntityOceanGardener) || event.entity.addedToChunk) return;
             EntityOceanGardener boss = (EntityOceanGardener) event.entity;
-            if((!GeminiSpawning.manualAdmission(boss) && (!active(event.world)
-                    || !GeminiPopulation.canAdmit(event.world, EntityOceanGardener.class, boss, GeminiConfig.oceanGardenerMaxLoaded)))
-                    || !space(boss)) event.setCanceled(true);
+            if(!GeminiSpawning.manualAdmission(boss) && (!active(event.world)
+                    || !GeminiPopulation.canAdmit(event.world, EntityOceanGardener.class, boss, GeminiConfig.oceanGardenerMaxLoaded)
+                    || !space(boss))) event.setCanceled(true);
         }
         @SubscribeEvent
         public void tick(TickEvent.WorldTickEvent event) {
