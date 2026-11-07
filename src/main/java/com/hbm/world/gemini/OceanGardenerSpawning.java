@@ -40,8 +40,8 @@ public final class OceanGardenerSpawning extends WorldSavedData {
     }
     public static boolean space(EntityOceanGardener boss) {
         World world = boss.worldObj;
-        AxisAlignedBB envelope = AxisAlignedBB.getBoundingBox(boss.posX - 11, boss.posY - 26, boss.posZ - 11,
-                boss.posX + 11, boss.posY + 6, boss.posZ + 11);
+        AxisAlignedBB envelope = AxisAlignedBB.getBoundingBox(boss.posX - 11, boss.posY, boss.posZ - 11,
+                boss.posX + 11, boss.posY + boss.height, boss.posZ + 11);
         if(envelope.minY < 2 || envelope.maxY > 254 || !GardenerNests.loaded(world, envelope.expand(2, 0, 2))) return false;
         for(int x = MathHelper.floor_double(envelope.minX); x <= MathHelper.floor_double(envelope.maxX); x++)
             for(int z = MathHelper.floor_double(envelope.minZ); z <= MathHelper.floor_double(envelope.maxZ); z++)
@@ -81,8 +81,8 @@ public final class OceanGardenerSpawning extends WorldSavedData {
                 int floor = seabed(world, x, z);
                 if(floor < 0) continue;
                 EntityOceanGardener boss = new EntityOceanGardener(world);
-                boss.anchor(x + 0.5D, floor + 26D, z + 0.5D);
-                if(!space(boss) || world.getClosestPlayer(boss.posX, boss.posY, boss.posZ, 28) != null) continue;
+                boss.anchor(x + 0.5D, floor, z + 0.5D);
+                if(!space(boss) || world.getClosestPlayer(boss.posX, boss.posY + boss.bodyOffset(), boss.posZ, 28) != null) continue;
                 if(world.spawnEntityInWorld(boss)) {
                     data.territories.add(new int[] {x, z}); data.markDirty(); return;
                 }

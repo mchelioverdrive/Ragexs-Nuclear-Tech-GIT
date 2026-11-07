@@ -73,6 +73,11 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
     @Override public boolean isInRangeToRenderDist(double distance) { return distance < 192D * 192D; }
     @Override public float getEyeHeight() { return 6.8F; }
     public boolean isOcean() { return false; }
+    public double bodyOffset() { return 0D; }
+    private double preyDistanceSq(Entity target) {
+        double dx = target.posX - posX, dy = target.posY - posY - bodyOffset(), dz = target.posZ - posZ;
+        return dx * dx + dy * dy + dz * dz;
+    }
     protected double attackReach() { return 17D; }
     protected double territoryRadius() { return 22D; }
     protected boolean environmentActive() {
@@ -107,7 +112,8 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
             double z = target.lastTickPosZ + (target.posZ - target.lastTickPosZ) * partial
                     - lastTickPosZ - (posZ - lastTickPosZ) * partial;
             double length = Math.sqrt(x * x + z * z), scale = length > attackReach() ? attackReach() / length : 1D;
-            return Vec3.createVectorHelper(x * scale, MathHelper.clamp_double(y, isOcean() ? -28 : 0.3, isOcean() ? 31 : 8), z * scale);
+            return Vec3.createVectorHelper(x * scale, MathHelper.clamp_double(y,
+                    bodyOffset() + (isOcean() ? -28 : 0.3), bodyOffset() + (isOcean() ? 31 : 8)), z * scale);
         }
         return Vec3.createVectorHelper(aimX(), aimY(), aimZ());
     }
@@ -157,10 +163,10 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
                 || ((EntityPlayer) target).capabilities.isCreativeMode)) return false;
         if(target.riddenByEntity instanceof EntityPlayer && (((EntityPlayer) target.riddenByEntity).capabilities.disableDamage
                 || ((EntityPlayer) target.riddenByEntity).capabilities.isCreativeMode)) return false;
-        return inTerritory(target) && getDistanceSqToEntity(target) <= (attackReach() + 7D) * (attackReach() + 7D);
+        return inTerritory(target) && preyDistanceSq(target) <= (attackReach() + 7D) * (attackReach() + 7D);
     }
     private boolean reach(Entity target, double range) {
-        return prey(target) && getDistanceSqToEntity(target) <= range * range
+        return prey(target) && preyDistanceSq(target) <= range * range
                 && GardenerNests.loaded(worldObj, boundingBox.addCoord(target.posX - posX, target.posY - posY, target.posZ - posZ).expand(1, 1, 1))
                 && worldObj.func_147447_a(Vec3.createVectorHelper(posX, posY + getEyeHeight(), posZ),
                     Vec3.createVectorHelper(target.posX, target.boundingBox.minY + target.height * 0.5D, target.posZ), false, true, false) == null;
@@ -185,7 +191,7 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
                         living.addPotionEffect(new net.minecraft.potion.PotionEffect(net.minecraft.potion.Potion.moveSlowdown.id, 30, 1));
                 }
             }
-            double score = getDistanceSqToEntity(target) + (target instanceof EntityPlayer ? 0 : 400D);
+            double score = preyDistanceSq(target) + (target instanceof EntityPlayer ? 0 : 400D);
             if(score < best) { best = score; closest = target; }
         }
         preyTarget = closest;
@@ -205,7 +211,8 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
             y = 0.3D;
             for(int dy = 3; dy >= -2; dy--) if(worldObj.getBlock(x, MathHelper.floor_double(posY) + dy - 1, z).getMaterial().blocksMovement()) { y = dy + 0.25D; break; }
         }
-        dataWatcher.updateObject(25, (float) MathHelper.clamp_double(y, isOcean() ? -28D : 0.3D, isOcean() ? 31D : 8D));
+        dataWatcher.updateObject(25, (float) MathHelper.clamp_double(y,
+                bodyOffset() + (isOcean() ? -28D : 0.3D), bodyOffset() + (isOcean() ? 31D : 8D)));
     }
     private void begin(int next) {
         dataWatcher.updateObject(21, (byte) next);
@@ -284,15 +291,15 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
             if(distance > 2.8D) {
                 captive.motionX = dx / Math.max(1D, distance) * 0.24D;
                 captive.motionZ = dz / Math.max(1D, distance) * 0.24D;
-                captive.motionY = isOcean() ? MathHelper.clamp_double((posY + 2D - captive.posY) * 0.035D, -0.18D, 0.22D)
+                captive.motionY = isOcean() ? MathHelper.clamp_double((posY + bodyOffset() + 2D - captive.posY) * 0.035D, -0.18D, 0.22D)
                         : MathHelper.clamp_double(captive.motionY, -0.1D, 0.08D);
                 captive.velocityChanged = true;
             }
             if(isOcean() && distance <= 2.8D) {
-                captive.motionY = MathHelper.clamp_double((posY + 2D - captive.posY) * 0.035D, -0.18D, 0.22D);
+                captive.motionY = MathHelper.clamp_double((posY + bodyOffset() + 2D - captive.posY) * 0.035D, -0.18D, 0.22D);
                 captive.velocityChanged = true;
             }
-            if(attackTicks % 20 == 0 && getDistanceSqToEntity(captive) < 36D) wound(captive, isOcean() ? 8F : 4F);
+            if(attackTicks % 20 == 0 && preyDistanceSq(captive) < 36D) wound(captive, isOcean() ? 8F : 4F);
             return;
         }
         if(state() == REACH && attackTicks <= 34 && reach(target, attackReach())) aim(target, false);
@@ -359,7 +366,7 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
                     double turn = attempt == 0 ? 0 : (attempt % 2 == 0 ? -1 : 1) * ((attempt + 1) / 2) * 0.65D;
                     double vx = distance > stop ? Math.cos(angle + turn) * speed : 0;
                     double vz = distance > stop ? Math.sin(angle + turn) * speed : 0;
-                    double vy = isOcean() ? MathHelper.clamp_double(gy - posY, -speed * 0.5, speed * 0.5) : 0;
+                    double vy = travelVertical(gy, speed);
                     double nx = posX + vx * 12, nz = posZ + vz * 12;
                     if((nx - nestX) * (nx - nestX) + (nz - nestZ) * (nz - nestZ) > territoryRadius() * territoryRadius()) continue;
                     if(canTravel(vx * 12, vy * 12, vz * 12)) { travelX = vx; travelY = vy; travelZ = vz; break; }
@@ -367,10 +374,15 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
             }
         }
         double ox = posX, oy = posY, oz = posZ;
-        if(canTravel(travelX, travelY, travelZ)) super.moveEntity(travelX, isOcean() ? travelY : -0.15D, travelZ);
+        if(canTravel(travelX, travelY, travelZ)) moveGardener(travelX, isOcean() ? travelY : -0.15D, travelZ);
         double moved = Math.abs(posX - ox) + Math.abs(posY - oy) + Math.abs(posZ - oz);
         dataWatcher.updateObject(29, moved > 0.005D ? 1F : 0F);
     }
+    protected double travelVertical(double goalY, double speed) {
+        return isOcean() ? MathHelper.clamp_double(goalY - posY, -speed * 0.5D, speed * 0.5D) : 0;
+    }
+    /** Bypass the public physics lock only for the authoritative territorial steering. */
+    protected void moveGardener(double x, double y, double z) { super.moveEntity(x, y, z); }
     protected boolean canTravel(double x, double y, double z) {
         AxisAlignedBB next = boundingBox.getOffsetBoundingBox(x, y, z);
         if(!GardenerNests.loaded(worldObj, next.expand(19, 2, 19)) || Math.abs(next.minY - nestY) > 4D

@@ -532,3 +532,8 @@
 2026-11-07 02:51 — Fix Ocean Gardener spawn egg admission
 
 - Exempt manual Ocean Gardener spawns from natural deep-ocean clearance checks so the egg works after the Mars gate is unlocked. Preserve natural spawning checks and water-only activity.
+
+2026-11-07 03:16 — Connect Ocean Gardener legs and enable land behavior
+
+- Root all six Ocean Gardener legs inside the lower body and keep their attachment points fixed through idle sway, walking, attacks and disabled-limb poses. Use a feet-based origin and a narrow full-height collision box for the approximately 32-block-tall silhouette; migrate legacy positions and anchors while preserving health and limb state.
+- Remove water requirements from activity, prey eligibility and travel clearance. Retain the existing territorial steering and capture system, add supported land movement and native stepping, and preserve slow underwater altitude correction, solid-limb obstruction checks, wandering, Mars/difficulty gates and natural deep-ocean admission. Retain saved natural residents after they move onto land. Shared hooks leave Underground Gardener behavior unchanged.
