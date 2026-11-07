@@ -523,3 +523,20 @@ Startup category `12_mobs.giantenderman` in `config/hbm.cfg`.
 | `playerGrabbing` | true | Allows player grabs. Small mobs remain eligible when disabled. |
 
 Health, phase, target memory and cooldowns survive saving. Reloaded encounters resume from recovery, releasing held victims and discarding temporary terrain formations. See [Giant Enderman commands](commands.md#rntgiantenderman).
+
+## The Wretch
+
+Startup category `21_gemini.wretch` in `config/hbm.cfg`. This Overworld boss requires the shared Mars/Duna visit milestone and Gemini enable setting.
+
+| Setting | Default | Effect |
+| --- | --- | --- |
+| `enabled` | true | Enables camps and combat. Disabled or locked saved bosses remain dormant. |
+| `health` | 900 HP | Health of new bosses, from 100 to the native 1024 HP attribute limit. Saved bosses retain their attributes. |
+| `campChance` | 256 | One-in-N roll per newly populated post-Mars forest chunk, followed by clearing and 512-block spacing checks. Zero disables new camps. Existing terrain receives no camp retrogen. |
+| `terrainDestruction` | true | Allows natural block damage within camp territory; also requires `mobGriefing` and native/Forge protection approval. Constructed blocks, tile entities and recorded player placements are protected. |
+
+Camps contain torn shelters, broken benches and an overgrown cold fire ring. At most 256 camp reservations are saved per world, including abandoned and defeated encounters. Each camp admits one boss, with no automatic respawn after defeat or removal. Camps and bosses never acquire chunk tickets.
+
+The Wretch uses visibly raised arms and sound cues before heavy attacks, followed by recovery. Sneak for 12 consecutive ticks during a grab to escape; a successful arm hit of at least 5 damage or 12 accumulated health damage during a capture interrupts it. Escaped players receive 10 seconds of grab immunity. Attack patterns change at 65% and 30% health. Feeding heals only after a confirmed kill of an eligible adult vanilla cow, mooshroom, pig, sheep or chicken; named, leashed, breeding and saddled animals are excluded. Other mods can veto the normal damage events or mark an animal's Forge entity data `WretchProtected=true`.
+
+Boss health, camp identity, position, attack/feeding cooldowns and camp defeat state survive saving. Reloading ends pending attacks and captures without storing restraints on players. Player block placements near a reserved camp permanently protect surrounding columns from this boss's terrain damage.

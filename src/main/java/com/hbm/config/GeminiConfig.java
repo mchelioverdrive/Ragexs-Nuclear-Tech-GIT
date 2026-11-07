@@ -30,6 +30,10 @@ public final class GeminiConfig {
 	public static int gardenerNestLimit = 32;
 	public static int gardenerSupportLimit = 4;
 	public static int gardenerBlocksPerSlam = 12;
+	public static boolean wretchEnabled = true;
+	public static float wretchHealth = 900F;
+	public static int wretchCampChance = 256;
+	public static boolean wretchTerrainDestruction = true;
 
 	private GeminiConfig() { }
 
@@ -72,6 +76,15 @@ public final class GeminiConfig {
 		mockeryOffshootLimit = config.getInt("offshootLimit", mockery, 2, 0, 2,
 				"Lifetime offspring per original Mockery, requiring growth 40/80. Offspring cannot reproduce. Zero disables budding.");
 		String disease = CATEGORY + ".deepRoot";
+		String wretch = CATEGORY + ".wretch";
+		wretchEnabled = config.getBoolean("enabled", wretch, true,
+				"Enable The Wretch and new woodland camps after Mars. Saved bosses become dormant when disabled.");
+		wretchHealth = config.getFloat("health", wretch, 900F, 100F, 1024F,
+				"Maximum health of newly spawned Wretches. Existing bosses retain their saved health attributes.");
+		wretchCampChance = config.getInt("campChance", wretch, 256, 0, 100000,
+				"One-in-N chance per newly populated post-Mars forest chunk, before clearing and 512-block spacing checks. Zero disables new camps. No retrogen; at most 256 lifetime camps per world.");
+		wretchTerrainDestruction = config.getBoolean("terrainDestruction", wretch, true,
+				"Allow bounded Wretch slams and pursuit to damage natural terrain inside its camp territory. Respects mobGriefing, claims, tiles and player construction.");
 		String gardener = CATEGORY + ".gardener";
 		gardenerEnabled = config.getBoolean("enabled", gardener, true,
 				"Enable rooted underground Gardeners and incremental cave nests after Mars. Disabled saved bosses remain dormant.");
