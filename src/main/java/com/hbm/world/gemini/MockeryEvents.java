@@ -19,7 +19,7 @@ public final class MockeryEvents {
         Entity owner = host.worldObj.getEntityByID(tag.getInteger("MockeryCaptorId"));
         if(owner instanceof EntityNaturesMockery && owner.isEntityAlive() && owner.addedToChunk
                 && owner.getUniqueID().toString().equals(tag.getString("MockeryCaptor"))
-                && ((EntityNaturesMockery) owner).owns(host) && MockerySpawning.active(host.worldObj)) {
+                && ((EntityNaturesMockery) owner).owns(host) && MockerySpawning.active((EntityNaturesMockery) owner)) {
             ((EntityNaturesMockery) owner).hold(host);
         } else {
             tag.removeTag("MockeryCaptor"); tag.removeTag("MockeryCaptorId");
@@ -28,10 +28,9 @@ public final class MockeryEvents {
     }
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void chat(ServerChatEvent event) {
-        if(!MockerySpawning.active(event.player.worldObj)) return;
         for(Object entry : event.player.worldObj.getEntitiesWithinAABB(EntityNaturesMockery.class, event.player.boundingBox.expand(12, 6, 12))) {
             EntityNaturesMockery mob = (EntityNaturesMockery) entry;
-            if(mob.isEntityAlive() && mob.getDistanceSqToEntity(event.player) <= 144D) mob.hear(event.message);
+            if(mob.isEntityAlive() && MockerySpawning.active(mob) && mob.getDistanceSqToEntity(event.player) <= 144D) mob.hear(event.message);
         }
     }
 }

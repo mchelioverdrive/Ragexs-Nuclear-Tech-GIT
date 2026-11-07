@@ -15,6 +15,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.event.world.ChunkEvent;
+import net.minecraftforge.event.entity.living.LivingSpawnEvent;
 
 /** Server-thread loaded membership. Never scans the world's general entity list or holds chunk tickets. */
 public final class GeminiPopulation {
@@ -33,6 +34,7 @@ public final class GeminiPopulation {
     }
 
     public static boolean canAdmit(World world, Class<? extends EntityLiving> type, EntityLiving candidate, int limit) {
+        if(GeminiSpawning.manualAdmission(candidate)) return true;
         if(world.isRemote || limit <= 0 || GeminiConfig.maxLoadedCreatures <= 0) return false;
         int total = 0, same = 0;
         Map<UUID, EntityLiving> members = WORLDS.get(world);
@@ -52,6 +54,12 @@ public final class GeminiPopulation {
         if(mob instanceof EntityGardener) return GeminiConfig.gardenerMaxLoaded;
         if(mob instanceof EntityWretch) return GeminiConfig.wretchMaxLoaded;
         return 0;
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void naturalSpawn(LivingSpawnEvent.SpecialSpawn event) {
+        if(!event.world.isRemote && event.entityLiving instanceof IGeminiCreature)
+            GeminiSpawning.markNatural(event.entityLiving);
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)

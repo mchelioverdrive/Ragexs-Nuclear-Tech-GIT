@@ -20,8 +20,13 @@ public final class MockerySpawning {
     }
 
     public static boolean canSpawn(World world, EntityNaturesMockery candidate) {
+        if(GeminiSpawning.manualAdmission(candidate)) return true;
         if(!active(world) || GeminiConfig.mockeryMaxActive == 0) return false;
         return GeminiPopulation.canAdmit(world, EntityNaturesMockery.class, candidate, GeminiConfig.mockeryMaxActive);
+    }
+
+    public static boolean active(EntityNaturesMockery mob) {
+        return GeminiSpawning.manualAdmission(mob) || active(mob.worldObj);
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)

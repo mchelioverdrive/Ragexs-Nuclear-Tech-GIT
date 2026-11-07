@@ -4,7 +4,7 @@ import java.util.List;
 
 import com.hbm.config.GeminiConfig;
 import com.hbm.entity.mob.gemini.EntityWoodcrawler;
-import com.hbm.world.gemini.GeminiInvasionManager;
+import com.hbm.world.gemini.GeminiSpawning;
 import com.hbm.world.gemini.WoodcrawlerSpawning;
 
 import net.minecraft.block.Block;
@@ -44,7 +44,7 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 	}
 
 	@Override
-	public boolean shouldExecute() { return mob.getHealth() > 0 && GeminiInvasionManager.canActivityOccur(world); }
+	public boolean shouldExecute() { return mob.getHealth() > 0 && GeminiSpawning.canAct(mob, 1); }
 	@Override
 	public boolean continueExecuting() { return shouldExecute(); }
 
@@ -307,7 +307,7 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 				&& !MinecraftForge.EVENT_BUS.post(new BlockEvent.BreakEvent(doorX, doorY, doorZ, world, block, meta, actor))
 				&& !MinecraftForge.EVENT_BUS.post(new BlockEvent.BreakEvent(doorX, doorY + 1, doorZ, world,
 						world.getBlock(doorX, doorY + 1, doorZ), world.getBlockMetadata(doorX, doorY + 1, doorZ), actor));
-		if(allowed && GeminiInvasionManager.canActivityOccur(world) && isClosedWoodenDoor(doorX, doorY, doorZ)
+		if(allowed && GeminiSpawning.canAct(mob, 1) && isClosedWoodenDoor(doorX, doorY, doorZ)
 				&& world.getGameRules().getGameRuleBooleanValue("mobGriefing")) {
 			world.func_147480_a(doorX, doorY, doorZ, true);
 			world.playAuxSFX(1012, doorX, doorY, doorZ, 0);

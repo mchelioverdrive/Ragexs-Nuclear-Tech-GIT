@@ -6,6 +6,7 @@ import java.util.UUID;
 import com.hbm.config.GeminiConfig;
 import com.hbm.world.gemini.GardenerNests;
 import com.hbm.world.gemini.WretchCamps;
+import com.hbm.world.gemini.GeminiSpawning;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityCreature;
 import net.minecraft.entity.EntityLiving;
@@ -76,7 +77,7 @@ public final class EntityWretch extends EntityCreature implements IMob, IBossDis
     public void bindCamp(UUID id, int x, int y, int z) { entityUniqueID = id; homeX = x; homeY = y; homeZ = z; campBound = true; eggSpawned = false; }
     @Override public IEntityLivingData onSpawnWithEgg(IEntityLivingData data) {
         data = super.onSpawnWithEgg(data);
-        if(!worldObj.isRemote && !campBound) {
+        if(!worldObj.isRemote && !campBound && GeminiSpawning.initialize(this)) {
             eggSpawned = true;
             homeX = MathHelper.floor_double(posX); homeY = MathHelper.floor_double(posY); homeZ = MathHelper.floor_double(posZ);
         }
@@ -95,7 +96,7 @@ public final class EntityWretch extends EntityCreature implements IMob, IBossDis
     public int attackArm() { return dataWatcher.getWatchableObjectByte(27); }
     public int phase() { return dataWatcher.getWatchableObjectByte(28); }
     private boolean active() {
-        return isEntityAlive() && WretchCamps.active(worldObj) && (eggSpawned || WretchCamps.owns(this))
+        return isEntityAlive() && (GeminiSpawning.manualAdmission(this) || WretchCamps.active(worldObj) && WretchCamps.owns(this))
                 && GardenerNests.loaded(worldObj, boundingBox.expand(9, 1, 9));
     }
     private void stop() {

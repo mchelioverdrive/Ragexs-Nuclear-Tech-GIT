@@ -2,12 +2,13 @@ package com.hbm.entity.mob.gemini;
 
 import com.hbm.config.GeminiConfig;
 import com.hbm.entity.mob.ai.EntityAIWoodcrawler;
-import com.hbm.world.gemini.GeminiInvasionManager;
 import com.hbm.world.gemini.WoodcrawlerConversionEvent;
 import com.hbm.world.gemini.WoodcrawlerSpawning;
 
 import net.minecraft.block.Block;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.IEntityLivingData;
+import com.hbm.world.gemini.GeminiSpawning;
 import net.minecraft.entity.EntityList;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityLivingBase;
@@ -51,6 +52,10 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 		tasks.addTask(1, new EntityAIWoodcrawler(this));
 	}
 
+    @Override public IEntityLivingData onSpawnWithEgg(IEntityLivingData data) {
+        GeminiSpawning.initialize(this);
+        return super.onSpawnWithEgg(data);
+    }
 	@Override
 	protected void entityInit() {
 		super.entityInit();
@@ -121,7 +126,7 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 	}
 
 	public void beginStrike(EntityLivingBase target) {
-		if(worldObj.isRemote || !GeminiInvasionManager.canActivityOccur(worldObj) || getHuntState() != CHASE
+		if(worldObj.isRemote || !GeminiSpawning.canAct(this, 1) || getHuntState() != CHASE
 				|| strikeDelay > 0 || strikeCooldown > 0 || !canStrike(target)) return;
 		strikeTarget = target;
 		strikeDelay = 7;
@@ -131,7 +136,7 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 
 	@Override
 	public boolean attackEntityAsMob(Entity target) {
-		if(worldObj.isRemote || !GeminiInvasionManager.canActivityOccur(worldObj) || strikeCooldown > 0
+		if(worldObj.isRemote || !GeminiSpawning.canAct(this, 1) || strikeCooldown > 0
 				|| hasCapturedVillager() || !(target instanceof EntityLivingBase) || !canStrike((EntityLivingBase) target)) return false;
 		strikeCooldown = 32;
 		if(target instanceof EntityVillager && ((EntityVillager) target).getHealth() <= ((EntityVillager) target).getMaxHealth() * 0.5F) {
@@ -154,8 +159,8 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 	@Override
 	public void onUpdate() {
 		if(!worldObj.isRemote) {
-			// Applies to eggs, commands, old saves and mobs already alive when invasions are disabled.
-			if(!GeminiInvasionManager.canActivityOccur(worldObj) || worldObj.difficultySetting == EnumDifficulty.PEACEFUL) {
+			// Natural creatures pause with invasions; manual spawn initialization is saved per creature.
+			if(!GeminiSpawning.canAct(this, 1) || worldObj.difficultySetting == EnumDifficulty.PEACEFUL) {
 				getNavigator().clearPathEntity();
 				setAttackTarget(null);
 				strikeDelay = strikeCooldown = attackAnimationTicks = 0;
@@ -176,7 +181,7 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 				WoodcrawlerConversionEvent event = new WoodcrawlerConversionEvent(this, capturedVillager);
 				MinecraftForge.EVENT_BUS.post(event);
 				EntityLiving replacement = event.getReplacement();
-				if(hasCapturedVillager() && !isDead && GeminiInvasionManager.canActivityOccur(worldObj)
+				if(hasCapturedVillager() && !isDead && GeminiSpawning.canAct(this, 1)
 						&& replacement != null && replacement != this && !replacement.isDead && replacement.worldObj == worldObj
 						&& !worldObj.loadedEntityList.contains(replacement)) {
 					replacement.setLocationAndAngles(posX, posY, posZ, rotationYaw, 0);
@@ -247,7 +252,7 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 	/** One decision per captive, including across reloads and vetoed/limited spawn retries. */
 	public boolean shouldConvertToFakePerson() {
 		if(worldObj.isRemote || !hasCapturedVillager() || captiveTicks < 600
-				|| !GeminiInvasionManager.canActivityOccur(worldObj)) return false;
+				|| !GeminiSpawning.canAct(this, 1)) return false;
 		if(fakePersonConversion == 0) fakePersonConversion = (byte) (rand.nextFloat() < GeminiConfig.fakePersonConversionChance ? 1 : 2);
 		return fakePersonConversion == 1;
 	}
@@ -283,7 +288,7 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 	@Override
 	public boolean attackEntityFrom(DamageSource source, float damage) {
 		return !worldObj.isRemote && !(source.getEntity() instanceof IGeminiCreature)
-				&& GeminiInvasionManager.canActivityOccur(worldObj) && super.attackEntityFrom(source, damage);
+				&& GeminiSpawning.canAct(this, 1) && super.attackEntityFrom(source, damage);
 	}
 	@Override
 	public void writeEntityToNBT(NBTTagCompound nbt) {

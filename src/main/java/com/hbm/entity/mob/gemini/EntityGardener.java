@@ -8,6 +8,8 @@ import com.hbm.world.gemini.GardenerNests;
 import com.hbm.world.gemini.GeminiInfections;
 import com.hbm.world.gemini.MockerySpawning;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.IEntityLivingData;
+import com.hbm.world.gemini.GeminiSpawning;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.SharedMonsterAttributes;
@@ -37,6 +39,10 @@ public final class EntityGardener extends EntityLiving implements IMob, IBossDis
     public EntityGardener(World world) {
         super(world); setSize(3.4F, 3.5F); experienceValue = 80; func_110163_bv();
         ignoreFrustumCheck = true; setHealth(getMaxHealth());
+    }
+    @Override public IEntityLivingData onSpawnWithEgg(IEntityLivingData data) {
+        GeminiSpawning.initialize(this);
+        return super.onSpawnWithEgg(data);
     }
     @Override protected void entityInit() {
         super.entityInit();
@@ -83,9 +89,10 @@ public final class EntityGardener extends EntityLiving implements IMob, IBossDis
         setPosition(x, y, z);
     }
     private boolean active() {
-        return isEntityAlive() && anchored && nestY >= 8 && nestY <= 44 && Math.abs(posY - nestY) < 1D
-                && GardenerNests.active(worldObj) && GardenerNests.loaded(worldObj, boundingBox.expand(10, 0, 10))
-                && !worldObj.canBlockSeeTheSky(MathHelper.floor_double(nestX), MathHelper.floor_double(nestY + 5), MathHelper.floor_double(nestZ));
+        return isEntityAlive() && anchored && Math.abs(posY - nestY) < 1D
+                && GardenerNests.loaded(worldObj, boundingBox.expand(10, 0, 10))
+                && (GeminiSpawning.manualAdmission(this) || nestY >= 8 && nestY <= 44 && GardenerNests.active(worldObj)
+                    && !worldObj.canBlockSeeTheSky(MathHelper.floor_double(nestX), MathHelper.floor_double(nestY + 5), MathHelper.floor_double(nestZ)));
     }
     private boolean prey(EntityLivingBase target) {
         if(target == null || target == this || target instanceof IGeminiCreature || target instanceof IBossDisplayData

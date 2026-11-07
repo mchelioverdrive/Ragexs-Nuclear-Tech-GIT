@@ -1,7 +1,7 @@
 package com.hbm.entity.mob.ai;
 
 import com.hbm.entity.mob.gemini.EntityFakePerson;
-import com.hbm.world.gemini.GeminiInvasionManager;
+import com.hbm.world.gemini.GeminiSpawning;
 
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.ai.EntityAIBase;
@@ -22,7 +22,7 @@ public final class EntityAIFakePerson extends EntityAIBase {
 
 	@Override
 	public boolean shouldExecute() {
-		if(mob.isRecovering() || mob.getHealth() <= 0 || !GeminiInvasionManager.canActivityOccur(mob.worldObj)) return false;
+		if(mob.isRecovering() || mob.getHealth() <= 0 || !GeminiSpawning.canAct(mob, 1)) return false;
 		EntityLivingBase attacker = mob.getAttackTarget();
 		if(mob.canHunt(attacker) && mob.getDistanceSqToEntity(attacker) <= 1024D) observed = attacker;
 		else if(mob.worldObj.getTotalWorldTime() >= nextScan) {
@@ -45,7 +45,7 @@ public final class EntityAIFakePerson extends EntityAIBase {
 	public boolean continueExecuting() {
 		return !mob.isRecovering() && mob.getHealth() > 0 && mob.canHunt(observed)
 				&& mob.getDistanceSqToEntity(observed) <= 1024D && unseenTicks < 200
-				&& GeminiInvasionManager.canActivityOccur(mob.worldObj);
+				&& GeminiSpawning.canAct(mob, 1);
 	}
 
 	@Override

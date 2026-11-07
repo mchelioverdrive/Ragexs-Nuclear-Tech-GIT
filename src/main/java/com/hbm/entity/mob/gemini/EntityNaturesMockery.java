@@ -8,6 +8,8 @@ import com.hbm.world.gemini.GeminiInfections;
 import com.hbm.world.gemini.MockeryGrowth;
 import com.hbm.world.gemini.MockerySpawning;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.IEntityLivingData;
+import com.hbm.world.gemini.GeminiSpawning;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.monster.EntityMob;
@@ -35,6 +37,10 @@ public final class EntityNaturesMockery extends EntityMob implements IGeminiCrea
         setSize(1.1F, 2.4F);
         experienceValue = 12;
         func_110163_bv();
+    }
+    @Override public IEntityLivingData onSpawnWithEgg(IEntityLivingData data) {
+        GeminiSpawning.initialize(this);
+        return super.onSpawnWithEgg(data);
     }
     @Override protected void entityInit() {
         super.entityInit();
@@ -95,7 +101,7 @@ public final class EntityNaturesMockery extends EntityMob implements IGeminiCrea
     }
 
     @Override public void onUpdate() {
-        if(!worldObj.isRemote && !MockerySpawning.active(worldObj)) {
+        if(!worldObj.isRemote && !MockerySpawning.active(this)) {
             release(); motionX = motionY = motionZ = 0; return;
         }
         prevExtension = extension;
@@ -104,7 +110,7 @@ public final class EntityNaturesMockery extends EntityMob implements IGeminiCrea
         super.onUpdate();
         if(worldObj.isRemote) return;
         if(!rooted) { rootX = posX; rootY = posY; rootZ = posZ; rooted = true; }
-        if(!isEntityAlive() || !MockerySpawning.active(worldObj)) { release(); return; }
+        if(!isEntityAlive() || !MockerySpawning.active(this)) { release(); return; }
         if(cooldown > 0) cooldown--;
         if(phraseTicks > 0 && --phraseTicks == 0) phrase = "";
         if(captive != null) tickCapture();
@@ -189,7 +195,7 @@ public final class EntityNaturesMockery extends EntityMob implements IGeminiCrea
     }
 
     public void hold(EntityLivingBase target) {
-        if(!owns(target) || !MockerySpawning.active(worldObj) || !reach(target)) return;
+        if(!owns(target) || !MockerySpawning.active(this) || !reach(target)) return;
         NBTTagCompound tag = target.getEntityData();
         tag.setString("MockeryCaptor", getUniqueID().toString());
         tag.setInteger("MockeryCaptorId", getEntityId());
@@ -230,13 +236,13 @@ public final class EntityNaturesMockery extends EntityMob implements IGeminiCrea
     }
 
     public void hear(String text) {
-        if(!MockerySpawning.active(worldObj) || phraseTicks > 0) return;
+        if(!MockerySpawning.active(this) || phraseTicks > 0) return;
         phrase = net.minecraft.util.EnumChatFormatting.getTextWithoutFormattingCodes(text).replaceAll("[\\p{Cntrl}]", "");
         if(phrase.length() > 48) phrase = phrase.substring(0, 48);
         phraseTicks = phrase.isEmpty() ? 0 : 1200;
     }
     @Override public boolean attackEntityFrom(DamageSource source, float damage) {
-        return !worldObj.isRemote && MockerySpawning.active(worldObj) && !(source.getEntity() instanceof IGeminiCreature)
+        return !worldObj.isRemote && MockerySpawning.active(this) && !(source.getEntity() instanceof IGeminiCreature)
                 && super.attackEntityFrom(source, damage);
     }
     @Override public void onDeath(DamageSource source) { if(!worldObj.isRemote) release(); super.onDeath(source); }

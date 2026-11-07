@@ -43,7 +43,7 @@ public final class GeminiConfig {
 
 	public static void loadFromConfig(Configuration config) {
 		enabled = config.getBoolean("enabled", CATEGORY, true,
-				"Enable Gemini activity after a player visits Mars (Duna). Disabling pauses scheduling; the world keeps its Mars milestone.");
+				"Enable natural Gemini activity after a player visits Mars (Duna). Disabling pauses scheduling; the world keeps its Mars milestone. Manual spawn eggs bypass this setting.");
 		phase2DelayDays = config.getInt("phase2DelayDays", CATEGORY, 3, 1, 10000,
 				"Minecraft days in phase 1 before infection unlocks. One day is 24000 enabled Overworld ticks with players present.");
 		phase3DelayDays = config.getInt("phase3DelayDays", CATEGORY, 5, 1, 10000,
@@ -54,7 +54,7 @@ public final class GeminiConfig {
 				CATEGORY, new int[] {25, 50, 75, 100}[i], 1, 100,
 				"Percent of Woodcrawler natural spawn attempts admitted. Event intervals scale by phase-1 percent / current percent; existing countdowns are retained.");
 		maxLoadedCreatures = config.getInt("maxLoadedCreatures", CATEGORY, 32, 0, 256,
-				"Combined loaded Gemini creature admission cap, excluding disposable boss parts. Zero stops new admissions; saved creatures are always retained.");
+				"Combined loaded Gemini creature admission cap, excluding disposable boss parts. Zero stops natural admissions; manual spawn eggs bypass the cap and saved creatures are always retained.");
 		minEventIntervalSeconds = config.getInt("minEventIntervalSeconds", CATEGORY, 1200, 1, 86400,
 				"Minimum phase-1 active Overworld seconds between Gemini event opportunities. Later phases scale by relative encounter percent (20 ticks per second).");
 		maxEventIntervalSeconds = config.getInt("maxEventIntervalSeconds", CATEGORY, 2400, 1, 86400,
@@ -72,9 +72,9 @@ public final class GeminiConfig {
 		woodcrawlerSpawnWeight = config.getInt("woodcrawlerSpawnWeight", CATEGORY, 2, 0, 20,
 				"Forest monster spawn weight after Mars. Zero disables both natural and invasion Woodcrawler spawns.");
 		woodcrawlerMaxLoaded = config.getInt("woodcrawlerMaxLoaded", CATEGORY, 8, 0, 64,
-				"Maximum loaded Woodcrawlers for admitting new spawns in the Overworld. Zero disables new spawns; saved creatures are retained.");
+				"Maximum loaded Woodcrawlers for admitting natural spawns in the Overworld. Zero disables natural spawns; manual spawn eggs bypass the cap and saved creatures are retained.");
 		fakePersonMaxLoaded = config.getInt("fakePersonMaxLoaded", CATEGORY, 16, 0, 128,
-				"Maximum loaded Fake People for admitting new spawns/conversions. Zero disables new ones; saved creatures are retained. No natural or invasion spawns are added.");
+				"Maximum loaded Fake People for admitting conversions. Zero disables conversions; manual spawn eggs bypass the cap and saved creatures are retained. No independent natural or invasion spawns are added.");
 		fakePersonConversionChance = config.getFloat("fakePersonConversionChance", CATEGORY, 0.35F, 0F, 1F,
 				"One saved probability roll per Woodcrawler captive after 30 seconds. Failed rolls keep the original captive; successful rolls wait for population space and a valid spawn.");
 		String mockery = CATEGORY + ".mockery";
@@ -87,15 +87,15 @@ public final class GeminiConfig {
 		mockerySpreadLimit = config.getInt("spreadLimit", mockery, 64, 0, 4096,
 				"Lifetime successful organic block placements per Mockery, including regrowth after harvesting. Zero disables block spread.");
 		mockeryMaxActive = config.getInt("maxActive", mockery, 16, 0, 128,
-				"Maximum loaded Mockeries for new admissions, including conversions, eggs and buds. Saved creatures are retained.");
+				"Maximum loaded Mockeries for conversions and buds. Manual spawn eggs bypass the cap; saved creatures are retained.");
 		mockeryOffshootLimit = config.getInt("offshootLimit", mockery, 2, 0, 2,
 				"Lifetime offspring per original Mockery, requiring growth 40/80. Offspring cannot reproduce. Zero disables budding.");
 		String disease = CATEGORY + ".deepRoot";
 		String wretch = CATEGORY + ".wretch";
 		wretchEnabled = config.getBoolean("enabled", wretch, true,
-				"Enable The Wretch and new woodland camps in phase 4. Saved bosses become dormant when disabled.");
+				"Enable natural Wretches and new woodland camps in phase 4. Saved natural bosses become dormant when disabled; manual spawn eggs bypass this setting.");
 		wretchMaxLoaded = config.getInt("maxLoaded", wretch, 1, 0, 16,
-				"Loaded Wretch admission cap. Waiting camps pause at the cap without consuming retries; saved bosses are retained.");
+				"Loaded natural Wretch admission cap. Waiting camps pause at the cap without consuming retries; manual spawn eggs bypass the cap and saved bosses are retained.");
 		wretchHealth = config.getFloat("health", wretch, 900F, 100F, 1024F,
 				"Maximum health of newly spawned Wretches. Existing bosses retain their saved health attributes.");
 		wretchCampChance = config.getInt("campChance", wretch, 256, 0, 100000,
@@ -104,9 +104,9 @@ public final class GeminiConfig {
 				"Allow bounded Wretch slams and pursuit to damage natural terrain inside its camp territory. Respects mobGriefing, claims, tiles and player construction.");
 		String gardener = CATEGORY + ".gardener";
 		gardenerEnabled = config.getBoolean("enabled", gardener, true,
-				"Enable rooted underground Gardeners and incremental cave nests in phase 3. Disabled saved bosses remain dormant.");
+				"Enable natural underground Gardeners and incremental cave nests in phase 3. Disabled saved natural bosses remain dormant; manual spawn eggs bypass this setting.");
 		gardenerMaxLoaded = config.getInt("maxLoaded", gardener, 2, 0, 16,
-				"Loaded Gardener admission cap. Completed nests wait at the cap without consuming retries; saved bosses are retained.");
+				"Loaded natural Gardener admission cap. Completed nests wait at the cap without consuming retries; manual spawn eggs bypass the cap and saved bosses are retained.");
 		gardenerNestChance = config.getInt("nestChance", gardener, 8, 1, 10000,
 				"One-in-N roll per active Overworld minute for up to eight loaded cave columns. No chunk loading or offline catch-up.");
 		gardenerNestLimit = config.getInt("nestLimit", gardener, 32, 0, 64,

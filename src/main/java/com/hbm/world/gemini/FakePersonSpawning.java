@@ -17,6 +17,7 @@ import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 public final class FakePersonSpawning {
 
 	public static boolean canSpawn(World world, EntityFakePerson candidate) {
+		if(GeminiSpawning.manualAdmission(candidate)) return true;
 		if(!GeminiInvasionManager.canActivityOccur(world) || world.difficultySetting == EnumDifficulty.PEACEFUL
 				|| GeminiConfig.fakePersonMaxLoaded == 0) return false;
 		return GeminiPopulation.canAdmit(world, EntityFakePerson.class, candidate, GeminiConfig.fakePersonMaxLoaded);

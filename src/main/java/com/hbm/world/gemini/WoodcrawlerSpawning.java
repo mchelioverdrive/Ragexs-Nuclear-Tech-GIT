@@ -23,6 +23,7 @@ public final class WoodcrawlerSpawning {
 	}
 
 	public static boolean canSpawn(World world, EntityWoodcrawler candidate) {
+		if(GeminiSpawning.manualAdmission(candidate)) return true;
 		if(!GeminiInvasionManager.canActivityOccur(world) || GeminiConfig.woodcrawlerSpawnWeight == 0
 				|| GeminiConfig.woodcrawlerMaxLoaded == 0 || world.difficultySetting == EnumDifficulty.PEACEFUL) return false;
 		return GeminiPopulation.canAdmit(world, EntityWoodcrawler.class, candidate, GeminiConfig.woodcrawlerMaxLoaded);
@@ -62,6 +63,7 @@ public final class WoodcrawlerSpawning {
 			int y = world.getTopSolidOrLiquidBlock(x, z);
 			mob.setLocationAndAngles(x + 0.5D, y, z + 0.5D, world.rand.nextFloat() * 360, 0);
 			if(!mob.getCanSpawnHere()) continue;
+			GeminiSpawning.markNatural(mob);
 			mob.onSpawnWithEgg(null);
 			if(world.spawnEntityInWorld(mob)) return;
 		}

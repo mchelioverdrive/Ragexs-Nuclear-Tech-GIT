@@ -499,3 +499,9 @@
 
 - Register vanilla-style spawn eggs for Woodcrawler, Fake Person, Nature's Mockery, Gardener and The Wretch before their mod entity registrations; Forge previously rejected the first four as already registered, and The Wretch had no egg entry. Preserve existing FML save names, network entity IDs and legacy egg allocation order; omit multipart hit regions.
 - Initialize and save egg-spawned Wretch territory independently of generated camps so its egg can admit a functional boss. Preserve phase-4, enablement, difficulty and loaded population checks, camp reservations and camp-only terrain damage. Existing saved camp bosses retain their original ownership rules.
+
+2026-11-06 19:59 — Make Gemini spawn eggs independent of natural invasion gates
+
+- Persist manual spawn origin through native entity Forge data. Eggs bypass Mars/phase gates, Gemini disable settings, spawn weights and population admission caps; their creatures retain active combat after reload and outside the Overworld. Peaceful behavior and duplicate-UUID rejection remain intact.
+- Let manually spawned Gardeners activate at their placed surface anchor and Wretches use their saved standalone territory. Apply the manual policy throughout mobile AI, attacks, damage handling and rooted-creature activity instead of only bypassing initial admission.
+- Identify native natural initialization through Forge's SpecialSpawn event and mark scheduled Woodcrawler initialization explicitly. Natural admissions, invasions, camp/nest generation, disease progression and environmental spread retain their existing gates; eggs do not advance world progression.

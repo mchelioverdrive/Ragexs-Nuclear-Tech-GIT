@@ -112,8 +112,8 @@ public final class GardenerNests extends WorldSavedData {
         public void join(EntityJoinWorldEvent event) {
             if(!event.world.isRemote && event.entity instanceof EntityGardener) {
                 EntityGardener boss = (EntityGardener) event.entity;
-                // Saved bosses remain dormant across config changes; new eggs/commands cannot bypass Mars.
-                if(!boss.addedToChunk && (!active(event.world) || !GeminiPopulation.canAdmit(event.world,
+                // Natural bosses retain progression/caps; manually initialized creatures are independent.
+                if(!boss.addedToChunk && !GeminiSpawning.manualAdmission(boss) && (!active(event.world) || !GeminiPopulation.canAdmit(event.world,
                         EntityGardener.class, boss, GeminiConfig.gardenerMaxLoaded))) event.setCanceled(true);
             }
         }

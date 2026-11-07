@@ -4,9 +4,10 @@ import java.util.UUID;
 
 import com.hbm.entity.mob.ai.EntityAIFakePerson;
 import com.hbm.world.gemini.FakePersonSpawning;
-import com.hbm.world.gemini.GeminiInvasionManager;
 
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.IEntityLivingData;
+import com.hbm.world.gemini.GeminiSpawning;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.EntityAIMoveIndoors;
@@ -43,6 +44,10 @@ public final class EntityFakePerson extends EntityMob implements IDeepRootCarrie
 		tasks.addTask(10, new EntityAIWatchClosest(this, EntityLivingBase.class, 8F));
 	}
 
+    @Override public IEntityLivingData onSpawnWithEgg(IEntityLivingData data) {
+        GeminiSpawning.initialize(this);
+        return super.onSpawnWithEgg(data);
+    }
 	@Override
 	protected void entityInit() {
 		super.entityInit();
@@ -99,7 +104,7 @@ public final class EntityFakePerson extends EntityMob implements IDeepRootCarrie
 	}
 
 	public void expose(EntityLivingBase target) {
-		if(worldObj.isRemote || !GeminiInvasionManager.canActivityOccur(worldObj) || getHealth() <= 0) return;
+		if(worldObj.isRemote || !GeminiSpawning.canAct(this, 1) || getHealth() <= 0) return;
 		boolean disguised = isDisguised();
 		flag(DISGUISED, false);
 		flag(HOSTILE, true);
@@ -121,7 +126,7 @@ public final class EntityFakePerson extends EntityMob implements IDeepRootCarrie
 
 	@Override
 	public boolean attackEntityFrom(DamageSource source, float damage) {
-		if(worldObj.isRemote || source.getEntity() instanceof IGeminiCreature || !GeminiInvasionManager.canActivityOccur(worldObj)) return false;
+		if(worldObj.isRemote || source.getEntity() instanceof IGeminiCreature || !GeminiSpawning.canAct(this, 1)) return false;
 		boolean hit = super.attackEntityFrom(source, damage);
 		if(hit && getHealth() > 0) {
 			Entity attacker = source.getEntity();
@@ -133,7 +138,7 @@ public final class EntityFakePerson extends EntityMob implements IDeepRootCarrie
 
 	@Override
 	public boolean attackEntityAsMob(Entity target) {
-		if(worldObj.isRemote || !GeminiInvasionManager.canActivityOccur(worldObj) || !isHostile()
+		if(worldObj.isRemote || !GeminiSpawning.canAct(this, 1) || !isHostile()
 				|| isRecovering() || getHealth() <= 0 || attackCooldown > 0 || !(target instanceof EntityLivingBase)
 				|| !canHunt((EntityLivingBase) target) || !canEntityBeSeen(target)) return false;
 		double reach = width + target.width + 0.6D;
@@ -149,7 +154,7 @@ public final class EntityFakePerson extends EntityMob implements IDeepRootCarrie
 
 	@Override
 	public void onDeath(DamageSource source) {
-		if(!worldObj.isRemote && !flag(RECOVERY_USED) && GeminiInvasionManager.canActivityOccur(worldObj)
+		if(!worldObj.isRemote && !flag(RECOVERY_USED) && GeminiSpawning.canAct(this, 1)
 				&& !source.isFireDamage() && !isBurning() && source != DamageSource.outOfWorld && rand.nextInt(4) == 0) {
 			flag(RECOVERY_USED, true);
 			flag(DISGUISED, false);
@@ -173,7 +178,7 @@ public final class EntityFakePerson extends EntityMob implements IDeepRootCarrie
 	@Override
 	public void onUpdate() {
 		if(!worldObj.isRemote) {
-			if(!GeminiInvasionManager.canActivityOccur(worldObj) || worldObj.difficultySetting == EnumDifficulty.PEACEFUL) {
+			if(!GeminiSpawning.canAct(this, 1) || worldObj.difficultySetting == EnumDifficulty.PEACEFUL) {
 				setAttackTarget(null);
 				getNavigator().clearPathEntity();
 				motionX = motionY = motionZ = 0;
