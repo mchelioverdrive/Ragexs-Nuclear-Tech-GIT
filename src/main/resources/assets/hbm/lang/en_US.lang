@@ -7587,6 +7587,7 @@ death.attack.rntBlade=%1$s was struck by a guillotine.
 death.attack.rntElectric=%1$s was electrocuted.
 death.attack.rntInjection=%1$s succumbed to a fictional terminal effect.
 
+entity.hbm.woodcrawler_cocoon.name=Conversion Cocoon
 entity.hbm.woodcrawler.name=Woodcrawler
 entity.woodcrawler.name=Woodcrawler
 entity.hbm.fake_person.name=Fake Person

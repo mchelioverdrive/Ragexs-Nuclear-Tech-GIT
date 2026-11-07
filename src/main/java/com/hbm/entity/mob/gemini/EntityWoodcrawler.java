@@ -2,7 +2,6 @@ package com.hbm.entity.mob.gemini;
 
 import com.hbm.config.GeminiConfig;
 import com.hbm.entity.mob.ai.EntityAIWoodcrawler;
-import com.hbm.world.gemini.WoodcrawlerConversionEvent;
 import com.hbm.world.gemini.WoodcrawlerSpawning;
 
 import net.minecraft.block.Block;
@@ -10,7 +9,6 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.IEntityLivingData;
 import com.hbm.world.gemini.GeminiSpawning;
 import net.minecraft.entity.EntityList;
-import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.EnumCreatureAttribute;
 import net.minecraft.entity.SharedMonsterAttributes;
@@ -25,13 +23,17 @@ import net.minecraft.util.MathHelper;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.EnumDifficulty;
 import net.minecraft.world.World;
-import net.minecraftforge.common.MinecraftForge;
 
 public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 
 	public static final int WANDER = 0, STALK = 1, CHASE = 2, SEARCH = 3, RETREAT = 4;
 	private NBTTagCompound capturedVillager;
 	private int captiveTicks;
+	public enum CaptureState { IDLE, HUNTING, STALKING, GRABBING, PLACING_CONVERSION_NEST,
+		CONVERTING_VICTIM, RECOVERING, RETURN_TO_HUNT }
+	private CaptureState captureState = CaptureState.IDLE;
+	private int captureStateTicks;
+	private final EntityAIWoodcrawler controller;
 	private byte fakePersonConversion;
 	private boolean loadedFromNBT;
 	private int strikeDelay, strikeCooldown;
@@ -49,7 +51,8 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 		getNavigator().setEnterDoors(true);
 		getNavigator().setBreakDoors(true);
 		tasks.addTask(0, new EntityAISwimming(this));
-		tasks.addTask(1, new EntityAIWoodcrawler(this));
+		controller = new EntityAIWoodcrawler(this);
+		tasks.addTask(1, controller);
 	}
 
     @Override public IEntityLivingData onSpawnWithEgg(IEntityLivingData data) {
@@ -79,7 +82,26 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 	public boolean isAIEnabled() { return true; }
 
 	public int getHuntState() { return dataWatcher.getWatchableObjectByte(20); }
-	public void setHuntState(int state) { dataWatcher.updateObject(20, Byte.valueOf((byte) state)); }
+	public void setHuntState(int state) {
+		dataWatcher.updateObject(20, Byte.valueOf((byte) state));
+		if(!isCaptureBusy() && strikeDelay == 0) captureState = state == WANDER ? CaptureState.IDLE
+				: state == STALK ? CaptureState.STALKING : CaptureState.HUNTING;
+	}
+	public CaptureState getCaptureState() { return captureState; }
+	public boolean isCaptureBusy() {
+		return captureState == CaptureState.PLACING_CONVERSION_NEST || captureState == CaptureState.CONVERTING_VICTIM
+				|| captureState == CaptureState.RECOVERING || captureState == CaptureState.RETURN_TO_HUNT;
+	}
+	private void captureState(CaptureState state) { captureState = state; captureStateTicks = 0; }
+	private void resetHunting() {
+		setAttackTarget(null);
+		getNavigator().clearPathEntity();
+		strikeTarget = null;
+		strikeDelay = strikeCooldown = attackAnimationTicks = 0;
+		setClimbing(false);
+		setCrouching(false);
+		controller.resetTask();
+	}
 	@Override
 	public boolean isOnLadder() { return dataWatcher.getWatchableObjectByte(21) != 0; }
 	public void setClimbing(boolean climbing) { dataWatcher.updateObject(21, Byte.valueOf((byte) (climbing ? 1 : 0))); }
@@ -99,7 +121,7 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 
 	public boolean isPrey(Entity entity) {
 		if(entity == this || entity instanceof IGeminiCreature || !(entity instanceof EntityLivingBase)
-				|| !entity.isEntityAlive() || entity.worldObj != worldObj) return false;
+				|| !entity.isEntityAlive() || entity.worldObj != worldObj || !entity.addedToChunk) return false;
 		if(entity instanceof EntityPlayer) {
 			EntityPlayer player = (EntityPlayer) entity;
 			return !player.capabilities.disableDamage && !player.capabilities.isCreativeMode;
@@ -127,8 +149,9 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 
 	public void beginStrike(EntityLivingBase target) {
 		if(worldObj.isRemote || !GeminiSpawning.canAct(this, 1) || getHuntState() != CHASE
-				|| strikeDelay > 0 || strikeCooldown > 0 || !canStrike(target)) return;
+				|| isCaptureBusy() || hasCapturedVillager() || strikeDelay > 0 || strikeCooldown > 0 || !canStrike(target)) return;
 		strikeTarget = target;
+		captureState(CaptureState.GRABBING);
 		strikeDelay = 7;
 		attackAnimationTicks = 14;
 		worldObj.setEntityState(this, (byte) 40);
@@ -137,20 +160,23 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 	@Override
 	public boolean attackEntityAsMob(Entity target) {
 		if(worldObj.isRemote || !GeminiSpawning.canAct(this, 1) || strikeCooldown > 0
-				|| hasCapturedVillager() || !(target instanceof EntityLivingBase) || !canStrike((EntityLivingBase) target)) return false;
+				|| isCaptureBusy() || hasCapturedVillager() || !(target instanceof EntityLivingBase) || !canStrike((EntityLivingBase) target)) return false;
 		strikeCooldown = 32;
 		if(target instanceof EntityVillager && ((EntityVillager) target).getHealth() <= ((EntityVillager) target).getMaxHealth() * 0.5F) {
 			EntityVillager villager = (EntityVillager) target;
 			NBTTagCompound snapshot = new NBTTagCompound();
 			if(!villager.writeToNBTOptional(snapshot)) return false;
-			capturedVillager = snapshot;
-			captiveTicks = 0;
-			fakePersonConversion = 0;
-			dataWatcher.updateObject(22, Byte.valueOf((byte) 1));
+			EntityWoodcrawlerCocoon cocoon = EntityWoodcrawlerCocoon.place(this, snapshot,
+					villager.posX, villager.posY, villager.posZ, 0, (byte) 0);
+			if(cocoon == null) {
+				resetHunting();
+				captureState(CaptureState.RECOVERING);
+				return false;
+			}
 			villager.setDead();
-			if(!villager.isDead) { clearCapture(); return false; }
-			setAttackTarget(null);
-			getNavigator().clearPathEntity();
+			if(!villager.isDead) { cocoon.cancelPlacement(); return false; }
+			resetHunting();
+			captureState(CaptureState.PLACING_CONVERSION_NEST);
 			return true;
 		}
 		return super.attackEntityAsMob(target);
@@ -161,10 +187,8 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 		if(!worldObj.isRemote) {
 			// Natural creatures pause with invasions; manual spawn initialization is saved per creature.
 			if(!GeminiSpawning.canAct(this, 1) || worldObj.difficultySetting == EnumDifficulty.PEACEFUL) {
-				getNavigator().clearPathEntity();
-				setAttackTarget(null);
-				strikeDelay = strikeCooldown = attackAnimationTicks = 0;
-				strikeTarget = null;
+				resetHunting();
+				captureState(CaptureState.IDLE);
 				setHuntState(WANDER);
 				setClimbing(false);
 				motionX = motionY = motionZ = 0;
@@ -175,17 +199,29 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 			if(strikeDelay > 0 && --strikeDelay == 0) {
 				if(getHealth() > 0 && getHuntState() == CHASE && strikeTarget == getAttackTarget()) attackEntityAsMob(strikeTarget);
 				strikeTarget = null;
+				if(captureState == CaptureState.GRABBING) captureState(CaptureState.HUNTING);
 			}
 			if(getHealth() <= 0 && hasCapturedVillager()) releaseCapturedVillager();
-			if(getHealth() > 0 && hasCapturedVillager() && ++captiveTicks >= 600 && captiveTicks % 200 == 0) {
-				WoodcrawlerConversionEvent event = new WoodcrawlerConversionEvent(this, capturedVillager);
-				MinecraftForge.EVENT_BUS.post(event);
-				EntityLiving replacement = event.getReplacement();
-				if(hasCapturedVillager() && !isDead && GeminiSpawning.canAct(this, 1)
-						&& replacement != null && replacement != this && !replacement.isDead && replacement.worldObj == worldObj
-						&& !worldObj.loadedEntityList.contains(replacement)) {
-					replacement.setLocationAndAngles(posX, posY, posZ, rotationYaw, 0);
-					if(spawnReplacement(replacement)) clearCapture();
+			// Migrate snapshots saved by the old carrier pipeline to independent processing.
+			if(getHealth() > 0 && hasCapturedVillager() && ++captiveTicks % 20 == 0) {
+				if(EntityWoodcrawlerCocoon.place(this, capturedVillager, posX, posY, posZ,
+						Math.min(captiveTicks, GeminiConfig.woodcrawlerConversionSeconds * 20), fakePersonConversion) != null) {
+					clearCapture();
+					resetHunting();
+					captureState(CaptureState.RECOVERING);
+				} else if(captiveTicks >= 200) releaseCapturedVillager();
+			}
+			if(isCaptureBusy()) {
+				captureStateTicks++;
+				if(captureState == CaptureState.PLACING_CONVERSION_NEST && captureStateTicks >= 20)
+					captureState(CaptureState.CONVERTING_VICTIM);
+				else if(captureState == CaptureState.CONVERTING_VICTIM && captureStateTicks >= 20)
+					captureState(CaptureState.RECOVERING);
+				else if(captureState == CaptureState.RECOVERING && captureStateTicks >= 40)
+					captureState(CaptureState.RETURN_TO_HUNT);
+				else if(captureState == CaptureState.RETURN_TO_HUNT) {
+					resetHunting();
+					captureState(CaptureState.IDLE);
 				}
 			}
 		}
@@ -198,23 +234,6 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 		if(attackAnimationTicks > 0) attackAnimationTicks--;
 		if(worldObj.isRemote) setSize(0.85F, isCrouching() ? 1.8F : 3.1F);
 		super.onUpdate();
-	}
-
-	private boolean spawnReplacement(EntityLiving replacement) {
-		if(!(replacement instanceof EntityFakePerson)) return worldObj.spawnEntityInWorld(replacement);
-		// Do not materialize inside the carrier, a wall, water, or another captive.
-		for(int i = 0; i < 25; i++) {
-			double x = posX + (i % 5 - 2);
-			double z = posZ + (i / 5 - 2);
-			replacement.setLocationAndAngles(x, posY, z, rotationYaw, 0);
-			if(!worldObj.blockExists(MathHelper.floor_double(x), MathHelper.floor_double(posY), MathHelper.floor_double(z))
-					|| !worldObj.getCollidingBoundingBoxes(replacement, replacement.boundingBox).isEmpty()
-					|| !worldObj.checkNoEntityCollision(replacement.boundingBox)
-					|| worldObj.isAnyLiquid(replacement.boundingBox)) continue;
-			// A canceled spawn keeps the captive and its already-rolled decision for the next retry.
-			return worldObj.spawnEntityInWorld(replacement);
-		}
-		return false;
 	}
 
 	@Override
@@ -236,6 +255,8 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 					|| !worldObj.getCollidingBoundingBoxes(restored, restored.boundingBox).isEmpty()) continue;
 			if(worldObj.spawnEntityInWorld(restored)) {
 				clearCapture();
+				resetHunting();
+				captureState(CaptureState.RECOVERING);
 				return true;
 			}
 		}
@@ -251,7 +272,7 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 
 	/** One decision per captive, including across reloads and vetoed/limited spawn retries. */
 	public boolean shouldConvertToFakePerson() {
-		if(worldObj.isRemote || !hasCapturedVillager() || captiveTicks < 600
+		if(worldObj.isRemote || !hasCapturedVillager() || captiveTicks < GeminiConfig.woodcrawlerConversionSeconds * 20
 				|| !GeminiSpawning.canAct(this, 1)) return false;
 		if(fakePersonConversion == 0) fakePersonConversion = (byte) (rand.nextFloat() < GeminiConfig.fakePersonConversionChance ? 1 : 2);
 		return fakePersonConversion == 1;
@@ -296,6 +317,7 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 		if(capturedVillager != null) nbt.setTag("WoodcrawlerCaptive", capturedVillager.copy());
 		nbt.setInteger("WoodcrawlerCaptiveTicks", captiveTicks);
 		nbt.setByte("FakePersonConversion", fakePersonConversion);
+		nbt.setString("CaptureState", captureState.name());
 	}
 	@Override
 	public void readEntityFromNBT(NBTTagCompound nbt) {
@@ -305,6 +327,9 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 		captiveTicks = Math.max(0, Math.min(600, nbt.getInteger("WoodcrawlerCaptiveTicks")));
 		fakePersonConversion = (byte) Math.max(0, Math.min(2, nbt.getByte("FakePersonConversion")));
 		dataWatcher.updateObject(22, Byte.valueOf((byte) (hasCapturedVillager() ? 1 : 0)));
-		// Paths, awareness and attack windups are intentionally transient.
+		// Never reload a windup, stale path, target or dependency on a cocoon's loaded chunk.
+		captureState = hasCapturedVillager() || nbt.hasKey("CaptureState", 8) ? CaptureState.RECOVERING : CaptureState.IDLE;
+		captureStateTicks = strikeDelay = strikeCooldown = 0;
+		strikeTarget = null;
 	}
 }

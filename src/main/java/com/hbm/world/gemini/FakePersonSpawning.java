@@ -25,13 +25,13 @@ public final class FakePersonSpawning {
 
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public void onConvert(WoodcrawlerConversionEvent event) {
-		if(event.getReplacement() != null || !event.carrier.shouldConvertToFakePerson()
-				|| !canSpawn(event.carrier.worldObj, null)) return;
+		if(event.getReplacement() != null || !event.shouldConvertToFakePerson()
+				|| !canSpawn(event.world, null)) return;
 		NBTTagCompound victim = event.getVillagerData();
 		// Unknown modded villager subclasses keep the lossless captive/release path.
 		// Never accept player NBT or a Gemini replacement as a new victim.
 		if(EntityList.stringToClassMapping.get(victim.getString("id")) != EntityVillager.class) return;
-		EntityFakePerson replacement = new EntityFakePerson(event.carrier.worldObj);
+		EntityFakePerson replacement = new EntityFakePerson(event.world);
 		replacement.imitateVillager(victim);
 		event.setReplacement(replacement);
 	}

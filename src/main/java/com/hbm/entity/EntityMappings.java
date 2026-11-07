@@ -329,6 +329,7 @@ public class EntityMappings {
 		registerGeminiEgg(com.hbm.entity.mob.gemini.EntityWretch.class, "wretch", 0x49372D, 0xB86B63);
 		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityWretch.class, "wretch", id++, MainRegistry.instance, 128, 2, true);
 		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityWretchPart.class, "wretch_part", id++, MainRegistry.instance, 128, 2, false);
+		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityWoodcrawlerCocoon.class, "woodcrawler_cocoon", id++, MainRegistry.instance, 96, 20, false);
 	}
 
 	private static void registerGeminiEgg(Class<? extends Entity> clazz, String name, int color1, int color2) {

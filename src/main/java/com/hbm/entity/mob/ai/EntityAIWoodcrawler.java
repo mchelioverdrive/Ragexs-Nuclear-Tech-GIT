@@ -13,6 +13,7 @@ import net.minecraft.block.material.Material;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.ai.EntityAIBase;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.passive.EntityVillager;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.MathHelper;
@@ -32,6 +33,7 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 	private int scanDelay, pathDelay, stalkTicks, memoryTicks, retreatTicks, wanderDelay;
 	private int entranceCursor, doorX, doorY, doorZ, doorTicks, doorBackoff, knockDelay;
 	private int climbTicks;
+	private int huntTicks, pathFailures;
 	private double knownX, knownY, knownZ, goalX, goalY, goalZ, climbStartY;
 	private double entranceDistance = Double.MAX_VALUE;
 	private double entranceX, entranceY, entranceZ;
@@ -50,19 +52,32 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 
 	@Override
 	public void resetTask() {
-		clearDoor();
+		forget();
 		mob.setClimbing(false);
-		mob.getNavigator().clearPathEntity();
-		hasGoal = false;
+		pathDelay = scanDelay = wanderDelay = climbTicks = doorBackoff = knockDelay = 0;
+		entranceCursor = 0;
+		entranceDistance = Double.MAX_VALUE;
 	}
 
 	@Override
 	public void updateTask() {
+		if(mob.isCaptureBusy()) {
+			if(mob.getCaptureState() == EntityWoodcrawler.CaptureState.RECOVERING) wander();
+			else mob.getNavigator().clearPathEntity();
+			mob.setClimbing(false);
+			return;
+		}
 		if(pathDelay > 0) pathDelay--;
 		if(scanDelay > 0) scanDelay--;
 		if(doorBackoff > 0) doorBackoff--;
 		if(knockDelay > 0) knockDelay--;
 		EntityLivingBase target = mob.getAttackTarget();
+		if(target != null && (++huntTicks > 1200 || pathFailures >= 5
+				|| !world.blockExists(MathHelper.floor_double(target.posX), MathHelper.floor_double(target.posY), MathHelper.floor_double(target.posZ)))) {
+			forget();
+			scanDelay = 100;
+			target = null;
+		}
 		if(mob.hasCapturedVillager() || !mob.isPrey(target)
 				|| mob.getDistanceSqToEntity(target) > square(GeminiConfig.woodcrawlerDetectionRange + 8)) {
 			if(target != null) forget();
@@ -155,7 +170,9 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 		for(int i = 0; i < candidates.size() && i < 64; i++) {
 			EntityLivingBase candidate = candidates.get(i);
 			double distance = mob.getDistanceSqToEntity(candidate);
-			if(distance < bestDistance && (mob.canEntityBeSeen(candidate) || indoors(candidate.posX, candidate.posY, candidate.posZ))) {
+			boolean preferred = candidate instanceof EntityVillager && !(best instanceof EntityVillager);
+			if(distance <= range * range && (preferred || distance < bestDistance && (!(best instanceof EntityVillager) || candidate instanceof EntityVillager))
+					&& (mob.canEntityBeSeen(candidate) || indoors(candidate.posX, candidate.posY, candidate.posZ))) {
 				best = candidate;
 				bestDistance = distance;
 			}
@@ -180,7 +197,7 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 		mob.setHuntState(EntityWoodcrawler.WANDER);
 		mob.getNavigator().clearPathEntity();
 		clearDoor();
-		memoryTicks = stalkTicks = retreatTicks = 0;
+		memoryTicks = stalkTicks = retreatTicks = huntTicks = pathFailures = 0;
 		hasEntrance = hasGoal = sawTarget = false;
 	}
 
@@ -197,8 +214,9 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 		int mx = MathHelper.floor_double(mob.posX), mz = MathHelper.floor_double(mob.posZ);
 		// Native PathNavigate uses followRange + 8; do not let ChunkCache load missing chunks.
 		if(!world.checkChunksExist(mx - radius, 0, mz - radius, mx + radius, 255, mz + radius)
-				|| !world.blockExists(ix, MathHelper.floor_double(y), iz)) return;
-		mob.getNavigator().tryMoveToXYZ(x, y, z, speed);
+				|| !world.blockExists(ix, MathHelper.floor_double(y), iz)) { pathFailures++; return; }
+		if(mob.getNavigator().tryMoveToXYZ(x, y, z, speed)) pathFailures = 0;
+		else pathFailures++;
 		if(mob.getNavigator().noPath() && mob.getDistanceSq(x, y, z) < 100) {
 			mob.getMoveHelper().setMoveTo(x, y, z, speed);
 		}

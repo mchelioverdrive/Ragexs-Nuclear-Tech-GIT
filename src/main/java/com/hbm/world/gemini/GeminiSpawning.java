@@ -32,6 +32,7 @@ public final class GeminiSpawning {
 
     public static boolean manualAdmission(EntityLivingBase mob) {
         return mob != null && !mob.worldObj.isRemote && mob.worldObj instanceof WorldServer
+                && GeminiInvasionManager.hasMarsVisited(mob.worldObj)
                 && mob.worldObj.difficultySetting != EnumDifficulty.PEACEFUL && isManual(mob);
     }
 
