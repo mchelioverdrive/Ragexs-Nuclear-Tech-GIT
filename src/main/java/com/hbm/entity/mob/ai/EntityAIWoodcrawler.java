@@ -61,6 +61,12 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 
 	@Override
 	public void updateTask() {
+		if(mob.isBurrowing() || mob.isGrabbing()) {
+			mob.getNavigator().clearPathEntity();
+			mob.setClimbing(false);
+			clearDoor();
+			return;
+		}
 		if(mob.isCaptureBusy()) {
 			if(mob.getCaptureState() == EntityWoodcrawler.CaptureState.RECOVERING) wander();
 			else mob.getNavigator().clearPathEntity();
@@ -136,6 +142,7 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 		double distance = mob.getDistanceSq(knownX, knownY, knownZ);
 		if(visible) {
 			clearDoor();
+			if(ready && mob.ticksExisted % 20 == 0 && mob.tryBurrow(target)) return;
 			if(ready && distance < 81) {
 				mob.setHuntState(EntityWoodcrawler.CHASE);
 				moveTo(knownX, knownY, knownZ, 1.55D);
@@ -158,6 +165,15 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 			interactWithDoor(ready);
 		}
 		updateClimbing();
+	}
+
+	/** Invalidate paths and entrance probes without restarting stalking or forgetting live prey. */
+	public void onBurrowFinished() {
+		pathDelay = pathFailures = climbTicks = 0;
+		hasGoal = hasEntrance = false;
+		entranceCursor = 0;
+		entranceDistance = Double.MAX_VALUE;
+		clearDoor();
 	}
 
 	private EntityLivingBase findTarget() {
