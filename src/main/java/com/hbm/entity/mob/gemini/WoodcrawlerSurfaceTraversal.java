@@ -2,7 +2,11 @@ package com.hbm.entity.mob.gemini;
 
 import java.util.ArrayList;
 import com.hbm.world.gemini.GardenerNests;
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockDoor;
+import net.minecraft.block.BlockFence;
+import net.minecraft.block.BlockFenceGate;
+import net.minecraft.block.BlockWall;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.MathHelper;
@@ -11,14 +15,17 @@ import net.minecraft.world.World;
 
 /** Collision-resolved wall/ladder attachment, including ledge entry and supported exits. */
 final class WoodcrawlerSurfaceTraversal {
-    private static final int NONE = 0, UP = 1, TOP = 2, DOWN = 3, LADDER = 4;
+    private static final int NONE = 0, UP = 1, TOP = 2, DOWN = 3, LADDER = 4, ROOF = 5;
     private final EntityWoodcrawler mob;
     private final World world;
     private int mode, nx, nz, ticks, blockedTicks, climbDelay, ladderDelay, landingTicks;
     private int ladderX, ladderZ, ladderBottom, ladderTop;
-    private boolean ladderFound;
+    private boolean ladderFound, barrierContact;
     private double plane, vx, vy, vz, exitX, exitZ, descentStartY;
     private double savedGoalX, savedGoalY, savedGoalZ;
+    private double progressX, progressY, progressZ, climbX, climbY, climbZ;
+    private int stalledTicks, climbNX, climbNZ, retryTicks;
+    private boolean climbEpisode;
 
     WoodcrawlerSurfaceTraversal(EntityWoodcrawler mob) { this.mob = mob; world = mob.worldObj; }
     boolean active() { return mode != NONE; }
@@ -70,17 +77,21 @@ final class WoodcrawlerSurfaceTraversal {
 
     private boolean wall(double reach, double bottom, double height) {
         AxisAlignedBB probe = body(mob.posX, bottom, mob.posZ);
+        probe.minY = bottom; // Keep contact until the actual feet, not an inset probe, clear the lip.
         probe.maxY = bottom + height;
         probe = probe.addCoord(-nx * reach, 0, -nz * reach);
         if(!GardenerNests.loaded(world, probe)) return false;
         double closest = Double.MAX_VALUE, selected = 0;
+        boolean selectedBarrier = false;
         // World reuses its collision list; the exposed-face checks below query it again.
         for(Object entry : new ArrayList<AxisAlignedBB>(world.getCollidingBoundingBoxes(mob, probe))) {
             AxisAlignedBB box = (AxisAlignedBB) entry;
-            if(box.maxY <= bottom + 0.04D || box.minY >= bottom + height - 0.04D) continue;
+            if(box.maxY <= bottom || box.minY >= bottom + height - 0.001D) continue;
             int bx = MathHelper.floor_double((box.minX + box.maxX) * 0.5D), by = MathHelper.floor_double((box.minY + box.maxY) * 0.5D);
             int bz = MathHelper.floor_double((box.minZ + box.maxZ) * 0.5D);
-            if(world.getBlock(bx, by, bz) instanceof BlockDoor) continue;
+            Block block = world.getBlock(bx, by, bz);
+            if(block instanceof BlockDoor) continue;
+            boolean barrier = block instanceof BlockFence || block instanceof BlockFenceGate || block instanceof BlockWall;
             double face = nx > 0 ? box.maxX : nx < 0 ? box.minX : nz > 0 ? box.maxZ : box.minZ;
             double distance = (nx != 0 ? mob.posX - face : mob.posZ - face) * (nx + nz);
             if(distance < -reach || distance > reach + mob.width / 2D) continue;
@@ -91,11 +102,37 @@ final class WoodcrawlerSurfaceTraversal {
             else if(nx < 0) { outside.minX = box.minX - 0.025D; outside.maxX = box.minX - 0.001D; }
             else if(nz > 0) { outside.minZ = box.maxZ + 0.001D; outside.maxZ = box.maxZ + 0.025D; }
             else { outside.minZ = box.minZ - 0.025D; outside.maxZ = box.minZ - 0.001D; }
+            if(barrier) {
+                // Connected rails overlap at corners. Only the local contact patch
+                // needs to be exposed, not the whole face of every intersecting rail.
+                if(nx != 0) {
+                    double z = MathHelper.clamp_double(mob.posZ, box.minZ + 0.001D, box.maxZ - 0.001D);
+                    outside.minZ = Math.max(box.minZ + 0.001D, z - 0.005D);
+                    outside.maxZ = Math.min(box.maxZ - 0.001D, z + 0.005D);
+                } else {
+                    double x = MathHelper.clamp_double(mob.posX, box.minX + 0.001D, box.maxX - 0.001D);
+                    outside.minX = Math.max(box.minX + 0.001D, x - 0.005D);
+                    outside.maxX = Math.min(box.maxX - 0.001D, x + 0.005D);
+                }
+            }
             if(!GardenerNests.loaded(world, outside) || !world.getCollidingBoundingBoxes(mob, outside).isEmpty()) continue;
-            if(distance < closest - 0.01D) { closest = distance; selected = face; }
+            if(distance < closest - 0.01D) { closest = distance; selected = face; selectedBarrier = barrier; }
         }
         if(closest == Double.MAX_VALUE) return false;
-        plane = selected; return true;
+        plane = selected; barrierContact = selectedBarrier; return true;
+    }
+    private boolean topExit() {
+        // Full blocks allow a broad landing. Fence rails and posts may only be
+        // a quarter block wide, so retain support before crossing their far side.
+        for(int sample = 0; sample < 3; sample++) {
+            double inset = sample == 0 ? mob.width / 2D + 0.08D : sample == 1 ? 0.125D : 0.0625D;
+            double x = nx == 0 ? mob.posX : plane - nx * inset;
+            double z = nz == 0 ? mob.posZ : plane - nz * inset;
+            if(!Double.isNaN(floor(x, mob.posY, z, 0.5D)) && clear(body(x, mob.posY, z))) {
+                exitX = x; exitZ = z; return true;
+            }
+        }
+        return false;
     }
     private void faceWall() {
         float yaw = (float) (Math.atan2(-nz, -nx) * 180D / Math.PI - 90D);
@@ -103,19 +140,35 @@ final class WoodcrawlerSurfaceTraversal {
         mob.renderYawOffset = mob.rotationYaw;
     }
     private void attach(int state) {
+        if(mode == NONE) {
+            climbEpisode = state == UP;
+            if(climbEpisode) {
+                climbX = mob.posX; climbY = mob.posY; climbZ = mob.posZ; climbNX = nx; climbNZ = nz;
+            }
+        }
         mode = state; ticks = blockedTicks = 0; mob.setCrouching(true); mob.getNavigator().clearPathEntity();
+        progressX = mob.posX; progressY = mob.posY; progressZ = mob.posZ; stalledTicks = 0;
         if(state == DOWN) descentStartY = mob.posY;
         mob.setClimbing(true); mob.fallDistance = 0;
     }
     private void finish() {
+        if(climbEpisode) retryTicks = 300;
+        climbEpisode = false;
         mode = NONE; ladderFound = false; ladderDelay = 40; landingTicks = 4;
         mob.motionX = mob.motionY = mob.motionZ = 0; mob.fallDistance = 0; mob.setClimbing(false);
         mob.getNavigator().clearPathEntity();
+        mob.onSurfaceTraversalFinished();
+    }
+    private boolean repeatedClimb() {
+        double dx = mob.posX - climbX, dz = mob.posZ - climbZ;
+        return retryTicks > 0 && nx == climbNX && nz == climbNZ
+                && Math.abs(mob.posY - climbY) < 1.25D && dx * dx + dz * dz < 9D;
     }
 
     boolean tick(double gx, double gy, double gz, boolean hasGoal, boolean allowed) {
-        if(hasGoal) { savedGoalX = gx; savedGoalY = gy; savedGoalZ = gz; }
-        else if(active()) { gx = savedGoalX; gy = savedGoalY; gz = savedGoalZ; }
+        if(active()) { gx = savedGoalX; gy = savedGoalY; gz = savedGoalZ; }
+        else if(hasGoal) { savedGoalX = gx; savedGoalY = gy; savedGoalZ = gz; }
+        if(retryTicks > 0) retryTicks--;
         if(climbDelay > 0) climbDelay--;
         if(ladderDelay > 0) ladderDelay--;
         if(landingTicks > 0) { landingTicks--; mob.fallDistance = 0; }
@@ -125,18 +178,48 @@ final class WoodcrawlerSurfaceTraversal {
             if(ladderFound && Math.abs(gy - mob.posY) > 0.5D
                     && mob.getDistanceSq(ladderX + 0.5D, mob.posY, ladderZ + 0.5D) < 0.3D
                     && mob.posY >= ladderBottom - 0.2D && mob.posY <= ladderTop + 1.2D) attach(LADDER);
-            if(mode == NONE && climbDelay == 0 && gy >= mob.posY - 1D) {
+            if(mode == NONE && climbDelay == 0) {
                 double dx = gx - mob.posX, dz = gz - mob.posZ;
                 if(dx * dx + dz * dz > 0.1D) {
                     nx = Math.abs(dx) >= Math.abs(dz) ? (dx > 0 ? -1 : 1) : 0;
                     nz = nx == 0 ? (dz > 0 ? -1 : 1) : 0;
-                    if(wall(0.35D, mob.posY, mob.height) && clear(body(mob.posX, mob.posY + 0.25D, mob.posZ))) attach(UP);
+                    if(!repeatedClimb() && wall(0.35D, mob.posY, mob.height)
+                            && (gy >= mob.posY - 1D || barrierContact)
+                            && clear(body(mob.posX, mob.posY + 0.25D, mob.posZ))) attach(UP);
                 }
             }
         }
         if(mode == NONE) return false;
         vx = vy = vz = 0;
-        if(++ticks > 2400) { if(mode == UP || mode == TOP) attach(DOWN); gy = ladderBottom; }
+        double progress = (mob.posX - progressX) * (mob.posX - progressX) + (mob.posY - progressY) * (mob.posY - progressY)
+                + (mob.posZ - progressZ) * (mob.posZ - progressZ);
+        if(progress > 0.01D) { progressX = mob.posX; progressY = mob.posY; progressZ = mob.posZ; stalledTicks = 0; }
+        else stalledTicks++;
+        if(++ticks > 2400 || stalledTicks > 100 && (mode == UP || mode == TOP || mode == ROOF)) {
+            if(mode == UP || mode == TOP || mode == ROOF) {
+                climbDelay = 100;
+                if(mob.onGround || !Double.isNaN(floor(mob.posX, mob.posY, mob.posZ, 0.18D))) { finish(); return false; }
+                attach(DOWN);
+            }
+            gy = ladderBottom;
+        }
+        if(mode == ROOF) {
+            // A roof shelf is part of the climb, not a chance for the ground path to reverse it.
+            double dx = gx - mob.posX, dz = gz - mob.posZ, distance = Math.sqrt(dx * dx + dz * dz);
+            if(distance < 0.6D && !Double.isNaN(floor(mob.posX, mob.posY, mob.posZ, 0.2D))) { finish(); return false; }
+            if(distance > 0.01D) {
+                vx = dx / distance * 0.12D; vz = dz / distance * 0.12D; vy = -0.08D;
+                nx = Math.abs(dx) >= Math.abs(dz) ? (dx > 0 ? -1 : 1) : 0;
+                nz = nx == 0 ? (dz > 0 ? -1 : 1) : 0;
+                if(wall(0.35D, mob.posY, mob.height) && clear(body(mob.posX, mob.posY + 0.18D, mob.posZ))) attach(UP);
+            }
+            if(mode == ROOF && Double.isNaN(floor(mob.posX, mob.posY, mob.posZ, 0.3D))) {
+                nx = Math.abs(dx) >= Math.abs(dz) ? (dx > 0 ? 1 : -1) : 0;
+                nz = nx == 0 ? (dz > 0 ? 1 : -1) : 0;
+                if(wall(1.35D, mob.posY - 0.5D, mob.height + 0.5D)) attach(DOWN);
+                else { finish(); return false; }
+            }
+        }
         if(mode == LADDER) {
             ladderMotion(gx, gy, gz);
         } else if(mode == DOWN) {
@@ -152,13 +235,10 @@ final class WoodcrawlerSurfaceTraversal {
                     blockedTicks = 0; vy = 0.16D;
                     vx = nx == 0 ? 0 : MathHelper.clamp_double(plane + nx * (mob.width / 2D + 0.015D) - mob.posX, -0.06D, 0.06D);
                     vz = nz == 0 ? 0 : MathHelper.clamp_double(plane + nz * (mob.width / 2D + 0.015D) - mob.posZ, -0.06D, 0.06D);
-                } else if(++blockedTicks >= 20) { attach(DOWN); climbDelay = 100; }
+                } else if(++blockedTicks >= 80) { attach(DOWN); climbDelay = 100; }
                 faceWall();
             } else {
-                exitX = nx == 0 ? mob.posX : plane - nx * (mob.width / 2D + 0.08D);
-                exitZ = nz == 0 ? mob.posZ : plane - nz * (mob.width / 2D + 0.08D);
-                double support = floor(exitX, mob.posY, exitZ, 0.5D);
-                if(Double.isNaN(support) || !clear(body(exitX, mob.posY, exitZ))) { attach(DOWN); }
+                if(!topExit()) { attach(DOWN); }
                 else { mode = TOP; ticks = 0; }
             }
         }
@@ -166,7 +246,7 @@ final class WoodcrawlerSurfaceTraversal {
             vx = MathHelper.clamp_double(exitX - mob.posX, -0.1D, 0.1D);
             vz = MathHelper.clamp_double(exitZ - mob.posZ, -0.1D, 0.1D); vy = 0;
             if(mob.getDistanceSq(exitX, mob.posY, exitZ) < 0.01D && !Double.isNaN(floor(mob.posX, mob.posY, mob.posZ, 0.2D))) {
-                finish(); return false;
+                mode = ROOF; ticks = 0; vx = vz = 0; vy = -0.08D;
             }
         }
         if(active()) { mob.motionX = vx; mob.motionY = vy; mob.motionZ = vz; mob.fallDistance = 0; mob.setClimbing(true); }
@@ -202,9 +282,10 @@ final class WoodcrawlerSurfaceTraversal {
 
     /** Called for the actual proposed native movement, after movement-helper acceleration. */
     void move(double x, double y, double z) {
-        if(active()) {
+        if(active() && mode != ROOF) {
             mob.moveSurfaceBody(vx, vy, vz); mob.fallDistance = 0; return;
         }
+        if(mode == ROOF) { x = vx; y = vy; z = vz; }
         if(!mob.isBurrowing() && !mob.isGrabbing() && !mob.isProbing() && !mob.isInWater()
                 && !(mob.hurtTime > 0 && y > 0.25D) && x * x + z * z > 0.0001D
                 && !Double.isNaN(floor(mob.posX, mob.posY, mob.posZ, 0.2D))) {
@@ -243,7 +324,7 @@ final class WoodcrawlerSurfaceTraversal {
         else if(landingTicks > 0) mob.fallDistance = 0;
     }
     void write(NBTTagCompound parent) {
-        if(!active()) return;
+        if(!active() && retryTicks == 0) return;
         NBTTagCompound tag = new NBTTagCompound();
         tag.setInteger("Mode", mode); tag.setInteger("NX", nx); tag.setInteger("NZ", nz);
         tag.setDouble("Plane", plane); tag.setDouble("StartY", descentStartY);
@@ -251,13 +332,16 @@ final class WoodcrawlerSurfaceTraversal {
         tag.setDouble("GoalX", savedGoalX); tag.setDouble("GoalY", savedGoalY); tag.setDouble("GoalZ", savedGoalZ);
         tag.setInteger("LadderX", ladderX); tag.setInteger("LadderZ", ladderZ);
         tag.setInteger("Bottom", ladderBottom); tag.setInteger("Top", ladderTop);
+        tag.setBoolean("ClimbEpisode", climbEpisode); tag.setInteger("RetryTicks", retryTicks);
+        tag.setDouble("ClimbX", climbX); tag.setDouble("ClimbY", climbY); tag.setDouble("ClimbZ", climbZ);
+        tag.setInteger("ClimbNX", climbNX); tag.setInteger("ClimbNZ", climbNZ);
         parent.setTag("WoodcrawlerSurface", tag);
     }
     void read(NBTTagCompound parent) {
         if(!parent.hasKey("WoodcrawlerSurface", 10)) return;
         NBTTagCompound tag = parent.getCompoundTag("WoodcrawlerSurface");
         int state = tag.getInteger("Mode"), x = tag.getInteger("NX"), z = tag.getInteger("NZ");
-        if(state < UP || state > LADDER || state != LADDER && Math.abs(x) + Math.abs(z) != 1) return;
+        if(state < NONE || state > ROOF || state != NONE && state != LADDER && Math.abs(x) + Math.abs(z) != 1) return;
         mode = state; nx = x; nz = z; plane = tag.getDouble("Plane"); descentStartY = tag.getDouble("StartY");
         exitX = tag.getDouble("ExitX"); exitZ = tag.getDouble("ExitZ");
         savedGoalX = tag.getDouble("GoalX"); savedGoalY = tag.getDouble("GoalY"); savedGoalZ = tag.getDouble("GoalZ");
@@ -265,6 +349,14 @@ final class WoodcrawlerSurfaceTraversal {
         ladderBottom = MathHelper.clamp_int(tag.getInteger("Bottom"), 0, 255);
         ladderTop = MathHelper.clamp_int(tag.getInteger("Top"), ladderBottom, 255);
         ladderFound = mode == LADDER;
-        mob.setCrouching(true); mob.setClimbing(true);
+        retryTicks = MathHelper.clamp_int(tag.getInteger("RetryTicks"), 0, 300);
+        climbEpisode = tag.hasKey("ClimbEpisode") ? tag.getBoolean("ClimbEpisode") : mode == UP || mode == TOP || mode == ROOF;
+        climbX = tag.hasKey("ClimbX") ? tag.getDouble("ClimbX") : mob.posX;
+        climbY = tag.hasKey("ClimbY") ? tag.getDouble("ClimbY") : mob.posY;
+        climbZ = tag.hasKey("ClimbZ") ? tag.getDouble("ClimbZ") : mob.posZ;
+        climbNX = tag.hasKey("ClimbNX") ? tag.getInteger("ClimbNX") : nx;
+        climbNZ = tag.hasKey("ClimbNZ") ? tag.getInteger("ClimbNZ") : nz;
+        progressX = mob.posX; progressY = mob.posY; progressZ = mob.posZ;
+        if(active()) { mob.setCrouching(true); mob.setClimbing(true); }
     }
 }

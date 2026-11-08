@@ -38,6 +38,10 @@ final class WoodcrawlerLocomotion {
     void afterPhysics() { surface.afterPhysics(); }
     void write(NBTTagCompound tag) { surface.write(tag); }
     void read(NBTTagCompound tag) { surface.read(tag); }
+    void onSurfaceFinished() {
+        goalAge = 100; escapeTicks = stuckTicks = 0; sampled = false; retryTicks = 40; digging = null;
+        crawlTicks = Math.max(crawlTicks, 40);
+    }
 
     private AxisAlignedBB body(double x, double y, double z, double height) {
         double width = height <= EntityWoodcrawler.CRAWLING_HEIGHT ? EntityWoodcrawler.CRAWLING_WIDTH : EntityWoodcrawler.BODY_WIDTH;

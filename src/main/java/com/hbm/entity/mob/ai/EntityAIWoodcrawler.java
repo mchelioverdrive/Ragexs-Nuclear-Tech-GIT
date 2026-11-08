@@ -237,6 +237,11 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 		entranceDistance = Double.MAX_VALUE;
 		clearDoor();
 	}
+	public void onSurfaceTraversalFinished() {
+		onBurrowFinished();
+		retreatTicks = 0;
+		sawTarget = false;
+	}
 
 	private EntityLivingBase findTarget() {
 		double range = GeminiConfig.woodcrawlerDetectionRange;

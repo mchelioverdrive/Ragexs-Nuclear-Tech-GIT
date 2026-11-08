@@ -592,3 +592,13 @@
 - Restore vanilla/Forge ladder recognition and route vertical goals through bounded nearby ladder-column searches, with centered climbing, descending and supported exits suitable for village church shafts.
 - Commit to door harassment across brief visibility changes, require the door to separate remembered prey, and defer retries while alternate entrances are investigated. Finish wall and ladder transitions before choosing another entrance; retain non-destructive door behavior and protected excavation boundaries.
 - Use loaded Gemini membership to limit Woodcrawler attention to two hunters per prey or nearby prey cluster. Preserve current hunts deterministically, admit other targets when available, and send excess hunters toward separate search locations instead of repeatedly converging. Keep other Gemini creatures' target rules, progression, registration and population caps unchanged.
+
+2026-11-07 23:22 — Stop Woodcrawler roof-climbing retry loops
+
+- Retain wall contact until the feet clear a roof lip and continue a committed climb across stepped roof shelves, instead of handing control back to a ground route at the first ledge.
+- Give obstructed climbs a bounded progress-aware recovery interval, remember recently attempted wall approaches briefly, and clear stale navigation/escape state when traversal ends. Preserve native collisions, controlled descent, ladder behavior and optional saved traversal data.
+
+2026-11-07 23:44 — Let Woodcrawlers cross narrow fences and raised yards
+
+- Check supported crest positions on narrow rails and posts instead of assuming a full-block landing. Resolve connected fence and wall contacts at the local exposed face, and permit climbing these barriers when prey or an exit is lower than the current yard.
+- Retain native collision shapes, supported descent, loaded-chunk checks and non-destructive traversal, including closed gates; ordinary doors and existing roof/ladder behavior retain their rules.

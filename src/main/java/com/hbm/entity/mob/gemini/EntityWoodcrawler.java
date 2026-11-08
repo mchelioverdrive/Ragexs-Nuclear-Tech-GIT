@@ -161,6 +161,10 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 	}
 	public void setMovementGoal(double x, double y, double z) { locomotion.goal(x, y, z); }
 	public boolean isSurfaceTraversal() { return locomotion.traversing(); }
+	void onSurfaceTraversalFinished() {
+		locomotion.onSurfaceFinished();
+		controller.onSurfaceTraversalFinished();
+	}
 	public Vec3 getClimbWaypoint(double x, double y, double z) { return locomotion.waypoint(x, y, z); }
 	@Override public void moveEntity(double x, double y, double z) {
 		if(locomotion != null && !worldObj.isRemote && ridingEntity == null && isEntityAlive() && GeminiSpawning.canAct(this, 1)) locomotion.move(x, y, z);
