@@ -28,6 +28,10 @@ public final class WoodcrawlerSpawning {
 				|| GeminiConfig.woodcrawlerMaxLoaded == 0 || world.difficultySetting == EnumDifficulty.PEACEFUL) return false;
 		return GeminiPopulation.canAdmit(world, EntityWoodcrawler.class, candidate, GeminiConfig.woodcrawlerMaxLoaded);
 	}
+	public static boolean canConvert(World world) {
+		return GeminiInvasionManager.canActivityOccur(world) && world.difficultySetting != EnumDifficulty.PEACEFUL
+				&& GeminiPopulation.canAdmit(world, EntityWoodcrawler.class, null, GeminiConfig.woodcrawlerMaxLoaded);
+	}
 
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public void onCheckSpawn(LivingSpawnEvent.CheckSpawn event) {
@@ -42,7 +46,8 @@ public final class WoodcrawlerSpawning {
 	public void onJoin(EntityJoinWorldEvent event) {
 		if(event.world.isRemote || !(event.entity instanceof EntityWoodcrawler)) return;
 		EntityWoodcrawler mob = (EntityWoodcrawler) event.entity;
-		if(!mob.addedToChunk && !canSpawn(event.world, mob)) event.setCanceled(true);
+		if(!mob.addedToChunk && !(mob.getEntityData().getBoolean("WoodcrawlerConverted")
+				? canConvert(event.world) : canSpawn(event.world, mob))) event.setCanceled(true);
 	}
 
 	@SubscribeEvent

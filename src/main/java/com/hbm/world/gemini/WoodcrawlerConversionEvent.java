@@ -10,7 +10,7 @@ import net.minecraft.world.World;
 
 /**
  * Server-thread extension hook on MinecraftForge.EVENT_BUS after the saved processing delay,
- * retried every 100 ticks for at most 60 active seconds. FakePersonSpawning supplies the default
+ * retried every 100 ticks, pausing failure time while population-limited. FakePersonSpawning supplies the default
  * conversion at lowest priority, respecting replacements supplied by integrations.
  * Supply a NEW, unspawned replacement in world. The cocoon owns
  * spawning it and only consumes its saved villager when that spawn succeeds.

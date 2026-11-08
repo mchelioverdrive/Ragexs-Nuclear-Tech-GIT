@@ -123,6 +123,7 @@ public final class ModelWoodcrawler extends ModelBase {
 	public void setRotationAngles(float stride, float amount, float age, float yaw, float pitch, float scale, Entity entity) {
 		EntityWoodcrawler mob = (EntityWoodcrawler) entity;
 		float partial = MathHelper.clamp_float(age - mob.ticksExisted, 0, 1);
+		stride = mob.prevTravelPhase + (mob.travelPhase - mob.prevTravelPhase) * partial;
 		float climb = mob.prevClimbBlend + (mob.climbBlend - mob.prevClimbBlend) * partial;
 		float crouch = mob.prevCrouchBlend + (mob.crouchBlend - mob.prevCrouchBlend) * partial;
 		float stalk = mob.prevStalkBlend + (mob.stalkBlend - mob.prevStalkBlend) * partial;
@@ -177,6 +178,10 @@ public final class ModelWoodcrawler extends ModelBase {
 				footZ = -14 - attack * 20 + MathHelper.sin(age * 0.027F + i) * 1.5F;
 				footY += (-26 - footY) * climb;
 				footZ += (-28 - footZ) * climb;
+				if(mob.getHuntState() == EntityWoodcrawler.BANG) {
+					float impact = Math.max(0, MathHelper.sin(age * 0.55F + i * 2));
+					footZ -= impact * 14; footY += impact * 9;
+				}
 			}
 			footX *= 1 - depth * 0.3F;
 			footY -= depth * 12;

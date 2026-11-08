@@ -97,6 +97,7 @@ public final class GeminiPopulation {
         // Release membership immediately: a fast reload must not mistake the old instance for a duplicate.
         for(Iterator<EntityLiving> it = members.values().iterator(); it.hasNext();) {
             EntityLiving mob = it.next();
+            if(mob instanceof EntityGardener) ((EntityGardener) mob).releaseForChunkUnload(event.getChunk().xPosition, event.getChunk().zPosition);
             if(mob.chunkCoordX == event.getChunk().xPosition && mob.chunkCoordZ == event.getChunk().zPosition) it.remove();
         }
     }

@@ -18,7 +18,7 @@ public final class GeminiConfig {
 	public static int woodcrawlerSpawnWeight = 2;
 	public static int woodcrawlerMaxLoaded = 8;
 	public static int fakePersonMaxLoaded = 16;
-	public static float fakePersonConversionChance = 0.35F;
+	public static float fakePersonConversionChance = 0.90F;
 	public static int woodcrawlerConversionSeconds = 30;
 	public static boolean deepRootEnabled = true;
 	public static final int[] deepRootStageSeconds = {300, 600, 600, 600, 600};
@@ -86,8 +86,8 @@ public final class GeminiConfig {
 				"Maximum loaded Woodcrawlers for admitting natural spawns in the Overworld. Zero disables natural spawns; manual spawn eggs bypass the cap and saved creatures are retained.");
 		fakePersonMaxLoaded = config.getInt("fakePersonMaxLoaded", CATEGORY, 16, 0, 128,
 				"Maximum loaded Fake People for admitting conversions. Zero disables conversions; manual spawn eggs bypass the cap and saved creatures are retained. No independent natural or invasion spawns are added.");
-		fakePersonConversionChance = config.getFloat("fakePersonConversionChance", CATEGORY, 0.35F, 0F, 1F,
-				"One saved probability roll per Woodcrawler cocoon. Failed rolls release the original villager; successful rolls wait up to 60 active seconds for population space and a valid spawn before releasing it.");
+		fakePersonConversionChance = config.getFloat("fakePersonConversionChance", CATEGORY, 0.90F, 0F, 1F,
+				"Saved conversion outcome: Fake Person probability; the remainder produces a Woodcrawler (default 90/10). Population-limited cocoons wait without rerolling. Existing configured values are retained.");
 		woodcrawlerConversionSeconds = config.getInt("woodcrawlerConversionSeconds", CATEGORY, 30, 1, 3600,
 				"Loaded active seconds to process a villager in a Woodcrawler cocoon. Saved per capture; pauses while Gemini activity is disabled, locked or in Peaceful.");
 		String mockery = CATEGORY + ".mockery";

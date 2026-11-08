@@ -48,6 +48,8 @@ public final class GeminiInfections {
 	/** Bounded contact validation for native carrier attack reach. Never loads terrain. */
 	public static boolean hasContact(EntityLivingBase carrier, EntityLivingBase victim) {
 		if(carrier == victim || carrier.worldObj != victim.worldObj || carrier.worldObj.isRemote) return false;
+		if(carrier instanceof com.hbm.entity.mob.gemini.EntityWoodcrawler
+				&& ((com.hbm.entity.mob.gemini.EntityWoodcrawler) carrier).hasProboscisContact(victim)) return true;
 		AxisAlignedBB a = carrier.boundingBox, b = victim.boundingBox;
 		double sx = MathHelper.clamp_double((b.minX + b.maxX) * 0.5D, a.minX, a.maxX);
 		double sy = MathHelper.clamp_double((b.minY + b.maxY) * 0.5D, a.minY, a.maxY);

@@ -20,10 +20,6 @@ import net.minecraft.util.MathHelper;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
-import net.minecraft.world.WorldServer;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.common.util.FakePlayerFactory;
-import net.minecraftforge.event.world.BlockEvent;
 
 /** One local controller; no changes to the shared mob AI or global pathfinder. */
 public final class EntityAIWoodcrawler extends EntityAIBase {
@@ -38,6 +34,8 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 	private double entranceDistance = Double.MAX_VALUE;
 	private double entranceX, entranceY, entranceZ;
 	private boolean sawTarget, hasGoal, hasEntrance, breakingDoor;
+	private double currentSpeed = 0.6D;
+	private int shelterDelay;
 
 	public EntityAIWoodcrawler(EntityWoodcrawler mob) {
 		this.mob = mob;
@@ -61,7 +59,7 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 
 	@Override
 	public void updateTask() {
-		if(mob.isBurrowing() || mob.isGrabbing()) {
+		if(mob.isBurrowing() || mob.isGrabbing() || mob.isProbing()) {
 			mob.getNavigator().clearPathEntity();
 			mob.setClimbing(false);
 			clearDoor();
@@ -77,8 +75,15 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 		if(scanDelay > 0) scanDelay--;
 		if(doorBackoff > 0) doorBackoff--;
 		if(knockDelay > 0) knockDelay--;
+		if(shelterDelay > 0) shelterDelay--;
+		if(mob.wantsShelter() || mob.avoidsExposure()) {
+			// Strong exposure overrides pursuit; milder light is handled by route weighting.
+			clearDoor(); mob.setHuntState(EntityWoodcrawler.RETREAT); mob.setClimbing(false);
+			seekShelter();
+			return;
+		}
 		EntityLivingBase target = mob.getAttackTarget();
-		if(target != null && (++huntTicks > 1200 || pathFailures >= 5
+		if(target != null && (++huntTicks > 1200 || pathFailures >= 8 && !breakingDoor
 				|| !world.blockExists(MathHelper.floor_double(target.posX), MathHelper.floor_double(target.posY), MathHelper.floor_double(target.posZ)))) {
 			forget();
 			scanDelay = 100;
@@ -102,6 +107,7 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 			}
 		}
 		if(target == null) {
+			mob.mimicVillager(false);
 			mob.setHuntState(EntityWoodcrawler.WANDER);
 			mob.setCrouching(false);
 			wander();
@@ -110,7 +116,7 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 		}
 
 		boolean visible = mob.canEntityBeSeen(target);
-		if(visible) remember(target);
+		if(visible || mob.ticksExisted % 10 == 0 && audible(target)) remember(target);
 		else if(--memoryTicks <= 0) {
 			forget();
 			scanDelay = 80;
@@ -138,6 +144,7 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 		}
 
 		stalkTicks = Math.min(stalkTicks + 1, GeminiConfig.woodcrawlerStalkSeconds * 20);
+		mob.mimicVillager(mob.getHuntState() == EntityWoodcrawler.STALK || indoors(knownX, knownY, knownZ));
 		boolean ready = stalkTicks >= GeminiConfig.woodcrawlerStalkSeconds * 20;
 		double distance = mob.getDistanceSq(knownX, knownY, knownZ);
 		if(visible) {
@@ -145,8 +152,11 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 			if(ready && mob.ticksExisted % 20 == 0 && mob.tryBurrow(target)) return;
 			if(ready && distance < 81) {
 				mob.setHuntState(EntityWoodcrawler.CHASE);
-				moveTo(knownX, knownY, knownZ, 1.55D);
 				mob.beginStrike(target);
+				if(!mob.isGrabbing()) {
+					double fleeing = (target.motionX * (target.posX - mob.posX) + target.motionZ * (target.posZ - mob.posZ)) / Math.max(1, Math.sqrt(distance));
+					moveTo(knownX, knownY, knownZ, distance < 9 ? 0.9D : fleeing > 0.04D ? 3.875D : 3.5D);
+				}
 			} else {
 				mob.setHuntState(EntityWoodcrawler.STALK);
 				// Follow at a distance, then close deliberately after the initial stalking period.
@@ -159,12 +169,38 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 			}
 		} else {
 			mob.setHuntState(ready ? EntityWoodcrawler.SEARCH : EntityWoodcrawler.STALK);
+			if(ready && distance <= 36 && memoryTicks > 0 && target.getDistanceSq(knownX, knownY, knownZ) <= 2.25D
+					&& mob.beginProbe(target)) { clearDoor(); return; }
 			searchEntrances();
-			moveTo(hasEntrance ? entranceX : knownX, hasEntrance ? entranceY : knownY,
-					hasEntrance ? entranceZ : knownZ, ready ? 1.0D : 0.6D);
+			if(!breakingDoor) moveTo(hasEntrance ? entranceX : knownX, hasEntrance ? entranceY : knownY,
+					hasEntrance ? entranceZ : knownZ, ready ? 2.5D : 0.6D);
 			interactWithDoor(ready);
 		}
 		updateClimbing();
+	}
+
+	private boolean audible(EntityLivingBase target) {
+		if(mob.getDistanceSqToEntity(target) > 64 || target.isSneaking()) return false;
+		double dx = target.posX - target.prevPosX, dz = target.posZ - target.prevPosZ;
+		return dx * dx + dz * dz > 0.0025D || target.hurtTime > 0;
+	}
+	private void seekShelter() {
+		if(shelterDelay > 0) return;
+		shelterDelay = 40;
+		double best = mob.shelterScore(mob.posX, mob.posY, mob.posZ);
+		double bx = mob.posX, by = mob.posY, bz = mob.posZ;
+		for(int i = 0; i < 16; i++) {
+			double angle = mob.getRNG().nextDouble() * Math.PI * 2, radius = 3 + mob.getRNG().nextInt(7);
+			double x = MathHelper.floor_double(mob.posX + Math.cos(angle) * radius) + 0.5D;
+			double z = MathHelper.floor_double(mob.posZ + Math.sin(angle) * radius) + 0.5D;
+			double y = MathHelper.floor_double(mob.posY) + mob.getRNG().nextInt(5) - 2;
+			if(!standable(x, y, z)) continue;
+			double score = mob.shelterScore(x, y, z);
+			if(score > best) { best = score; bx = x; by = y; bz = z; }
+		}
+		pathDelay = 0;
+		if(bx != mob.posX || bz != mob.posZ) moveTo(bx, by, bz, 2.5D);
+		else mob.getNavigator().clearPathEntity();
 	}
 
 	/** Invalidate paths and entrance probes without restarting stalking or forgetting live prey. */
@@ -188,7 +224,7 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 			double distance = mob.getDistanceSqToEntity(candidate);
 			boolean preferred = candidate instanceof EntityVillager && !(best instanceof EntityVillager);
 			if(distance <= range * range && (preferred || distance < bestDistance && (!(best instanceof EntityVillager) || candidate instanceof EntityVillager))
-					&& (mob.canEntityBeSeen(candidate) || indoors(candidate.posX, candidate.posY, candidate.posZ))) {
+					&& (mob.canEntityBeSeen(candidate) || audible(candidate))) {
 				best = candidate;
 				bestDistance = distance;
 			}
@@ -218,6 +254,9 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 	}
 
 	private void moveTo(double x, double y, double z, double speed) {
+		if(mob.isHazardAt(x, y, z)) return;
+		currentSpeed += MathHelper.clamp_double(speed - currentSpeed, -0.14D, 0.08D);
+		speed = currentSpeed;
 		goalX = x;
 		goalY = y;
 		goalZ = z;
@@ -225,6 +264,17 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 		mob.getNavigator().setSpeed(speed);
 		if(pathDelay > 0) return;
 		pathDelay = 20 + mob.getRNG().nextInt(10);
+		// Short dark detours guide native navigation; a hunt can still cross a lit patch.
+		double dx = x - mob.posX, dz = z - mob.posZ, distance = Math.sqrt(dx * dx + dz * dz);
+		if(distance > 5 && Math.abs(y - mob.posY) < 2) {
+			double nx = mob.posX + dx / distance * 4, nz = mob.posZ + dz / distance * 4;
+			int best = mob.lightAt(MathHelper.floor_double(nx), MathHelper.floor_double(mob.posY + 1), MathHelper.floor_double(nz));
+			for(int side = -1; side <= 1; side += 2) {
+				double sx = nx - dz / distance * 3 * side, sz = nz + dx / distance * 3 * side;
+				int light = mob.lightAt(MathHelper.floor_double(sx), MathHelper.floor_double(mob.posY + 1), MathHelper.floor_double(sz));
+				if(light + 2 < best && standable(sx, mob.posY, sz)) { x = sx; y = mob.posY; z = sz; best = light; }
+			}
+		}
 		int ix = MathHelper.floor_double(x), iz = MathHelper.floor_double(z);
 		int radius = GeminiConfig.woodcrawlerDetectionRange + 10;
 		int mx = MathHelper.floor_double(mob.posX), mz = MathHelper.floor_double(mob.posZ);
@@ -233,6 +283,11 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 				|| !world.blockExists(ix, MathHelper.floor_double(y), iz)) { pathFailures++; return; }
 		if(mob.getNavigator().tryMoveToXYZ(x, y, z, speed)) pathFailures = 0;
 		else pathFailures++;
+		net.minecraft.pathfinding.PathEntity path = mob.getNavigator().getPath();
+		if(path != null) for(int i = path.getCurrentPathIndex(); i < Math.min(path.getCurrentPathLength(), path.getCurrentPathIndex() + 6); i++) {
+			net.minecraft.pathfinding.PathPoint point = path.getPathPointFromIndex(i);
+			if(mob.isHazardAt(point.xCoord + 0.5D, point.yCoord, point.zCoord + 0.5D)) { mob.getNavigator().clearPathEntity(); return; }
+		}
 		if(mob.getNavigator().noPath() && mob.getDistanceSq(x, y, z) < 100) {
 			mob.getMoveHelper().setMoveTo(x, y, z, speed);
 		}
@@ -276,6 +331,7 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 			Block block = world.getBlock(x, y, z);
 			boolean door = block instanceof BlockDoor && block.getMaterial() == Material.wood
 					&& (world.getBlockMetadata(x, y, z) & 8) == 0;
+			if(door && doorBackoff > 0 && x == doorX && y == doorY && z == doorZ) continue;
 			// Native paths already handle open passages; these candidates also recover partial paths at facades.
 			boolean opening = block == Blocks.air && world.getBlock(x, y + 1, z) == Blocks.air
 					&& world.getBlock(x, y + 2, z).getMaterial().blocksMovement()
@@ -300,7 +356,8 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 
 	private boolean standable(double x, double y, double z) {
 		int ix = MathHelper.floor_double(x), iy = MathHelper.floor_double(y), iz = MathHelper.floor_double(z);
-		return world.blockExists(ix, iy - 1, iz) && world.getBlock(ix, iy - 1, iz).isNormalCube()
+		return world.checkChunksExist(ix - 1, iy - 1, iz - 1, ix + 1, iy + (int) mob.height + 1, iz + 1)
+				&& !mob.isHazardAt(x, y, z) && world.getBlock(ix, iy - 1, iz).isNormalCube()
 				&& world.getCollidingBoundingBoxes(mob, AxisAlignedBB.getBoundingBox(x - 0.43D, y, z - 0.43D,
 						x + 0.43D, y + mob.height, z + 0.43D)).isEmpty();
 	}
@@ -324,32 +381,18 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 			clearDoor();
 			return;
 		}
+		mob.setHuntState(EntityWoodcrawler.BANG);
+		mob.getNavigator().clearPathEntity();
+		mob.getLookHelper().setLookPosition(doorX + 0.5D, doorY + 1D, doorZ + 0.5D, 30, 30);
 		if(knockDelay == 0) {
 			world.playAuxSFX(1010, doorX, doorY, doorZ, 0);
-			knockDelay = 120 + mob.getRNG().nextInt(160);
+			knockDelay = 12 + mob.getRNG().nextInt(32);
 		}
-		if(!ready || !world.getGameRules().getGameRuleBooleanValue("mobGriefing")) { clearDoor(); return; }
-		mob.getNavigator().clearPathEntity();
-		if(++doorTicks % 12 == 0) world.destroyBlockInWorldPartially(mob.getEntityId(), doorX, doorY, doorZ, doorTicks / 12 - 1);
-		if(doorTicks < 120) return;
-		Block block = world.getBlock(doorX, doorY, doorZ);
-		int meta = world.getBlockMetadata(doorX, doorY, doorZ);
-		EntityPlayer actor = FakePlayerFactory.getMinecraft((WorldServer) world);
-		boolean allowed = block.canEntityDestroy(world, doorX, doorY, doorZ, mob)
-				&& !block.hasTileEntity(meta) && world.canMineBlock(actor, doorX, doorY, doorZ)
-				&& world.canMineBlock(actor, doorX, doorY + 1, doorZ)
-				&& !MinecraftForge.EVENT_BUS.post(new BlockEvent.BreakEvent(doorX, doorY, doorZ, world, block, meta, actor))
-				&& !MinecraftForge.EVENT_BUS.post(new BlockEvent.BreakEvent(doorX, doorY + 1, doorZ, world,
-						world.getBlock(doorX, doorY + 1, doorZ), world.getBlockMetadata(doorX, doorY + 1, doorZ), actor));
-		if(allowed && GeminiSpawning.canAct(mob, 1) && isClosedWoodenDoor(doorX, doorY, doorZ)
-				&& world.getGameRules().getGameRuleBooleanValue("mobGriefing")) {
-			world.func_147480_a(doorX, doorY, doorZ, true);
-			world.playAuxSFX(1012, doorX, doorY, doorZ, 0);
-			hasEntrance = false;
-			pathDelay = 0;
-		}
+		// Harassment never destroys a door, even with mobGriefing enabled.
+		if(++doorTicks < 160) return;
 		clearDoor();
-		doorBackoff = 100;
+		doorBackoff = 200;
+		hasEntrance = false; entranceCursor = 0; entranceDistance = Double.MAX_VALUE; pathDelay = 0;
 	}
 
 	private boolean isClosedWoodenDoor(int x, int y, int z) {
@@ -366,7 +409,6 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 	}
 
 	private void clearDoor() {
-		if(breakingDoor) world.destroyBlockInWorldPartially(mob.getEntityId(), doorX, doorY, doorZ, -1);
 		breakingDoor = false;
 		doorTicks = 0;
 	}

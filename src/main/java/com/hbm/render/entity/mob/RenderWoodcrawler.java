@@ -28,8 +28,10 @@ public final class RenderWoodcrawler extends RenderLiving {
 
 	@Override
 	public void doRender(Entity entity, double x, double y, double z, float yaw, float partial) {
+		if(((EntityWoodcrawler) entity).isDormant()) return;
 		super.doRender(entity, x, y, z, yaw, partial);
 		EntityWoodcrawler mob = (EntityWoodcrawler) entity;
+		if(mob.isProbing() && !mob.isInvisible() && mob.isEntityAlive()) renderProboscis(mob, x, y, z, partial);
 		EntityLivingBase target = mob.getTendrilTarget();
 		if(!mob.isGrabbing() || target == null || mob.isInvisible() || !mob.isEntityAlive()
 				|| mob.isBurrowing() || mob.getDistanceSqToEntity(target) > 36 || !mob.hasClearTendrils(target, partial)) return;
@@ -55,6 +57,20 @@ public final class RenderWoodcrawler extends RenderLiving {
 			}
 			tess.draw();
 		} finally { GL11.glPopMatrix(); GL11.glPopAttrib(); }
+	}
+	private void renderProboscis(EntityWoodcrawler mob, double x, double y, double z, float partial) {
+		double mx = mob.lastTickPosX + (mob.posX - mob.lastTickPosX) * partial;
+		double my = mob.lastTickPosY + (mob.posY - mob.lastTickPosY) * partial;
+		double mz = mob.lastTickPosZ + (mob.posZ - mob.lastTickPosZ) * partial;
+		GL11.glPushMatrix();
+		try {
+			GL11.glTranslated(x - mx, y - my, z - mz);
+			bindTexture(TEXTURE);
+			Tessellator tess = Tessellator.instance;
+			tess.startDrawingQuads(); tess.setColorOpaque_F(0.65F, 0.45F, 0.4F);
+			segment(tess, mob.getProboscisOrigin(partial), mob.getProboscisEnd(partial), 0.045D);
+			tess.draw();
+		} finally { GL11.glPopMatrix(); }
 	}
 
 	/** A textured square strut, with a stable frame even when pointing straight down. */

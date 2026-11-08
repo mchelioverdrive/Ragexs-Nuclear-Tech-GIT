@@ -144,6 +144,19 @@ public class TileEntityFEL extends TileEntityMachineBase implements IEnergyRecei
 				List<EntityLivingBase> list = worldObj.getEntitiesWithinAABB(EntityLivingBase.class, AxisAlignedBB.getBoundingBox(blx, bly, blz, bux, buy, buz));
 				
 				for(EntityLivingBase entity : list) {
+					if(mode == EnumWavelengths.UV && entity instanceof com.hbm.entity.mob.gemini.EntityWoodcrawler) {
+						// Confirm the current beam, not last tick's cached length, before UV contact.
+						int step = dir.offsetX != 0 ? (MathHelper.floor_double(entity.posX) - xCoord) * dir.offsetX
+								: (MathHelper.floor_double(entity.posZ) - zCoord) * dir.offsetZ;
+						boolean clear = step >= 3 && step < range;
+						for(int i = 3; clear && i < step; i++) {
+							int bx = xCoord + dir.offsetX * i, bz = zCoord + dir.offsetZ * i;
+							clear = worldObj.blockExists(bx, yCoord + 1, bz)
+									&& !worldObj.getBlock(bx, yCoord + 1, bz).getMaterial().isOpaque();
+						}
+						if(clear) ((com.hbm.entity.mob.gemini.EntityWoodcrawler) entity).receiveUltraviolet(xCoord + 0.5D, zCoord + 0.5D);
+						continue; // UV has its own exposure damage; do not also ignite this species.
+					}
 					switch(this.mode) {
 					case VISIBLE: entity.addPotionEffect(new PotionEffect(Potion.blindness.id, 60 * 60 * 65536, 0));
 					case IR:

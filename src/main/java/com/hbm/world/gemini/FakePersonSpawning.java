@@ -2,6 +2,8 @@ package com.hbm.world.gemini;
 
 import com.hbm.config.GeminiConfig;
 import com.hbm.entity.mob.gemini.EntityFakePerson;
+import com.hbm.entity.mob.gemini.EntityWoodcrawler;
+import net.minecraft.entity.EntityLiving;
 
 import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
@@ -25,14 +27,25 @@ public final class FakePersonSpawning {
 
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public void onConvert(WoodcrawlerConversionEvent event) {
-		if(event.getReplacement() != null || !event.shouldConvertToFakePerson()
-				|| !canSpawn(event.world, null)) return;
+		if(event.getReplacement() != null) return;
+		boolean fake = event.shouldConvertToFakePerson();
+		if(fake ? !canSpawn(event.world, null) : !WoodcrawlerSpawning.canConvert(event.world)) return;
 		NBTTagCompound victim = event.getVillagerData();
 		// Unknown modded villager subclasses keep the lossless captive/release path.
 		// Never accept player NBT or a Gemini replacement as a new victim.
 		if(EntityList.stringToClassMapping.get(victim.getString("id")) != EntityVillager.class) return;
-		EntityFakePerson replacement = new EntityFakePerson(event.world);
-		replacement.imitateVillager(victim);
+		EntityLiving replacement;
+		if(fake) {
+			EntityFakePerson person = new EntityFakePerson(event.world);
+			person.imitateVillager(victim);
+			replacement = person;
+		} else {
+			EntityWoodcrawler crawler = new EntityWoodcrawler(event.world);
+			crawler.inheritConversionIdentity(victim);
+			crawler.setCrouching(true); // A house cocoon must not require full standing clearance.
+			crawler.crouchBlend = crawler.prevCrouchBlend = 1;
+			replacement = crawler;
+		}
 		event.setReplacement(replacement);
 	}
 
@@ -49,7 +62,8 @@ public final class FakePersonSpawning {
 		// check, never a ticking population search; Gemini duplicates use the shared registry.
 		if(!mob.addedToChunk) for(Object entry : event.world.loadedEntityList) {
 			Entity other = (Entity) entry;
-			if(other != mob && !other.isDead && mob.getUniqueID().equals(other.getUniqueID())) {
+			if(other != mob && !other.isDead && mob.getUniqueID().equals(other.getUniqueID())
+					&& !com.hbm.entity.mob.gemini.EntityWoodcrawlerCocoon.isConversionSource(other, mob)) {
 				event.setCanceled(true); return;
 			}
 		}

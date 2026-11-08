@@ -58,6 +58,7 @@ public final class MockerySpawning {
     public static boolean convert(EntityLivingBase host) {
         if(host instanceof EntityPlayer || !GeminiInfections.isConversionEligible(host) || !canSpawn(host.worldObj, null)
                 || com.hbm.entity.mob.gemini.EntityWretch.isCaptured(host)
+                || host.getEntityData().getLong("WoodcrawlerCocoonUntil") > host.worldObj.getTotalWorldTime()
                 || host.ridingEntity != null || host.riddenByEntity != null) return false;
         EntityNaturesMockery mob = new EntityNaturesMockery(host.worldObj);
         mob.setLocationAndAngles(host.posX, host.boundingBox.minY, host.posZ, host.rotationYaw, 0);
