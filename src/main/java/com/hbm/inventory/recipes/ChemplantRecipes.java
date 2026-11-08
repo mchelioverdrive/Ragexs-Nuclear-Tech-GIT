@@ -46,20 +46,21 @@ public class ChemplantRecipes extends SerializableRecipe {
 
 	@Override
 	public void registerDefaults() {
-        // Abstract pharmaceutical gameplay, deliberately unrelated to real synthesis or formulations.
-        recipes.add(new ChemRecipe(1700, "PHARMACEUTICAL_BASE", 1200)
+        // Abstract pharmaceutical processing, not a real synthesis or dosage calculation.
+        // Keep template IDs and the material's saved item identity unchanged.
+        recipes.add(new ChemRecipe(1700, "KETAMINE", 1200)
                 .inputItems(new ComparableStack(ModItems.biomass, 2), new ComparableStack(Items.sugar, 2), new ComparableStack(ModItems.rag))
-                .inputFluids(new FluidStack(Fluids.FRESH_WATER, 2))
-                .outputItems(new ItemStack(ModItems.pharmaceutical_base, 2)).physicalProcess(120000, 2000));
-        recipes.add(new ChemRecipe(1701, "TERMINAL_REAGENT", 2400)
-                .inputItems(new ComparableStack(ModItems.pharmaceutical_base, 4), new ComparableStack(ModItems.powder_poison, 4), new ComparableStack(ModItems.ingot_polymer, 2))
-                .inputFluids(new FluidStack(Fluids.FRESH_WATER, 2))
-                // Fictional, nominal fluid units; no physiological concentration or dosage model.
-                .outputFluids(new FluidStack(Fluids.TERMINAL_REAGENT, 1000)).physicalProcess(480000, 4000));
-        recipes.add(new ChemRecipe(1702, "TERMINAL_INJECTION", 400)
-                .inputItems(new ComparableStack(ModItems.syringe_empty), new ComparableStack(ModItems.rag))
+                .inputFluids(new FluidStack(Fluids.FRESH_WATER, 2), new FluidStack(Fluids.ETHANOL, 2))
+                .outputItems(new ItemStack(ModItems.ketamine, 2)).physicalProcess(120000, 2000));
+        // Compatibility only: recover saved reagent stock into the existing KCl identity.
+        // The old nominal 1,000-unit batch becomes one current 20-liter tank, not 1,000 liters.
+        recipes.add(new ChemRecipe(1701, "POTASSIUM_CHLORIDE_RECOVERY", 400)
                 .inputFluids(new FluidStack(Fluids.TERMINAL_REAGENT, 250))
-                .outputItems(new ItemStack(ModItems.injection_terminal)).physicalProcess(80000, 4000));
+                .outputFluids(new FluidStack(Fluids.POTASSIUM_CHLORIDE, 5)).physicalProcess(80000, 4000));
+        recipes.add(new ChemRecipe(1702, "TERMINAL_INJECTION", 2400)
+                .inputItems(new ComparableStack(ModItems.syringe_empty), new ComparableStack(ModItems.rag, 2), new ComparableStack(ModItems.ingot_polymer, 2))
+                .inputFluids(new FluidStack(Fluids.POTASSIUM_CHLORIDE, 5))
+                .outputItems(new ItemStack(ModItems.injection_terminal)).physicalProcess(480000, 4000));
 
         recipes.add(new ChemRecipe(1600, "IRON_CONCENTRATION", 1).petroleum(com.hbm.realsim.SteelmakingProcesses.concentrate()));
         recipes.add(new ChemRecipe(1601, "IRON_PELLETIZING", 1).petroleum(com.hbm.realsim.SteelmakingProcesses.pelletize()));

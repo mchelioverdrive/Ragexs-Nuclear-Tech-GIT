@@ -68,7 +68,9 @@ import net.minecraftforge.fluids.FluidStack;
 
 public class ModItems {
 	public static Item handcuffs, straight_jacket, tranquilizer_syringe, tranquilizer_dart, injection_terminal;
-	public static Item pharmaceutical_base;
+	public static Item ketamine;
+	/** Saved item/API identity retained for worlds made before the chemical was named. */
+	@Deprecated public static Item pharmaceutical_base;
 	public static Item noose;
 
 
@@ -3029,7 +3031,8 @@ public class ModItems {
 		tranquilizer_syringe = new com.hbm.items.special.ItemRestraint(false).setUnlocalizedName("tranquilizer_syringe").setCreativeTab(MainRegistry.consumableTab).setTextureName("hbm:tranquilizer_syringe");
 		tranquilizer_dart = new com.hbm.items.weapon.ItemTranquilizerDart().setUnlocalizedName("tranquilizer_dart").setCreativeTab(MainRegistry.weaponTab).setTextureName("hbm:tranquilizer_dart");
 		injection_terminal = new com.hbm.items.special.ItemRestraint(false).setUnlocalizedName("injection_terminal").setCreativeTab(MainRegistry.consumableTab).setTextureName("hbm:injection_terminal");
-		pharmaceutical_base = new ItemCustomLore().setUnlocalizedName("pharmaceutical_base").setCreativeTab(MainRegistry.partsTab).setTextureName("hbm:powder_sodium");
+		ketamine = new ItemCustomLore().setUnlocalizedName("pharmaceutical_base").setCreativeTab(MainRegistry.partsTab).setTextureName("hbm:powder_sodium");
+		pharmaceutical_base = ketamine;
 		noose = new com.hbm.items.special.ItemRestraint(true).setUnlocalizedName("noose").setCreativeTab(MainRegistry.controlTab).setTextureName("hbm:noose");
 	}
 
@@ -7374,7 +7377,7 @@ public class ModItems {
 		GameRegistry.registerItem(tranquilizer_syringe, tranquilizer_syringe.getUnlocalizedName());
 		GameRegistry.registerItem(tranquilizer_dart, tranquilizer_dart.getUnlocalizedName());
 		GameRegistry.registerItem(injection_terminal, injection_terminal.getUnlocalizedName());
-		GameRegistry.registerItem(pharmaceutical_base, pharmaceutical_base.getUnlocalizedName());
+		GameRegistry.registerItem(ketamine, ketamine.getUnlocalizedName());
 	}
 
 	private static void registerItem() {

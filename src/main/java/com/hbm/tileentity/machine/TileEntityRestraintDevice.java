@@ -216,7 +216,8 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
         if(!armedSneakReleased) { Restraints.message(player, "restraint.confirm"); return; }
         armedBy = null; cycle = 0;
         if(kind() == Kind.TABLE) {
-            if(!Restraints.inject(e)) { Restraints.message(player, "restraint.not_ready"); return; }
+            if(!Restraints.compatible(e)) { Restraints.message(player, "restraint.not_ready"); return; }
+            // Reserve exactly one dose on confirmation; apply it at the existing needle stroke.
             decrStackSize(0, 1);
         }
         setActive(true); sync();
@@ -282,7 +283,11 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
                     setStoredEnergyQuanta(energyQuanta - RestraintConfig.chairQuantaPerTick);
                     if(cycle % 20 == 0) { e.attackEntityFrom(Restraints.ELECTRIC, RestraintConfig.electricDamage); sound("hbm:weapon.sparkShoot", 0.35F); }
                 }
-            } else if(kind() == Kind.TABLE) { if(cycle >= 40 || e == null) setActive(false); }
+            } else if(kind() == Kind.TABLE) {
+                // cycle is saved with the device, so reloads cannot repeat an already passed stroke.
+                if(cycle == 15 && e != null) Restraints.inject(e);
+                if(cycle >= 40 || e == null) setActive(false);
+            }
             else if(kind() == Kind.HANGING) {
                 if(cycle == 12) sound("step.cloth", 0.8F);
                 if(cycle >= 80 && e != null) {

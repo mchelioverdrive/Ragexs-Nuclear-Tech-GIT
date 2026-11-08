@@ -39,7 +39,8 @@ public class Fluids {
 
 
 	public static FluidType NONE;
-	public static FluidType TERMINAL_REAGENT;
+	/** Compatibility stock only; new terminal injections use POTASSIUM_CHLORIDE. */
+	@Deprecated public static FluidType TERMINAL_REAGENT;
 	public static FluidType SALT_WATER;
 	/** Legacy external API alias; the registered identity is SALT_WATER. */
 	@Deprecated public static FluidType WATER;
@@ -512,7 +513,7 @@ public class Fluids {
 		CHLOROCALCITE_SOLUTION = new FluidType("CHLOROCALCITE_SOLUTION", 0x808080, 0, 0, 0, EnumSymbol.NONE).addTraits(LIQUID, NOCON, new FT_Corrosive(60));
 		CHLOROCALCITE_MIX =		new FluidType("CHLOROCALCITE_MIX",	0x808080, 0, 0, 0, EnumSymbol.NONE).addTraits(LIQUID, NOCON, new FT_Corrosive(60));
 		CHLOROCALCITE_CLEANED =	new FluidType("CHLOROCALCITE_CLEANED", 0x808080, 0, 0, 0, EnumSymbol.NONE).addTraits(LIQUID, NOCON, new FT_Corrosive(60));
-		POTASSIUM_CHLORIDE =	new FluidType("POTASSIUM_CHLORIDE",	0x808080, 0, 0, 0, EnumSymbol.NONE).addTraits(LIQUID, NOCON, new FT_Corrosive(10));
+		POTASSIUM_CHLORIDE =	new FluidType("POTASSIUM_CHLORIDE",	0x808080, 0, 0, 0, EnumSymbol.NONE).addTraits(LIQUID, new FT_Corrosive(10));
 		//apparently this is supposed to be heated...???
 
 
@@ -641,7 +642,8 @@ public class Fluids {
         TOLUENE = new FluidType("TOLUENE", 0xDACA8A, 2, 4, 0, EnumSymbol.NONE).addTraits(LIQUID);
         GLYCEROL = new FluidType("GLYCEROL", 0xE3E0BD, 0, 1, 0, EnumSymbol.NONE).addTraits(LIQUID, VISCOUS);
 
-        // Append after existing/custom identities to preserve saved fluid metadata.
+        // Retain the old slot and nominal quantity basis for saved tanks and templates.
+        // Only the recovery recipe consumes it; no default recipe produces this legacy stock.
         if(nameMapping.containsKey("TERMINAL_REAGENT")) throw new IllegalStateException("Custom fluid collides with TERMINAL_REAGENT");
         TERMINAL_REAGENT = new FluidType("TERMINAL_REAGENT", 0x73518C, 0, 0, 0, EnumSymbol.NONE).addTraits(LIQUID);
 

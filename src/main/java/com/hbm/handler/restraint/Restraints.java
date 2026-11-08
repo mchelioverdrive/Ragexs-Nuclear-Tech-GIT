@@ -47,6 +47,7 @@ import net.minecraftforge.event.entity.player.PlayerUseItemEvent;
 /** All mutations and damage run on the owning server tick or native interaction callback. */
 public final class Restraints {
     private static final UUID SPEED = UUID.fromString("14f1512a-bf1c-4dfe-909c-c77679e7e7c1");
+    private static final UUID RECOVERY_WEAKNESS = UUID.fromString("d91e9e58-233a-4516-a830-0668d23a8d94");
     private final Map<World, Map<Integer, UUID>> anchors = new WeakHashMap<World, Map<Integer, UUID>>();
     public static final DamageSource INJECTION = new DamageSource("rntInjection").setDamageBypassesArmor();
     public static final DamageSource BLADE = new DamageSource("rntBlade").setDamageBypassesArmor();
@@ -78,7 +79,7 @@ public final class Restraints {
         if(e.worldObj.isRemote) return;
         RestraintState s = RestraintState.get(e);
         s.controlAI(e, RestraintConfig.enabled && s.bound());
-        updateSpeed(e, s);
+        updateModifiers(e, s);
         ((net.minecraft.world.WorldServer) e.worldObj).getEntityTracker().func_151247_a(e, PacketDispatcher.wrapper.getPacketFrom(new RestraintPacket(e)));
         if(e instanceof EntityPlayerMP) PacketDispatcher.wrapper.sendTo(new RestraintPacket(e), (EntityPlayerMP) e);
     }
@@ -94,15 +95,22 @@ public final class Restraints {
         return true;
     }
 
-    private static void updateSpeed(EntityLivingBase e, RestraintState s) {
-        IAttributeInstance attribute = e.getEntityAttribute(SharedMonsterAttributes.movementSpeed);
-        if(attribute == null) return;
+    private static void updateModifiers(EntityLivingBase e, RestraintState s) {
+        boolean enabled = RestraintConfig.enabled && (!(e instanceof EntityPlayer) || RestraintConfig.players);
         // Stop voluntary travel without cancelling collision impulses, gravity or native forced movement.
-        double amount = !RestraintConfig.enabled ? 0 : s.bound() ? -1 : s.onset > 0 ? -0.75 : 0;
-        AttributeModifier previous = attribute.getModifier(SPEED);
+        double amount = !enabled ? 0 : s.bound() ? -1 : s.onset > 0 ? -0.75 : s.recovery > 0 ? -0.5 : 0;
+        updateModifier(e.getEntityAttribute(SharedMonsterAttributes.movementSpeed), SPEED, "RNT restraint slowing", amount);
+        // An independent modifier avoids replacing or removing weakness from other gameplay sources.
+        updateModifier(e.getEntityAttribute(SharedMonsterAttributes.attackDamage), RECOVERY_WEAKNESS,
+                "RNT ketamine recovery weakness", enabled && s.recovery > 0 ? -0.5 : 0);
+    }
+
+    private static void updateModifier(IAttributeInstance attribute, UUID id, String name, double amount) {
+        if(attribute == null) return;
+        AttributeModifier previous = attribute.getModifier(id);
         if(previous != null && previous.getAmount() == amount) return;
         if(previous != null) attribute.removeModifier(previous);
-        if(amount != 0) attribute.applyModifier(new AttributeModifier(SPEED, "RNT restraint slowing", amount, 2).setSaved(false));
+        if(amount != 0) attribute.applyModifier(new AttributeModifier(id, name, amount, 2).setSaved(false));
     }
 
     @SubscribeEvent public void construct(EntityConstructing event) {
@@ -126,7 +134,7 @@ public final class Restraints {
             clear(e); return;
         }
         boolean sync = e.ticksExisted % 20 == 0;
-        if(s.recovery > 0) --s.recovery;
+        if(s.recovery > 0 && --s.recovery == 0) sync = true;
         if(s.onset > 0 && --s.onset == 0) {
             s.asleep = RestraintConfig.sedationTicks;
             s.anchored = false; sync = true;
@@ -153,7 +161,7 @@ public final class Restraints {
             }
         }
         s.controlAI(e, s.bound());
-        updateSpeed(e, s);
+        updateModifiers(e, s);
         EntityPlayer leader = escort(e, s);
         if(s.escort != null && leader == null) { s.escort = null; sync = true; }
         if(!s.device) s.anchored = false;
