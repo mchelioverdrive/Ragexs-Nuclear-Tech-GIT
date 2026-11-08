@@ -57,6 +57,27 @@ public final class GeminiPopulation {
         return 0;
     }
 
+    /** At most two Woodcrawlers per living prey or nearby prey cluster. Uses existing loaded membership. */
+    public static boolean canWoodcrawlerHunt(EntityWoodcrawler seeker, EntityLivingBase target) {
+        if(target == null || !seeker.isPrey(target)) return false;
+        Map<UUID, EntityLiving> members = WORLDS.get(seeker.worldObj);
+        if(members == null) return true;
+        boolean incumbent = seeker.getAttackTarget() == target;
+        int ahead = 0;
+        for(EntityLiving entry : members.values()) {
+            if(!(entry instanceof EntityWoodcrawler) || entry == seeker || !entry.isEntityAlive() || !entry.addedToChunk
+                    || entry.worldObj != seeker.worldObj || seeker.worldObj.getEntityByID(entry.getEntityId()) != entry) continue;
+            EntityWoodcrawler other = (EntityWoodcrawler) entry;
+            EntityLivingBase prey = other.getAttackTarget();
+            if(other.isDormant() || other.hasCapturedVillager() || !other.isPrey(prey)) continue;
+            double dx = prey.posX - target.posX, dz = prey.posZ - target.posZ;
+            if(prey != target && (dx * dx + dz * dz > 144D || Math.abs(prey.posY - target.posY) > 8D)) continue;
+            // Existing hunts win admissions. A deterministic order resolves clusters that merge later.
+            if((!incumbent || other.getEntityId() < seeker.getEntityId()) && ++ahead >= 2) return false;
+        }
+        return true;
+    }
+
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void naturalSpawn(LivingSpawnEvent.SpecialSpawn event) {
         if(!event.world.isRemote && event.entityLiving instanceof IGeminiCreature)
@@ -115,7 +136,10 @@ public final class GeminiPopulation {
                     || !GardenerNests.loaded(caller.worldObj, ally.boundingBox.addCoord(target.posX - ally.posX,
                             target.posY - ally.posY, target.posZ - ally.posZ).expand(1, 1, 1))) continue;
             if(ally instanceof EntityWoodcrawler && !((EntityWoodcrawler) ally).hasCapturedVillager()
-                    && ((EntityWoodcrawler) ally).isPrey(target) && ally.canEntityBeSeen(target)) ally.setAttackTarget(target);
+                    && ((EntityWoodcrawler) ally).isPrey(target) && ally.canEntityBeSeen(target)) {
+                ally.setAttackTarget(target);
+                if(ally.getAttackTarget() != target) continue;
+            }
             else if(ally instanceof EntityFakePerson && !((EntityFakePerson) ally).isRecovering()
                     && ((EntityFakePerson) ally).canHunt(target) && ally.canEntityBeSeen(target)) ally.setAttackTarget(target);
             else continue;

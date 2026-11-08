@@ -1,0 +1,270 @@
+package com.hbm.entity.mob.gemini;
+
+import java.util.ArrayList;
+import com.hbm.world.gemini.GardenerNests;
+import net.minecraft.block.BlockDoor;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.util.MathHelper;
+import net.minecraft.util.Vec3;
+import net.minecraft.world.World;
+
+/** Collision-resolved wall/ladder attachment, including ledge entry and supported exits. */
+final class WoodcrawlerSurfaceTraversal {
+    private static final int NONE = 0, UP = 1, TOP = 2, DOWN = 3, LADDER = 4;
+    private final EntityWoodcrawler mob;
+    private final World world;
+    private int mode, nx, nz, ticks, blockedTicks, climbDelay, ladderDelay, landingTicks;
+    private int ladderX, ladderZ, ladderBottom, ladderTop;
+    private boolean ladderFound;
+    private double plane, vx, vy, vz, exitX, exitZ, descentStartY;
+    private double savedGoalX, savedGoalY, savedGoalZ;
+
+    WoodcrawlerSurfaceTraversal(EntityWoodcrawler mob) { this.mob = mob; world = mob.worldObj; }
+    boolean active() { return mode != NONE; }
+
+    private AxisAlignedBB body(double x, double y, double z) {
+        double half = mob.width / 2D - 0.001D;
+        return AxisAlignedBB.getBoundingBox(x - half, y + 0.001D, z - half, x + half, y + mob.height - 0.001D, z + half);
+    }
+    private boolean clear(AxisAlignedBB box) {
+        return GardenerNests.loaded(world, box) && world.getCollidingBoundingBoxes(mob, box).isEmpty() && !world.isAnyLiquid(box);
+    }
+    private double floor(double x, double y, double z, double drop) {
+        AxisAlignedBB probe = AxisAlignedBB.getBoundingBox(x - 0.1D, y - drop, z - 0.1D, x + 0.1D, y + 0.08D, z + 0.1D);
+        if(!GardenerNests.loaded(world, probe)) return Double.NaN;
+        double top = Double.NaN;
+        for(Object entry : world.getCollidingBoundingBoxes(mob, probe)) {
+            AxisAlignedBB box = (AxisAlignedBB) entry;
+            if(box.maxY <= y + 0.08D && (Double.isNaN(top) || box.maxY > top)) top = box.maxY;
+        }
+        return top;
+    }
+    private boolean ladder(int x, int y, int z) {
+        return world.blockExists(x, y, z) && world.getBlock(x, y, z).isLadder(world, x, y, z, mob);
+    }
+    private void findLadder(double gx, double gy, double gz) {
+        if(ladderDelay > 0) return;
+        ladderDelay = 40; ladderFound = false;
+        if(Math.abs(gy - mob.posY) < 1) return;
+        int mx = MathHelper.floor_double(mob.posX), my = MathHelper.floor_double(mob.posY), mz = MathHelper.floor_double(mob.posZ);
+        double best = Double.MAX_VALUE;
+        for(int x = mx - 4; x <= mx + 4; x++) for(int z = mz - 4; z <= mz + 4; z++) for(int y = my - 2; y <= my + 2; y++) {
+            if(!ladder(x, y, z)) continue;
+            int low = y, high = y;
+            while(low > y - 32 && ladder(x, low - 1, z)) low--;
+            while(high < y + 32 && ladder(x, high + 1, z)) high++;
+            if(gy > mob.posY ? high + 1 <= mob.posY + 0.5D : low >= mob.posY - 0.5D) continue;
+            double score = mob.getDistanceSq(x + 0.5D, MathHelper.clamp_double(mob.posY, low, high + 1D), z + 0.5D)
+                    + ((x + 0.5D - gx) * (x + 0.5D - gx) + (z + 0.5D - gz) * (z + 0.5D - gz)) * 0.1D;
+            if(score < best) { best = score; ladderX = x; ladderZ = z; ladderBottom = low; ladderTop = high; ladderFound = true; }
+            break;
+        }
+    }
+    Vec3 waypoint(double gx, double gy, double gz) {
+        findLadder(gx, gy, gz);
+        if(!ladderFound || !ladder(ladderX, MathHelper.clamp_int(MathHelper.floor_double(mob.posY), ladderBottom, ladderTop), ladderZ)
+                || Math.abs(gy - mob.posY) < 0.5D) return null;
+        return Vec3.createVectorHelper(ladderX + 0.5D, MathHelper.clamp_double(mob.posY, ladderBottom, ladderTop + 1D), ladderZ + 0.5D);
+    }
+
+    private boolean wall(double reach, double bottom, double height) {
+        AxisAlignedBB probe = body(mob.posX, bottom, mob.posZ);
+        probe.maxY = bottom + height;
+        probe = probe.addCoord(-nx * reach, 0, -nz * reach);
+        if(!GardenerNests.loaded(world, probe)) return false;
+        double closest = Double.MAX_VALUE, selected = 0;
+        // World reuses its collision list; the exposed-face checks below query it again.
+        for(Object entry : new ArrayList<AxisAlignedBB>(world.getCollidingBoundingBoxes(mob, probe))) {
+            AxisAlignedBB box = (AxisAlignedBB) entry;
+            if(box.maxY <= bottom + 0.04D || box.minY >= bottom + height - 0.04D) continue;
+            int bx = MathHelper.floor_double((box.minX + box.maxX) * 0.5D), by = MathHelper.floor_double((box.minY + box.maxY) * 0.5D);
+            int bz = MathHelper.floor_double((box.minZ + box.maxZ) * 0.5D);
+            if(world.getBlock(bx, by, bz) instanceof BlockDoor) continue;
+            double face = nx > 0 ? box.maxX : nx < 0 ? box.minX : nz > 0 ? box.maxZ : box.minZ;
+            double distance = (nx != 0 ? mob.posX - face : mob.posZ - face) * (nx + nz);
+            if(distance < -reach || distance > reach + mob.width / 2D) continue;
+            // Adjacent cubes have internal faces too. Attaching to one would pin the
+            // creature beneath an eave instead of carrying it around the outside edge.
+            AxisAlignedBB outside = box.contract(0.001D, 0.001D, 0.001D);
+            if(nx > 0) { outside.minX = box.maxX + 0.001D; outside.maxX = box.maxX + 0.025D; }
+            else if(nx < 0) { outside.minX = box.minX - 0.025D; outside.maxX = box.minX - 0.001D; }
+            else if(nz > 0) { outside.minZ = box.maxZ + 0.001D; outside.maxZ = box.maxZ + 0.025D; }
+            else { outside.minZ = box.minZ - 0.025D; outside.maxZ = box.minZ - 0.001D; }
+            if(!GardenerNests.loaded(world, outside) || !world.getCollidingBoundingBoxes(mob, outside).isEmpty()) continue;
+            if(distance < closest - 0.01D) { closest = distance; selected = face; }
+        }
+        if(closest == Double.MAX_VALUE) return false;
+        plane = selected; return true;
+    }
+    private void faceWall() {
+        float yaw = (float) (Math.atan2(-nz, -nx) * 180D / Math.PI - 90D);
+        mob.rotationYaw += MathHelper.clamp_float(MathHelper.wrapAngleTo180_float(yaw - mob.rotationYaw), -20, 20);
+        mob.renderYawOffset = mob.rotationYaw;
+    }
+    private void attach(int state) {
+        mode = state; ticks = blockedTicks = 0; mob.setCrouching(true); mob.getNavigator().clearPathEntity();
+        if(state == DOWN) descentStartY = mob.posY;
+        mob.setClimbing(true); mob.fallDistance = 0;
+    }
+    private void finish() {
+        mode = NONE; ladderFound = false; ladderDelay = 40; landingTicks = 4;
+        mob.motionX = mob.motionY = mob.motionZ = 0; mob.fallDistance = 0; mob.setClimbing(false);
+        mob.getNavigator().clearPathEntity();
+    }
+
+    boolean tick(double gx, double gy, double gz, boolean hasGoal, boolean allowed) {
+        if(hasGoal) { savedGoalX = gx; savedGoalY = gy; savedGoalZ = gz; }
+        else if(active()) { gx = savedGoalX; gy = savedGoalY; gz = savedGoalZ; }
+        if(climbDelay > 0) climbDelay--;
+        if(ladderDelay > 0) ladderDelay--;
+        if(landingTicks > 0) { landingTicks--; mob.fallDistance = 0; }
+        if(!allowed || mob.isInWater() || mob.handleLavaMovement()) { if(active()) finish(); return false; }
+        if(mode == NONE && hasGoal) {
+            findLadder(gx, gy, gz);
+            if(ladderFound && Math.abs(gy - mob.posY) > 0.5D
+                    && mob.getDistanceSq(ladderX + 0.5D, mob.posY, ladderZ + 0.5D) < 0.3D
+                    && mob.posY >= ladderBottom - 0.2D && mob.posY <= ladderTop + 1.2D) attach(LADDER);
+            if(mode == NONE && climbDelay == 0 && gy >= mob.posY - 1D) {
+                double dx = gx - mob.posX, dz = gz - mob.posZ;
+                if(dx * dx + dz * dz > 0.1D) {
+                    nx = Math.abs(dx) >= Math.abs(dz) ? (dx > 0 ? -1 : 1) : 0;
+                    nz = nx == 0 ? (dz > 0 ? -1 : 1) : 0;
+                    if(wall(0.35D, mob.posY, mob.height) && clear(body(mob.posX, mob.posY + 0.25D, mob.posZ))) attach(UP);
+                }
+            }
+        }
+        if(mode == NONE) return false;
+        vx = vy = vz = 0;
+        if(++ticks > 2400) { if(mode == UP || mode == TOP) attach(DOWN); gy = ladderBottom; }
+        if(mode == LADDER) {
+            ladderMotion(gx, gy, gz);
+        } else if(mode == DOWN) {
+            double ground = floor(mob.posX, mob.posY, mob.posZ, 0.18D);
+            if(!Double.isNaN(ground) && mob.posY < descentStartY - 0.1D) { finish(); return false; }
+            if(!wall(1.35D, mob.posY - 0.5D, mob.height + 0.5D)) { finish(); return false; }
+            vx = nx == 0 ? 0 : MathHelper.clamp_double(plane + nx * (mob.width / 2D + 0.025D) - mob.posX, -0.1D, 0.1D);
+            vz = nz == 0 ? 0 : MathHelper.clamp_double(plane + nz * (mob.width / 2D + 0.025D) - mob.posZ, -0.1D, 0.1D);
+            vy = -0.12D; faceWall();
+        } else if(mode == UP) {
+            if(wall(0.4D, mob.posY, mob.height)) {
+                if(clear(body(mob.posX, mob.posY + 0.18D, mob.posZ))) {
+                    blockedTicks = 0; vy = 0.16D;
+                    vx = nx == 0 ? 0 : MathHelper.clamp_double(plane + nx * (mob.width / 2D + 0.015D) - mob.posX, -0.06D, 0.06D);
+                    vz = nz == 0 ? 0 : MathHelper.clamp_double(plane + nz * (mob.width / 2D + 0.015D) - mob.posZ, -0.06D, 0.06D);
+                } else if(++blockedTicks >= 20) { attach(DOWN); climbDelay = 100; }
+                faceWall();
+            } else {
+                exitX = nx == 0 ? mob.posX : plane - nx * (mob.width / 2D + 0.08D);
+                exitZ = nz == 0 ? mob.posZ : plane - nz * (mob.width / 2D + 0.08D);
+                double support = floor(exitX, mob.posY, exitZ, 0.5D);
+                if(Double.isNaN(support) || !clear(body(exitX, mob.posY, exitZ))) { attach(DOWN); }
+                else { mode = TOP; ticks = 0; }
+            }
+        }
+        if(mode == TOP) {
+            vx = MathHelper.clamp_double(exitX - mob.posX, -0.1D, 0.1D);
+            vz = MathHelper.clamp_double(exitZ - mob.posZ, -0.1D, 0.1D); vy = 0;
+            if(mob.getDistanceSq(exitX, mob.posY, exitZ) < 0.01D && !Double.isNaN(floor(mob.posX, mob.posY, mob.posZ, 0.2D))) {
+                finish(); return false;
+            }
+        }
+        if(active()) { mob.motionX = vx; mob.motionY = vy; mob.motionZ = vz; mob.fallDistance = 0; mob.setClimbing(true); }
+        return active();
+    }
+    private void ladderMotion(double gx, double gy, double gz) {
+        double level = MathHelper.clamp_double(gy, ladderBottom, ladderTop + 1D);
+        double target = level + (gy > mob.posY ? 0.04D : 0);
+        if(Math.abs(target - mob.posY) > 0.05D) {
+            if(!ladder(ladderX, MathHelper.clamp_int(MathHelper.floor_double(mob.posY), ladderBottom, ladderTop), ladderZ)) { finish(); return; }
+            vx = MathHelper.clamp_double(ladderX + 0.5D - mob.posX, -0.08D, 0.08D);
+            vz = MathHelper.clamp_double(ladderZ + 0.5D - mob.posZ, -0.08D, 0.08D);
+            vy = MathHelper.clamp_double(target - mob.posY, -0.12D, 0.16D);
+            if(!clear(body(mob.posX + vx, mob.posY + vy, mob.posZ + vz))) { if(++blockedTicks > 40) { finish(); climbDelay = 100; } }
+            else blockedTicks = 0;
+            return;
+        }
+        double best = Double.MAX_VALUE;
+        boolean found = false;
+        for(int side = 0; side < 4; side++) {
+            double x = ladderX + 0.5D + (side == 0 ? 1 : side == 1 ? -1 : 0);
+            double z = ladderZ + 0.5D + (side == 2 ? 1 : side == 3 ? -1 : 0);
+            if(Double.isNaN(floor(x, mob.posY, z, 0.25D)) || !clear(body(x, mob.posY, z))) continue;
+            double score = (x - gx) * (x - gx) + (z - gz) * (z - gz);
+            if(score < best) { best = score; exitX = x; exitZ = z; found = true; }
+        }
+        if(!found) { if(++blockedTicks > 40) finish(); return; }
+        vx = MathHelper.clamp_double(exitX - mob.posX, -0.1D, 0.1D);
+        vz = MathHelper.clamp_double(exitZ - mob.posZ, -0.1D, 0.1D); vy = 0;
+        if(mob.getDistanceSq(ladderX + 0.5D, mob.posY, ladderZ + 0.5D) > 0.5D
+                && !Double.isNaN(floor(mob.posX, mob.posY, mob.posZ, 0.25D))) finish();
+    }
+
+    /** Called for the actual proposed native movement, after movement-helper acceleration. */
+    void move(double x, double y, double z) {
+        if(active()) {
+            mob.moveSurfaceBody(vx, vy, vz); mob.fallDistance = 0; return;
+        }
+        if(!mob.isBurrowing() && !mob.isGrabbing() && !mob.isProbing() && !mob.isInWater()
+                && !(mob.hurtTime > 0 && y > 0.25D) && x * x + z * z > 0.0001D
+                && !Double.isNaN(floor(mob.posX, mob.posY, mob.posZ, 0.2D))) {
+            int steps = Math.max(1, MathHelper.ceiling_double_int(Math.sqrt(x * x + z * z) / 0.15D));
+            double safeX = mob.posX, safeZ = mob.posZ;
+            for(int step = 1; step <= steps; step++) {
+                double px = mob.posX + x * step / steps, pz = mob.posZ + z * step / steps;
+                if(!Double.isNaN(floor(px, mob.posY, pz, 1.25D))) { safeX = px; safeZ = pz; continue; }
+                if(ladderFound && Math.abs(px - ladderX - 0.5D) < 0.5D && Math.abs(pz - ladderZ - 0.5D) < 0.5D
+                        && ladder(ladderX, MathHelper.clamp_int(MathHelper.floor_double(mob.posY - 1), ladderBottom, ladderTop), ladderZ)) {
+                    attach(LADDER); vx = MathHelper.clamp_double(ladderX + 0.5D - mob.posX, -0.1D, 0.1D);
+                    vz = MathHelper.clamp_double(ladderZ + 0.5D - mob.posZ, -0.1D, 0.1D); vy = -0.12D;
+                } else {
+                    nx = Math.abs(x) >= Math.abs(z) ? (x > 0 ? 1 : -1) : 0;
+                    nz = nx == 0 ? (z > 0 ? 1 : -1) : 0;
+                    if(wall(1.35D, mob.posY - 2.5D, 1.5D)) {
+                        // Verify a lower wall, but first get the whole body outside the actual
+                        // roof edge. The wall may be recessed beneath a one-block eave.
+                        double lowerPlane = plane;
+                        if(!wall(1.35D, mob.posY - 0.5D, 0.5D)) plane = lowerPlane;
+                        attach(DOWN);
+                        vx = nx == 0 ? 0 : MathHelper.clamp_double(plane + nx * (mob.width / 2D + 0.025D) - mob.posX, -0.1D, 0.1D);
+                        vz = nz == 0 ? 0 : MathHelper.clamp_double(plane + nz * (mob.width / 2D + 0.025D) - mob.posZ, -0.1D, 0.1D); vy = -0.12D;
+                    } else {
+                        mob.motionX = mob.motionZ = 0;
+                        mob.moveSurfaceBody(safeX - mob.posX, Math.min(0, y), safeZ - mob.posZ); return;
+                    }
+                }
+                mob.moveSurfaceBody(vx, vy, vz); mob.fallDistance = 0; return;
+            }
+        }
+        mob.moveSurfaceBody(x, y, z);
+    }
+    void afterPhysics() {
+        if(active()) { mob.motionX = vx; mob.motionY = vy; mob.motionZ = vz; mob.fallDistance = 0; }
+        else if(landingTicks > 0) mob.fallDistance = 0;
+    }
+    void write(NBTTagCompound parent) {
+        if(!active()) return;
+        NBTTagCompound tag = new NBTTagCompound();
+        tag.setInteger("Mode", mode); tag.setInteger("NX", nx); tag.setInteger("NZ", nz);
+        tag.setDouble("Plane", plane); tag.setDouble("StartY", descentStartY);
+        tag.setDouble("ExitX", exitX); tag.setDouble("ExitZ", exitZ);
+        tag.setDouble("GoalX", savedGoalX); tag.setDouble("GoalY", savedGoalY); tag.setDouble("GoalZ", savedGoalZ);
+        tag.setInteger("LadderX", ladderX); tag.setInteger("LadderZ", ladderZ);
+        tag.setInteger("Bottom", ladderBottom); tag.setInteger("Top", ladderTop);
+        parent.setTag("WoodcrawlerSurface", tag);
+    }
+    void read(NBTTagCompound parent) {
+        if(!parent.hasKey("WoodcrawlerSurface", 10)) return;
+        NBTTagCompound tag = parent.getCompoundTag("WoodcrawlerSurface");
+        int state = tag.getInteger("Mode"), x = tag.getInteger("NX"), z = tag.getInteger("NZ");
+        if(state < UP || state > LADDER || state != LADDER && Math.abs(x) + Math.abs(z) != 1) return;
+        mode = state; nx = x; nz = z; plane = tag.getDouble("Plane"); descentStartY = tag.getDouble("StartY");
+        exitX = tag.getDouble("ExitX"); exitZ = tag.getDouble("ExitZ");
+        savedGoalX = tag.getDouble("GoalX"); savedGoalY = tag.getDouble("GoalY"); savedGoalZ = tag.getDouble("GoalZ");
+        ladderX = tag.getInteger("LadderX"); ladderZ = tag.getInteger("LadderZ");
+        ladderBottom = MathHelper.clamp_int(tag.getInteger("Bottom"), 0, 255);
+        ladderTop = MathHelper.clamp_int(tag.getInteger("Top"), ladderBottom, 255);
+        ladderFound = mode == LADDER;
+        mob.setCrouching(true); mob.setClimbing(true);
+    }
+}

@@ -5,8 +5,10 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockDoor;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.MathHelper;
+import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.common.MinecraftForge;
@@ -17,17 +19,25 @@ import net.minecraftforge.event.world.BlockEvent;
 final class WoodcrawlerLocomotion {
     private final EntityWoodcrawler mob;
     private final World world;
+    private final WoodcrawlerSurfaceTraversal surface;
     private double goalX, goalY, goalZ, sampledX, sampledY, sampledZ, escapeX, escapeY, escapeZ;
-    private int goalAge = 100, crawlTicks, climbTicks, crestTicks, stuckTicks, escapeTicks, retryTicks, attempts, dug;
+    private int goalAge = 100, crawlTicks, stuckTicks, escapeTicks, retryTicks, attempts, dug;
     private int digX, digY, digZ, digTicks, digDelay;
     private Block digging;
     private boolean sampled;
 
-    WoodcrawlerLocomotion(EntityWoodcrawler mob) { this.mob = mob; world = mob.worldObj; }
+    WoodcrawlerLocomotion(EntityWoodcrawler mob) { this.mob = mob; world = mob.worldObj; surface = new WoodcrawlerSurfaceTraversal(mob); }
 
     void goal(double x, double y, double z) { goalX = x; goalY = y; goalZ = z; goalAge = 0; }
     boolean recovering() { return escapeTicks > 0; }
-    boolean keepCrawling() { return crawlTicks > 0 || recovering(); }
+    boolean keepCrawling() { return crawlTicks > 0 || recovering() || surface.active(); }
+    boolean traversing() { return surface.active(); }
+    boolean controlsMovement() { return recovering() || surface.active(); }
+    Vec3 waypoint(double x, double y, double z) { return surface.waypoint(x, y, z); }
+    void move(double x, double y, double z) { surface.move(x, y, z); }
+    void afterPhysics() { surface.afterPhysics(); }
+    void write(NBTTagCompound tag) { surface.write(tag); }
+    void read(NBTTagCompound tag) { surface.read(tag); }
 
     private AxisAlignedBB body(double x, double y, double z, double height) {
         double width = height <= EntityWoodcrawler.CRAWLING_HEIGHT ? EntityWoodcrawler.CRAWLING_WIDTH : EntityWoodcrawler.BODY_WIDTH;
@@ -57,11 +67,15 @@ final class WoodcrawlerLocomotion {
     }
 
     void tick() {
-        goalAge = Math.min(100, goalAge + 1);
+        if(!surface.active()) goalAge = Math.min(100, goalAge + 1);
         if(retryTicks > 0) retryTicks--;
         if(digDelay > 0) digDelay--;
-        if(mob.isBurrowing() || mob.isGrabbing() || mob.isProbing() || mob.isCaptureBusy()
-                || mob.getHuntState() == EntityWoodcrawler.BANG && digging == null) {
+        boolean allowed = !mob.isBurrowing() && !mob.isGrabbing() && !mob.isProbing() && !mob.isCaptureBusy()
+                && (mob.getHuntState() != EntityWoodcrawler.BANG || digging != null);
+        if(surface.tick(recovering() ? escapeX : goalX, recovering() ? escapeY : goalY,
+                recovering() ? escapeZ : goalZ, recovering() || goalAge < 60,
+                mob.isEntityAlive() && (allowed || surface.active() && !mob.isBurrowing() && !mob.isGrabbing() && !mob.isProbing()) && digging == null)) return;
+        if(!allowed) {
             mob.setClimbing(false); return;
         }
         if(mob.ticksExisted % 10 == 0) {
@@ -92,23 +106,8 @@ final class WoodcrawlerLocomotion {
                 if(digging != null || stuckTicks >= 60) dig(dx / distance, dz / distance);
             }
         }
-        boolean climbing = false;
-        if((recovering() || goalAge < 60) && distance > 0.05D && climbingAllowed()
-                && clear(body(mob.posX, mob.posY + 0.22D, mob.posZ, mob.height))) {
-            // Test the entire side of the current body, rather than one block near its feet.
-            AxisAlignedBB side = body(mob.posX, mob.posY, mob.posZ, mob.height).addCoord(dx / distance * 0.3D, 0, dz / distance * 0.3D);
-            boolean wall = GardenerNests.loaded(world, side) && !world.getCollidingBoundingBoxes(mob, side).isEmpty();
-            if(wall && climbTicks < 200) { crestTicks = 8; climbTicks++; climbing = true; }
-            else if(crestTicks > 0) { crestTicks--; climbing = true; }
-            if(climbing) {
-                mob.motionY = 0.2D; mob.motionX = dx / distance * 0.12D; mob.motionZ = dz / distance * 0.12D;
-                mob.fallDistance = 0;
-            }
-        }
-        if(!climbing && mob.onGround) climbTicks = crestTicks = 0;
-        mob.setClimbing(climbing);
+        mob.setClimbing(false);
     }
-    private boolean climbingAllowed() { return digging == null && !mob.isInWater() && !mob.handleLavaMovement(); }
 
     private void chooseEscape() {
         double best = Double.MAX_VALUE;

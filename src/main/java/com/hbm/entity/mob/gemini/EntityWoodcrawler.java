@@ -136,7 +136,7 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 		controller.resetTask();
 	}
 	@Override
-	public boolean isOnLadder() { return dataWatcher.getWatchableObjectByte(21) != 0; }
+	public boolean isOnLadder() { return dataWatcher.getWatchableObjectByte(21) != 0 || super.isOnLadder(); }
 	public void setClimbing(boolean climbing) { dataWatcher.updateObject(21, Byte.valueOf((byte) (climbing ? 1 : 0))); }
 	public boolean hasCapturedVillager() { return capturedVillager != null; }
 	public boolean isCarrying() { return dataWatcher.getWatchableObjectByte(22) != 0; }
@@ -160,6 +160,13 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 				posX + width / 2D, boundingBox.minY + height, posZ + width / 2D);
 	}
 	public void setMovementGoal(double x, double y, double z) { locomotion.goal(x, y, z); }
+	public boolean isSurfaceTraversal() { return locomotion.traversing(); }
+	public Vec3 getClimbWaypoint(double x, double y, double z) { return locomotion.waypoint(x, y, z); }
+	@Override public void moveEntity(double x, double y, double z) {
+		if(locomotion != null && !worldObj.isRemote && ridingEntity == null && isEntityAlive() && GeminiSpawning.canAct(this, 1)) locomotion.move(x, y, z);
+		else super.moveEntity(x, y, z);
+	}
+	void moveSurfaceBody(double x, double y, double z) { super.moveEntity(x, y, z); }
 	@Override public boolean canBeCollidedWith() { return !isDormant() && super.canBeCollidedWith(); }
 	@Override public boolean canBePushed() { return !isDormant() && super.canBePushed(); }
 
@@ -177,7 +184,8 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 
 	@Override
 	public void setAttackTarget(EntityLivingBase target) {
-		super.setAttackTarget(isPrey(target) ? target : null);
+		super.setAttackTarget(isPrey(target) && (worldObj.isRemote
+				|| com.hbm.world.gemini.GeminiPopulation.canWoodcrawlerHunt(this, target)) ? target : null);
 	}
 
 	public int getGrabTick() { return dataWatcher.getWatchableObjectByte(24); }
@@ -289,6 +297,7 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 
 	public void beginStrike(EntityLivingBase target) {
 		if(worldObj.isRemote || !GeminiSpawning.canAct(this, 1) || getHuntState() != CHASE
+				|| isSurfaceTraversal()
 				|| getHealth() <= 0 || isCaptureBusy() || hasCapturedVillager() || isGrabbing() || isProbing() || strikeCooldown > 0 || !canStrike(target)) return;
 		strikeTarget = target;
 		captureState(CaptureState.GRABBING);
@@ -447,7 +456,7 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 		return dataWatcher.getWatchableObjectByte(31) == 2 && target == strikeTarget && probeContact(target);
 	}
 	public boolean beginProbe(EntityLivingBase target) {
-		if(worldObj.isRemote || !GeminiSpawning.canAct(this, 1) || isCaptureBusy() || hasCapturedVillager()
+		if(worldObj.isRemote || !GeminiSpawning.canAct(this, 1) || isSurfaceTraversal() || isCaptureBusy() || hasCapturedVillager()
 				|| isBurrowing() || isGrabbing() || isProbing() || strikeCooldown > 0 || !isPrey(target)
 				|| getDistanceSqToEntity(target) > 36 || !onGround) return false;
 		Vec3 origin = getProboscisOrigin(1);
@@ -692,12 +701,13 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 		if(isDormant()) { motionX = motionY = motionZ = 0; return; }
 		if(!worldObj.isRemote && GeminiSpawning.canAct(this, 1)) {
 			locomotion.tick();
-			if(locomotion.recovering()) strafe = forward = 0;
+			if(locomotion.controlsMovement()) strafe = forward = 0;
 		}
 		if(isBurrowing() || isGrabbing() || isProbing() || getHuntState() == BANG) {
 			motionX = motionZ = 0;
 			super.moveEntityWithHeading(0, 0);
 		} else super.moveEntityWithHeading(strafe, forward);
+		if(!worldObj.isRemote) locomotion.afterPhysics();
 	}
 
 	@Override
@@ -884,6 +894,7 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 		nbt.setBoolean("WoodcrawlerDayBurrow", daytimeBurrow);
 		nbt.setInteger("WoodcrawlerBurrowTick", getBurrowTick());
 		nbt.setInteger("WoodcrawlerDisturbed", disturbanceTicks);
+		locomotion.write(nbt);
 	}
 	@Override
 	public void readEntityFromNBT(NBTTagCompound nbt) {
@@ -915,5 +926,6 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 			burrowDepth = prevBurrowDepth = tick == 70 ? 1 : MathHelper.clamp_float(tick <= 20 ? tick / 20F : (60 - tick) / 20F, 0, 1);
 		}
 		disturbanceTicks = MathHelper.clamp_int(nbt.getInteger("WoodcrawlerDisturbed"), 0, 200);
+		locomotion.read(nbt);
 	}
 }
