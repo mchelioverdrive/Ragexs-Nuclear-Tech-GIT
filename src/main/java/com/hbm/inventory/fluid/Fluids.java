@@ -39,6 +39,7 @@ public class Fluids {
 
 
 	public static FluidType NONE;
+	public static FluidType TERMINAL_REAGENT;
 	public static FluidType SALT_WATER;
 	/** Legacy external API alias; the registered identity is SALT_WATER. */
 	@Deprecated public static FluidType WATER;
@@ -640,6 +641,10 @@ public class Fluids {
         TOLUENE = new FluidType("TOLUENE", 0xDACA8A, 2, 4, 0, EnumSymbol.NONE).addTraits(LIQUID);
         GLYCEROL = new FluidType("GLYCEROL", 0xE3E0BD, 0, 1, 0, EnumSymbol.NONE).addTraits(LIQUID, VISCOUS);
 
+        // Append after existing/custom identities to preserve saved fluid metadata.
+        if(nameMapping.containsKey("TERMINAL_REAGENT")) throw new IllegalStateException("Custom fluid collides with TERMINAL_REAGENT");
+        TERMINAL_REAGENT = new FluidType("TERMINAL_REAGENT", 0x73518C, 0, 0, 0, EnumSymbol.NONE).addTraits(LIQUID);
+
 
 		//AND DON'T FORGET THE META DOWN HERE
 		// V V V V V V V V
@@ -923,6 +928,7 @@ public class Fluids {
         metaOrder.add(RAW_NATURAL_GAS);
         metaOrder.add(TOLUENE);
         metaOrder.add(GLYCEROL);
+        metaOrder.add(TERMINAL_REAGENT);
 
 
 		//ANY INTERNAL RENAMING MUST BE REFLECTED HERE - DON'T FORGET TO CHANGE: LANG FILES + TYPE'S STRING ID + NAME OF TANK/GUI TEXTURE FILES!

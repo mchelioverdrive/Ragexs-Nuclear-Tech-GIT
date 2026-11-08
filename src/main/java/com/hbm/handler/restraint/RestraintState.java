@@ -19,6 +19,11 @@ public final class RestraintState implements IExtendedEntityProperties {
     public int dimension, x, y, z, onset, asleep, recovery, terminal, terminalElapsed;
     public double anchorX, anchorY, anchorZ;
     public boolean anchored;
+    // Server-only confirmation belongs to this held stack/session, never to saved or synchronized state.
+    public net.minecraft.item.ItemStack injectionConfirmStack;
+    public long injectionConfirmUntil;
+    public int injectionConfirmDimension;
+    public boolean injectionConfirmReleased;
     private final List<EntityAITasks.EntityAITaskEntry> tasks = new ArrayList<EntityAITasks.EntityAITaskEntry>();
     private final List<EntityAITasks.EntityAITaskEntry> targets = new ArrayList<EntityAITasks.EntityAITaskEntry>();
     private int aiMode;

@@ -46,6 +46,21 @@ public class ChemplantRecipes extends SerializableRecipe {
 
 	@Override
 	public void registerDefaults() {
+        // Abstract pharmaceutical gameplay, deliberately unrelated to real synthesis or formulations.
+        recipes.add(new ChemRecipe(1700, "PHARMACEUTICAL_BASE", 1200)
+                .inputItems(new ComparableStack(ModItems.biomass, 2), new ComparableStack(Items.sugar, 2), new ComparableStack(ModItems.rag))
+                .inputFluids(new FluidStack(Fluids.FRESH_WATER, 2))
+                .outputItems(new ItemStack(ModItems.pharmaceutical_base, 2)).physicalProcess(120000, 2000));
+        recipes.add(new ChemRecipe(1701, "TERMINAL_REAGENT", 2400)
+                .inputItems(new ComparableStack(ModItems.pharmaceutical_base, 4), new ComparableStack(ModItems.powder_poison, 4), new ComparableStack(ModItems.ingot_polymer, 2))
+                .inputFluids(new FluidStack(Fluids.FRESH_WATER, 2))
+                // Fictional, nominal fluid units; no physiological concentration or dosage model.
+                .outputFluids(new FluidStack(Fluids.TERMINAL_REAGENT, 1000)).physicalProcess(480000, 4000));
+        recipes.add(new ChemRecipe(1702, "TERMINAL_INJECTION", 400)
+                .inputItems(new ComparableStack(ModItems.syringe_empty), new ComparableStack(ModItems.rag))
+                .inputFluids(new FluidStack(Fluids.TERMINAL_REAGENT, 250))
+                .outputItems(new ItemStack(ModItems.injection_terminal)).physicalProcess(80000, 4000));
+
         recipes.add(new ChemRecipe(1600, "IRON_CONCENTRATION", 1).petroleum(com.hbm.realsim.SteelmakingProcesses.concentrate()));
         recipes.add(new ChemRecipe(1601, "IRON_PELLETIZING", 1).petroleum(com.hbm.realsim.SteelmakingProcesses.pelletize()));
         recipes.add(new ChemRecipe(1602, "IRON_PELLET_HARDENING", 1).petroleum(com.hbm.realsim.SteelmakingProcesses.harden()));

@@ -83,6 +83,17 @@ public final class Restraints {
         if(e instanceof EntityPlayerMP) PacketDispatcher.wrapper.sendTo(new RestraintPacket(e), (EntityPlayerMP) e);
     }
 
+    /** One saved, server-owned timer for both table and confirmed self-use. */
+    public static boolean inject(EntityLivingBase e) {
+        if(e.worldObj.isRemote || !compatible(e)) return false;
+        RestraintState s = RestraintState.get(e);
+        if(s.terminal > 0) return false;
+        s.terminal = RestraintConfig.injectionTicks;
+        s.terminalElapsed = 0;
+        changed(e);
+        return true;
+    }
+
     private static void updateSpeed(EntityLivingBase e, RestraintState s) {
         IAttributeInstance attribute = e.getEntityAttribute(SharedMonsterAttributes.movementSpeed);
         if(attribute == null) return;
@@ -106,7 +117,7 @@ public final class Restraints {
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public void tick(LivingUpdateEvent event) {
         EntityLivingBase e = event.entityLiving;
-        if(e.worldObj.isRemote) return;
+        if(e.worldObj.isRemote || !e.isEntityAlive()) return;
         RestraintState s = RestraintState.get(e);
         if(!s.active()) return;
         if(!RestraintConfig.enabled || e instanceof EntityPlayer && !RestraintConfig.players) {
@@ -125,11 +136,9 @@ public final class Restraints {
         }
         if(s.terminal > 0) {
             --s.terminal; ++s.terminalElapsed;
-            if(s.terminalElapsed % 20 == 0 || s.terminal == 0) {
-                float damage = RestraintConfig.injectionDamage * (1F + s.terminalElapsed / 40F);
-                if(s.terminal == 0 && damage > 0) damage = Math.max(damage, e.getMaxHealth() * 2);
-                e.attackEntityFrom(INJECTION, damage);
-            }
+            if(s.terminalElapsed % 20 == 0 && RestraintConfig.injectionDamage > 0)
+                e.attackEntityFrom(INJECTION, RestraintConfig.injectionDamage);
+            if(s.terminal == 0) sync = true;
         }
         if(!e.isEntityAlive()) return;
         if(s.occupied()) {
@@ -307,6 +316,7 @@ public final class Restraints {
         s.device = false; s.deviceToken = null; s.escort = null;
         s.cuffs = s.jacket = s.anchored = false;
         s.onset = s.asleep = s.recovery = s.terminal = s.terminalElapsed = 0;
+        s.injectionConfirmStack = null;
         changed(e);
     }
     @SubscribeEvent(priority = EventPriority.LOWEST) public void death(LivingDeathEvent event) {

@@ -216,10 +216,8 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
         if(!armedSneakReleased) { Restraints.message(player, "restraint.confirm"); return; }
         armedBy = null; cycle = 0;
         if(kind() == Kind.TABLE) {
+            if(!Restraints.inject(e)) { Restraints.message(player, "restraint.not_ready"); return; }
             decrStackSize(0, 1);
-            // Commit the effect at the same time as item consumption so unloading cannot duplicate a dose.
-            RestraintState s = RestraintState.get(e);
-            s.terminal = RestraintConfig.injectionTicks; s.terminalElapsed = 0; Restraints.changed(e);
         }
         setActive(true); sync();
         sound(kind() == Kind.HANGING ? "random.door_open" : kind() == Kind.GUILLOTINE ? "hbm:block.pressOperate" : kind() == Kind.TABLE ? "random.fizz" : "hbm:door.lever", 0.8F);

@@ -144,12 +144,13 @@ public class PhysicalAccountingTest {
         String source = new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get("src/main/java/com/hbm/inventory/fluid/Fluids.java")), java.nio.charset.StandardCharsets.UTF_8);
         java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("(?m)^\\s*(\\w+)\\s*=\\s*new FluidType\\(").matcher(source);
         java.util.List<String> names = new java.util.ArrayList<String>();
-        while(matcher.find()) if(!matcher.group(1).matches("(HYDROGEN|OXYGEN|NITROGEN)_GAS|AIR_HEATED|AIRBLAST|BLAST_FURNACE_GAS|DEPLETED_WATER|BUTADIENE|PHENOL|ACETONE|FORMALDEHYDE|BENZENE|BAUXITE_RESIDUE|MOLTEN_CALCIUM_CHLORIDE|MINERAL_BRINE|MOLTEN_LITHIUM_CHLORIDE|RAW_NATURAL_GAS|TOLUENE|GLYCEROL")) names.add(matcher.group(1));
+        while(matcher.find()) if(!matcher.group(1).matches("(HYDROGEN|OXYGEN|NITROGEN)_GAS|AIR_HEATED|AIRBLAST|BLAST_FURNACE_GAS|DEPLETED_WATER|BUTADIENE|PHENOL|ACETONE|FORMALDEHYDE|BENZENE|BAUXITE_RESIDUE|MOLTEN_CALCIUM_CHLORIDE|MINERAL_BRINE|MOLTEN_LITHIUM_CHLORIDE|RAW_NATURAL_GAS|TOLUENE|GLYCEROL|TERMINAL_REAGENT")) names.add(matcher.group(1));
         assertEquals(224, names.size());
         assertEquals("SALT_WATER", names.get(1));
         // The string identity changed; normalize it only for the historical numeric-order fingerprint.
         names.set(1, "WATER");
         assertTrue(source.indexOf("DEPLETED_WATER = new FluidType") > source.indexOf("BLAST_FURNACE_GAS = new FluidType"));
+        assertTrue(source.indexOf("TERMINAL_REAGENT = new FluidType") > source.indexOf("GLYCEROL = new FluidType"));
         byte[] hash = java.security.MessageDigest.getInstance("SHA-256").digest(String.join("\n", names).getBytes(java.nio.charset.StandardCharsets.UTF_8));
         StringBuilder hex = new StringBuilder(); for(byte value : hash) hex.append(String.format("%02x", value & 255));
         assertEquals("a628424d8f32be3cc376cc1084c1f44e47b3cda4cdb5913a487c1005024ca11a", hex.toString());

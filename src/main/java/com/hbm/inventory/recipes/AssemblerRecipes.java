@@ -5477,6 +5477,11 @@ public class AssemblerRecipes extends SerializableRecipe {
 				new OreDictStack(IRON.plate(), 1)}, 100);
 		makeRecipe(new ComparableStack(ModItems.gas_mask_mono), new AStack[] {
 				new OreDictStack(ANY_RUBBER.ingot(), 4), new OreDictStack(IRON.plate(), 1)}, 100);
+
+		// Append to retain legacy assembly-template metadata for existing recipes.
+		makeRecipe(new ComparableStack(ModItems.tranquilizer_syringe), new AStack[] {
+				new ComparableStack(ModItems.pharmaceutical_base), new ComparableStack(ModItems.syringe_empty),
+				new ComparableStack(ModItems.rag)}, 200);
 	}
 
 	public static void makeRecipe(ComparableStack out, AStack[] in, int duration) {
