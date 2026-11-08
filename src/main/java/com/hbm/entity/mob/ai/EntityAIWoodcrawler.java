@@ -28,9 +28,9 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 	private final World world;
 	private int scanDelay, pathDelay, stalkTicks, memoryTicks, retreatTicks, wanderDelay;
 	private int entranceCursor, doorX, doorY, doorZ, doorTicks, doorBackoff, knockDelay;
-	private int climbTicks;
+
 	private int huntTicks, pathFailures;
-	private double knownX, knownY, knownZ, goalX, goalY, goalZ, climbStartY;
+	private double knownX, knownY, knownZ, goalX, goalY, goalZ;
 	private double entranceDistance = Double.MAX_VALUE;
 	private double entranceX, entranceY, entranceZ;
 	private boolean sawTarget, hasGoal, hasEntrance, breakingDoor;
@@ -52,7 +52,7 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 	public void resetTask() {
 		forget();
 		mob.setClimbing(false);
-		pathDelay = scanDelay = wanderDelay = climbTicks = doorBackoff = knockDelay = 0;
+		pathDelay = scanDelay = wanderDelay = doorBackoff = knockDelay = 0;
 		entranceCursor = 0;
 		entranceDistance = Double.MAX_VALUE;
 	}
@@ -205,7 +205,7 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 
 	/** Invalidate paths and entrance probes without restarting stalking or forgetting live prey. */
 	public void onBurrowFinished() {
-		pathDelay = pathFailures = climbTicks = 0;
+		pathDelay = pathFailures = 0;
 		hasGoal = hasEntrance = false;
 		entranceCursor = 0;
 		entranceDistance = Double.MAX_VALUE;
@@ -261,6 +261,7 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 		goalY = y;
 		goalZ = z;
 		hasGoal = true;
+		mob.setMovementGoal(x, y, z);
 		mob.getNavigator().setSpeed(speed);
 		if(pathDelay > 0) return;
 		pathDelay = 20 + mob.getRNG().nextInt(10);
@@ -358,8 +359,8 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 		int ix = MathHelper.floor_double(x), iy = MathHelper.floor_double(y), iz = MathHelper.floor_double(z);
 		return world.checkChunksExist(ix - 1, iy - 1, iz - 1, ix + 1, iy + (int) mob.height + 1, iz + 1)
 				&& !mob.isHazardAt(x, y, z) && world.getBlock(ix, iy - 1, iz).isNormalCube()
-				&& world.getCollidingBoundingBoxes(mob, AxisAlignedBB.getBoundingBox(x - 0.43D, y, z - 0.43D,
-						x + 0.43D, y + mob.height, z + 0.43D)).isEmpty();
+				&& world.getCollidingBoundingBoxes(mob, AxisAlignedBB.getBoundingBox(x - mob.width / 2D, y, z - mob.width / 2D,
+						x + mob.width / 2D, y + mob.height, z + mob.width / 2D)).isEmpty();
 	}
 
 	private void interactWithDoor(boolean ready) {
@@ -414,31 +415,7 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 	}
 
 	private void updateClimbing() {
-		boolean climbing = false;
-		if(hasGoal && mob.isCollidedHorizontally && !breakingDoor && climbTicks < 80) {
-			double dx = goalX - mob.posX, dz = goalZ - mob.posZ;
-			double length = Math.sqrt(dx * dx + dz * dz);
-			if(length > 0.1D) {
-				int x = MathHelper.floor_double(mob.posX + dx / length * 0.8D);
-				int y = MathHelper.floor_double(mob.posY + 0.5D);
-				int z = MathHelper.floor_double(mob.posZ + dz / length * 0.8D);
-				if(world.blockExists(x, y, z)) {
-					Block wall = world.getBlock(x, y, z);
-					if(climbTicks == 0) climbStartY = mob.posY;
-					climbing = wall.isNormalCube() && !(wall instanceof BlockDoor)
-							&& wall.getMaterial() != Material.leaves && mob.posY < climbStartY + 6;
-					if(climbing) {
-						climbTicks++;
-						mob.motionY = 0.18D;
-						mob.motionX += dx / length * 0.025D;
-						mob.motionZ += dz / length * 0.025D;
-						mob.fallDistance = 0;
-					}
-				}
-			}
-		}
-		if(!mob.isCollidedHorizontally && mob.onGround) climbTicks = 0;
-		mob.setClimbing(climbing);
+		if(hasGoal) mob.setMovementGoal(goalX, goalY, goalZ);
 	}
 
 	private static double square(double value) { return value * value; }

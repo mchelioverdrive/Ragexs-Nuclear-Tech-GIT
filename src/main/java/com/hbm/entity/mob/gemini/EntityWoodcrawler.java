@@ -35,6 +35,7 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 
 	public static final int WANDER = 0, STALK = 1, CHASE = 2, SEARCH = 3, RETREAT = 4, BANG = 5;
 	public static final float STANDING_HEIGHT = 5.6F, BODY_WIDTH = 0.85F;
+	public static final float CRAWLING_HEIGHT = 1.8F, CRAWLING_WIDTH = 0.6F;
 	public static final int GRAB_WINDUP = 12, GRAB_HOLD_END = 26, GRAB_END = 36;
 	private NBTTagCompound capturedVillager;
 	private int captiveTicks;
@@ -43,6 +44,7 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 	private CaptureState captureState = CaptureState.IDLE;
 	private int captureStateTicks;
 	private final EntityAIWoodcrawler controller;
+	private final WoodcrawlerLocomotion locomotion = new WoodcrawlerLocomotion(this);
 	private byte fakePersonConversion;
 	private boolean loadedFromNBT;
 	private boolean checkLoadedClearance;
@@ -143,12 +145,23 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 
 	public void setCrouching(boolean crouch) {
 		if(crouch == isCrouching()) return;
+		if(!crouch && locomotion != null && locomotion.keepCrawling()) return;
 		if(!crouch && !worldObj.getCollidingBoundingBoxes(this,
-				AxisAlignedBB.getBoundingBox(boundingBox.minX, boundingBox.minY + 1.8D, boundingBox.minZ,
-						boundingBox.maxX, boundingBox.minY + STANDING_HEIGHT, boundingBox.maxZ)).isEmpty()) return;
+				AxisAlignedBB.getBoundingBox(posX - BODY_WIDTH / 2D, boundingBox.minY + 0.001D, posZ - BODY_WIDTH / 2D,
+						posX + BODY_WIDTH / 2D, boundingBox.minY + STANDING_HEIGHT, posZ + BODY_WIDTH / 2D)).isEmpty()) return;
 		dataWatcher.updateObject(23, Byte.valueOf((byte) (crouch ? 1 : 0)));
-		setSize(BODY_WIDTH, crouch ? 1.8F : STANDING_HEIGHT);
+		resizeBody(crouch ? CRAWLING_WIDTH : BODY_WIDTH, crouch ? CRAWLING_HEIGHT : STANDING_HEIGHT);
 	}
+	private void resizeBody(float bodyWidth, float bodyHeight) {
+		// Entity.setSize grows width toward one corner and moves the entity. Posture changes
+		// instead preserve the current center after checking the complete destination shape.
+		width = bodyWidth; height = bodyHeight;
+		boundingBox.setBounds(posX - width / 2D, boundingBox.minY, posZ - width / 2D,
+				posX + width / 2D, boundingBox.minY + height, posZ + width / 2D);
+	}
+	public void setMovementGoal(double x, double y, double z) { locomotion.goal(x, y, z); }
+	@Override public boolean canBeCollidedWith() { return !isDormant() && super.canBeCollidedWith(); }
+	@Override public boolean canBePushed() { return !isDormant() && super.canBePushed(); }
 
 	public boolean isPrey(Entity entity) {
 		if(entity == this || entity instanceof IGeminiCreature || !(entity instanceof EntityLivingBase)
@@ -633,7 +646,7 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 			if(tick < 20) dataWatcher.updateObject(26, Byte.valueOf((byte) (tick + 1)));
 			else if(tick <= 20 || tick == 70) {
 				dataWatcher.updateObject(26, Byte.valueOf((byte) 70));
-				setSize(BODY_WIDTH, 0.3F);
+				resizeBody(CRAWLING_WIDTH, 0.3F);
 				darkTicks = !wantsShelter() && cachedLight <= 7 ? darkTicks + 1 : 0;
 				if(darkTicks >= 100 || disturbanceTicks > 0) emerge();
 			} else if(tick >= 60) finishBurrow();
@@ -663,11 +676,12 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 		AxisAlignedBB standing = AxisAlignedBB.getBoundingBox(posX - BODY_WIDTH / 2, posY, posZ - BODY_WIDTH / 2,
 				posX + BODY_WIDTH / 2, posY + STANDING_HEIGHT, posZ + BODY_WIDTH / 2);
 		if(!worldObj.getCollidingBoundingBoxes(this, standing).isEmpty()) {
-			standing.maxY = posY + 1.8D;
+			standing = AxisAlignedBB.getBoundingBox(posX - CRAWLING_WIDTH / 2D, posY, posZ - CRAWLING_WIDTH / 2D,
+					posX + CRAWLING_WIDTH / 2D, posY + CRAWLING_HEIGHT, posZ + CRAWLING_WIDTH / 2D);
 			if(!worldObj.getCollidingBoundingBoxes(this, standing).isEmpty()) return;
 			setCrouching(true);
 		}
-		setSize(BODY_WIDTH, isCrouching() ? 1.8F : STANDING_HEIGHT);
+		resizeBody(isCrouching() ? CRAWLING_WIDTH : BODY_WIDTH, isCrouching() ? CRAWLING_HEIGHT : STANDING_HEIGHT);
 		int tick = getBurrowTick();
 		dataWatcher.updateObject(26, Byte.valueOf((byte) (tick < 20 ? 60 - tick : 41)));
 		burrowCooldown = 400;
@@ -676,6 +690,10 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 	@Override
 	public void moveEntityWithHeading(float strafe, float forward) {
 		if(isDormant()) { motionX = motionY = motionZ = 0; return; }
+		if(!worldObj.isRemote && GeminiSpawning.canAct(this, 1)) {
+			locomotion.tick();
+			if(locomotion.recovering()) strafe = forward = 0;
+		}
 		if(isBurrowing() || isGrabbing() || isProbing() || getHuntState() == BANG) {
 			motionX = motionZ = 0;
 			super.moveEntityWithHeading(0, 0);
@@ -711,6 +729,7 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 			}
 			if(strikeCooldown > 0) strikeCooldown--;
 			if(burrowCooldown > 0) burrowCooldown--;
+			locomotion.prepareBody();
 			tickEnvironment();
 			tickProbe();
 			tickGrab();
@@ -749,7 +768,8 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 		int burrowTick = getBurrowTick();
 		burrowDepth = burrowTick == 70 ? 1 : burrowTick == 0 ? 0 : MathHelper.clamp_float(burrowTick <= 20 ? burrowTick / 20F
 				: burrowTick <= 40 ? 1 : (60 - burrowTick) / 20F, 0, 1);
-		if(worldObj.isRemote) setSize(BODY_WIDTH, isDormant() ? 0.3F : isCrouching() ? 1.8F : STANDING_HEIGHT);
+		if(worldObj.isRemote) resizeBody(isDormant() || isCrouching() ? CRAWLING_WIDTH : BODY_WIDTH,
+				isDormant() ? 0.3F : isCrouching() ? CRAWLING_HEIGHT : STANDING_HEIGHT);
 		if(worldObj.isRemote && isBurrowing() && !isDormant() && ticksExisted % 6 == 0) {
 			int x = MathHelper.floor_double(posX), y = MathHelper.floor_double(posY - 0.05D), z = MathHelper.floor_double(posZ);
 			String dust = "blockcrack_" + Block.getIdFromBlock(worldObj.getBlock(x, y, z)) + "_" + worldObj.getBlockMetadata(x, y, z);
@@ -830,6 +850,10 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 	public float getEyeHeight() { return height * 0.78F; }
 	@Override
 	public boolean attackEntityFrom(DamageSource source, float damage) {
+		if(isDormant() && source != DamageSource.outOfWorld) {
+			if(!worldObj.isRemote && source.isExplosion()) { disturbanceTicks = 200; emerge(); }
+			return false;
+		}
 		if(source.isFireDamage()) damage *= 1.75F;
 		if(source.getSourceOfDamage() instanceof com.hbm.entity.projectile.EntityBulletBaseNT) {
 			com.hbm.entity.projectile.EntityBulletBaseNT bullet = (com.hbm.entity.projectile.EntityBulletBaseNT) source.getSourceOfDamage();
@@ -887,7 +911,7 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 		if(daytimeBurrow) {
 			int tick = MathHelper.clamp_int(nbt.getInteger("WoodcrawlerBurrowTick"), 1, 70);
 			dataWatcher.updateObject(26, Byte.valueOf((byte) tick));
-			if(tick == 70) setSize(BODY_WIDTH, 0.3F);
+			if(tick == 70) resizeBody(CRAWLING_WIDTH, 0.3F);
 			burrowDepth = prevBurrowDepth = tick == 70 ? 1 : MathHelper.clamp_float(tick <= 20 ? tick / 20F : (60 - tick) / 20F, 0, 1);
 		}
 		disturbanceTicks = MathHelper.clamp_int(nbt.getInteger("WoodcrawlerDisturbed"), 0, 200);

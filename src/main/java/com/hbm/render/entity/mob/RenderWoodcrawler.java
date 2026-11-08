@@ -28,7 +28,7 @@ public final class RenderWoodcrawler extends RenderLiving {
 
 	@Override
 	public void doRender(Entity entity, double x, double y, double z, float yaw, float partial) {
-		if(((EntityWoodcrawler) entity).isDormant()) return;
+		if(((EntityWoodcrawler) entity).isDormant()) { shadowSize = 0; return; }
 		super.doRender(entity, x, y, z, yaw, partial);
 		EntityWoodcrawler mob = (EntityWoodcrawler) entity;
 		if(mob.isProbing() && !mob.isInvisible() && mob.isEntityAlive()) renderProboscis(mob, x, y, z, partial);
