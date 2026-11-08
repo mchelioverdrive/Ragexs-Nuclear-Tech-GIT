@@ -38,6 +38,7 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
     private int clientCycle;
     private long clientCycleAt;
     private boolean clientInitialized;
+    private boolean collisionCellsChecked;
     private com.hbm.sound.AudioWrapper dischargeAudio;
 
     public TileEntityRestraintDevice() { super(1); }
@@ -91,9 +92,7 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
     }
 
     public float yaw() {
-        switch(getBlockMetadata() - 10) {
-            case 2: return 180; case 4: return 270; case 5: return 90; default: return 0;
-        }
+        return BlockRestraintDevice.modelYaw(getBlockMetadata());
     }
     public Vec3 local(double x, double y, double z) {
         double angle = Math.toRadians(yaw());
@@ -259,6 +258,8 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
             }
             return;
         }
+        if(!collisionCellsChecked && worldObj.getTotalWorldTime() % 20 == 0)
+            collisionCellsChecked = ((BlockRestraintDevice) getBlockType()).ensureCollisionCells(worldObj, xCoord, yCoord, zCoord);
         if(armedBy != null) {
             EntityPlayer operator = worldObj.func_152378_a(armedBy);
             if(worldObj.getTotalWorldTime() > armedUntil || operator == null || !isUseableByPlayer(operator)) armedBy = null;

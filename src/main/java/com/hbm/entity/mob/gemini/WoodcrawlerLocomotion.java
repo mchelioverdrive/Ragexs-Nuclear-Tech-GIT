@@ -91,7 +91,9 @@ final class WoodcrawlerLocomotion {
                     double angle = side * Math.PI / 2D;
                     if(!clear(body(mob.posX + Math.cos(angle), mob.posY, mob.posZ + Math.sin(angle), EntityWoodcrawler.CRAWLING_HEIGHT))) sides++;
                 }
-                blocked = sides >= 3; // A one-block pit can trap an idle creature with no prey/route.
+                // Thin rails are not a resting floor: an idle hunter still needs
+                // a supported way down, even with no currently visible prey.
+                blocked = sides >= 3 || surface.standingOnBarrier();
             }
             boolean trying = blocked || goalAge < 60 && mob.getDistanceSq(goalX, goalY, goalZ) > 2D;
             stuckTicks = sampled && trying && dx * dx + dy * dy + dz * dz < 0.04D ? Math.min(400, stuckTicks + 10) : 0;

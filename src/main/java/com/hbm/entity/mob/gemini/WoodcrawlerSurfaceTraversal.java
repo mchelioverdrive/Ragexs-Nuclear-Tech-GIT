@@ -10,22 +10,26 @@ import net.minecraft.block.BlockWall;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.MathHelper;
+import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 
 /** Collision-resolved wall/ladder attachment, including ledge entry and supported exits. */
 final class WoodcrawlerSurfaceTraversal {
-    private static final int NONE = 0, UP = 1, TOP = 2, DOWN = 3, LADDER = 4, ROOF = 5;
+    private static final int NONE = 0, UP = 1, TOP = 2, DOWN = 3, LADDER = 4, ROOF = 5, DISMOUNT = 6;
     private final EntityWoodcrawler mob;
     private final World world;
     private int mode, nx, nz, ticks, blockedTicks, climbDelay, ladderDelay, landingTicks;
     private int ladderX, ladderZ, ladderBottom, ladderTop;
     private boolean ladderFound, barrierContact;
-    private double plane, vx, vy, vz, exitX, exitZ, descentStartY;
+    private double plane, vx, vy, vz, exitX, exitY, exitZ, descentStartY;
     private double savedGoalX, savedGoalY, savedGoalZ;
     private double progressX, progressY, progressZ, climbX, climbY, climbZ;
     private int stalledTicks, climbNX, climbNZ, retryTicks;
     private boolean climbEpisode;
+    private int approachScan, approachNX, approachNZ, dismountDelay;
+    private boolean approachFound;
+    private double approachX, approachY, approachZ, approachGoalX, approachGoalZ;
 
     WoodcrawlerSurfaceTraversal(EntityWoodcrawler mob) { this.mob = mob; world = mob.worldObj; }
     boolean active() { return mode != NONE; }
@@ -70,9 +74,123 @@ final class WoodcrawlerSurfaceTraversal {
     }
     Vec3 waypoint(double gx, double gy, double gz) {
         findLadder(gx, gy, gz);
-        if(!ladderFound || !ladder(ladderX, MathHelper.clamp_int(MathHelper.floor_double(mob.posY), ladderBottom, ladderTop), ladderZ)
-                || Math.abs(gy - mob.posY) < 0.5D) return null;
-        return Vec3.createVectorHelper(ladderX + 0.5D, MathHelper.clamp_double(mob.posY, ladderBottom, ladderTop + 1D), ladderZ + 0.5D);
+        Vec3 column = ladderFound && ladder(ladderX, MathHelper.clamp_int(MathHelper.floor_double(mob.posY), ladderBottom, ladderTop), ladderZ)
+                && Math.abs(gy - mob.posY) >= 0.5D ? Vec3.createVectorHelper(ladderX + 0.5D,
+                        MathHelper.clamp_double(mob.posY, ladderBottom, ladderTop + 1D), ladderZ + 0.5D) : null;
+        Vec3 barrier = barrierWaypoint(column == null ? gx : column.xCoord, column == null ? gz : column.zCoord);
+        return barrier != null ? barrier : column;
+    }
+    private boolean isBarrier(Block block) {
+        return block instanceof BlockFence || block instanceof BlockFenceGate || block instanceof BlockWall;
+    }
+    boolean standingOnBarrier() {
+        return barrierSupport(mob.posX, mob.boundingBox.minY, mob.posZ);
+    }
+    private boolean barrierSupport(double x, double feet, double z) {
+        double half = mob.width / 2D - 0.001D;
+        AxisAlignedBB support = AxisAlignedBB.getBoundingBox(x - half, feet - 0.15D, z - half, x + half, feet + 0.001D, z + half);
+        if(!GardenerNests.loaded(world, support)) return false;
+        for(Object entry : world.getCollidingBoundingBoxes(mob, support)) {
+            AxisAlignedBB box = (AxisAlignedBB) entry;
+            if(Math.abs(box.maxY - feet) < 0.08D && isBarrier(world.getBlock(MathHelper.floor_double((box.minX + box.maxX) * 0.5D),
+                    MathHelper.floor_double((box.minY + box.maxY) * 0.5D), MathHelper.floor_double((box.minZ + box.maxZ) * 0.5D)))) return true;
+        }
+        return false;
+    }
+    private boolean dismount(double gx, double gz) {
+        if(dismountDelay > 0) return false;
+        dismountDelay = 20;
+        double bearing = Math.atan2(gz - mob.posZ, gx - mob.posX), best = Double.MAX_VALUE;
+        boolean found = false;
+        for(int side = 0; side < 8; side++) {
+            int turn = side == 7 ? 4 : (side + 1) / 2 * (side % 2 == 1 ? 1 : -1);
+            double angle = bearing + turn * Math.PI / 4D;
+            for(int radius = 0; radius < 3; radius++) {
+                double distance = 0.8D + radius * 0.5D;
+                double x = mob.posX + Math.cos(angle) * distance, z = mob.posZ + Math.sin(angle) * distance;
+                double y = floor(x, mob.posY, z, 3.5D);
+                if(Double.isNaN(y) || y > mob.posY - 0.2D || barrierSupport(x, y, z) || mob.isHazardAt(x, y, z)
+                        || !clear(body(x, y, z)) || !dismountPathClear(x, z)) continue;
+                double score = distance * distance + (mob.posY - y) * 0.25D + side * 0.75D
+                        + ((gx - x) * (gx - x) + (gz - z) * (gz - z)) * 0.02D;
+                if(score < best) { best = score; exitX = x; exitY = y; exitZ = z; found = true; }
+            }
+        }
+        if(found) attach(DISMOUNT);
+        return found;
+    }
+    private double overlap(AxisAlignedBB a, AxisAlignedBB b) {
+        return Math.max(0, Math.min(a.maxX, b.maxX) - Math.max(a.minX, b.minX))
+                * Math.max(0, Math.min(a.maxY, b.maxY) - Math.max(a.minY, b.minY))
+                * Math.max(0, Math.min(a.maxZ, b.maxZ) - Math.max(a.minZ, b.minZ));
+    }
+    private boolean dismountPathClear(double x, double z) {
+        AxisAlignedBB start = body(mob.posX, mob.posY + 0.02D, mob.posZ);
+        AxisAlignedBB route = start.addCoord(x - mob.posX, 0, z - mob.posZ);
+        if(!GardenerNests.loaded(world, route)) return false;
+        for(Object entry : world.getCollidingBoundingBoxes(mob, route)) {
+            AxisAlignedBB obstacle = (AxisAlignedBB) entry;
+            double previous = overlap(start, obstacle);
+            if(previous == 0) return false;
+            // A rail under an eave can already overlap the folded body's head.
+            // Permit native movement out of that overlap, never deeper into it
+            // or into a new obstacle, and require the whole body to end clear.
+            for(int step = 1; step <= 4; step++) {
+                double fraction = step / 4D;
+                double next = overlap(body(mob.posX + (x - mob.posX) * fraction, mob.posY + 0.02D,
+                        mob.posZ + (z - mob.posZ) * fraction), obstacle);
+                if(next > previous + 0.000001D) return false;
+                previous = next;
+            }
+            if(previous > 0.000001D) return false;
+        }
+        return true;
+    }
+    private Vec3 barrierWaypoint(double gx, double gz) {
+        if((gx - approachGoalX) * (gx - approachGoalX) + (gz - approachGoalZ) * (gz - approachGoalZ) > 1D
+                || Math.abs(mob.posY - approachY) > 0.5D) approachScan = 0;
+        if(approachScan == 0) {
+            approachScan = 10; approachFound = false;
+            approachGoalX = gx; approachGoalZ = gz; approachY = mob.posY;
+            double dx = gx - mob.posX, dz = gz - mob.posZ, distance = Math.sqrt(dx * dx + dz * dz);
+            if(distance > 0.2D) {
+                dx /= distance; dz /= distance;
+                Vec3 from = Vec3.createVectorHelper(mob.posX, mob.posY + 0.5D, mob.posZ);
+                Vec3 to = from.addVector(dx * Math.min(distance, 4D), 0, dz * Math.min(distance, 4D));
+                AxisAlignedBB probe = AxisAlignedBB.getBoundingBox(from.xCoord - 0.01D, from.yCoord - 0.01D, from.zCoord - 0.01D,
+                        from.xCoord + 0.01D, from.yCoord + 0.01D, from.zCoord + 0.01D).addCoord(to.xCoord - from.xCoord, 0, to.zCoord - from.zCoord);
+                if(GardenerNests.loaded(world, probe)) {
+                    MovingObjectPosition closest = null;
+                    Block obstacle = null;
+                    double best = Double.MAX_VALUE;
+                    for(Object entry : world.getCollidingBoundingBoxes(mob, probe)) {
+                        AxisAlignedBB box = (AxisAlignedBB) entry;
+                        MovingObjectPosition hit = box.calculateIntercept(from, to);
+                        if(hit == null || from.squareDistanceTo(hit.hitVec) >= best) continue;
+                        best = from.squareDistanceTo(hit.hitVec); closest = hit;
+                        obstacle = world.getBlock(MathHelper.floor_double((box.minX + box.maxX) * 0.5D),
+                                MathHelper.floor_double((box.minY + box.maxY) * 0.5D), MathHelper.floor_double((box.minZ + box.maxZ) * 0.5D));
+                    }
+                    // Ordinary native paths stop outside fence cells. Approach the first
+                    // actual rail, while keeping solid walls and doors in charge of their routes.
+                    if(closest != null && isBarrier(obstacle)) {
+                        double advance = Math.min(Math.sqrt(best) + 0.1D, 2.2D);
+                        approachX = mob.posX + dx * advance; approachZ = mob.posZ + dz * advance;
+                        approachNX = closest.sideHit == 4 ? -1 : closest.sideHit == 5 ? 1 : 0;
+                        approachNZ = closest.sideHit == 2 ? -1 : closest.sideHit == 3 ? 1 : 0;
+                        approachFound = !mob.isHazardAt(approachX, approachY, approachZ)
+                                && !mob.isHazardAt((mob.posX + approachX) * 0.5D, approachY, (mob.posZ + approachZ) * 0.5D);
+                        for(double step = 0.4D; approachFound && step < Math.sqrt(best); step += 0.4D) {
+                            double x = mob.posX + dx * step, z = mob.posZ + dz * step;
+                            approachFound = !Double.isNaN(floor(x, mob.posY, z, 1.25D)) && !mob.isHazardAt(x, mob.posY, z);
+                        }
+                    }
+                }
+            }
+        }
+        if(!approachFound || !GardenerNests.loaded(world, body(mob.posX, mob.posY, mob.posZ)
+                .addCoord(approachX - mob.posX, 0, approachZ - mob.posZ))) return null;
+        return Vec3.createVectorHelper(approachX, approachY, approachZ);
     }
 
     private boolean wall(double reach, double bottom, double height) {
@@ -91,7 +209,7 @@ final class WoodcrawlerSurfaceTraversal {
             int bz = MathHelper.floor_double((box.minZ + box.maxZ) * 0.5D);
             Block block = world.getBlock(bx, by, bz);
             if(block instanceof BlockDoor) continue;
-            boolean barrier = block instanceof BlockFence || block instanceof BlockFenceGate || block instanceof BlockWall;
+            boolean barrier = isBarrier(block);
             double face = nx > 0 ? box.maxX : nx < 0 ? box.minX : nz > 0 ? box.maxZ : box.minZ;
             double distance = (nx != 0 ? mob.posX - face : mob.posZ - face) * (nx + nz);
             if(distance < -reach || distance > reach + mob.width / 2D) continue;
@@ -155,6 +273,7 @@ final class WoodcrawlerSurfaceTraversal {
         if(climbEpisode) retryTicks = 300;
         climbEpisode = false;
         mode = NONE; ladderFound = false; ladderDelay = 40; landingTicks = 4;
+        approachFound = false; approachScan = 0;
         mob.motionX = mob.motionY = mob.motionZ = 0; mob.fallDistance = 0; mob.setClimbing(false);
         mob.getNavigator().clearPathEntity();
         mob.onSurfaceTraversalFinished();
@@ -169,6 +288,8 @@ final class WoodcrawlerSurfaceTraversal {
         if(active()) { gx = savedGoalX; gy = savedGoalY; gz = savedGoalZ; }
         else if(hasGoal) { savedGoalX = gx; savedGoalY = gy; savedGoalZ = gz; }
         if(retryTicks > 0) retryTicks--;
+        if(approachScan > 0) approachScan--;
+        if(dismountDelay > 0) dismountDelay--;
         if(climbDelay > 0) climbDelay--;
         if(ladderDelay > 0) ladderDelay--;
         if(landingTicks > 0) { landingTicks--; mob.fallDistance = 0; }
@@ -183,6 +304,9 @@ final class WoodcrawlerSurfaceTraversal {
                 if(dx * dx + dz * dz > 0.1D) {
                     nx = Math.abs(dx) >= Math.abs(dz) ? (dx > 0 ? -1 : 1) : 0;
                     nz = nx == 0 ? (dz > 0 ? -1 : 1) : 0;
+                    if(approachFound && approachScan > 0 && Math.abs(approachNX) + Math.abs(approachNZ) == 1) {
+                        nx = approachNX; nz = approachNZ;
+                    }
                     if(!repeatedClimb() && wall(0.35D, mob.posY, mob.height)
                             && (gy >= mob.posY - 1D || barrierContact)
                             && clear(body(mob.posX, mob.posY + 0.25D, mob.posZ))) attach(UP);
@@ -220,11 +344,22 @@ final class WoodcrawlerSurfaceTraversal {
                 else { finish(); return false; }
             }
         }
+        if(mode == DOWN && mob.onGround && stalledTicks > 8 && standingOnBarrier()) dismount(gx, gz);
+        if(mode == DISMOUNT) {
+            // A corner can support both sides of the body. Clear the complete
+            // rail footprint toward a verified nearby landing, not just one face.
+            vx = MathHelper.clamp_double(exitX - mob.posX, -0.1D, 0.1D);
+            vz = MathHelper.clamp_double(exitZ - mob.posZ, -0.1D, 0.1D); vy = -0.12D;
+            if(ticks > 100 || stalledTicks > 40 || mob.getDistanceSq(exitX, exitY, exitZ) < 0.04D && mob.onGround) {
+                finish(); return false;
+            }
+        }
         if(mode == LADDER) {
             ladderMotion(gx, gy, gz);
         } else if(mode == DOWN) {
             double ground = floor(mob.posX, mob.posY, mob.posZ, 0.18D);
-            if(!Double.isNaN(ground) && mob.posY < descentStartY - 0.1D) { finish(); return false; }
+            if(!Double.isNaN(ground) && mob.posY < descentStartY - 0.1D
+                    || mob.onGround && stalledTicks > 20 && !standingOnBarrier()) { finish(); return false; }
             if(!wall(1.35D, mob.posY - 0.5D, mob.height + 0.5D)) { finish(); return false; }
             vx = nx == 0 ? 0 : MathHelper.clamp_double(plane + nx * (mob.width / 2D + 0.025D) - mob.posX, -0.1D, 0.1D);
             vz = nz == 0 ? 0 : MathHelper.clamp_double(plane + nz * (mob.width / 2D + 0.025D) - mob.posZ, -0.1D, 0.1D);
@@ -328,7 +463,7 @@ final class WoodcrawlerSurfaceTraversal {
         NBTTagCompound tag = new NBTTagCompound();
         tag.setInteger("Mode", mode); tag.setInteger("NX", nx); tag.setInteger("NZ", nz);
         tag.setDouble("Plane", plane); tag.setDouble("StartY", descentStartY);
-        tag.setDouble("ExitX", exitX); tag.setDouble("ExitZ", exitZ);
+        tag.setDouble("ExitX", exitX); tag.setDouble("ExitY", exitY); tag.setDouble("ExitZ", exitZ);
         tag.setDouble("GoalX", savedGoalX); tag.setDouble("GoalY", savedGoalY); tag.setDouble("GoalZ", savedGoalZ);
         tag.setInteger("LadderX", ladderX); tag.setInteger("LadderZ", ladderZ);
         tag.setInteger("Bottom", ladderBottom); tag.setInteger("Top", ladderTop);
@@ -341,9 +476,9 @@ final class WoodcrawlerSurfaceTraversal {
         if(!parent.hasKey("WoodcrawlerSurface", 10)) return;
         NBTTagCompound tag = parent.getCompoundTag("WoodcrawlerSurface");
         int state = tag.getInteger("Mode"), x = tag.getInteger("NX"), z = tag.getInteger("NZ");
-        if(state < NONE || state > ROOF || state != NONE && state != LADDER && Math.abs(x) + Math.abs(z) != 1) return;
+        if(state < NONE || state > DISMOUNT || state != NONE && state != LADDER && Math.abs(x) + Math.abs(z) != 1) return;
         mode = state; nx = x; nz = z; plane = tag.getDouble("Plane"); descentStartY = tag.getDouble("StartY");
-        exitX = tag.getDouble("ExitX"); exitZ = tag.getDouble("ExitZ");
+        exitX = tag.getDouble("ExitX"); exitY = tag.getDouble("ExitY"); exitZ = tag.getDouble("ExitZ");
         savedGoalX = tag.getDouble("GoalX"); savedGoalY = tag.getDouble("GoalY"); savedGoalZ = tag.getDouble("GoalZ");
         ladderX = tag.getInteger("LadderX"); ladderZ = tag.getInteger("LadderZ");
         ladderBottom = MathHelper.clamp_int(tag.getInteger("Bottom"), 0, 255);

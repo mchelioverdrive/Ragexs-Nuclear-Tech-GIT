@@ -25,6 +25,7 @@ import net.minecraft.world.WorldServer;
 public final class DeepRootDisease implements Pathogen {
 
 	public static final String ID = "deep_root";
+	private static final String DEBUG_PHASE_BYPASS = "debugPhaseBypass";
 	public enum Stage { EXPOSURE, ROOTS, CONTRACTION, BULBS, SPROUTS, TERMINAL }
 	private static final UUID SPEED = UUID.fromString("2b7366e1-4e42-48cb-a540-4c19d883fe16");
 	private static final double[] SLOWING = {0, -0.10, -0.20, -0.30, -0.55, -0.60};
@@ -51,9 +52,42 @@ public final class DeepRootDisease implements Pathogen {
 	}
 
 	public static boolean active(EntityLivingBase host) {
+		Pathogen pathogen = DiseaseManager.pathogen(ID);
+		Infection infection = DiseaseHost.get(host).infections.get(ID);
 		return host.isEntityAlive() && host.addedToChunk
 				&& host.worldObj.getChunkProvider().chunkExists(host.chunkCoordX, host.chunkCoordZ)
-				&& DiseaseManager.pathogen(ID).canInfect(host);
+				&& (infection != null && infection.details.getBoolean(DEBUG_PHASE_BYPASS)
+						? host.worldObj instanceof WorldServer && pathogen.enabled() && pathogen.supports(host)
+						: pathogen.canInfect(host));
+	}
+
+	/** Administrator-only establishment; natural exposure still uses canInfect through DiseaseManager. */
+	public static boolean infectForDebug(EntityLivingBase host, String sourceHost) {
+		Pathogen pathogen = DiseaseManager.pathogen(ID);
+		if(!(host.worldObj instanceof WorldServer) || host.worldObj.isRemote || !host.isEntityAlive()
+				|| !pathogen.enabled() || !pathogen.supports(host)) return false;
+		DiseaseHost data = DiseaseHost.get(host);
+		if(data.infections.containsKey(ID)) return false;
+		Infection infection = pathogen.establish(host, "command:ntmdisease", sourceHost, DiseaseManager.now(host));
+		infection.details.setBoolean(DEBUG_PHASE_BYPASS, true);
+		data.infections.put(ID, infection);
+		selectStage(host, Stage.EXPOSURE);
+		return true;
+	}
+
+	/** Reconcile command changes without ticking the clock or running terminal conversion. */
+	public static boolean selectStage(EntityLivingBase host, Stage stage) {
+		if(host.worldObj.isRemote) return false;
+		Infection infection = DiseaseHost.get(host).infections.get(ID);
+		if(infection == null) return false;
+		infection.stage = stage.name();
+		infection.details.setLong("stageTicks", 0L);
+		if(active(host)) {
+			setSpeed(host, SLOWING[stage.ordinal()]);
+			setVisual(host, stage.ordinal() + 1, false);
+			DiseaseManager.pathogen(ID).update(host, infection, DiseaseManager.now(host));
+		} else DiseaseManager.pathogen(ID).removeEffects(host);
+		return true;
 	}
 
 	@Override public Infection establish(EntityLivingBase host, String source, String sourceHost, long now) {

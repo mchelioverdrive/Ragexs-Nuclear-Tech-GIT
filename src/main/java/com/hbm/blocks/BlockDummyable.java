@@ -472,10 +472,15 @@ public abstract class BlockDummyable extends BlockContainer implements ICustomBl
 	// players currently inside instances of this block
 	private List<EntityPlayer> internalPlayers = new ArrayList<>();
 
+	/** Retain placement escape behavior in subclasses with custom multipart collisions. */
+	protected boolean ignoresCollision(Entity entity) {
+		return internalPlayers.contains(entity);
+	}
+
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Override
 	public void addCollisionBoxesToList(World world, int x, int y, int z, AxisAlignedBB entityBounding, List list, Entity entity) {
-		if(!internalPlayers.isEmpty() && internalPlayers.contains(entity))
+		if(ignoresCollision(entity))
 			return;
 		
 		if(!this.useDetailedHitbox()) {

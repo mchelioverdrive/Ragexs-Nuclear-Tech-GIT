@@ -602,3 +602,20 @@
 
 - Check supported crest positions on narrow rails and posts instead of assuming a full-block landing. Resolve connected fence and wall contacts at the local exposed face, and permit climbing these barriers when prey or an exit is lower than the current yard.
 - Retain native collision shapes, supported descent, loaded-chunk checks and non-destructive traversal, including closed gates; ordinary doors and existing roof/ladder behavior retain their rules.
+
+2026-11-08 00:11 — Connect Woodcrawler hunting paths to fence traversal
+
+- Bridge native pathfinding's fence-cell standoff with a short, cached collision-checked approach to the first rail, retaining obstruction, hazard and loaded-chunk boundaries. Keep ladder approaches and non-destructive climbing authoritative.
+- Treat idle rail perches as needing a supported local exit, instead of allowing creatures without visible prey to remain balanced on a fence indefinitely. Preserve active attacks, captures and daytime dormancy.
+- Resolve stalled fence-corner descents with a saved, collision-checked whole-body dismount to nearby supported ground, so a second connected rail cannot keep an existing descent active indefinitely.
+
+2026-11-08 04:03 — Add administrative Deep Root infection and stage commands
+
+- Add permission-level-2 `/ntmdisease infect <player|entityId> deep_root` and `/ntmdisease stage <player|entityId> deep_root <stage>` with all six stages, tab completion and explicit validation feedback. Stage selection creates a missing infection, resets its stage clock and refreshes existing movement, symptom and client visual synchronization without invoking conversion.
+- Persist an invasion-gate bypass only on command-created infections using the existing infection details NBT. Retain global Gemini/Deep Root settings, supported host checks, natural transmission/progression rules, player conversion exclusions and existing inspect/clear behavior; selecting a stage on a natural infection preserves its activity gates.
+
+2026-11-08 04:28 — Align execution and restraint device collisions with their models
+
+- Use the renderer's cardinal yaw and model-pixel cuboids for the Hanging Station, Guillotine, Electric Chair, Injection Table and Brazen Bull. Replace approximate solid regions with multipart frame, platform, seat, support and assembly bounds, retaining open spaces and existing open-hatch passability. Follow the guillotine blade and table injector positions without changing rendering, captive anchors or execution controls.
+- Clip collision and ray-selection geometry to each occupied multiblock cell, including state-dependent closed hatches; use the same parts for selection highlights. Preserve placement escape behavior and existing core/dummy orientation metadata.
+- Reserve the Injection Table's third block layer for its upper support. Existing tables add only missing support-tip cells in loaded, replaceable space, preserving neighboring blocks and saved device state.

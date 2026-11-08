@@ -322,11 +322,11 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 		goalZ = z;
 		hasGoal = true;
 		mob.setMovementGoal(x, y, z);
-		Vec3 ladder = mob.getClimbWaypoint(x, y, z);
-		if(ladder != null) { x = ladder.xCoord; y = ladder.yCoord; z = ladder.zCoord; mob.setCrouching(true); }
-		if(ladder != null && mob.getDistanceSq(x, y, z) < 6.25D) {
-			// Native paths stop short of a deep ladder shaft because they see an unsafe fall.
-			// Let collision-resolved attachment guide the final approach into that column.
+		Vec3 approach = mob.getClimbWaypoint(x, y, z);
+		if(approach != null) { x = approach.xCoord; y = approach.yCoord; z = approach.zCoord; mob.setCrouching(true); }
+		if(approach != null && mob.getDistanceSq(x, y, z) < 6.25D) {
+			// Native paths stop short of deep ladder shafts and fence cells.
+			// Let collision-resolved attachment guide the final approach to the obstacle.
 			mob.getNavigator().clearPathEntity();
 			mob.getMoveHelper().setMoveTo(x, y, z, speed);
 			pathFailures = 0;
