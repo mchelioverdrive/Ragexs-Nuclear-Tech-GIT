@@ -7506,6 +7506,7 @@ gui.rtm.upgrades.short=Upg.
 gui.rtm.cooling.short=Loop
 gui.rtm.retained=Retained
 death.attack.rabies=%1$s succumbed to neurological illness
+death.attack.deepRoot=%1$s was consumed by Deep Root Disease
 entity.hbm.sandworm.name=Sandworm
 entity.hbm.worm_brain.name=Sandworm Brain
 entity.hbm.worm_heart.name=Sandworm Heart

@@ -20,11 +20,13 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
 import net.minecraft.world.WorldServer;
+import net.minecraft.util.DamageSource;
 
 /** Loaded-host progression, independent of rabies' absolute-time deadlines and fatal behavior. */
 public final class DeepRootDisease implements Pathogen {
 
 	public static final String ID = "deep_root";
+	public static final DamageSource TERMINAL_DAMAGE = new DamageSource("deepRoot").setDamageBypassesArmor();
 	private static final String DEBUG_PHASE_BYPASS = "debugPhaseBypass";
 	public enum Stage { EXPOSURE, ROOTS, CONTRACTION, BULBS, SPROUTS, TERMINAL }
 	private static final UUID SPEED = UUID.fromString("2b7366e1-4e42-48cb-a540-4c19d883fe16");
@@ -109,7 +111,7 @@ public final class DeepRootDisease implements Pathogen {
 
 	public static long durationTicks(Infection infection) {
 		int index = stage(infection).ordinal();
-		if(index == Stage.TERMINAL.ordinal()) return 0L; // Deliberately indefinite, never a death deadline.
+		if(index == Stage.TERMINAL.ordinal()) return 0L; // Terminal symptoms continue until treatment or conversion/death.
 		long saved = infection.details.getLong("duration" + index);
 		return saved > 0L ? saved : Math.max(1L, GeminiConfig.deepRootStageSeconds[index]) * 20L;
 	}
@@ -128,16 +130,22 @@ public final class DeepRootDisease implements Pathogen {
 		if(stage(infection) == Stage.TERMINAL && !(host instanceof EntityPlayer)
 				&& (host.ticksExisted + host.getEntityId()) % 100 == 0
 				&& com.hbm.world.gemini.MockerySpawning.convert(host)) return;
+		if(stage(infection) == Stage.TERMINAL && host instanceof EntityPlayer && stageTicks(infection) % 100L == 0L) {
+			host.attackEntityFrom(TERMINAL_DAMAGE, 2F);
+			if(!host.isEntityAlive()) return;
+			// Damage listeners may treat the host. Never restore symptoms after a successful cure.
+			if(data.infections.get(ID) != infection || !active(host)) return;
+		}
 		Stage stage = stage(infection);
 		long phase = stageTicks(infection) % 200L;
-		boolean spasm = stage.ordinal() >= Stage.CONTRACTION.ordinal() && stageTicks(infection) >= 200L && phase < 6L;
+		boolean spasm = stageTicks(infection) >= 200L && phase < 6L;
 		if(spasm && phase == 0L) {
 			host.motionX *= -0.15D;
 			host.motionZ *= -0.15D;
 			host.velocityChanged = true; // A brief native velocity correction, never a position anchor or AI takeover.
 		}
 		// Six ticks per ten seconds at most. All stages retain movement between spasms, including terminal players.
-		setSpeed(host, spasm ? -0.95D : SLOWING[stage.ordinal()]);
+		setSpeed(host, spasm ? (stage.ordinal() < Stage.CONTRACTION.ordinal() ? -0.25D : -0.95D) : SLOWING[stage.ordinal()]);
 		setVisual(host, stage.ordinal() + 1, spasm);
 	}
 
@@ -184,8 +192,7 @@ public final class DeepRootDisease implements Pathogen {
 		boolean spasm = false;
 		if(infection != null && active(host)) {
 			visual = stage(infection).ordinal() + 1;
-			spasm = stage(infection).ordinal() >= Stage.CONTRACTION.ordinal()
-					&& stageTicks(infection) >= 200L && stageTicks(infection) % 200L < 6L;
+			spasm = stageTicks(infection) >= 200L && stageTicks(infection) % 200L < 6L;
 		}
 		PacketDispatcher.wrapper.sendTo(new DeepRootVisualPacket(host, visual, spasm), observer);
 	}

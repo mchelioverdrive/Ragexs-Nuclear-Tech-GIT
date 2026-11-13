@@ -37,7 +37,10 @@ public final class DiseaseManager {
 	public static void tick(EntityLivingBase host) {
 		if(host.worldObj.isRemote || !host.isEntityAlive()) return;
 		DiseaseHost data = DiseaseHost.get(host);
-		for(Pathogen pathogen : PATHOGENS.values()) pathogen.onHostTick(host, data);
+		for(Pathogen pathogen : PATHOGENS.values()) {
+			pathogen.onHostTick(host, data);
+			if(!host.isEntityAlive()) return;
+		}
 		// Stagger symptom updates; each pathogen owns its clock (rabies deadlines, Deep Root loaded ticks).
 		if(data.infections.isEmpty() || (host.ticksExisted + host.getEntityId()) % 20 != 0) return;
 		long now = now(host);

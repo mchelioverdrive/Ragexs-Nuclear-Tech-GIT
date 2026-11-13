@@ -69,6 +69,7 @@ public final class DiseaseEvents {
 	private static final List<PendingBite> BITES = new ArrayList<PendingBite>();
 	private static final Map<EntityPlayer, PendingSample> SAMPLES = new IdentityHashMap<EntityPlayer, PendingSample>();
 	private static final Set<EntityBat> BATS = Collections.newSetFromMap(new IdentityHashMap<EntityBat, Boolean>());
+	private static final List<LivingDeathEvent> DEEP_ROOT_DEATHS = new ArrayList<LivingDeathEvent>();
 
 	public static void queueBat(EntityBat bat) { BATS.add(bat); }
 
@@ -76,10 +77,13 @@ public final class DiseaseEvents {
 		BITES.clear();
 		SAMPLES.clear();
 		BATS.clear();
+		DEEP_ROOT_DEATHS.clear();
 	}
 
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public void onDeath(LivingDeathEvent event) {
+		if(!event.entityLiving.worldObj.isRemote && event.entityLiving instanceof EntityPlayer
+				&& event.source == DeepRootDisease.TERMINAL_DAMAGE) DEEP_ROOT_DEATHS.add(event);
 		if(!event.entityLiving.worldObj.isRemote) Rabies.setFrothing(event.entityLiving, false);
 		if(!event.entityLiving.worldObj.isRemote) DiseaseManager.pathogen(DeepRootDisease.ID).removeEffects(event.entityLiving);
 		// Native death clears combat history before Item.hitEntity runs. Retain only this attack's wound.
@@ -208,6 +212,11 @@ public final class DiseaseEvents {
 	@SubscribeEvent
 	public void onServerTick(TickEvent.ServerTickEvent event) {
 		if(event.phase != TickEvent.Phase.END) return;
+		for(LivingDeathEvent death : DEEP_ROOT_DEATHS) {
+			if(!death.isCanceled() && !death.entityLiving.isEntityAlive())
+				com.hbm.world.gemini.MockerySpawning.convertPlayerDeath((EntityPlayer) death.entityLiving);
+		}
+		DEEP_ROOT_DEATHS.clear();
 		// Contact and neurological impairment run after native flight, once per loaded bat tick.
 		for(EntityBat bat : BATS) {
 			if(loaded(bat) && bat.isEntityAlive()) RabiesBehavior.updateBat(bat);

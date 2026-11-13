@@ -82,7 +82,7 @@ public final class CommandDisease extends CommandBase {
 					+ ", active=" + DeepRootDisease.active(host) + ", stageTicks=" + DeepRootDisease.stageTicks(deepRoot)
 					+ ", durationTicks=" + DeepRootDisease.durationTicks(deepRoot)
 					+ ", conversionEligible=" + GeminiInfections.isConversionEligible(host)
-					+ ", conversionImplemented=false, source=" + deepRoot.source + " (" + deepRoot.sourceHost + ")"));
+					+ ", conversionImplemented=true, source=" + deepRoot.source + " (" + deepRoot.sourceHost + ")"));
 			return;
 		}
 		if("clear".equals(args[0])) {

@@ -2,6 +2,10 @@ package com.hbm.world.gemini;
 
 import com.hbm.config.GeminiConfig;
 import com.hbm.entity.mob.gemini.EntityNaturesMockery;
+import com.hbm.handler.disease.DeepRootDisease;
+import com.hbm.handler.disease.DiseaseHost;
+import com.hbm.handler.disease.DiseaseManager;
+import com.hbm.handler.disease.Infection;
 import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import net.minecraft.entity.Entity;
@@ -14,6 +18,7 @@ import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 
 /** All new admissions, including eggs and terminal conversions, share this boundary. */
 public final class MockerySpawning {
+    private static final String CONVERSION = "MockeryConversion";
     public static boolean active(World world) {
         return GeminiInvasionManager.canActivityOccur(world, 2) && GeminiConfig.deepRootEnabled
                 && world.difficultySetting != EnumDifficulty.PEACEFUL;
@@ -56,13 +61,61 @@ public final class MockerySpawning {
 
     /** Spawn first: canceled/obstructed conversions leave the original host and its infection intact. */
     public static boolean convert(EntityLivingBase host) {
-        if(host instanceof EntityPlayer || !GeminiInfections.isConversionEligible(host) || !canSpawn(host.worldObj, null)
+        return convert(host, null, false);
+    }
+
+    /** The caller has held this still-infected host for the full assimilation duration. */
+    public static boolean assimilate(EntityLivingBase host, EntityNaturesMockery captor) {
+        if(host instanceof EntityPlayer || captor == null || !captor.isEntityAlive() || !captor.canCompleteAssimilation(host)
+                || !MockerySpawning.active(captor) || !DeepRootDisease.active(host)
+                || !host.worldObj.getGameRules().getGameRuleBooleanValue("doMobSpawning")) return false;
+        Infection infection = DiseaseHost.get(host).infections.get(DeepRootDisease.ID);
+        if(infection == null) return false; // Treatment interrupts assimilation; never re-establish infection here.
+        DeepRootDisease.selectStage(host, DeepRootDisease.Stage.TERMINAL);
+        return convert(host, captor, false);
+    }
+
+    /** Called only after the terminal disease's native death event has completed uncanceled. */
+    public static boolean convertPlayerDeath(EntityPlayer host) {
+        return convert(host, null, true);
+    }
+
+    private static boolean eligible(EntityLivingBase host, boolean playerDeath) {
+        if(!playerDeath) return GeminiInfections.isConversionEligible(host);
+        Infection infection = DiseaseHost.get(host).infections.get(DeepRootDisease.ID);
+        return host instanceof EntityPlayer && !host.isEntityAlive() && !host.worldObj.isRemote
+                && host.worldObj.getChunkProvider().chunkExists(MathHelper.floor_double(host.posX) >> 4, MathHelper.floor_double(host.posZ) >> 4)
+                && DiseaseManager.pathogen(DeepRootDisease.ID).canInfect(host)
+                && infection != null && DeepRootDisease.stage(infection) == DeepRootDisease.Stage.TERMINAL;
+    }
+
+    private static boolean convert(EntityLivingBase host, EntityNaturesMockery captor, boolean playerDeath) {
+        if(!eligible(host, playerDeath) || host.getEntityData().hasKey(CONVERSION) || !canSpawn(host.worldObj, null)
+                || (!playerDeath && host.getEntityData().hasKey("MockeryCaptor")
+                    && (captor == null || !captor.getUniqueID().toString().equals(host.getEntityData().getString("MockeryCaptor"))))
                 || com.hbm.entity.mob.gemini.EntityWretch.isCaptured(host)
                 || host.getEntityData().getLong("WoodcrawlerCocoonUntil") > host.worldObj.getTotalWorldTime()
                 || host.ridingEntity != null || host.riddenByEntity != null) return false;
         EntityNaturesMockery mob = new EntityNaturesMockery(host.worldObj);
         mob.setLocationAndAngles(host.posX, host.boundingBox.minY, host.posZ, host.rotationYaw, 0);
-        if(!space(mob, host) || !host.worldObj.spawnEntityInWorld(mob)) return false;
+        if(!space(mob, host)) return false;
+        Infection infection = DiseaseHost.get(host).infections.get(DeepRootDisease.ID);
+        // Lock before calling external spawn listeners: they can reenter conversion on this same host.
+        host.getEntityData().setBoolean(CONVERSION, true);
+        boolean converted = false;
+        try {
+            if(!host.worldObj.spawnEntityInWorld(mob)) return false;
+            // Spawn listeners can also cure/kill the host or destroy its captor. Recheck before consuming it.
+            if(mob.isDead || DiseaseHost.get(host).infections.get(DeepRootDisease.ID) != infection
+                    || !eligible(host, playerDeath) || (captor != null && (!captor.isEntityAlive() || !captor.canCompleteAssimilation(host)))) {
+                mob.setDead();
+                return false;
+            }
+            converted = true;
+        } finally {
+            if(!converted) host.getEntityData().removeTag(CONVERSION);
+        }
+        if(playerDeath) return true; // Native player death owns inventory, drops and respawn; never remove the player.
         // Conversion bypasses death; explicitly preserve carried player property on vanilla equines.
         if(host instanceof net.minecraft.entity.passive.EntityHorse)
             ((net.minecraft.entity.passive.EntityHorse) host).dropChestItems();

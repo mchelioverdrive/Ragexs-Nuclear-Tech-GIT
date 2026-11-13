@@ -56,7 +56,7 @@ public final class DeepRootVisualPacket implements IMessage {
 					if(entity instanceof EntityLivingBase && (player || entity.getClass().getName().equals(message.type))) {
 						DiseaseHost data = DiseaseHost.get((EntityLivingBase) entity);
 						data.deepRootVisualStage = message.stage;
-						data.deepRootSpasm = message.stage >= 3 && message.spasm;
+						data.deepRootSpasm = message.stage > 0 && message.spasm;
 					}
 				}
 			});

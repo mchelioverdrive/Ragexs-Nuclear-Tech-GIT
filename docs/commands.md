@@ -8,7 +8,7 @@ These commands are registered during server startup.
 
 ### `/ntmdisease inspect|clear <player|entityId> [rabies|deep_root]`
 
-The optional pathogen defaults to `rabies`, preserving existing command behavior. Select `deep_root` to inspect its saved stage, loaded stage ticks, snapshotted stage duration, active gate and terminal conversion eligibility, or to clear only Deep Root Disease and its movement/visual symptoms. A terminal duration of zero means indefinite; conversion is not implemented. Deep Root inspection does not advance time. Targets must be loaded living entities in the sender's dimension or online players. Both variants require operator permission level 2.
+The optional pathogen defaults to `rabies`, preserving existing command behavior. Select `deep_root` to inspect its saved stage, loaded stage ticks, snapshotted stage duration, active gate and terminal conversion eligibility, or to clear only Deep Root Disease and its movement/visual symptoms. A terminal duration of zero means there is no further timed stage: non-player hosts attempt conversion, while players take gradual disease damage. Deep Root inspection does not advance time or cause conversion. Targets must be loaded living entities in the sender's dimension or online players. Both variants require operator permission level 2.
 
 Requires operator permission level 2. `inspect` reports the authoritative rabies stage, presentation, infection source, infection time and saved stage deadlines to the administrator. Players see the separate RABIES status while their infection remains saved. `clear` removes the rabies record, RABIES indicator and disease AI; short potion symptoms expire naturally. This is an administrative override, not vaccination or medical treatment.
 

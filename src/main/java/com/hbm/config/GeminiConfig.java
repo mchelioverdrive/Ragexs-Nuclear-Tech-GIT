@@ -101,7 +101,7 @@ public final class GeminiConfig {
 				"Loaded active seconds to process a villager in a Woodcrawler cocoon. Saved per capture; pauses while Gemini activity is disabled, locked or in Peaceful.");
 		String mockery = CATEGORY + ".mockery";
 		mockeryGrowthSeconds = config.getInt("growthSeconds", mockery, 30, 1, 3600,
-				"Loaded active seconds per growth point after feeding. Each consumed non-player supplies 20 points; maximum growth is 100.");
+				"Loaded active seconds per growth point after assimilation. Each converted non-player supplies 20 points; maximum growth is 100.");
 		mockerySpreadSeconds = config.getInt("spreadSeconds", mockery, 15, 1, 3600,
 				"Loaded active seconds between single-candidate growth placements and occasional offshoot attempts. No catch-up.");
 		mockeryRadius = config.getInt("radius", mockery, 6, 2, 16,
@@ -111,7 +111,7 @@ public final class GeminiConfig {
 		mockeryMaxActive = config.getInt("maxActive", mockery, 16, 0, 128,
 				"Maximum loaded Mockeries for conversions and buds. Manual spawn eggs bypass the cap; saved creatures are retained.");
 		mockeryOffshootLimit = config.getInt("offshootLimit", mockery, 2, 0, 2,
-				"Lifetime offspring per original Mockery, requiring growth 40/80. Offspring cannot reproduce. Zero disables budding.");
+				"Lifetime buds per original Mockery, requiring growth 40/80. Buds cannot bud again. Zero disables budding; assimilation is separate.");
 		String disease = CATEGORY + ".deepRoot";
 		String wretch = CATEGORY + ".wretch";
 		wretchEnabled = config.getBoolean("enabled", wretch, true,
@@ -173,7 +173,7 @@ public final class GeminiConfig {
 		int[] defaults = {300, 600, 600, 600, 600};
 		for(int i = 0; i < stages.length; i++)
 			deepRootStageSeconds[i] = config.getInt(stages[i] + "Seconds", disease, defaults[i], 1, 604800,
-					"Loaded, active seconds spent in this stage before advancing (20 ticks per second). Snapshotted for each new infection. Terminal non-player hosts retry Nature's Mockery conversion; players never convert.");
+					"Loaded, active seconds spent in this stage before advancing (20 ticks per second). Snapshotted for each new infection. Terminal non-player hosts retry conversion; terminal players take gradual disease damage and can leave a Mockery on disease-caused death.");
 		deepRootPlayerTransmissionChance = config.getFloat("playerTransmissionChance", disease, 0.25F, 0F, 1F,
 				"One establishment roll per confirmed Gemini carrier melee wound against a susceptible player.");
 		deepRootMobTransmissionChance = config.getFloat("mobTransmissionChance", disease, 0.4F, 0F, 1F,

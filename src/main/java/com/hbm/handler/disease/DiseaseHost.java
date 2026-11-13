@@ -28,6 +28,9 @@ public final class DiseaseHost implements IExtendedEntityProperties {
 	public int nextRabiesFroth; // Client emission deadline, in host ticks; no per-particle packets.
 	public int deepRootVisualStage; // 0 = inactive; otherwise stage ordinal + 1. Never infection authority.
 	public boolean deepRootSpasm;
+	// Local rendered-eye animation only. No infection authority, save data or per-frame network traffic.
+	public int deepRootEyeTick = Integer.MIN_VALUE, deepRootEyeTarget = -1;
+	public float deepRootEyeYaw, deepRootEyePitch, deepRootPrevEyeYaw, deepRootPrevEyePitch;
 	public int nextGeminiContactTick; // Transient contact throttle shared by overlapping organic blocks.
 
 	public static DiseaseHost get(EntityLivingBase host) {

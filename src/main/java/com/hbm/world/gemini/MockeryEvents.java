@@ -17,7 +17,13 @@ public final class MockeryEvents {
         NBTTagCompound tag = host.getEntityData();
         if(!tag.hasKey("MockeryCaptor")) return;
         Entity owner = host.worldObj.getEntityByID(tag.getInteger("MockeryCaptorId"));
+        if(!(owner instanceof EntityNaturesMockery) || !owner.getUniqueID().toString().equals(tag.getString("MockeryCaptor"))) {
+            try { owner = GeminiPopulation.find(host.worldObj, java.util.UUID.fromString(tag.getString("MockeryCaptor"))); }
+            catch(IllegalArgumentException ignored) { owner = null; }
+        }
         if(owner instanceof EntityNaturesMockery && owner.isEntityAlive() && owner.addedToChunk
+                && host.worldObj.getEntityByID(owner.getEntityId()) == owner
+                && host.worldObj.getChunkProvider().chunkExists(owner.chunkCoordX, owner.chunkCoordZ)
                 && owner.getUniqueID().toString().equals(tag.getString("MockeryCaptor"))
                 && ((EntityNaturesMockery) owner).owns(host) && MockerySpawning.active((EntityNaturesMockery) owner)) {
             ((EntityNaturesMockery) owner).hold(host);
