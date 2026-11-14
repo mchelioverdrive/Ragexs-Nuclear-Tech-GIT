@@ -897,6 +897,7 @@ public class ClientProxy extends ServerProxy {
 		RenderingRegistry.registerEntityRenderingHandler(EntityBlockSpider.class, new RenderBlockSpider());
 		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.mob.gemini.EntityWoodcrawler.class, new com.hbm.render.entity.mob.RenderWoodcrawler());
 		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.mob.gemini.EntityWoodcrawlerCocoon.class, new com.hbm.render.entity.mob.RenderWoodcrawlerCocoon());
+		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.mob.gemini.EntityGardenerCocoon.class, new com.hbm.render.entity.mob.RenderGardenerCocoon());
 		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.mob.gemini.EntityFakePerson.class, new com.hbm.render.entity.mob.RenderFakePerson());
 		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.mob.gemini.EntityNaturesMockery.class, new com.hbm.render.entity.mob.RenderNaturesMockery());
 		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.mob.gemini.EntityGardener.class, new com.hbm.render.entity.mob.RenderGardener());

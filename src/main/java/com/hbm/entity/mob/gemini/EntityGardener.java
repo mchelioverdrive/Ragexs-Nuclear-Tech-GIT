@@ -31,6 +31,9 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
     private final int[] recovery = new int[6], limbHurt = new int[6];
     private final Set<UUID> struck = new HashSet<UUID>();
     private Entity captive, preyTarget;
+    private EntityGardenerCocoon pendingCocoon;
+    private boolean feeding;
+    private net.minecraftforge.event.entity.living.LivingDeathEvent feedingDeath;
     protected double nestX, nestY, nestZ;
     private double travelX, travelY, travelZ;
     private float previousCrawl, crawl;
@@ -169,12 +172,20 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
                 || !target.isEntityAlive() || target.worldObj != worldObj || !target.addedToChunk
                 || !suitablePrey(target)
                 || target.getEntityData().hasKey("MockeryCaptor")
+                || target.getEntityData().getLong("WoodcrawlerCocoonUntil") > worldObj.getTotalWorldTime()
+                || heldByOtherGardener(target)
                 || target.getEntityData().getLong("GardenerEscapeUntil") > worldObj.getTotalWorldTime()) return false;
         if(target instanceof EntityPlayer && (((EntityPlayer) target).capabilities.disableDamage
                 || ((EntityPlayer) target).capabilities.isCreativeMode)) return false;
         if(target.riddenByEntity instanceof EntityPlayer && (((EntityPlayer) target.riddenByEntity).capabilities.disableDamage
                 || ((EntityPlayer) target.riddenByEntity).capabilities.isCreativeMode)) return false;
         return inTerritory(target) && preyDistanceSq(target) <= (attackReach() + 7D) * (attackReach() + 7D);
+    }
+    private boolean heldByOtherGardener(Entity target) {
+        if(!target.getEntityData().hasKey("GardenerCaptorId")) return false;
+        Entity owner = worldObj.getEntityByID(target.getEntityData().getInteger("GardenerCaptorId"));
+        return owner != this && owner instanceof EntityGardener && ((EntityGardener) owner).isHolding(target)
+                && owner.getUniqueID().toString().equals(target.getEntityData().getString("GardenerCaptor"));
     }
     private boolean reach(Entity target, double range) {
         return prey(target) && preyDistanceSq(target) <= range * range
@@ -235,10 +246,14 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
     }
     private void release(boolean escaped) {
         if(captive != null) {
+            if(getUniqueID().toString().equals(captive.getEntityData().getString("GardenerCaptor"))) {
+                captive.getEntityData().removeTag("GardenerCaptor"); captive.getEntityData().removeTag("GardenerCaptorId");
+            }
             if(escaped) captive.getEntityData().setLong("GardenerEscapeUntil", worldObj.getTotalWorldTime() + 400L);
             captive.velocityChanged = true;
         }
         captive = null;
+        pendingCocoon = null;
         preyTarget = null; setAttackTarget(null); dataWatcher.updateObject(20, -1);
         if(state() != IDLE && state() != RECOVER) { begin(RECOVER); cooldown = 45; }
     }
@@ -310,6 +325,9 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
                 if(!reach(victim, attackReach()) || !clearLimb(attackArm()) || !GardenerPose.touches(a, b, victim.boundingBox, GardenerPose.RADIUS)) continue;
                 captive = preyTarget = victim; setAttackTarget(victim instanceof EntityLivingBase ? (EntityLivingBase) victim : null); dataWatcher.updateObject(20, victim.getEntityId());
                 begin(HOLD);
+                victim.getEntityData().setString("GardenerCaptor", getUniqueID().toString());
+                victim.getEntityData().setInteger("GardenerCaptorId", getEntityId());
+                pendingCocoon = EntityGardenerCocoon.findCeiling(this, victim);
                 {
                     double dx = victim.posX - posX, dz = victim.posZ - posZ;
                     double distance = Math.sqrt(dx * dx + dz * dz);
@@ -366,6 +384,7 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
         dataWatcher.updateObject(30, extensions);
     }
     private Vec3 captureGoal() {
+        if(pendingCocoon != null) return pendingCocoon.victimGoal(captive);
         // Finish beside the upper body, outside its collision column even for a wide vehicle.
         double radius = Math.max(2.8D, width * 0.5D + captive.width * 0.5D + 0.75D);
         return Vec3.createVectorHelper(posX + captureSideX * radius, posY + bodyOffset() + (isOcean() ? 2D : 2.5D),
@@ -386,14 +405,31 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
         aim(captive, false);
         captureSneakTicks = captive instanceof EntityPlayer && captive.isSneaking() ? captureSneakTicks + 1 : 0;
         if(captureSneakTicks >= 20) { release(); return; }
+        if(pendingCocoon != null && (attackTicks % 10 == 0 && !pendingCocoon.attachmentValid()
+                || attackTicks - captureProgressTick >= 100)) abandonCeiling();
         double distance = captureDistance();
-        if(distance <= 1.25D && attackTicks - lastFeedingTick >= 20) {
+        if(pendingCocoon != null && distance <= 0.4D) {
+            if(pendingCocoon.attach(this, captive)) { release(false); return; }
+            abandonCeiling(); distance = captureDistance();
+        }
+        if(pendingCocoon == null && distance <= 1.25D && attackTicks - lastFeedingTick >= 20) {
             lastFeedingTick = attackTicks;
-            if(wound(captive, isOcean() ? 8F : 4F)) {
+            Entity victim = captive;
+            boolean fed, consumed;
+            feeding = true; feedingDeath = null;
+            try {
+                fed = wound(victim, isOcean() ? 8F : 4F);
+                consumed = feedingDeath != null && !feedingDeath.isCanceled();
+            } finally { feeding = false; feedingDeath = null; }
+            if(captive != victim) return;
+            if(fed) {
                 captureProgressTick = attackTicks;
                 playSound("mob.slime.attack", 0.8F, isOcean() ? 0.6F : 0.75F);
             }
-            if(!captive.isEntityAlive()) { release(false); return; }
+            if(!captive.isEntityAlive()) {
+                if(fed && consumed && !isOcean()) EntityGardenerCocoon.afterFeeding(this, captive);
+                release(false); return;
+            }
         }
         if(distance < captureBestDistance - 0.25D) {
             captureBestDistance = distance; captureProgressTick = attackTicks;
@@ -420,6 +456,13 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
                 player.playerNetServerHandler.setPlayerLocation(captive.posX, captive.posY, captive.posZ, captive.rotationYaw, captive.rotationPitch);
         }
         captive.velocityChanged = true;
+    }
+    private void abandonCeiling() {
+        pendingCocoon = null;
+        captureBestDistance = captureDistance(); captureProgressTick = lastFeedingTick = attackTicks;
+    }
+    public void recordFeedingDeath(net.minecraftforge.event.entity.living.LivingDeathEvent event) {
+        if(feeding && captive == event.entityLiving && event.source.getEntity() == this) feedingDeath = event;
     }
     private static final class HeldPlayer {
         private static final java.lang.reflect.Field FLOATING = cpw.mods.fml.relauncher.ReflectionHelper.findField(
@@ -578,7 +621,7 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
         nbt.setInteger("Summons", summons); nbt.setInteger("SummonTicks", summonTicks); nbt.setInteger("Cooldown", cooldown);
         nbt.setInteger("GardenerFormVersion", 2);
         for(int i = 0; i < 6; i++) { nbt.setFloat("LimbHealth" + i, limbHealth[i]); nbt.setInteger("LimbRecovery" + i, recovery[i]); }
-        // Captures and in-flight attacks deliberately end on reload. No restraint is stored on the victim.
+        // Captures and in-flight attacks end on reload. Saved claim hints are valid only with a live holding owner.
     }
     @Override public void readEntityFromNBT(NBTTagCompound nbt) {
         super.readEntityFromNBT(nbt); fromSave = true;

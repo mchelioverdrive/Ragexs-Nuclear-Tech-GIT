@@ -35,6 +35,7 @@ public final class GeminiConfig {
 	public static int gardenerNestLimit = 32;
 	public static int gardenerSupportLimit = 4;
 	public static int gardenerBlocksPerSlam = 12;
+	public static int gardenerCocoonSeconds = 120, gardenerCocoonMaxLoaded = 8;
 	public static boolean oceanGardenerEnabled = true;
 	public static int oceanGardenerMaxLoaded = 1, oceanGardenerChance = 32;
 	public static boolean wretchEnabled = true;
@@ -160,6 +161,10 @@ public final class GeminiConfig {
 				"Lifetime successful sterile Nature's Mockery summons per Gardener. Also respects Mockery and disease admission settings.");
 		gardenerBlocksPerSlam = config.getInt("blocksPerSlam", gardener, 12, 0, 32,
 				"Maximum natural/tissue block removals per major slam inside the nest. Four coordinates per tick; respects mobGriefing and protection events.");
+		gardenerCocoonSeconds = config.getInt("cocoonSeconds", gardener, 120, 1, 3600,
+				"Loaded active seconds for both Gardener cocoon forms to produce a Woodcrawler. Saved per cocoon; unrelated to Woodcrawler-to-Fake-Person conversion.");
+		gardenerCocoonMaxLoaded = config.getInt("cocoonMaxLoaded", gardener, 8, 0, 64,
+				"Maximum loaded Gardener cocoons, also bounded by the combined Gemini cap. Zero disables new cocoons. Hatchlings obey normal Woodcrawler conversion admission limits, including for manual parents.");
 		String ocean = CATEGORY + ".oceanGardener";
 		oceanGardenerEnabled = config.getBoolean("enabled", ocean, true,
 				"Enable rare phase-3 Ocean Gardeners in loaded deep Overworld oceans after Mars. Saved residents remain dormant when disabled.");

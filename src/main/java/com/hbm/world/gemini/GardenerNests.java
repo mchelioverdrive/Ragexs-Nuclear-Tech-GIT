@@ -205,8 +205,13 @@ public final class GardenerNests extends WorldSavedData {
     }
     /** Registered vanilla and NTM starts protect their full saved bounds, even when not presently populated. */
     private static boolean overlapsStructure(World world, Nest nest) {
+        return overlapsStructure(world, AxisAlignedBB.getBoundingBox(nest.x - 16, nest.y - 3, nest.z - 16,
+                nest.x + 16, nest.y + 14, nest.z + 16));
+    }
+    public static boolean overlapsStructure(World world, AxisAlignedBB box) {
         if(structureLimitExceeded) return true;
-        StructureBoundingBox area = new StructureBoundingBox(nest.x - 16, nest.y - 3, nest.z - 16, nest.x + 16, nest.y + 14, nest.z + 16);
+        StructureBoundingBox area = new StructureBoundingBox(MathHelper.floor_double(box.minX), MathHelper.floor_double(box.minY),
+                MathHelper.floor_double(box.minZ), MathHelper.floor_double(box.maxX), MathHelper.ceiling_double_int(box.maxY), MathHelper.floor_double(box.maxZ));
         int examined = 0;
         for(String name : STRUCTURES) {
             MapGenStructureData structures = (MapGenStructureData) world.perWorldStorage.loadData(MapGenStructureData.class, name);
@@ -215,8 +220,8 @@ public final class GardenerNests extends WorldSavedData {
             for(Object key : features.func_150296_c()) {
                 if(++examined > 4096) return true; // Fail closed in huge saves instead of an unbounded structure search.
                 NBTTagCompound feature = features.getCompoundTag((String) key);
-                int[] box = feature.getIntArray("BB");
-                if(box.length == 6 && new StructureBoundingBox(box).intersectsWith(area)) return true;
+                int[] bounds = feature.getIntArray("BB");
+                if(bounds.length == 6 && new StructureBoundingBox(bounds).intersectsWith(area)) return true;
             }
         }
         return false;

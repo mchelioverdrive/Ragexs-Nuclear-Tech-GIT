@@ -6,7 +6,6 @@ import net.minecraft.client.renderer.entity.Render;
 import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.client.renderer.culling.Frustrum;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.boss.BossStatus;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.ResourceLocation;
 import org.lwjgl.opengl.GL11;
@@ -23,7 +22,6 @@ public final class RenderWretch extends Render {
         if(boss.isInvisible()) return;
         frustum.setPosition(RenderManager.renderPosX, RenderManager.renderPosY, RenderManager.renderPosZ);
         if(!frustum.isBoundingBoxInFrustum(boss.visualBounds())) return;
-        if(boss.isEntityAlive() && boss.isAwake()) BossStatus.setBossStatus(boss, true);
         GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_CURRENT_BIT | GL11.GL_TEXTURE_BIT | GL11.GL_LIGHTING_BIT);
         GL11.glPushMatrix();
         try {

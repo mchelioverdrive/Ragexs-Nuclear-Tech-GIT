@@ -236,6 +236,15 @@ public final class WretchCamps extends WorldSavedData {
         BitSet set = placedColumns.get(column(x >> 4, z >> 4));
         return set != null && set.get((x & 15) | ((z & 15) << 4));
     }
+    /** Reuse recorded construction protection for non-destructive Gemini growth placement. */
+    public static boolean hasPlayerPlacement(World world, AxisAlignedBB box) {
+        WretchCamps data = get(world);
+        if(data.placementOverflow) return true;
+        for(int x = MathHelper.floor_double(box.minX); x <= MathHelper.floor_double(box.maxX); x++)
+            for(int z = MathHelper.floor_double(box.minZ); z <= MathHelper.floor_double(box.maxZ); z++)
+                if(data.placed(x, z)) return true;
+        return false;
+    }
     private boolean generatedBuilding(World world, int x, int y, int z) {
         if(world.provider.dimensionId != 0 || !generatedChunks.contains(column(x >> 4, z >> 4))) return false;
         long now = world.getTotalWorldTime();

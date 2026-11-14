@@ -643,3 +643,10 @@
 2026-11-13 20:03 — Drop chicken nuggets from baby chickens
 
 - Make baby chickens drop one existing Chicken Nugget item on death when `doMobLoot` is enabled. Use the normal Forge drop list so drop cancellation and existing contagion tagging still apply; preserve adult chicken drops.
+
+2026-11-14 02:06 — Enclose Gardener prey in geological Woodcrawler cocoons
+
+- Prioritize collision-resolved tentacle transport of small non-player prey to nearby loaded natural ceilings. Transfer ownership only after checked cocoon admission; fall back to feeding on invalid or stalled attachments. Confirm uncanceled native feeding deaths before producing a low surface cocoon, and exclude Ocean Gardeners from both forms.
+- Add distinct fractured stalactite and soil/root mound appearances with concealed red interiors, slow client tissue movement, increasing organic exposure and empty-shell collapse. Share saved two-minute active conversion, configurable duration/admission limits, supported same-chunk hatch retries and persistent Woodcrawler output identity. Breaking a cocoon destroys its biomass rather than restoring a duplicate victim; retain the existing Woodcrawler/Fake Person conversion system and disease progression.
+- Keep placement terrain-free and bounded, reject occupied space, tiles, saved structures and recorded player construction, and honor mining, attack, cocoon-placement and entity-admission vetoes. Hatchlings retain normal Gemini conversion gates and population limits, including for manual parents; append the entity registration without shifting existing IDs or eggs.
+- Remove Gardener and Wretch boss-bar submissions, covering both Gardener variants and all Gemini renderers. Preserve health, combat and boss classification mechanics and unrelated bosses' displays.

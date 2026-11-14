@@ -20,6 +20,17 @@ import net.minecraftforge.event.entity.living.LivingSpawnEvent;
 /** Server-thread loaded membership. Never scans the world's general entity list or holds chunk tickets. */
 public final class GeminiPopulation {
     private static final Map<World, Map<UUID, EntityLiving>> WORLDS = new HashMap<World, Map<UUID, EntityLiving>>();
+    private static final Map<World, Map<UUID, EntityGardenerCocoon>> COCOONS = new HashMap<World, Map<UUID, EntityGardenerCocoon>>();
+
+    public static boolean canAdmitCocoon(World world) {
+        if(world.isRemote || GeminiConfig.gardenerCocoonMaxLoaded <= 0 || GeminiConfig.maxLoadedCreatures <= 0) return false;
+        int count = 0, total = 0;
+        Map<UUID, EntityGardenerCocoon> cocoons = COCOONS.get(world);
+        if(cocoons != null) for(EntityGardenerCocoon cocoon : cocoons.values()) if(!cocoon.isDead) count++;
+        Map<UUID, EntityLiving> living = WORLDS.get(world);
+        if(living != null) for(EntityLiving mob : living.values()) if(!mob.isDead) total++;
+        return count < GeminiConfig.gardenerCocoonMaxLoaded && count + total < GeminiConfig.maxLoadedCreatures;
+    }
 
     private static Map<UUID, EntityLiving> members(World world) {
         Map<UUID, EntityLiving> members = WORLDS.get(world);
@@ -84,8 +95,24 @@ public final class GeminiPopulation {
             GeminiSpawning.markNatural(event.entityLiving);
     }
 
+    @SubscribeEvent(priority = EventPriority.LOWEST, receiveCanceled = true)
+    public void feedingDeath(net.minecraftforge.event.entity.living.LivingDeathEvent event) {
+        if(!event.entityLiving.worldObj.isRemote && event.source.getEntity() instanceof EntityGardener)
+            ((EntityGardener) event.source.getEntity()).recordFeedingDeath(event);
+    }
+
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void join(EntityJoinWorldEvent event) {
+        if(!event.world.isRemote && event.entity instanceof EntityGardenerCocoon) {
+            EntityGardenerCocoon cocoon = (EntityGardenerCocoon) event.entity;
+            Map<UUID, EntityGardenerCocoon> cocoons = COCOONS.get(event.world);
+            if(cocoons == null) { cocoons = new HashMap<UUID, EntityGardenerCocoon>(); COCOONS.put(event.world, cocoons); }
+            EntityGardenerCocoon duplicate = cocoons.get(cocoon.getUniqueID());
+            if(duplicate != null && duplicate != cocoon && !duplicate.isDead
+                    || !cocoon.addedToChunk && !canAdmitCocoon(event.world)) { event.setCanceled(true); return; }
+            cocoons.put(cocoon.getUniqueID(), cocoon);
+            return;
+        }
         if(event.world.isRemote || !(event.entity instanceof IGeminiCreature) || !(event.entity instanceof EntityLiving)) return;
         EntityLiving mob = (EntityLiving) event.entity;
         EntityLiving duplicate = find(event.world, mob.getUniqueID());
@@ -99,6 +126,11 @@ public final class GeminiPopulation {
 
     @SubscribeEvent public void tick(TickEvent.WorldTickEvent event) {
         if(event.phase != TickEvent.Phase.END || event.world.isRemote || event.world.getTotalWorldTime() % 20 != 0) return;
+        Map<UUID, EntityGardenerCocoon> cocoons = COCOONS.get(event.world);
+        if(cocoons != null) for(Iterator<EntityGardenerCocoon> it = cocoons.values().iterator(); it.hasNext();) {
+            EntityGardenerCocoon cocoon = it.next();
+            if(cocoon.isDead || !cocoon.addedToChunk || event.world.getEntityByID(cocoon.getEntityId()) != cocoon) it.remove();
+        }
         Map<UUID, EntityLiving> members = WORLDS.get(event.world);
         if(members == null) return;
         for(Iterator<EntityLiving> it = members.values().iterator(); it.hasNext();) {
@@ -109,10 +141,15 @@ public final class GeminiPopulation {
         }
     }
 
-    @SubscribeEvent public void unload(WorldEvent.Unload event) { WORLDS.remove(event.world); }
+    @SubscribeEvent public void unload(WorldEvent.Unload event) { WORLDS.remove(event.world); COCOONS.remove(event.world); }
 
     @SubscribeEvent public void unloadChunk(ChunkEvent.Unload event) {
         if(event.world.isRemote) return;
+        Map<UUID, EntityGardenerCocoon> cocoons = COCOONS.get(event.world);
+        if(cocoons != null) for(Iterator<EntityGardenerCocoon> it = cocoons.values().iterator(); it.hasNext();) {
+            EntityGardenerCocoon cocoon = it.next();
+            if(cocoon.chunkCoordX == event.getChunk().xPosition && cocoon.chunkCoordZ == event.getChunk().zPosition) it.remove();
+        }
         Map<UUID, EntityLiving> members = WORLDS.get(event.world);
         if(members == null) return;
         // Release membership immediately: a fast reload must not mistake the old instance for a duplicate.
