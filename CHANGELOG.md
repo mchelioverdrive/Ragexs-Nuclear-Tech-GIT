@@ -639,3 +639,7 @@
 - Replace Mockery feeding kills with ten-second restrained assimilation of infected villagers and other supported non-player hosts. Share terminal conversion with natural disease progression, preserve the parent, and guard each victim against duplicate or reentrant spawning. Recheck infection after spawn callbacks so cures interrupt conversion; preserve native inventory handling and failed-admission survival.
 - Bound direct reproduction to four successes per parent with a 30-second success cooldown, existing population limits and doMobSpawning. Save capture progress, ownership and reproduction counts; preserve players' short capture and release behavior.
 - Make terminal player infection deal gradual, cancelable disease damage. An uncanceled disease-caused death attempts a population- and space-checked Mockery spawn through the shared conversion path while native player death retains inventory, drops and respawn ownership. Preserve disease clearing, activity gates and independent rabies behavior; update existing configuration and command documentation.
+
+2026-11-13 20:03 — Drop chicken nuggets from baby chickens
+
+- Make baby chickens drop one existing Chicken Nugget item on death when `doMobLoot` is enabled. Use the normal Forge drop list so drop cancellation and existing contagion tagging still apply; preserve adult chicken drops.

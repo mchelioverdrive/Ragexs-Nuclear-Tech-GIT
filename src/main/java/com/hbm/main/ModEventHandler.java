@@ -125,6 +125,7 @@ import net.minecraft.entity.monster.EntitySpider;
 import net.minecraft.entity.monster.EntityZombie;
 import net.minecraft.entity.monster.IMob;
 import net.minecraft.entity.passive.EntityAnimal;
+import net.minecraft.entity.passive.EntityChicken;
 import net.minecraft.entity.passive.EntityCow;
 import net.minecraft.entity.passive.EntityMooshroom;
 import net.minecraft.entity.passive.EntityVillager;
@@ -689,6 +690,14 @@ public class ModEventHandler {
 	public void onLivingDrop(LivingDropsEvent event) {
 
 		if(!event.entityLiving.worldObj.isRemote) {
+			if(event.entityLiving instanceof EntityChicken && event.entityLiving.isChild()
+					&& event.entityLiving.worldObj.getGameRules().getGameRuleBooleanValue("doMobLoot")) {
+				EntityItem nugget = new EntityItem(event.entityLiving.worldObj, event.entityLiving.posX,
+						event.entityLiving.posY, event.entityLiving.posZ, new ItemStack(ModItems.nugget));
+				nugget.delayBeforeCanPickup = 10;
+				event.drops.add(nugget);
+			}
+
 			boolean contaminated = HbmLivingProps.getContagion(event.entityLiving) > 0;
 
 			if(contaminated) {
