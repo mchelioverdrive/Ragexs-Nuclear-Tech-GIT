@@ -32,17 +32,22 @@ public final class GardenerPose {
         y += Math.max(0, Math.cos(cycle)) * boss.crawlAmount(partial) * t * 0.8D;
         double sway = Math.sin(age * 0.025D + arm * 1.7D - joint * 0.8D) * 0.18D * t;
         x += Math.sin(angle) * sway; z -= Math.cos(angle) * sway;
-        if(arm == boss.attackArm() && boss.state() == EntityGardener.HOLD) {
+        if(arm == boss.attackArm() && (boss.captureState() || boss.state() == EntityGardener.RELEASE)) {
             Vec3 aim = boss.limbAim(partial);
-            x = Math.cos(angle) * RADIAL[0] * (1D - t) + aim.xCoord * t;
-            z = Math.sin(angle) * RADIAL[0] * (1D - t) + aim.zCoord * t;
-            y = (HEIGHT[0] + boss.bodyShift(partial)) * (1D - t) + aim.yCoord * t;
-            extension = 1;
+            double blend = boss.state() == EntityGardener.RELEASE ? Math.max(0D, 1D - boss.stateTime(partial) / 24D) : 1D;
+            double hx = Math.cos(angle) * RADIAL[0] * (1D - t) + aim.xCoord * t;
+            double hz = Math.sin(angle) * RADIAL[0] * (1D - t) + aim.zCoord * t;
+            double hy = (HEIGHT[0] + boss.bodyShift(partial)) * (1D - t) + aim.yCoord * t;
+            // A deliberate upward arch follows the same live tip on server and client.
+            hy += Math.sin(t * Math.PI) * Math.min(1.2D,
+                    Math.max(0D, aim.yCoord - HEIGHT[0]) * 0.12D);
+            x += (hx - x) * blend; y += (hy - y) * blend; z += (hz - z) * blend;
+            extension += (1D - extension) * blend;
         }
-        if(arm == boss.attackArm() && boss.state() != EntityGardener.IDLE && boss.state() != EntityGardener.HOLD) {
+        if(arm == boss.attackArm() && boss.state() != EntityGardener.IDLE && !boss.captureState() && boss.state() != EntityGardener.RELEASE) {
             double time = boss.stateTime(partial);
             double blend = boss.state() == EntityGardener.REACH ? Math.min(1D, time / 24D)
-                    : boss.state() == EntityGardener.RECOVER ? Math.max(0D, 1D - time / 24D) : 1D;
+                    : boss.state() == EntityGardener.RECOVER || boss.state() == EntityGardener.RELEASE ? Math.max(0D, 1D - time / 24D) : 1D;
             double bend = t * t * blend;
             extension += (1D - extension) * blend;
             Vec3 aim = boss.limbAim(partial);

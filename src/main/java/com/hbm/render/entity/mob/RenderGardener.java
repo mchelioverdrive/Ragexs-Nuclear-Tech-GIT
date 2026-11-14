@@ -39,6 +39,22 @@ public final class RenderGardener extends Render {
                     tube(tess, GardenerPose.point(boss, arm, segment, partial), GardenerPose.point(boss, arm, segment + 1, partial), GardenerPose.RADIUS);
                 // Fine forks add the skeletal silhouette without independent decorative entities.
                 Vec3 root = GardenerPose.point(boss, arm, 2, partial), tip = GardenerPose.point(boss, arm, 4, partial);
+                if(!boss.isOcean() && arm == boss.attackArm() && (boss.captureState() || boss.state() == EntityGardener.RELEASE)) {
+                    float close = boss.state() == EntityGardener.CAPTURE ? Math.min(1F, boss.stateTime(partial) / 16F)
+                            : boss.state() == EntityGardener.RELEASE ? Math.max(0F, 1F - boss.stateTime(partial) / 24F) : 1F;
+                    Entity victim = boss.eyeTarget();
+                    double grip = victim == null ? 0.4D : Math.max(0.25D, victim.width * 0.55D);
+                    for(int hook = 0; hook < 3; hook++) {
+                        double angle = hook * Math.PI * 2 / 3;
+                        double spread = grip + (1F - close) * 0.65D;
+                        Vec3 base = tip.addVector(0, 0.5D, 0);
+                        Vec3 bend = tip.addVector(Math.cos(angle) * spread, 0.1D, Math.sin(angle) * spread);
+                        Vec3 end = tip.addVector(Math.cos(angle) * grip * (1.2D - close * 0.4D), -0.4D,
+                                Math.sin(angle) * grip * (1.2D - close * 0.4D));
+                        tube(tess, base, bend, 0.10D); tube(tess, bend, end, 0.055D);
+                    }
+                    continue;
+                }
                 double dx = tip.xCoord - root.xCoord, dz = tip.zCoord - root.zCoord;
                 double length = Math.max(1D, Math.sqrt(dx * dx + dz * dz));
                 for(int fork = -1; fork <= 1; fork += 2) {

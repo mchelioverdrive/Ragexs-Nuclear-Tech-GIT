@@ -48,20 +48,26 @@ public final class RenderGardenerCocoon extends Render {
             double pulse = Math.sin(age * 0.027D + phase) * Math.sin(age * 0.011D + phase * 0.7D) * 0.012D;
             double contraction = Math.pow(Math.max(0, Math.sin(age * 0.009D + phase)), 18) * 0.018D;
             double[][][] shape = cocoon.isHanging() ? HANGING : SURFACE;
+            float growth = cocoon.growth(partial);
             if(cocoon.isEmpty()) {
                 float shrink = Math.max(0.1F, 1F - cocoon.collapseAmount() * 0.9F);
                 GL11.glScalef(1, shrink, 1);
             }
             bindTexture(FLESH);
             GL11.glColor3f(0.46F, 0.17F, 0.15F);
-            draw(shape, 0, cocoon.maturity(), cocoon.isHanging(), 0.965D + pulse - contraction);
+            if(growth < 1F) wrapping(cocoon.isHanging(), growth, age);
+            GL11.glPushMatrix();
+            if(cocoon.isHanging()) GL11.glTranslated(0, 3D * (1D - growth), 0);
+            GL11.glScaled(0.12D + growth * 0.88D, Math.max(0.01D, growth), 0.12D + growth * 0.88D);
+            draw(shape, 0, cocoon.maturity(), cocoon.isHanging(), 0.965D + pulse - contraction, growth);
             bindTexture(cocoon.isHanging() ? STONE : DIRT);
             GL11.glColor3f(cocoon.isHanging() ? 0.83F : 0.7F, cocoon.isHanging() ? 0.80F : 0.62F, cocoon.isHanging() ? 0.76F : 0.53F);
-            draw(shape, 1, cocoon.maturity(), cocoon.isHanging(), 1);
+            draw(shape, 1, cocoon.maturity(), cocoon.isHanging(), 1, growth);
             bindTexture(STONE); GL11.glColor3f(0.72F, 0.70F, 0.66F);
-            draw(shape, 2, cocoon.maturity(), cocoon.isHanging(), 1.003D);
+            draw(shape, 2, cocoon.maturity(), cocoon.isHanging(), 1.003D, growth);
             bindTexture(FLESH); GL11.glColor3f(0.27F, 0.13F, 0.12F);
             veins(shape, cocoon.isHanging());
+            GL11.glPopMatrix();
         } finally { GL11.glPopMatrix(); GL11.glPopAttrib(); }
     }
     private static boolean exposed(int ring, int side, float maturity, boolean hanging) {
@@ -70,11 +76,13 @@ public final class RenderGardenerCocoon extends Render {
                 : hash < 18 + (int) (maturity * 7);
     }
     /** Inner tissue is continuous; interrupted exterior panels expose irregular seams as it matures. */
-    private static void draw(double[][][] shape, int layer, float maturity, boolean hanging, double scale) {
+    private static void draw(double[][][] shape, int layer, float maturity, boolean hanging, double scale, float growth) {
         Tessellator tess = Tessellator.instance;
         tess.startDrawingQuads();
         for(int ring = 0; ring < RINGS - 1; ring++) for(int side = 0; side < SIDES; side++) {
             int next = (side + 1) % SIDES;
+            // Deterministic panel growth exposes flesh first, then blends in the retained rock shell.
+            if(layer > 0 && growth < 0.55F + ((ring * 11 + side * 7) % 23) / 23F * 0.45F) continue;
             if(layer > 0 && (exposed(ring, side, maturity, hanging) || ((ring * 7 + side) % 9 == 0) != (layer == 2))) continue;
             double angle = (side + 0.5D) * Math.PI * 2 / SIDES;
             tess.setNormal((float) Math.cos(angle), hanging ? -0.18F : 0.55F, (float) Math.sin(angle));
@@ -82,6 +90,33 @@ public final class RenderGardenerCocoon extends Render {
             vertex(tess, shape[ring + 1][side], scale, 0, 1);
             vertex(tess, shape[ring + 1][next], scale, 1, 1);
             vertex(tess, shape[ring][next], scale, 1, 0);
+        }
+        tess.draw();
+    }
+    /** Several continuous fleshy ribbons belong to this cocoon, never separate entities. */
+    private static void wrapping(boolean hanging, float growth, double age) {
+        Tessellator tess = Tessellator.instance;
+        tess.startDrawingQuads();
+        for(int strand = 0; strand < 7; strand++) {
+            double length = Math.min(1D, growth * 2D);
+            int sections = 24;
+            for(int segment = 0; segment < sections; segment++) {
+                double a = segment / (double) sections, b = (segment + 1D) / sections;
+                if(a >= length) break;
+                b = Math.min(b, length);
+                double angleA = strand * Math.PI * 2 / 7 + a * Math.PI * 3 * growth;
+                double angleB = strand * Math.PI * 2 / 7 + b * Math.PI * 3 * growth;
+                double radiusA = hanging ? 0.12D + Math.sin(a * Math.PI * 0.8D) * 0.48D : 0.15D + a * 0.83D;
+                double radiusB = hanging ? 0.12D + Math.sin(b * Math.PI * 0.8D) * 0.48D : 0.15D + b * 0.83D;
+                double ya = hanging ? 2.99D - a * 2.7D : 0.035D + (1D - a) * 0.12D * growth;
+                double yb = hanging ? 2.99D - b * 2.7D : 0.035D + (1D - b) * 0.12D * growth;
+                double width = 0.025D + growth * 0.07D;
+                tess.setNormal((float) Math.cos(angleA), hanging ? 0 : 1, (float) Math.sin(angleA));
+                tess.addVertexWithUV(Math.cos(angleA - width) * radiusA, ya, Math.sin(angleA - width) * radiusA, 0, a);
+                tess.addVertexWithUV(Math.cos(angleB - width) * radiusB, yb, Math.sin(angleB - width) * radiusB, 0, b);
+                tess.addVertexWithUV(Math.cos(angleB + width) * radiusB, yb, Math.sin(angleB + width) * radiusB, 1, b);
+                tess.addVertexWithUV(Math.cos(angleA + width) * radiusA, ya, Math.sin(angleA + width) * radiusA, 1, a);
+            }
         }
         tess.draw();
     }

@@ -33,7 +33,13 @@ import net.minecraftforge.event.entity.living.LivingAttackEvent;
 
 /** Gardener biomass, independent of the villager/Fake Person processing nest. No terrain mutations. */
 public final class EntityGardenerCocoon extends Entity implements IGeminiCreature {
+    public static final int GROWTH_TICKS = 100;
     private int remaining, duration, retry, collapse;
+    private int growth = GROWTH_TICKS;
+    private float previousGrowth, visualGrowth;
+    private boolean visualInitialized;
+    private EntityGardener captor;
+    private Entity captive;
     private boolean sealed, completed, manual, resolving;
     private String placementFailure;
 
@@ -44,11 +50,30 @@ public final class EntityGardenerCocoon extends Entity implements IGeminiCreatur
         dataWatcher.addObject(20, (byte) 0); // Hanging / surface.
         dataWatcher.addObject(21, (byte) 0); // Coarse visual maturity; never an interface progress bar.
         dataWatcher.addObject(22, (byte) 0); // Empty, collapsing shell.
+        dataWatcher.addObject(23, GROWTH_TICKS); // Loaded server growth ticks, separate from conversion.
     }
     public boolean isHanging() { return dataWatcher.getWatchableObjectByte(20) == 0; }
     public float maturity() { return dataWatcher.getWatchableObjectByte(21) / 100F; }
     public boolean isEmpty() { return dataWatcher.getWatchableObjectByte(22) != 0; }
     public float collapseAmount() { return Math.max(0, dataWatcher.getWatchableObjectByte(22) - 1) / 30F; }
+    public float growth(float partial) { return (previousGrowth + (visualGrowth - previousGrowth) * partial) / GROWTH_TICKS; }
+    boolean fullyWrapped() { return growth >= GROWTH_TICKS; }
+    void growWrapping() {
+        if(!worldObj.isRemote && !sealed && !isDead && growth < GROWTH_TICKS) {
+            growth++;
+            syncGrowth();
+        }
+    }
+    private void syncGrowth() {
+        if(growth % 5 == 0 || growth == GROWTH_TICKS) dataWatcher.updateObject(23, growth);
+    }
+    @Override public void func_145781_i(int id) {
+        super.func_145781_i(id);
+        if(id == 23 && !visualInitialized) {
+            visualGrowth = previousGrowth = dataWatcher.getWatchableObjectInt(23);
+            visualInitialized = true;
+        }
+    }
     private void form(boolean hanging) {
         dataWatcher.updateObject(20, (byte) (hanging ? 0 : 1));
         setSize(hanging ? 1.5F : 2F, hanging ? 3F : 1F);
@@ -65,7 +90,7 @@ public final class EntityGardenerCocoon extends Entity implements IGeminiCreatur
     }
     private static boolean enabled(EntityGardener parent) {
         return !parent.isOcean() && GeminiSpawning.canAct(parent, 3)
-                && parent.worldObj.getGameRules().getGameRuleBooleanValue("doMobSpawning")
+                && (GeminiSpawning.manualAdmission(parent) || parent.worldObj.getGameRules().getGameRuleBooleanValue("doMobSpawning"))
                 && GeminiPopulation.canAdmitCocoon(parent.worldObj);
     }
     static void failure(EntityGardener parent, String reason) {
@@ -74,8 +99,9 @@ public final class EntityGardenerCocoon extends Entity implements IGeminiCreatur
     }
     private static boolean admission(EntityGardener parent) {
         if(enabled(parent)) return true;
-        failure(parent, GeminiPopulation.canAdmitCocoon(parent.worldObj)
-                ? "activity/progression or doMobSpawning rejects cocoon" : "population limits reject cocoon");
+        failure(parent, !GeminiSpawning.canAct(parent, 3) ? "activity/progression rejects cocoon"
+                : !GeminiSpawning.manualAdmission(parent) && !parent.worldObj.getGameRules().getGameRuleBooleanValue("doMobSpawning")
+                ? "doMobSpawning rejects natural cocoon" : "population limits reject cocoon");
         return false;
     }
     private static boolean naturalSupport(World world, int x, int y, int z, boolean hanging) {
@@ -94,7 +120,7 @@ public final class EntityGardenerCocoon extends Entity implements IGeminiCreatur
                 && GardenerNests.loaded(worldObj, boundingBox.expand(1, 1, 1))
                 && naturalSupport(worldObj, x, y, z, isHanging())
                 && (!isHanging() || !worldObj.canBlockSeeTheSky(x, y - 1, z))
-                && worldObj.getCollidingBoundingBoxes(this, boundingBox).isEmpty()
+                && worldObj.func_147461_a(boundingBox).isEmpty()
                 && !worldObj.isAnyLiquid(boundingBox);
     }
     private boolean site(EntityGardener parent, Entity victim) {
@@ -146,7 +172,7 @@ public final class EntityGardenerCocoon extends Entity implements IGeminiCreatur
                 }
                 AxisAlignedBB path = victim.boundingBox.addCoord(goal.xCoord - victim.posX,
                         goal.yCoord - victim.boundingBox.minY - victim.height * 0.5D, goal.zCoord - victim.posZ);
-                if(!GardenerNests.loaded(world, path.expand(1, 0, 1)) || !world.getCollidingBoundingBoxes(victim, path).isEmpty()
+                if(!GardenerNests.loaded(world, path.expand(1, 0, 1)) || !world.func_147461_a(path).isEmpty()
                         || world.isAnyLiquid(path)) { rejected = "collision or unloaded space blocks transport"; continue; }
                 if(!candidate.site(parent, victim)) { rejected = candidate.placementFailure; continue; }
                 return candidate;
@@ -172,13 +198,13 @@ public final class EntityGardenerCocoon extends Entity implements IGeminiCreatur
         if(GeminiPopulation.hasCocoon(parent.worldObj, cocoon.getUniqueID())
                 || GeminiPopulation.find(parent.worldObj, outputIdentity(cocoon.getUniqueID())) != null) return true;
         if(!enabled(parent)) { if(diagnose) admission(parent); return false; }
-        int top = Math.min(parent.worldObj.getHeight() - 3, MathHelper.floor_double(Math.max(py, parent.posY + 1)));
+        int top = Math.min(parent.worldObj.getHeight() - 3, MathHelper.floor_double(parent.posY + 3));
         int bottom = Math.max(2, MathHelper.floor_double(parent.posY) - 6);
         String rejected = "no suitable ground in loaded search area";
         // Search beyond the 5.8-block-wide parent's body rather than forcing overlap with the corpse.
         for(int radius = 0; radius <= 8; radius++) for(int dx = -radius; dx <= radius; dx++) for(int dz = -radius; dz <= radius; dz++) {
             if(Math.max(Math.abs(dx), Math.abs(dz)) != radius) continue;
-            int x = MathHelper.floor_double(px) + dx, z = MathHelper.floor_double(pz) + dz;
+            int x = MathHelper.floor_double(parent.posX) + dx, z = MathHelper.floor_double(parent.posZ) + dz;
             // Job removal and cocoon creation are saved by the same chunk.
             if((x >> 4) != (MathHelper.floor_double(parent.posX) >> 4) || (z >> 4) != (MathHelper.floor_double(parent.posZ) >> 4)) continue;
             for(int y = top; y >= bottom; y--) {
@@ -198,6 +224,16 @@ public final class EntityGardenerCocoon extends Entity implements IGeminiCreatur
                         victim.boundingBox.minY + victim.height * 0.5D, victim.posZ)) > 0.16D) return false;
         return place(parent, victim, true, true);
     }
+    /** Commit only after the admitted entity has visibly wrapped its still-living source. */
+    boolean seal(EntityGardener parent, Entity victim) {
+        if(worldObj.isRemote || isDead || sealed || !fullyWrapped() || captor != parent || captive != victim
+                || !victim.isEntityAlive() || !parent.isHolding(victim) || !site(parent, victim)) return false;
+        victim.setDead();
+        if(!victim.isDead) return false;
+        sealed = true; captor = null; captive = null;
+        return true;
+    }
+    void cancelWrapping() { if(!sealed) super.setDead(); }
     private boolean place(EntityGardener parent, Entity victim, boolean consume, boolean diagnose) {
         if(worldObj.isRemote) return false;
         if(!enabled(parent)) { if(diagnose) admission(parent); return false; }
@@ -221,11 +257,9 @@ public final class EntityGardenerCocoon extends Entity implements IGeminiCreatur
         if(isDead || consume && (!victim.isEntityAlive() || !parent.isHolding(victim))) {
             if(diagnose) failure(parent, "entity creation invalidated by admission callbacks"); super.setDead(); return false;
         }
-        if(consume) {
-            victim.setDead();
-            if(!victim.isDead) { super.setDead(); return false; }
-        }
-        sealed = true;
+        growth = 0; dataWatcher.updateObject(23, 0);
+        if(consume) { captor = parent; captive = victim; }
+        else sealed = true;
         return true;
     }
     @Cancelable public static final class PlacementEvent extends Event {
@@ -243,6 +277,13 @@ public final class EntityGardenerCocoon extends Entity implements IGeminiCreatur
     }
     @Override public void onUpdate() {
         super.onUpdate(); motionX = motionY = motionZ = 0;
+        if(!visualInitialized) {
+            visualGrowth = dataWatcher.getWatchableObjectInt(23);
+            visualInitialized = true;
+        }
+        previousGrowth = visualGrowth;
+        // Smooth between coarse server updates; never predict sealing or conversion.
+        visualGrowth += (dataWatcher.getWatchableObjectInt(23) - visualGrowth) * 0.5F;
         if(worldObj.isRemote) {
             if((height > 2F) != isHanging()) {
                 setSize(isHanging() ? 1.5F : 2F, isHanging() ? 3F : 1F);
@@ -250,7 +291,11 @@ public final class EntityGardenerCocoon extends Entity implements IGeminiCreatur
             }
             return;
         }
-        if(!sealed) { super.setDead(); return; }
+        if(!sealed) {
+            if(captor == null || captive == null || !captor.isPreparingCocoon(this, captive)
+                    || !captive.isEntityAlive() || !attachmentValid()) cancelWrapping();
+            return;
+        }
         if(completed) {
             if(++collapse >= 30) super.setDead();
             else if(collapse % 5 == 0) dataWatcher.updateObject(22, (byte) (collapse + 1));
@@ -259,6 +304,7 @@ public final class EntityGardenerCocoon extends Entity implements IGeminiCreatur
         if(!GardenerNests.loaded(worldObj, boundingBox.expand(1, 1, 1))) return;
         if(ticksExisted % 20 == 1 && !attachmentValid()) { setDead(); return; }
         if(!active()) return;
+        if(growth < GROWTH_TICKS) { growth++; syncGrowth(); return; }
         if(remaining > 0) remaining--;
         if(ticksExisted % 40 == 0 || remaining == 0)
             dataWatcher.updateObject(21, (byte) Math.min(100, (duration - remaining) * 100L / Math.max(1, duration)));
@@ -325,13 +371,18 @@ public final class EntityGardenerCocoon extends Entity implements IGeminiCreatur
         nbt.setBoolean("Hanging", isHanging()); nbt.setBoolean("Sealed", sealed);
         nbt.setBoolean("Completed", completed); nbt.setBoolean("Manual", manual);
         nbt.setInteger("Remaining", remaining); nbt.setInteger("Duration", duration); nbt.setInteger("Collapse", collapse);
+        nbt.setInteger("Growth", growth);
     }
+    // In-flight captures end on reload; keep the real prey, never save an ownerless wrapping shell.
+    @Override public boolean writeToNBTOptional(NBTTagCompound nbt) { return sealed && super.writeToNBTOptional(nbt); }
     @Override protected void readEntityFromNBT(NBTTagCompound nbt) {
         form(nbt.getBoolean("Hanging")); sealed = nbt.getBoolean("Sealed");
         completed = nbt.getBoolean("Completed"); manual = nbt.getBoolean("Manual");
         duration = MathHelper.clamp_int(nbt.getInteger("Duration"), 20, 72000);
         remaining = MathHelper.clamp_int(nbt.getInteger("Remaining"), 0, duration);
         collapse = MathHelper.clamp_int(nbt.getInteger("Collapse"), 0, 30); retry = 20;
+        growth = nbt.hasKey("Growth") ? MathHelper.clamp_int(nbt.getInteger("Growth"), 0, GROWTH_TICKS) : GROWTH_TICKS;
+        dataWatcher.updateObject(23, growth); visualGrowth = previousGrowth = growth;
         dataWatcher.updateObject(21, (byte) ((duration - remaining) * 100L / duration));
         dataWatcher.updateObject(22, (byte) (completed ? 1 : 0));
     }

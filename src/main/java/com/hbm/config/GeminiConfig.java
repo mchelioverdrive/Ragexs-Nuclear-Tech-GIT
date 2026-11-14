@@ -162,7 +162,7 @@ public final class GeminiConfig {
 		gardenerBlocksPerSlam = config.getInt("blocksPerSlam", gardener, 12, 0, 32,
 				"Maximum natural/tissue block removals per major slam inside the nest. Four coordinates per tick; respects mobGriefing and protection events.");
 		gardenerCocoonSeconds = config.getInt("cocoonSeconds", gardener, 120, 1, 3600,
-				"Loaded active seconds for both Gardener cocoon forms to produce a Woodcrawler. Saved per cocoon; unrelated to Woodcrawler-to-Fake-Person conversion.");
+				"Loaded active seconds after five-second cocoon growth to produce a Woodcrawler. Saved per cocoon; unrelated to Woodcrawler-to-Fake-Person conversion.");
 		gardenerCocoonMaxLoaded = config.getInt("cocoonMaxLoaded", gardener, 8, 0, 64,
 				"Maximum loaded Gardener cocoons, also bounded by the combined Gemini cap. Zero disables new cocoons. Hatchlings obey normal Woodcrawler conversion admission limits, including for manual parents.");
 		String ocean = CATEGORY + ".oceanGardener";
