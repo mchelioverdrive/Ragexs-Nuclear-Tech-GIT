@@ -97,9 +97,9 @@ public final class EntityGardenerCocoon extends Entity implements IGeminiCreatur
         MainRegistry.logger.info("[Gardener cocoon] gardener=" + parent.getUniqueID() + " dimension="
                 + parent.worldObj.provider.dimensionId + " at=" + parent.posX + "," + parent.posY + "," + parent.posZ + ": " + reason);
     }
-    private static boolean admission(EntityGardener parent) {
-        if(enabled(parent)) return true;
-        failure(parent, !GeminiSpawning.canAct(parent, 3) ? "activity/progression rejects cocoon"
+    static boolean admission(EntityGardener parent) {
+        if(enabled(parent)) { parent.reportCocoonAdmission(null); return true; }
+        parent.reportCocoonAdmission(!GeminiSpawning.canAct(parent, 3) ? "activity/progression rejects cocoon"
                 : !GeminiSpawning.manualAdmission(parent) && !parent.worldObj.getGameRules().getGameRuleBooleanValue("doMobSpawning")
                 ? "doMobSpawning rejects natural cocoon" : "population limits reject cocoon");
         return false;
@@ -183,11 +183,13 @@ public final class EntityGardenerCocoon extends Entity implements IGeminiCreatur
     }
     /** Only a confirmed lethal feeding bite supplies surface biomass; no saved victim can be restored. */
     public static void afterFeeding(EntityGardener parent, Entity victim) {
-        if(parent.isOcean()) return;
+        if(parent.worldObj.isRemote || parent.isOcean()) return;
         if(!suitable(victim) || victim.isEntityAlive()) {
             failure(parent, "feeding death does not qualify for conversion"); return;
         }
         if(victim.getEntityData().getBoolean("GardenerConsumed")) return;
+        // Consumption belongs to the confirmed death, independent of optional cocoon admission.
+        victim.getEntityData().setBoolean("GardenerConsumed", true);
         parent.queueSurfaceCocoon(victim);
     }
     /** Bounded retry; the saved job contains biomass identity/position, never a restorable victim. */
@@ -217,13 +219,16 @@ public final class EntityGardenerCocoon extends Entity implements IGeminiCreatur
         return false;
     }
     public boolean attach(EntityGardener parent, Entity victim) {
+        placementFailure = "invalid attachment handoff";
         if(!suitable(victim) || !victim.isEntityAlive() || !parent.isHolding(victim)
                 || (MathHelper.floor_double(victim.posX) >> 4) != (MathHelper.floor_double(posX) >> 4)
                 || (MathHelper.floor_double(victim.posZ) >> 4) != (MathHelper.floor_double(posZ) >> 4)
                 || victimGoal(victim).squareDistanceTo(Vec3.createVectorHelper(victim.posX,
                         victim.boundingBox.minY + victim.height * 0.5D, victim.posZ)) > 0.16D) return false;
-        return place(parent, victim, true, true);
+        // The parent owns bounded retries/transition diagnostics for temporary entity occupancy.
+        return place(parent, victim, true, false);
     }
+    boolean placementObstructed() { return "entity collision prevents placement".equals(placementFailure); }
     /** Commit only after the admitted entity has visibly wrapped its still-living source. */
     boolean seal(EntityGardener parent, Entity victim) {
         if(worldObj.isRemote || isDead || sealed || !fullyWrapped() || captor != parent || captive != victim

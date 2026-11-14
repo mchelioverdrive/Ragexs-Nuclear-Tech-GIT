@@ -19,6 +19,11 @@ public final class GardenerPose {
 
     /** Explicit extension is also used by the server's bounded terrain probes. */
     public static Vec3 point(EntityGardener boss, int arm, int joint, float partial, double extension) {
+        return point(boss, arm, joint, partial, extension, null);
+    }
+
+    /** Prospective contact for collision probes; never changes the synchronized pose. */
+    static Vec3 point(EntityGardener boss, int arm, int joint, float partial, double extension, Vec3 contact) {
         if(boss.isOcean()) return OceanGardenerPose.point(boss, arm, joint, partial);
         double t = joint / (double) SEGMENTS, angle = ANGLE[arm];
         double age = boss.isAwake() ? boss.worldObj.getTotalWorldTime() + partial : 0;
@@ -33,7 +38,7 @@ public final class GardenerPose {
         double sway = Math.sin(age * 0.025D + arm * 1.7D - joint * 0.8D) * 0.18D * t;
         x += Math.sin(angle) * sway; z -= Math.cos(angle) * sway;
         if(arm == boss.attackArm() && (boss.captureState() || boss.state() == EntityGardener.RELEASE)) {
-            Vec3 aim = boss.limbAim(partial);
+            Vec3 aim = contact == null ? boss.limbAim(partial) : contact;
             double blend = boss.state() == EntityGardener.RELEASE ? Math.max(0D, 1D - boss.stateTime(partial) / 24D) : 1D;
             double hx = Math.cos(angle) * RADIAL[0] * (1D - t) + aim.xCoord * t;
             double hz = Math.sin(angle) * RADIAL[0] * (1D - t) + aim.zCoord * t;

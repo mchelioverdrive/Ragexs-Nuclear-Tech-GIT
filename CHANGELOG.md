@@ -668,3 +668,15 @@
 
 - Give Woodcrawlers hatched beneath geological cover a saved, concealed emergence state with bounded loaded-terrain searches, collision-resolved travel and natural-only protected excavation. Reuse the existing rise animation and entity identity; retain cocoon growth/maturation clocks, same-chunk admission and natural population limits. Surface hatchlings retain ordinary behavior.
 - Prioritize vulnerable survival players, villagers and then passive animals, retain valid hunts within a tier, and briefly commit to retaliation. Preserve detection, stalking, target memory, captures and conversion odds. Allow the initial surface hunt before resuming daylight dormancy; retain fire/UV avoidance, both Gardener variants and Ocean Gardener feeding.
+
+2026-11-14 17:07 — Retain Underground Gardener captures through feeding and wrapping
+
+- Separate held-prey validation from acquisition territory checks. Suspend and restore the captured mob's native task instances and navigation, suppress conflicting movement impulses, and retain collision-resolved server transport without persistent AI flags or changes to uncaptured mobs.
+- Sweep the holding tentacle against solid block shapes independently of attack rays and entity occupancy. Retain ownership during bounded obstruction recovery and small attachment corrections; retry temporary cocoon occupancy and fall back from unusable ceilings to feeding without dropping living prey.
+- Count meaningful approach movement, successful bites and actual wrapping as progress. Keep the existing feeding damage/interval and confirmed-death surface biomass rules, five-second wrapping, sealing-before-consumption, escape/recovery animations, save behavior and population limits. Preserve Ocean capture behavior separately; log unexpected capture endings and ceiling fallbacks with owner/victim identities, state and elapsed ticks, and restore navigation on release, unload or removal.
+
+2026-11-14 18:47 — Feed Underground Gardener prey independently of cocoon limits
+
+- Measure Underground Gardener prey reach against body and prey bounds with explicit vertical clearance. Feed living prey beneath the model's narrowed underside, keep the holding tip attached to the real captive, and clear underground steering while captures are active. Preserve capture windup, feeding damage and interval, wrapping duration, valid escape and unload paths, models, and distinct Ocean Gardener feeding.
+- Finish feeding when the pending biomass queue or cocoon population limits reject output. Check admission before adding biomass, discard rejected placement work, recheck admission after placement callbacks, and report unchanged admission failures only once until admission recovers. Mark confirmed feeding deaths consumed independently of optional cocoon creation; retain native death/removal, stable output identities, existing caps, successful placement, incubation and hatching.
+- Replace the unsupported Ghast warning identifier with Minecraft 1.7.10's `mob.ghast.charge` in the shared Gardener attack cue, preserving its volume, pitch and trigger timing.

@@ -108,6 +108,11 @@ public final class GeminiPopulation {
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void captiveMovement(net.minecraftforge.event.entity.living.LivingEvent.LivingUpdateEvent event) {
+        EntityGardener.updateCaptive(event.entityLiving);
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
     public void join(EntityJoinWorldEvent event) {
         if(!event.world.isRemote && event.entity instanceof EntityGardenerCocoon) {
             EntityGardenerCocoon cocoon = (EntityGardenerCocoon) event.entity;
@@ -143,11 +148,19 @@ public final class GeminiPopulation {
             EntityLiving mob = it.next();
             if(mob.isDead || !mob.addedToChunk || mob.worldObj != event.world
                     || event.world.getEntityByID(mob.getEntityId()) != mob
-                    || !event.world.getChunkProvider().chunkExists(mob.chunkCoordX, mob.chunkCoordZ)) it.remove();
+                    || !event.world.getChunkProvider().chunkExists(mob.chunkCoordX, mob.chunkCoordZ)) {
+                if(mob instanceof EntityGardener) ((EntityGardener) mob).releaseForWorldUnload();
+                it.remove();
+            }
         }
     }
 
-    @SubscribeEvent public void unload(WorldEvent.Unload event) { WORLDS.remove(event.world); COCOONS.remove(event.world); }
+    @SubscribeEvent public void unload(WorldEvent.Unload event) {
+        Map<UUID, EntityLiving> members = WORLDS.remove(event.world);
+        if(!event.world.isRemote && members != null) for(EntityLiving mob : members.values())
+            if(mob instanceof EntityGardener) ((EntityGardener) mob).releaseForWorldUnload();
+        COCOONS.remove(event.world);
+    }
 
     @SubscribeEvent public void unloadChunk(ChunkEvent.Unload event) {
         if(event.world.isRemote) return;
