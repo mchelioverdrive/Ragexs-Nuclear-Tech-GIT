@@ -328,6 +328,7 @@ public final class EntityGardenerCocoon extends Entity implements IGeminiCreatur
             output.inheritConversionIdentity(identity);
             output.setCrouching(true);
             output.crouchBlend = output.prevCrouchBlend = 1;
+            boolean underground = WoodcrawlerEmergence.underground(worldObj, posX, posY, posZ);
             // At most 350 loaded probes, only once per five seconds; never split the chunk-save handoff.
             for(int level = 0; level < 14; level++) for(int i = 0; i < 25; i++) {
                 double x = MathHelper.floor_double(posX) + i % 5 - 2 + 0.5D;
@@ -348,6 +349,7 @@ public final class EntityGardenerCocoon extends Entity implements IGeminiCreatur
                     if(!other.isDead && (other.preventEntitySpawning || other.canBeCollidedWith())) { occupied = true; break; }
                 }
                 if(occupied) continue;
+                if(underground) output.beginCocoonEmergence();
                 if(worldObj.spawnEntityInWorld(output)) finish();
                 return; // Protection vetoes wait for the next retry, rather than trying every coordinate.
             }

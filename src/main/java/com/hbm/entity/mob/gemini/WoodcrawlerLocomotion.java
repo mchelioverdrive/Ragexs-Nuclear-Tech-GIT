@@ -155,6 +155,21 @@ final class WoodcrawlerLocomotion {
         EntityPlayer actor = FakePlayerFactory.getMinecraft((WorldServer) world);
         return world.canMineBlock(actor, x, y, z) && !MinecraftForge.EVENT_BUS.post(new BlockEvent.BreakEvent(x, y, z, world, block, meta, actor));
     }
+    boolean canExcavateNatural(int x, int y, int z) {
+        return world.blockExists(x, y, z) && WoodcrawlerEmergence.natural(world.getBlock(x, y, z)) && diggable(x, y, z, false);
+    }
+    boolean excavateNatural(int x, int y, int z) {
+        AxisAlignedBB area = AxisAlignedBB.getBoundingBox(x - 1, y - 1, z - 1, x + 2, y + 2, z + 2);
+        if(!GardenerNests.loaded(world, area) || !canExcavateNatural(x, y, z)
+                || com.hbm.world.gemini.WretchCamps.hasPlayerPlacement(world, area)
+                || GardenerNests.overlapsStructure(world, area)) return false;
+        Block before = world.getBlock(x, y, z);
+        int meta = world.getBlockMetadata(x, y, z);
+        // Recheck after cancelable callbacks; never remove a replacement tile or protected block.
+        return diggable(x, y, z, true) && world.getBlock(x, y, z) == before
+                && world.getBlockMetadata(x, y, z) == meta && canExcavateNatural(x, y, z)
+                && world.func_147480_a(x, y, z, true);
+    }
     private void dig(double dx, double dz) {
         if(dug >= 4 || digDelay > 0) return;
         if(digging == null) {

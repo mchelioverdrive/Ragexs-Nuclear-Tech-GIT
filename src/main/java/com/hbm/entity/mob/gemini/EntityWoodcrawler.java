@@ -45,6 +45,7 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 	private int captureStateTicks;
 	private final EntityAIWoodcrawler controller;
 	private final WoodcrawlerLocomotion locomotion = new WoodcrawlerLocomotion(this);
+	private final WoodcrawlerEmergence emergence = new WoodcrawlerEmergence(this);
 	private byte fakePersonConversion;
 	private boolean loadedFromNBT;
 	private boolean checkLoadedClearance;
@@ -171,8 +172,8 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 		else super.moveEntity(x, y, z);
 	}
 	void moveSurfaceBody(double x, double y, double z) { super.moveEntity(x, y, z); }
-	@Override public boolean canBeCollidedWith() { return !isDormant() && super.canBeCollidedWith(); }
-	@Override public boolean canBePushed() { return !isDormant() && super.canBePushed(); }
+	@Override public boolean canBeCollidedWith() { return !isDormant() && !isUndergroundEmerging() && super.canBeCollidedWith(); }
+	@Override public boolean canBePushed() { return !isDormant() && !isUndergroundEmerging() && super.canBePushed(); }
 
 	public boolean isPrey(Entity entity) {
 		if(entity == this || entity instanceof IGeminiCreature || !(entity instanceof EntityLivingBase)
@@ -182,8 +183,13 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 			EntityPlayer player = (EntityPlayer) entity;
 			return !player.capabilities.disableDamage && !player.capabilities.isCreativeMode;
 		}
-		return entity instanceof EntityVillager && entity.ridingEntity == null && entity.riddenByEntity == null
-				&& entity.getEntityData().getLong("WoodcrawlerCocoonUntil") <= worldObj.getTotalWorldTime();
+		if(entity.ridingEntity != null || entity.riddenByEntity != null || entity.noClip
+				|| entity.getEntityData().getLong("WoodcrawlerCocoonUntil") > worldObj.getTotalWorldTime()) return false;
+		return entity instanceof EntityVillager || entity == getAITarget()
+				|| entity instanceof net.minecraft.entity.passive.EntityAnimal;
+	}
+	public int preyPriority(EntityLivingBase entity) {
+		return entity instanceof EntityPlayer ? 0 : entity instanceof EntityVillager ? 1 : 2;
 	}
 
 	@Override
@@ -197,9 +203,23 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 	public int getBurrowTick() { return dataWatcher.getWatchableObjectByte(26); }
 	public boolean isBurrowing() { return getBurrowTick() != 0; }
 	public boolean isDormant() { return getBurrowTick() == 70; }
+	public boolean isUndergroundEmerging() { return getBurrowTick() == 71; }
+	public boolean isCocoonEmerging() { return emergence.active(); }
+	public void beginCocoonEmergence() {
+		if(!worldObj.isRemote) { resetHunting(); daytimeBurrow = false; emergence.begin(); }
+	}
+	void setEmergenceBurrowTick(int tick) { dataWatcher.updateObject(26, Byte.valueOf((byte) tick)); }
+	void finishCocoonEmergence() {
+		finishBurrow(); burrowCooldown = 400;
+		controller.resetTask();
+	}
+	boolean canExcavateForEmergence(int x, int y, int z) { return locomotion.canExcavateNatural(x, y, z); }
+	boolean excavateForEmergence(int x, int y, int z) { return locomotion.excavateNatural(x, y, z); }
 	public boolean isProbing() { return dataWatcher.getWatchableObjectByte(31) != 0; }
-	public boolean wantsShelter() { return worldObj.isDaytime() && !worldObj.provider.hasNoSky && disturbanceTicks == 0; }
-	public boolean avoidsExposure() { return nearbyFire || uvUntil >= worldObj.getTotalWorldTime() || cachedLight >= 12; }
+	public boolean wantsShelter() { return !emergence.active() && !emergence.initialHunt()
+			&& worldObj.isDaytime() && !worldObj.provider.hasNoSky && disturbanceTicks == 0; }
+	public boolean avoidsExposure() { return nearbyFire || uvUntil >= worldObj.getTotalWorldTime()
+			|| !emergence.initialHunt() && cachedLight >= 12; }
 	public int lightAt(int x, int y, int z) {
 		if(!worldObj.blockExists(x, y, z)) return 15;
 		return Math.max(worldObj.getSavedLightValue(EnumSkyBlock.Block, x, y, z),
@@ -650,7 +670,7 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 	}
 
 	private void tickBurrow() {
-		if(!isBurrowing()) return;
+		if(!isBurrowing() || emergence.active()) return;
 		int tick = getBurrowTick();
 		getNavigator().clearPathEntity();
 		motionX = motionZ = 0;
@@ -702,7 +722,7 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 
 	@Override
 	public void moveEntityWithHeading(float strafe, float forward) {
-		if(isDormant()) { motionX = motionY = motionZ = 0; return; }
+		if(isDormant() || isUndergroundEmerging() || emergence.active()) { motionX = motionY = motionZ = 0; return; }
 		if(!worldObj.isRemote && GeminiSpawning.canAct(this, 1)) {
 			locomotion.tick();
 			if(locomotion.controlsMovement()) strafe = forward = 0;
@@ -743,8 +763,9 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 			}
 			if(strikeCooldown > 0) strikeCooldown--;
 			if(burrowCooldown > 0) burrowCooldown--;
+			emergence.tick();
 			locomotion.prepareBody();
-			tickEnvironment();
+			if(!emergence.active()) tickEnvironment();
 			tickProbe();
 			tickGrab();
 			tickBurrow();
@@ -780,11 +801,11 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 		stalkBlend += ((getHuntState() == STALK ? 1F : 0F) - stalkBlend) * 0.15F;
 		prevBurrowDepth = burrowDepth;
 		int burrowTick = getBurrowTick();
-		burrowDepth = burrowTick == 70 ? 1 : burrowTick == 0 ? 0 : MathHelper.clamp_float(burrowTick <= 20 ? burrowTick / 20F
+		burrowDepth = burrowTick >= 70 ? 1 : burrowTick == 0 ? 0 : MathHelper.clamp_float(burrowTick <= 20 ? burrowTick / 20F
 				: burrowTick <= 40 ? 1 : (60 - burrowTick) / 20F, 0, 1);
 		if(worldObj.isRemote) resizeBody(isDormant() || isCrouching() ? CRAWLING_WIDTH : BODY_WIDTH,
 				isDormant() ? 0.3F : isCrouching() ? CRAWLING_HEIGHT : STANDING_HEIGHT);
-		if(worldObj.isRemote && isBurrowing() && !isDormant() && ticksExisted % 6 == 0) {
+		if(worldObj.isRemote && isBurrowing() && !isDormant() && !isUndergroundEmerging() && ticksExisted % 6 == 0) {
 			int x = MathHelper.floor_double(posX), y = MathHelper.floor_double(posY - 0.05D), z = MathHelper.floor_double(posZ);
 			String dust = "blockcrack_" + Block.getIdFromBlock(worldObj.getBlock(x, y, z)) + "_" + worldObj.getBlockMetadata(x, y, z);
 			for(int i = 0; i < 2; i++) worldObj.spawnParticle(dust, posX + (rand.nextDouble() - 0.5D) * 0.8D,
@@ -864,6 +885,7 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 	public float getEyeHeight() { return height * 0.78F; }
 	@Override
 	public boolean attackEntityFrom(DamageSource source, float damage) {
+		if(isUndergroundEmerging() && source != DamageSource.outOfWorld) return false;
 		if(isDormant() && source != DamageSource.outOfWorld) {
 			if(!worldObj.isRemote && source.isExplosion()) { disturbanceTicks = 200; emerge(); }
 			return false;
@@ -878,11 +900,12 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 		if(worldObj.isRemote || source.getEntity() instanceof IGeminiCreature || !GeminiSpawning.canAct(this, 1)
 				|| !super.attackEntityFrom(source, damage)) return false;
 		if(isProbing()) retractProbe(); else endGrab();
+		if(source.getEntity() instanceof EntityLivingBase) controller.onAttacked((EntityLivingBase) source.getEntity());
 		disturbanceTicks = 200;
 		int tick = getBurrowTick();
 		// Damage forces emergence at the current visual depth, including during entry.
 		if(daytimeBurrow) emerge();
-		else if(tick > 0 && tick <= 40) dataWatcher.updateObject(26, Byte.valueOf((byte) (tick <= 20 ? 60 - tick : 41)));
+		else if(!emergence.active() && tick > 0 && tick <= 40) dataWatcher.updateObject(26, Byte.valueOf((byte) (tick <= 20 ? 60 - tick : 41)));
 		return true;
 	}
 	@Override
@@ -899,6 +922,7 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 		nbt.setInteger("WoodcrawlerBurrowTick", getBurrowTick());
 		nbt.setInteger("WoodcrawlerDisturbed", disturbanceTicks);
 		locomotion.write(nbt);
+		emergence.write(nbt);
 	}
 	@Override
 	public void readEntityFromNBT(NBTTagCompound nbt) {
@@ -931,5 +955,10 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 		}
 		disturbanceTicks = MathHelper.clamp_int(nbt.getInteger("WoodcrawlerDisturbed"), 0, 200);
 		locomotion.read(nbt);
+		emergence.read(nbt);
+		if(emergence.active()) {
+			daytimeBurrow = false; checkLoadedClearance = false;
+			captureState = CaptureState.IDLE;
+		}
 	}
 }

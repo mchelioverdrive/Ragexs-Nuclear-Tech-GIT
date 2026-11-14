@@ -31,6 +31,7 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 	private int entranceCursor, doorX, doorY, doorZ, doorTicks, doorBackoff, knockDelay;
 
 	private int huntTicks, pathFailures;
+	private int retaliationTicks;
 	private double knownX, knownY, knownZ, goalX, goalY, goalZ;
 	private double entranceDistance = Double.MAX_VALUE;
 	private double entranceX, entranceY, entranceZ;
@@ -57,6 +58,7 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 		mob.setClimbing(false);
 		pathDelay = scanDelay = wanderDelay = doorBackoff = knockDelay = 0;
 		crowdDelay = disperseTicks = disperseDelay = 0;
+		retaliationTicks = 0;
 		entranceCursor = 0;
 		entranceDistance = Double.MAX_VALUE;
 	}
@@ -83,6 +85,7 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 		if(crowdDelay > 0) crowdDelay--;
 		if(disperseTicks > 0) disperseTicks--;
 		if(disperseDelay > 0) disperseDelay--;
+		if(retaliationTicks > 0) retaliationTicks--;
 		if(mob.wantsShelter() || mob.avoidsExposure()) {
 			// Strong exposure overrides pursuit; milder light is handled by route weighting.
 			clearDoor(); mob.setHuntState(EntityWoodcrawler.RETREAT); mob.setClimbing(false);
@@ -110,20 +113,19 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 			mob.getNavigator().clearPathEntity();
 			return; // Finish the physical wall/ladder transition before selecting another entrance.
 		}
-		if(target == null && !mob.hasCapturedVillager() && scanDelay == 0) {
+		if(!mob.hasCapturedVillager() && scanDelay == 0 && (target == null || retaliationTicks == 0 && mob.preyPriority(target) > 0)) {
 			scanDelay = 20 + mob.getRNG().nextInt(10);
-			target = findTarget();
-			if(target != null) {
-				mob.setAttackTarget(target);
-				if(mob.getAttackTarget() != target) { beginDispersal(target); target = null; }
-			}
-			if(target != null) {
-				disperseTicks = 0;
-				remember(target);
-				stalkTicks = 0;
-				retreatTicks = 0;
-				sawTarget = mob.canEntityBeSeen(target);
-				if(sawTarget) com.hbm.world.gemini.GeminiPopulation.alert(mob, target);
+			EntityLivingBase preferred = findTarget(target == null ? 3 : mob.preyPriority(target));
+			if(preferred != null) {
+				mob.setAttackTarget(preferred);
+				if(mob.getAttackTarget() == preferred) {
+					clearDoor(); onTargetAcquired(preferred);
+					target = preferred;
+				} else {
+					// A vetoed promotion must not discard a valid incumbent hunt.
+					mob.setAttackTarget(target);
+					if(target == null) beginDispersal(preferred);
+				}
 			}
 		}
 		if(target == null) {
@@ -243,27 +245,45 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 		sawTarget = false;
 	}
 
-	private EntityLivingBase findTarget() {
+	private void onTargetAcquired(EntityLivingBase target) {
+		disperseTicks = huntTicks = pathFailures = 0;
+		remember(target); stalkTicks = retreatTicks = 0;
+		sawTarget = mob.canEntityBeSeen(target);
+		if(sawTarget) GeminiPopulation.alert(mob, target);
+	}
+
+	/** Damage establishes a short retaliation commitment without bypassing prey/admission rules. */
+	public void onAttacked(EntityLivingBase attacker) {
+		if(mob.isBurrowing() || mob.isCaptureBusy() || !mob.isPrey(attacker)) return;
+		boolean changed = mob.getAttackTarget() != attacker;
+		mob.setAttackTarget(attacker);
+		if(mob.getAttackTarget() != attacker) return;
+		clearDoor();
+		if(changed) onTargetAcquired(attacker); else remember(attacker);
+		retaliationTicks = 200;
+	}
+
+	private EntityLivingBase findTarget(int priorityLimit) {
 		double range = GeminiConfig.woodcrawlerDetectionRange;
-		List<EntityLivingBase> candidates = world.selectEntitiesWithinAABB(EntityLivingBase.class,
-				mob.boundingBox.expand(range, range, range), entity -> mob.isPrey(entity));
-		EntityLivingBase best = null;
-		double bestDistance = range * range;
-		// A bounded local query, at most 64 detailed occupancy/visibility checks per scan.
-		for(int i = 0; i < candidates.size() && i < 64; i++) {
-			EntityLivingBase candidate = candidates.get(i);
-			double distance = mob.getDistanceSqToEntity(candidate);
-			if(disperseTicks > 0 && candidate.getDistanceSq(crowdedX, crowdedY, crowdedZ) < 256D) continue;
-			if(!mob.canEntityBeSeen(candidate) && !audible(candidate)) continue;
-			if(!GeminiPopulation.canWoodcrawlerHunt(mob, candidate)) { beginDispersal(candidate); continue; }
-			boolean preferred = candidate instanceof EntityVillager && !(best instanceof EntityVillager);
-			if(distance <= range * range && (preferred || distance < bestDistance && (!(best instanceof EntityVillager) || candidate instanceof EntityVillager))
-					&& (mob.canEntityBeSeen(candidate) || audible(candidate))) {
-				best = candidate;
-				bestDistance = distance;
+		// Separate local tiers keep a crowded animal pen from hiding a nearby player behind the budget.
+		for(int priority = 0; priority < priorityLimit; priority++) {
+			Class<? extends EntityLivingBase> type = priority == 0 ? EntityPlayer.class
+					: priority == 1 ? EntityVillager.class : net.minecraft.entity.passive.EntityAnimal.class;
+			List<? extends EntityLivingBase> candidates = world.selectEntitiesWithinAABB(type,
+					mob.boundingBox.expand(range, range, range), entity -> mob.isPrey(entity));
+			EntityLivingBase best = null;
+			double bestDistance = range * range;
+			for(int i = 0; i < candidates.size() && i < 64; i++) {
+				EntityLivingBase candidate = candidates.get(i);
+				double distance = mob.getDistanceSqToEntity(candidate);
+				if(distance > bestDistance || disperseTicks > 0 && candidate.getDistanceSq(crowdedX, crowdedY, crowdedZ) < 256D) continue;
+				if(!mob.canEntityBeSeen(candidate) && !audible(candidate)) continue;
+				if(!GeminiPopulation.canWoodcrawlerHunt(mob, candidate)) { beginDispersal(candidate); continue; }
+				best = candidate; bestDistance = distance;
 			}
+			if(best != null) return best;
 		}
-		return best;
+		return null;
 	}
 	private void beginDispersal(EntityLivingBase crowded) {
 		if(disperseTicks > 0) return;
@@ -310,6 +330,7 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 		mob.getNavigator().clearPathEntity();
 		clearDoor();
 		memoryTicks = stalkTicks = retreatTicks = huntTicks = pathFailures = 0;
+		retaliationTicks = 0;
 		hasEntrance = hasGoal = sawTarget = false;
 	}
 
