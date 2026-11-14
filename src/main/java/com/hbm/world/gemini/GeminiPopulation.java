@@ -22,6 +22,12 @@ public final class GeminiPopulation {
     private static final Map<World, Map<UUID, EntityLiving>> WORLDS = new HashMap<World, Map<UUID, EntityLiving>>();
     private static final Map<World, Map<UUID, EntityGardenerCocoon>> COCOONS = new HashMap<World, Map<UUID, EntityGardenerCocoon>>();
 
+    public static boolean hasCocoon(World world, UUID id) {
+        Map<UUID, EntityGardenerCocoon> cocoons = COCOONS.get(world);
+        EntityGardenerCocoon cocoon = cocoons == null ? null : cocoons.get(id);
+        return cocoon != null && !cocoon.isDead;
+    }
+
     public static boolean canAdmitCocoon(World world) {
         if(world.isRemote || GeminiConfig.gardenerCocoonMaxLoaded <= 0 || GeminiConfig.maxLoadedCreatures <= 0) return false;
         int count = 0, total = 0;

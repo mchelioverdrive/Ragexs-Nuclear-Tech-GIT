@@ -1,6 +1,9 @@
 package com.hbm.entity.mob.gemini;
 
 import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import com.hbm.config.GeminiConfig;
@@ -17,6 +20,7 @@ import net.minecraft.entity.boss.IBossDisplayData;
 import net.minecraft.entity.monster.IMob;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.MathHelper;
@@ -32,7 +36,9 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
     private final Set<UUID> struck = new HashSet<UUID>();
     private Entity captive, preyTarget;
     private EntityGardenerCocoon pendingCocoon;
-    private boolean feeding;
+    private final List<SurfaceBiomass> surfaceBiomass = new ArrayList<SurfaceBiomass>();
+    private boolean placingSurface;
+    private boolean feeding, returningFromCeiling;
     private net.minecraftforge.event.entity.living.LivingDeathEvent feedingDeath;
     protected double nestX, nestY, nestZ;
     private double travelX, travelY, travelZ;
@@ -179,7 +185,18 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
                 || ((EntityPlayer) target).capabilities.isCreativeMode)) return false;
         if(target.riddenByEntity instanceof EntityPlayer && (((EntityPlayer) target.riddenByEntity).capabilities.disableDamage
                 || ((EntityPlayer) target.riddenByEntity).capabilities.isCreativeMode)) return false;
+        if(target == captive && (pendingCocoon != null || returningFromCeiling)) {
+            double dx = target.posX - nestX, dz = target.posZ - nestZ;
+            return dx * dx + dz * dz <= territoryRadius() * territoryRadius()
+                    && canTransportTo(Vec3.createVectorHelper(target.posX, target.boundingBox.minY + target.height * 0.5D, target.posZ));
+        }
         return inTerritory(target) && preyDistanceSq(target) <= (attackReach() + 7D) * (attackReach() + 7D);
+    }
+    /** Ceiling transport reaches from the upper body, rather than the ground-level territory band. */
+    boolean canTransportTo(Vec3 point) {
+        double dx = point.xCoord - posX, dy = point.yCoord - boundingBox.maxY, dz = point.zCoord - posZ;
+        double reach = attackReach() + 2D;
+        return dx * dx + dy * dy + dz * dz <= reach * reach;
     }
     private boolean heldByOtherGardener(Entity target) {
         if(!target.getEntityData().hasKey("GardenerCaptorId")) return false;
@@ -254,6 +271,7 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
         }
         captive = null;
         pendingCocoon = null;
+        returningFromCeiling = false;
         preyTarget = null; setAttackTarget(null); dataWatcher.updateObject(20, -1);
         if(state() != IDLE && state() != RECOVER) { begin(RECOVER); cooldown = 45; }
     }
@@ -264,6 +282,7 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
         previousCrawl = crawl;
         crawl += (dataWatcher.getWatchableObjectFloat(29) - crawl) * 0.25F;
         if(worldObj.isRemote) return;
+        tickSurfaceBiomass();
         if(!anchored) anchor(posX, posY, posZ);
         if(!active()) {
             release(); preyTarget = null; setAttackTarget(null); dataWatcher.updateObject(20, -1); dataWatcher.updateObject(28, (byte) 0);
@@ -399,17 +418,30 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
         // shoulder-to-victim skeleton is checked instead, with a little slack for native movement.
         if(captive != null && !captive.isEntityAlive()) { release(false); return; }
         if(captive == null || !prey(captive) || worldObj.getEntityByID(captive.getEntityId()) != captive
-                || preyDistanceSq(captive) > (attackReach() + 2D) * (attackReach() + 2D)
-                || !GardenerNests.loaded(worldObj, captive.boundingBox.expand(1, 0, 1))
-                || !clearLimb(attackArm())) { release(); return; }
+                || pendingCocoon == null && !returningFromCeiling && preyDistanceSq(captive) > (attackReach() + 2D) * (attackReach() + 2D)
+                || !GardenerNests.loaded(worldObj, captive.boundingBox.expand(1, 0, 1))) {
+            if(pendingCocoon != null) EntityGardenerCocoon.failure(this, "ceiling transport failed: captive, reach or loaded-space check");
+            release(); return;
+        }
+        if(!clearLimb(attackArm())) {
+            if(pendingCocoon != null) {
+                EntityGardenerCocoon.failure(this, "ceiling transport failed: tentacle collision; falling back to feeding");
+                abandonCeiling();
+            } else { release(); return; }
+        }
         aim(captive, false);
         captureSneakTicks = captive instanceof EntityPlayer && captive.isSneaking() ? captureSneakTicks + 1 : 0;
         if(captureSneakTicks >= 20) { release(); return; }
         if(pendingCocoon != null && (attackTicks % 10 == 0 && !pendingCocoon.attachmentValid()
-                || attackTicks - captureProgressTick >= 100)) abandonCeiling();
+                || attackTicks - captureProgressTick >= 160 || attackTicks >= 600)) {
+            EntityGardenerCocoon.failure(this, "ceiling transport failed: invalid attachment or timeout (ticks="
+                    + attackTicks + ", stalled=" + (attackTicks - captureProgressTick) + ")");
+            abandonCeiling();
+        }
         double distance = captureDistance();
         if(pendingCocoon != null && distance <= 0.4D) {
             if(pendingCocoon.attach(this, captive)) { release(false); return; }
+            EntityGardenerCocoon.failure(this, "ceiling handoff rejected; falling back to feeding");
             abandonCeiling(); distance = captureDistance();
         }
         if(pendingCocoon == null && distance <= 1.25D && attackTicks - lastFeedingTick >= 20) {
@@ -428,6 +460,8 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
             }
             if(!captive.isEntityAlive()) {
                 if(fed && consumed && !isOcean()) EntityGardenerCocoon.afterFeeding(this, captive);
+                else if(!isOcean()) EntityGardenerCocoon.failure(this, "feeding death does not qualify: damage=" + fed
+                        + ", confirmed uncanceled death=" + consumed);
                 release(false); return;
             }
         }
@@ -435,7 +469,7 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
             captureBestDistance = distance; captureProgressTick = attackTicks;
         }
         // Measure achieved movement, not requested velocity: roofs, AI and escape attempts can stall it.
-        if(attackTicks - captureProgressTick >= 120 || attackTicks >= 1200) { release(); return; }
+        if(pendingCocoon == null && attackTicks - captureProgressTick >= 120 || attackTicks >= 1200) { release(); return; }
         Vec3 goal = captureGoal();
         double dx = goal.xCoord - captive.posX, dz = goal.zCoord - captive.posZ;
         double horizontal = Math.sqrt(dx * dx + dz * dz);
@@ -459,10 +493,64 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
     }
     private void abandonCeiling() {
         pendingCocoon = null;
+        returningFromCeiling = true;
         captureBestDistance = captureDistance(); captureProgressTick = lastFeedingTick = attackTicks;
     }
     public void recordFeedingDeath(net.minecraftforge.event.entity.living.LivingDeathEvent event) {
         if(feeding && captive == event.entityLiving && event.source.getEntity() == this) feedingDeath = event;
+    }
+    void queueSurfaceCocoon(Entity victim) {
+        if(worldObj.isRemote || isOcean() || placingSurface) return;
+        for(SurfaceBiomass biomass : surfaceBiomass) if(biomass.id.equals(victim.getUniqueID())) return;
+        if(surfaceBiomass.size() >= 16) {
+            EntityGardenerCocoon.failure(this, "surface placement abandoned: pending biomass limit reached"); return;
+        }
+        SurfaceBiomass biomass = new SurfaceBiomass(victim);
+        surfaceBiomass.add(biomass);
+        placeSurfaceBiomass(biomass);
+    }
+    private void tickSurfaceBiomass() {
+        for(Iterator<SurfaceBiomass> it = surfaceBiomass.iterator(); it.hasNext();) {
+            SurfaceBiomass biomass = it.next();
+            if(--biomass.remaining <= 0) {
+                EntityGardenerCocoon.failure(this, "surface placement abandoned after bounded retries: victim=" + biomass.id);
+                it.remove();
+            }
+        }
+        if(!surfaceBiomass.isEmpty() && ticksExisted % 20 == 0) placeSurfaceBiomass(surfaceBiomass.get(0));
+    }
+    private void placeSurfaceBiomass(SurfaceBiomass biomass) {
+        if(placingSurface || !active()) return;
+        placingSurface = true;
+        try {
+            boolean placed = EntityGardenerCocoon.placeSurface(this, biomass.victim, biomass.id,
+                    biomass.x, biomass.y, biomass.z, !biomass.attempted);
+            biomass.attempted = true;
+            surfaceBiomass.remove(biomass);
+            if(placed) {
+                if(biomass.victim != null) biomass.victim.getEntityData().setBoolean("GardenerConsumed", true);
+            } else surfaceBiomass.add(biomass);
+        } finally { placingSurface = false; }
+    }
+    private static final class SurfaceBiomass {
+        final UUID id;
+        final double x, y, z;
+        final Entity victim;
+        int remaining = 1200;
+        boolean attempted;
+        SurfaceBiomass(Entity victim) {
+            this.victim = victim; id = victim.getUniqueID(); x = victim.posX; y = victim.boundingBox.minY; z = victim.posZ;
+        }
+        SurfaceBiomass(NBTTagCompound tag) {
+            victim = null; id = UUID.fromString(tag.getString("Victim"));
+            x = tag.getDouble("X"); y = tag.getDouble("Y"); z = tag.getDouble("Z");
+            remaining = MathHelper.clamp_int(tag.getInteger("Remaining"), 1, 1200); attempted = tag.getBoolean("Attempted");
+        }
+        NBTTagCompound save() {
+            NBTTagCompound tag = new NBTTagCompound(); tag.setString("Victim", id.toString());
+            tag.setDouble("X", x); tag.setDouble("Y", y); tag.setDouble("Z", z);
+            tag.setInteger("Remaining", remaining); tag.setBoolean("Attempted", attempted); return tag;
+        }
     }
     private static final class HeldPlayer {
         private static final java.lang.reflect.Field FLOATING = cpw.mods.fml.relauncher.ReflectionHelper.findField(
@@ -620,6 +708,9 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
         nbt.setBoolean("NestAnchored", anchored); nbt.setDouble("NestX", nestX); nbt.setDouble("NestY", nestY); nbt.setDouble("NestZ", nestZ);
         nbt.setInteger("Summons", summons); nbt.setInteger("SummonTicks", summonTicks); nbt.setInteger("Cooldown", cooldown);
         nbt.setInteger("GardenerFormVersion", 2);
+        NBTTagList biomass = new NBTTagList();
+        for(SurfaceBiomass entry : surfaceBiomass) biomass.appendTag(entry.save());
+        nbt.setTag("SurfaceBiomass", biomass);
         for(int i = 0; i < 6; i++) { nbt.setFloat("LimbHealth" + i, limbHealth[i]); nbt.setInteger("LimbRecovery" + i, recovery[i]); }
         // Captures and in-flight attacks end on reload. Saved claim hints are valid only with a live holding owner.
     }
@@ -631,6 +722,12 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
         anchored = nbt.getBoolean("NestAnchored"); nestX = nbt.getDouble("NestX"); nestY = nbt.getDouble("NestY"); nestZ = nbt.getDouble("NestZ");
         summons = MathHelper.clamp_int(nbt.getInteger("Summons"), 0, 16); summonTicks = MathHelper.clamp_int(nbt.getInteger("SummonTicks"), 0, 400);
         cooldown = Math.max(80, MathHelper.clamp_int(nbt.getInteger("Cooldown"), 0, 400));
+        surfaceBiomass.clear();
+        NBTTagList biomass = nbt.getTagList("SurfaceBiomass", 10);
+        if(!isOcean()) for(int i = 0; i < Math.min(16, biomass.tagCount()); i++) {
+            try { surfaceBiomass.add(new SurfaceBiomass(biomass.getCompoundTagAt(i))); }
+            catch(IllegalArgumentException ignored) { }
+        }
         for(int i = 0; i < 6; i++) {
             limbHealth[i] = nbt.hasKey("LimbHealth" + i) ? MathHelper.clamp_float(nbt.getFloat("LimbHealth" + i), 0, 32) : 32;
             recovery[i] = MathHelper.clamp_int(nbt.getInteger("LimbRecovery" + i), 0, 300);

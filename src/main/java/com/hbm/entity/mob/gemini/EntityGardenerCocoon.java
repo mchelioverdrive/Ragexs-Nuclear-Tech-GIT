@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import com.hbm.blocks.ModBlocks;
 import com.hbm.config.GeminiConfig;
+import com.hbm.main.MainRegistry;
 import com.hbm.world.gemini.GardenerNests;
 import com.hbm.world.gemini.GeminiInvasionManager;
 import com.hbm.world.gemini.GeminiPopulation;
@@ -34,6 +35,7 @@ import net.minecraftforge.event.entity.living.LivingAttackEvent;
 public final class EntityGardenerCocoon extends Entity implements IGeminiCreature {
     private int remaining, duration, retry, collapse;
     private boolean sealed, completed, manual, resolving;
+    private String placementFailure;
 
     public EntityGardenerCocoon(World world) {
         super(world); setSize(1.5F, 3F); preventEntitySpawning = true;
@@ -66,6 +68,16 @@ public final class EntityGardenerCocoon extends Entity implements IGeminiCreatur
                 && parent.worldObj.getGameRules().getGameRuleBooleanValue("doMobSpawning")
                 && GeminiPopulation.canAdmitCocoon(parent.worldObj);
     }
+    static void failure(EntityGardener parent, String reason) {
+        MainRegistry.logger.info("[Gardener cocoon] gardener=" + parent.getUniqueID() + " dimension="
+                + parent.worldObj.provider.dimensionId + " at=" + parent.posX + "," + parent.posY + "," + parent.posZ + ": " + reason);
+    }
+    private static boolean admission(EntityGardener parent) {
+        if(enabled(parent)) return true;
+        failure(parent, GeminiPopulation.canAdmitCocoon(parent.worldObj)
+                ? "activity/progression or doMobSpawning rejects cocoon" : "population limits reject cocoon");
+        return false;
+    }
     private static boolean naturalSupport(World world, int x, int y, int z, boolean hanging) {
         Block block = world.getBlock(x, y, z);
         boolean natural = block == Blocks.stone || block == Blocks.dirt || block == Blocks.grass || block == Blocks.gravel
@@ -86,7 +98,12 @@ public final class EntityGardenerCocoon extends Entity implements IGeminiCreatur
                 && !worldObj.isAnyLiquid(boundingBox);
     }
     private boolean site(EntityGardener parent, Entity victim) {
-        if(!attachmentValid() || WretchCamps.hasPlayerPlacement(worldObj, boundingBox.expand(1, 0, 1))
+        placementFailure = "invalid attachment, unloaded space, liquid or block collision";
+        if(!attachmentValid()) return false;
+        // Column provenance protects natural growth. Manual, terrain-free enclosures instead use
+        // the actual empty volume, mining permissions and placement/admission events below.
+        placementFailure = "construction protection rejects candidate";
+        if((!GeminiSpawning.manualAdmission(parent) && WretchCamps.hasPlayerPlacement(worldObj, boundingBox.expand(1, 0, 1)))
                 || GardenerNests.overlapsStructure(worldObj, boundingBox.expand(1, 1, 1))) return false;
         // Air only, including the roots' footprint. Never overwrite tiles, plants, doors or furnishings.
         for(int x = MathHelper.floor_double(boundingBox.minX); x <= MathHelper.floor_double(boundingBox.maxX); x++)
@@ -94,11 +111,13 @@ public final class EntityGardenerCocoon extends Entity implements IGeminiCreatur
                 for(int y = MathHelper.floor_double(posY); y < MathHelper.ceiling_double_int(boundingBox.maxY); y++)
                     if(!worldObj.isAirBlock(x, y, z) || worldObj.getTileEntity(x, y, z) != null
                             || !worldObj.canMineBlock(FakePlayerFactory.getMinecraft((WorldServer) worldObj), x, y, z)) return false;
+        placementFailure = "entity collision prevents placement";
         for(Object entry : worldObj.getEntitiesWithinAABBExcludingEntity(this, boundingBox)) {
             Entity other = (Entity) entry;
             if(other == victim || other.isDead || other instanceof EntityGardenerTentacle && ((EntityGardenerTentacle) other).owner() == parent) continue;
             if(other.canBeCollidedWith() || other.preventEntitySpawning || other instanceof EntityGardenerCocoon) return false;
         }
+        placementFailure = null;
         return true;
     }
     public Vec3 victimGoal(Entity victim) {
@@ -106,59 +125,102 @@ public final class EntityGardenerCocoon extends Entity implements IGeminiCreatur
     }
     /** One bounded search per capture, never per tick. Conservative swept-box clearance needs no pathfinder. */
     public static EntityGardenerCocoon findCeiling(EntityGardener parent, Entity victim) {
-        if(!suitable(victim) || !enabled(parent)) return null;
+        if(!suitable(victim) || parent.isOcean()) return null;
+        if(!admission(parent)) return null;
         World world = parent.worldObj;
         int cx = MathHelper.floor_double(victim.posX), cz = MathHelper.floor_double(victim.posZ);
         EntityGardenerCocoon candidate = new EntityGardenerCocoon(world);
-        for(int i = 0; i < 25; i++) {
-            int x = cx + i % 5 - 2, z = cz + i / 5 - 2;
-            if((x >> 4) != (cx >> 4) || (z >> 4) != (cz >> 4)) continue;
-            for(int y = MathHelper.floor_double(victim.boundingBox.maxY) + 2; y <= MathHelper.floor_double(parent.posY) + 10; y++) {
+        String rejected = "no reachable solid attachment with clear transport space";
+        int top = Math.min(world.getHeight() - 2, MathHelper.floor_double(parent.boundingBox.maxY + parent.attackReach()));
+        for(int radius = 0; radius <= 4; radius++) for(int dx = -radius; dx <= radius; dx++) for(int dz = -radius; dz <= radius; dz++) {
+            if(Math.max(Math.abs(dx), Math.abs(dz)) != radius) continue;
+            int x = cx + dx, z = cz + dz;
+            for(int y = MathHelper.floor_double(victim.boundingBox.maxY) + 2; y <= top; y++) {
                 candidate.setPosition(x + 0.5D, y - 3D, z + 0.5D);
                 Vec3 goal = candidate.victimGoal(victim);
-                if(parent.getDistanceSq(goal.xCoord, goal.yCoord, goal.zCoord) > 16D * 16D || !candidate.attachmentValid()) continue;
+                if(!parent.canTransportTo(goal)) continue;
+                if(!candidate.attachmentValid()) {
+                    if(GardenerNests.loaded(world, candidate.boundingBox.expand(1, 1, 1)) && naturalSupport(world, x, y, z, true))
+                        rejected = "collision or liquid prevents ceiling placement";
+                    continue;
+                }
                 AxisAlignedBB path = victim.boundingBox.addCoord(goal.xCoord - victim.posX,
                         goal.yCoord - victim.boundingBox.minY - victim.height * 0.5D, goal.zCoord - victim.posZ);
                 if(!GardenerNests.loaded(world, path.expand(1, 0, 1)) || !world.getCollidingBoundingBoxes(victim, path).isEmpty()
-                        || world.isAnyLiquid(path) || !candidate.site(parent, victim)) continue;
+                        || world.isAnyLiquid(path)) { rejected = "collision or unloaded space blocks transport"; continue; }
+                if(!candidate.site(parent, victim)) { rejected = candidate.placementFailure; continue; }
                 return candidate;
             }
         }
+        failure(parent, "no valid ceiling found: " + rejected);
         return null;
     }
     /** Only a confirmed lethal feeding bite supplies surface biomass; no saved victim can be restored. */
     public static void afterFeeding(EntityGardener parent, Entity victim) {
-        if(!suitable(victim) || victim.isEntityAlive() || !enabled(parent) || victim.getEntityData().getBoolean("GardenerConsumed")) return;
-        victim.getEntityData().setBoolean("GardenerConsumed", true);
-        EntityGardenerCocoon cocoon = new EntityGardenerCocoon(parent.worldObj);
-        cocoon.form(false);
-        for(int i = 0; i < 75; i++) {
-            int x = MathHelper.floor_double(victim.posX) + i % 5 - 2;
-            int z = MathHelper.floor_double(victim.posZ) + i / 5 % 5 - 2;
-            int y = MathHelper.floor_double(victim.posY) - i / 25;
-            cocoon.setPosition(x + 0.5D, y, z + 0.5D);
-            if(cocoon.site(parent, victim)) { cocoon.place(parent, victim, false); return; }
+        if(parent.isOcean()) return;
+        if(!suitable(victim) || victim.isEntityAlive()) {
+            failure(parent, "feeding death does not qualify for conversion"); return;
         }
+        if(victim.getEntityData().getBoolean("GardenerConsumed")) return;
+        parent.queueSurfaceCocoon(victim);
+    }
+    /** Bounded retry; the saved job contains biomass identity/position, never a restorable victim. */
+    static boolean placeSurface(EntityGardener parent, Entity victim, UUID victimId, double px, double py, double pz, boolean diagnose) {
+        EntityGardenerCocoon cocoon = new EntityGardenerCocoon(parent.worldObj);
+        cocoon.entityUniqueID = UUID.nameUUIDFromBytes(("gardener-surface:" + victimId).getBytes(StandardCharsets.UTF_8));
+        cocoon.form(false);
+        if(GeminiPopulation.hasCocoon(parent.worldObj, cocoon.getUniqueID())
+                || GeminiPopulation.find(parent.worldObj, outputIdentity(cocoon.getUniqueID())) != null) return true;
+        if(!enabled(parent)) { if(diagnose) admission(parent); return false; }
+        int top = Math.min(parent.worldObj.getHeight() - 3, MathHelper.floor_double(Math.max(py, parent.posY + 1)));
+        int bottom = Math.max(2, MathHelper.floor_double(parent.posY) - 6);
+        String rejected = "no suitable ground in loaded search area";
+        // Search beyond the 5.8-block-wide parent's body rather than forcing overlap with the corpse.
+        for(int radius = 0; radius <= 8; radius++) for(int dx = -radius; dx <= radius; dx++) for(int dz = -radius; dz <= radius; dz++) {
+            if(Math.max(Math.abs(dx), Math.abs(dz)) != radius) continue;
+            int x = MathHelper.floor_double(px) + dx, z = MathHelper.floor_double(pz) + dz;
+            // Job removal and cocoon creation are saved by the same chunk.
+            if((x >> 4) != (MathHelper.floor_double(parent.posX) >> 4) || (z >> 4) != (MathHelper.floor_double(parent.posZ) >> 4)) continue;
+            for(int y = top; y >= bottom; y--) {
+                cocoon.setPosition(x + 0.5D, y, z + 0.5D);
+                if(!cocoon.site(parent, victim)) { if(cocoon.attachmentValid()) rejected = cocoon.placementFailure; continue; }
+                return cocoon.place(parent, victim, false, diagnose);
+            }
+        }
+        if(diagnose) failure(parent, "surface placement deferred: " + rejected);
+        return false;
     }
     public boolean attach(EntityGardener parent, Entity victim) {
         if(!suitable(victim) || !victim.isEntityAlive() || !parent.isHolding(victim)
-                || victim.chunkCoordX != (MathHelper.floor_double(posX) >> 4)
-                || victim.chunkCoordZ != (MathHelper.floor_double(posZ) >> 4)
+                || (MathHelper.floor_double(victim.posX) >> 4) != (MathHelper.floor_double(posX) >> 4)
+                || (MathHelper.floor_double(victim.posZ) >> 4) != (MathHelper.floor_double(posZ) >> 4)
                 || victimGoal(victim).squareDistanceTo(Vec3.createVectorHelper(victim.posX,
                         victim.boundingBox.minY + victim.height * 0.5D, victim.posZ)) > 0.16D) return false;
-        return place(parent, victim, true);
+        return place(parent, victim, true, true);
     }
-    private boolean place(EntityGardener parent, Entity victim, boolean consume) {
-        if(worldObj.isRemote || !enabled(parent) || !site(parent, victim)) return false;
+    private boolean place(EntityGardener parent, Entity victim, boolean consume, boolean diagnose) {
+        if(worldObj.isRemote) return false;
+        if(!enabled(parent)) { if(diagnose) admission(parent); return false; }
+        if(!site(parent, victim)) { if(diagnose) failure(parent, placementFailure); return false; }
         // Honor the existing cancelable mob-attack protection hook before a non-damaging enclosure.
-        if(consume && MinecraftForge.EVENT_BUS.post(new LivingAttackEvent((EntityLiving) victim, DamageSource.causeMobDamage(parent), 0F))) return false;
-        if(MinecraftForge.EVENT_BUS.post(new PlacementEvent(parent, victim, this))) return false;
-        if(isDead || !enabled(parent) || !site(parent, victim) || consume && (!victim.isEntityAlive() || !parent.isHolding(victim))) return false;
+        if(consume && MinecraftForge.EVENT_BUS.post(new LivingAttackEvent((EntityLiving) victim, DamageSource.causeMobDamage(parent), 0F))) {
+            if(diagnose) failure(parent, "attachment canceled by attack protection"); return false;
+        }
+        if(MinecraftForge.EVENT_BUS.post(new PlacementEvent(parent, victim, this))) {
+            if(diagnose) failure(parent, "entity creation canceled by cocoon placement event"); return false;
+        }
+        if(isDead || !enabled(parent) || !site(parent, victim) || consume && (!victim.isEntityAlive() || !parent.isHolding(victim))) {
+            if(diagnose) failure(parent, "placement invalidated during protection callbacks"); return false;
+        }
         duration = remaining = GeminiConfig.gardenerCocoonSeconds * 20;
         manual = GeminiSpawning.isManual(parent);
-        if(!worldObj.spawnEntityInWorld(this)) { super.setDead(); return false; }
+        if(!worldObj.spawnEntityInWorld(this)) {
+            if(diagnose) failure(parent, "entity creation canceled by entity admission"); super.setDead(); return false;
+        }
         // Source and structure occupy the same chunk at handoff. Failed admission never consumes prey.
-        if(isDead || consume && (!victim.isEntityAlive() || !parent.isHolding(victim))) { super.setDead(); return false; }
+        if(isDead || consume && (!victim.isEntityAlive() || !parent.isHolding(victim))) {
+            if(diagnose) failure(parent, "entity creation invalidated by admission callbacks"); super.setDead(); return false;
+        }
         if(consume) {
             victim.setDead();
             if(!victim.isDead) { super.setDead(); return false; }
@@ -168,6 +230,7 @@ public final class EntityGardenerCocoon extends Entity implements IGeminiCreatur
     }
     @Cancelable public static final class PlacementEvent extends Event {
         public final EntityGardener gardener;
+        /** Null only for saved surface biomass whose dead source entity is no longer available. */
         public final Entity victim;
         public final EntityGardenerCocoon cocoon;
         PlacementEvent(EntityGardener gardener, Entity victim, EntityGardenerCocoon cocoon) {
@@ -209,7 +272,7 @@ public final class EntityGardenerCocoon extends Entity implements IGeminiCreatur
         resolving = true;
         try {
             // Stable across retries/reloads, but distinct from the briefly coexisting empty shell.
-            UUID outputId = UUID.nameUUIDFromBytes(("gardener-woodcrawler:" + getUniqueID()).getBytes(StandardCharsets.UTF_8));
+            UUID outputId = outputIdentity(getUniqueID());
             if(GeminiPopulation.find(worldObj, outputId) != null) { finish(); return; }
             if(!worldObj.getGameRules().getGameRuleBooleanValue("doMobSpawning") || !WoodcrawlerSpawning.canConvert(worldObj)) return;
             EntityWoodcrawler output = new EntityWoodcrawler(worldObj);
@@ -243,6 +306,9 @@ public final class EntityGardenerCocoon extends Entity implements IGeminiCreatur
                 return; // Protection vetoes wait for the next retry, rather than trying every coordinate.
             }
         } finally { resolving = false; }
+    }
+    private static UUID outputIdentity(UUID cocoonId) {
+        return UUID.nameUUIDFromBytes(("gardener-woodcrawler:" + cocoonId).getBytes(StandardCharsets.UTF_8));
     }
     private void finish() { completed = true; dataWatcher.updateObject(22, (byte) 1); }
     @Override public boolean attackEntityFrom(DamageSource source, float amount) {
