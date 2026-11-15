@@ -109,7 +109,18 @@ public final class GeminiPopulation {
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void captiveMovement(net.minecraftforge.event.entity.living.LivingEvent.LivingUpdateEvent event) {
-        EntityGardener.updateCaptive(event.entityLiving);
+        // Only owned Underground Gardener prey skips native AI/gravity. Retain the base tick
+        // for damage immunity, potion effects, drowning and death; the parent moves it once.
+        if(EntityGardener.updateCaptiveMovement(event.entityLiving)) {
+            event.entityLiving.onEntityUpdate();
+            event.setCanceled(true);
+        }
+    }
+
+    @SubscribeEvent
+    public void captiveSuffocation(net.minecraftforge.event.entity.living.LivingAttackEvent event) {
+        if(event.source == net.minecraft.util.DamageSource.inWall && EntityGardener.preventsDraggingSuffocation(event.entityLiving))
+            event.setCanceled(true);
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
