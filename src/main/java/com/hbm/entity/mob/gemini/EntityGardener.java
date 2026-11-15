@@ -55,6 +55,8 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
     private int limbObstructionTicks, movementObstructionTicks;
     private HeldNavigation heldNavigation;
     private int smashCursor = -1, smashX, smashY, smashZ, smashRemoved;
+    private static final boolean CAPTURE_DIAGNOSTICS = Boolean.getBoolean("hbm.gardenerCaptureDiagnostics");
+    private long nextCaptureDiagnostic;
 
     public EntityGardener(World world) {
         super(world); setSize(5.8F, 8F); stepHeight = 1F; experienceValue = 80; func_110163_bv();
@@ -155,9 +157,10 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
             // During the ocean lift the real victim owns the contact point, including escape slack.
             if(captureState()) return Vec3.createVectorHelper(x,
                     y + (isOcean() ? 0 : gripHeight(target) - target.height * 0.5D), z);
+            if(!isOcean() && state() == REACH) y += gripHeight(target) - target.height * 0.5D;
             double length = Math.sqrt(x * x + z * z), scale = length > attackReach() ? attackReach() / length : 1D;
             return Vec3.createVectorHelper(x * scale, MathHelper.clamp_double(y,
-                    bodyOffset() + (isOcean() ? -28 : 0.3), bodyOffset() + (isOcean() ? 31 : 8)), z * scale);
+                    bodyOffset() + (isOcean() ? -28 : -8), bodyOffset() + (isOcean() ? 31 : 8)), z * scale);
         }
         return Vec3.createVectorHelper(aimX(), aimY(), aimZ());
     }
@@ -202,18 +205,24 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
                     && target.canBeCollidedWith() && target.width <= 8F && target.height <= 8F;
     }
     private boolean prey(Entity target) {
-        if(target == null || target == this || target instanceof IGeminiCreature || target instanceof IBossDisplayData
-                || !target.isEntityAlive() || target.worldObj != worldObj || !target.addedToChunk
-                || !suitablePrey(target)
-                || target.getEntityData().hasKey("MockeryCaptor")
-                || target.getEntityData().getLong("WoodcrawlerCocoonUntil") > worldObj.getTotalWorldTime()
-                || heldByOtherGardener(target)
-                || target.getEntityData().getLong("GardenerEscapeUntil") > worldObj.getTotalWorldTime()) return false;
+        return preyRejection(target) == null;
+    }
+    private String preyRejection(Entity target) {
+        if(target == null) return "No target";
+        if(target == this || target instanceof IGeminiCreature || target instanceof IBossDisplayData) return "Excluded creature";
+        if(!target.isEntityAlive() || target.worldObj != worldObj || !target.addedToChunk) return "Dead or unloaded prey";
+        if(!suitablePrey(target)) return "Unsuitable size or mount";
+        if(target.getEntityData().hasKey("MockeryCaptor")) return "Held by Mockery";
+        if(target.getEntityData().getLong("WoodcrawlerCocoonUntil") > worldObj.getTotalWorldTime()) return "Woodcrawler cocoon cooldown";
+        if(heldByOtherGardener(target)) return "Held by another Gardener";
+        if(target.getEntityData().getLong("GardenerEscapeUntil") > worldObj.getTotalWorldTime()) return "Gardener escape cooldown";
         if(target instanceof EntityPlayer && (((EntityPlayer) target).capabilities.disableDamage
-                || ((EntityPlayer) target).capabilities.isCreativeMode)) return false;
+                || ((EntityPlayer) target).capabilities.isCreativeMode)) return "Invulnerable player";
         if(target.riddenByEntity instanceof EntityPlayer && (((EntityPlayer) target.riddenByEntity).capabilities.disableDamage
-                || ((EntityPlayer) target.riddenByEntity).capabilities.isCreativeMode)) return false;
-        return inTerritory(target) && preyDistanceSq(target) <= (attackReach() + 7D) * (attackReach() + 7D);
+                || ((EntityPlayer) target.riddenByEntity).capabilities.isCreativeMode)) return "Invulnerable rider";
+        if(!inTerritory(target)) return "Outside territory";
+        if(preyDistanceSq(target) > (attackReach() + 7D) * (attackReach() + 7D)) return "Outside search reach";
+        return null;
     }
     /** Ceiling transport reaches from the upper body, rather than the ground-level territory band. */
     boolean canTransportTo(Vec3 point) {
@@ -228,12 +237,28 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
                 && owner.getUniqueID().toString().equals(target.getEntityData().getString("GardenerCaptor"));
     }
     private boolean reach(Entity target, double range) {
-        return prey(target) && preyDistanceSq(target) <= range * range
-                && (isOcean() || target.boundingBox.maxY >= boundingBox.minY - 2D
-                    && target.boundingBox.minY <= boundingBox.maxY + 2D)
-                && GardenerNests.loaded(worldObj, boundingBox.addCoord(target.posX - posX, target.posY - posY, target.posZ - posZ).expand(1, 1, 1))
-                && worldObj.func_147447_a(Vec3.createVectorHelper(posX, posY + getEyeHeight(), posZ),
-                    Vec3.createVectorHelper(target.posX, target.boundingBox.minY + target.height * 0.5D, target.posZ), false, true, false) == null;
+        return reachRejection(target, range) == null;
+    }
+    private String reachRejection(Entity target, double range) {
+        String eligibility = preyRejection(target);
+        if(eligibility != null) return eligibility;
+        if(preyDistanceSq(target) > range * range) return "Outside bounding-box reach";
+        // Use the existing search band beneath the body, including crater floors. Retain
+        // the narrower vertical approach limit outside that footprint.
+        if(!isOcean() && (target.boundingBox.maxY < boundingBox.minY - (beneathBody(target) ? 8D : 2D)
+                || target.boundingBox.minY > boundingBox.maxY + 2D)) return "Outside vertical reach";
+        if(!GardenerNests.loaded(worldObj, boundingBox.addCoord(target.posX - posX, target.posY - posY, target.posZ - posZ).expand(1, 1, 1)))
+            return "Unloaded approach";
+        // Block rays deliberately exclude our own body/limb entity collision boxes.
+        if(worldObj.func_147447_a(Vec3.createVectorHelper(posX, posY + getEyeHeight(), posZ),
+                Vec3.createVectorHelper(target.posX, target.boundingBox.minY + target.height * 0.5D, target.posZ), false, true, false) != null)
+            return "Blocked line of sight";
+        return null;
+    }
+    private boolean beneathBody(Entity target) {
+        return target != null && target.boundingBox.maxX >= boundingBox.minX && target.boundingBox.minX <= boundingBox.maxX
+                && target.boundingBox.maxZ >= boundingBox.minZ && target.boundingBox.minZ <= boundingBox.maxZ
+                && target.boundingBox.minY <= boundingBox.maxY;
     }
     private void findTarget() {
         Entity closest = null;
@@ -242,9 +267,10 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
         double scan = attackReach() + 7D;
         for(Object entry : worldObj.getEntitiesWithinAABBExcludingEntity(this, boundingBox.expand(scan, isOcean() ? 32 : 8, scan))) {
             Entity target = (Entity) entry;
-            if(!prey(target)) continue;
-            if(++examined > 32) break;
-            if(!reach(target, attackReach() + (target instanceof EntityPlayer ? 7D : 0D))) continue;
+            if(!prey(target)) { captureRejection(target, preyRejection(target)); continue; }
+            if(isOcean() && ++examined > 32) break;
+            String rejection = reachRejection(target, attackReach() + (target instanceof EntityPlayer ? 7D : 0D));
+            if(rejection != null) { captureRejection(target, rejection); continue; }
             if(!isOcean() && target instanceof EntityLivingBase) {
                 int x = MathHelper.floor_double(target.posX), y = MathHelper.floor_double(target.boundingBox.minY), z = MathHelper.floor_double(target.posZ);
                 if(worldObj.getBlock(x, y - 1, z) == com.hbm.blocks.ModBlocks.gardener_flesh
@@ -256,7 +282,17 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
                 }
             }
             double score = preyDistanceSq(target) + (target instanceof EntityPlayer ? 0 : 400D);
-            if(score < best) { best = score; closest = target; }
+            if(!isOcean()) {
+                // Do not abandon a meal under the body for a player outside capture range.
+                if(!beneathBody(target)) score += 10000D;
+                if(!tipInReach(target)) score += 20000D;
+            }
+            if(score < best) {
+                if(!isOcean() && beneathBody(target) && captureArm(target) < 0) {
+                    captureRejection(target, "No enabled tentacle with a clear reaching path"); continue;
+                }
+                best = score; closest = target;
+            }
         }
         preyTarget = closest;
         setAttackTarget(closest instanceof EntityLivingBase ? (EntityLivingBase) closest : null);
@@ -270,13 +306,14 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
         dataWatcher.updateObject(24, (float) (dx * scale));
         dataWatcher.updateObject(26, (float) (dz * scale));
         double y = target.boundingBox.minY + target.height * 0.5D - posY;
+        if(!isOcean() && !ground) y += gripHeight(target) - target.height * 0.5D;
         if(ground) {
             int x = MathHelper.floor_double(posX + dx * scale), z = MathHelper.floor_double(posZ + dz * scale);
             y = 0.3D;
             for(int dy = 3; dy >= -2; dy--) if(worldObj.getBlock(x, MathHelper.floor_double(posY) + dy - 1, z).getMaterial().blocksMovement()) { y = dy + 0.25D; break; }
         }
         dataWatcher.updateObject(25, (float) MathHelper.clamp_double(y,
-                bodyOffset() + (isOcean() ? -28D : 0.3D), bodyOffset() + (isOcean() ? 31D : 8D)));
+                bodyOffset() + (isOcean() ? -28D : ground ? 0.3D : -8D), bodyOffset() + (isOcean() ? 31D : 8D)));
     }
     private void begin(int next) {
         dataWatcher.updateObject(21, (byte) next);
@@ -287,6 +324,18 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
         if(captive != null || captureState()) MainRegistry.logger.info("[Gardener capture] gardener=" + getUniqueID()
                 + " captive=" + (captive == null ? "unknown" : captive.getUniqueID()) + " state=" + state()
                 + " ticks=" + captureTicks + ": " + reason);
+    }
+    private void captureRejection(Entity target, String reason) {
+        if(isOcean() || !CAPTURE_DIAGNOSTICS || reason == null || target == null || !suitablePrey(target)
+                || preyDistanceSq(target) > attackReach() * attackReach()
+                || worldObj.getTotalWorldTime() < nextCaptureDiagnostic) return;
+        nextCaptureDiagnostic = worldObj.getTotalWorldTime() + 100L;
+        double dx = target.posX - posX, dz = target.posZ - posZ;
+        MainRegistry.logger.info("[Gardener capture rejected] gardener=" + getEntityId() + " target=" + target.getEntityId()
+                + " horizontal=" + Math.sqrt(dx * dx + dz * dz) + " vertical=" + (target.boundingBox.minY - boundingBox.minY)
+                + " boxSeparation=" + Math.sqrt(preyDistanceSq(target)) + " eligible=" + prey(target)
+                + " state=" + state() + " cooldown=" + cooldown + " captive=" + (captive == null ? -1 : captive.getEntityId())
+                + " escapeUntil=" + target.getEntityData().getLong("GardenerEscapeUntil") + ": " + reason);
     }
     private void release(String reason) {
         captureDiagnostic(reason);
@@ -340,26 +389,32 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
             if(recovery[arm] > 0) mask |= 1 << arm;
         }
         dataWatcher.updateObject(27, (byte) mask);
-        if(ticksExisted % 20 == 1) { maintainParts(); if(captive == null && state() != RELEASE) findTarget(); }
+        if(ticksExisted % 20 == 1) {
+            maintainParts();
+            if(captive == null && (isOcean() ? state() != RELEASE : state() == IDLE)) findTarget();
+        }
         Entity target = preyTarget;
-        if(captive == null && !prey(target)) { preyTarget = null; setAttackTarget(null); dataWatcher.updateObject(20, -1); target = null; }
+        if(captive == null && !prey(target)) {
+            captureRejection(target, preyRejection(target));
+            preyTarget = null; setAttackTarget(null); dataWatcher.updateObject(20, -1); target = null;
+        }
         tickLocomotion(target);
         if(ticksExisted % 10 == 1 || dataWatcher.getWatchableObjectFloat(29) > 0) adaptLimbs();
         if(cooldown > 0) cooldown--;
-        if(state() == IDLE && target != null && cooldown == 0 && reach(target, attackReach())) {
-            int arm = -1;
-            double best = Double.MAX_VALUE;
-            for(int i = 0; i < 6; i++) if(!armDisabled(i)) {
-                Vec3 shoulder = GardenerPose.point(this, i, 1, 1);
-                double score = shoulder.squareDistanceTo(Vec3.createVectorHelper(target.posX, target.posY, target.posZ));
-                if(score < best) { best = score; arm = i; }
-            }
+        if(state() == IDLE && target != null && cooldown == 0 && reach(target, attackReach()) && (isOcean() || tipInReach(target))) {
+            int arm = captureArm(target);
             if(arm >= 0) {
                 dataWatcher.updateObject(23, (byte) arm);
-                boolean slam = !isOcean() && rand.nextInt(getHealth() < getMaxHealth() * 0.4F ? 2 : 3) == 0;
+                boolean slam = !isOcean() && !beneathBody(target) && rand.nextInt(getHealth() < getMaxHealth() * 0.4F ? 2 : 3) == 0;
                 aim(target, slam); begin(slam ? SLAM : REACH);
                 playSound("mob.ghast.charge", 0.65F, 0.5F);
+            } else {
+                captureRejection(target, "No enabled tentacle with a clear reaching path");
+                if(!isOcean()) cooldown = 20; // Retry transient obstruction without six probes every tick.
             }
+        } else if(!isOcean() && state() == IDLE && target != null) {
+            String rejection = cooldown > 0 ? "Attack cooldown" : reachRejection(target, attackReach());
+            captureRejection(target, rejection == null ? "Outside tentacle tip reach; approaching prey" : rejection);
         }
         if(state() != IDLE) tickAttack();
         if(!isOcean() && target != null && ++summonTicks >= (getHealth() < getMaxHealth() * 0.5F ? 200 : 400)) {
@@ -380,9 +435,15 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
         if(state() == REACH && attackTicks <= 34 && reach(target, attackReach())) aim(target, false);
         if(state() == REACH && attackTicks >= 24 && attackTicks <= 34) {
             Vec3 a = GardenerPose.point(this, attackArm(), 3, 1), b = GardenerPose.point(this, attackArm(), 4, 1);
-            for(Object entry : worldObj.getEntitiesWithinAABBExcludingEntity(this, GardenerPose.bounds(a, b, GardenerPose.RADIUS))) {
+            List<Entity> contacts = worldObj.getEntitiesWithinAABBExcludingEntity(this, GardenerPose.bounds(a, b, GardenerPose.RADIUS));
+            if(!isOcean() && target != null) { contacts.remove(target); contacts.add(0, target); }
+            boolean clear = clearLimb(attackArm());
+            for(Object entry : contacts) {
                 Entity victim = (Entity) entry;
-                if(!reach(victim, attackReach()) || !clearLimb(attackArm()) || !GardenerPose.touches(a, b, victim.boundingBox, GardenerPose.RADIUS)) continue;
+                String rejection = reachRejection(victim, attackReach());
+                if(rejection == null && !clear) rejection = "Reaching tentacle obstructed";
+                if(rejection == null && !GardenerPose.touches(a, b, victim.boundingBox, GardenerPose.RADIUS)) rejection = "Reaching tip missed prey bounds";
+                if(rejection != null) { if(attackTicks == 34 && victim == target) captureRejection(victim, rejection); continue; }
                 captive = preyTarget = victim; setAttackTarget(victim instanceof EntityLivingBase ? (EntityLivingBase) victim : null); dataWatcher.updateObject(20, victim.getEntityId());
                 begin(isOcean() ? HOLD : CAPTURE);
                 victim.getEntityData().setString("GardenerCaptor", getUniqueID().toString());
@@ -434,6 +495,44 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
                     || worldObj.func_147447_a(a, b, false, true, false) != null) return false;
         }
         return true;
+    }
+    private int captureArm(Entity target) {
+        int arm = -1;
+        double best = Double.MAX_VALUE;
+        for(int i = 0; i < 6; i++) if(!armDisabled(i)) {
+            Vec3 shoulder = GardenerPose.point(this, i, 1, 1);
+            double score = shoulder.squareDistanceTo(Vec3.createVectorHelper(target.posX, target.posY, target.posZ));
+            if(score < best && (isOcean() || clearReachLimb(i, target))) { best = score; arm = i; }
+        }
+        return arm;
+    }
+    /** Check the actual final reaching shape before committing to an arm, using blocks only. */
+    private boolean clearReachLimb(int arm, Entity target) {
+        Vec3 contact = reachContact(target);
+        for(int joint = 0; joint < GardenerPose.SEGMENTS; joint++) {
+            Vec3 a = GardenerPose.reachPoint(this, arm, joint, contact);
+            Vec3 b = GardenerPose.reachPoint(this, arm, joint + 1, contact);
+            AxisAlignedBB area = GardenerPose.bounds(a, b, GardenerPose.RADIUS);
+            if(!GardenerNests.loaded(worldObj, area)) return false;
+            for(Object entry : worldObj.func_147461_a(area))
+                if(GardenerPose.touches(a, b, (AxisAlignedBB) entry, GardenerPose.RADIUS)) return false;
+        }
+        return true;
+    }
+    private Vec3 reachContact(Entity target) {
+        double dx = target.posX - posX, dz = target.posZ - posZ;
+        double length = Math.sqrt(dx * dx + dz * dz);
+        double scale = length > attackReach() ? attackReach() / length : 1D;
+        return Vec3.createVectorHelper(dx * scale,
+                MathHelper.clamp_double(target.boundingBox.minY + gripHeight(target) - posY, -8D, 8D), dz * scale);
+    }
+    private boolean tipInReach(Entity target) {
+        Vec3 tip = reachContact(target).addVector(posX, posY, posZ);
+        AxisAlignedBB box = target.boundingBox;
+        double dx = Math.max(box.minX - tip.xCoord, Math.max(0D, tip.xCoord - box.maxX));
+        double dy = Math.max(box.minY - tip.yCoord, Math.max(0D, tip.yCoord - box.maxY));
+        double dz = Math.max(box.minZ - tip.zCoord, Math.max(0D, tip.zCoord - box.maxZ));
+        return dx * dx + dy * dy + dz * dz <= GardenerPose.RADIUS * GardenerPose.RADIUS;
     }
     /** Capture probes use solid block shapes, never the victim, our parts or non-solid entity AABBs. */
     private static double gripHeight(Entity victim) {
@@ -834,7 +933,7 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
     public void releaseForWorldUnload() { release("Chunk unloading: world unload"); }
     /** Short collision-tested steering probes instead of an enormous vanilla cave path search. */
     private void tickLocomotion(Entity target) {
-        if(captive != null || state() != IDLE) {
+        if(captive != null || state() != IDLE || !isOcean() && target != null && tipInReach(target) && reach(target, attackReach())) {
             if(!isOcean()) travelX = travelY = travelZ = 0;
             dataWatcher.updateObject(29, 0F); return;
         }

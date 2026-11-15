@@ -24,6 +24,14 @@ public final class GardenerPose {
 
     /** Prospective contact for collision probes; never changes the synchronized pose. */
     static Vec3 point(EntityGardener boss, int arm, int joint, float partial, double extension, Vec3 contact) {
+        return point(boss, arm, joint, partial, extension, contact, false);
+    }
+
+    static Vec3 reachPoint(EntityGardener boss, int arm, int joint, Vec3 contact) {
+        return point(boss, arm, joint, 1, 1, contact, true);
+    }
+
+    private static Vec3 point(EntityGardener boss, int arm, int joint, float partial, double extension, Vec3 contact, boolean reaching) {
         if(boss.isOcean()) return OceanGardenerPose.point(boss, arm, joint, partial);
         double t = joint / (double) SEGMENTS, angle = ANGLE[arm];
         double age = boss.isAwake() ? boss.worldObj.getTotalWorldTime() + partial : 0;
@@ -49,13 +57,13 @@ public final class GardenerPose {
             x += (hx - x) * blend; y += (hy - y) * blend; z += (hz - z) * blend;
             extension += (1D - extension) * blend;
         }
-        if(arm == boss.attackArm() && boss.state() != EntityGardener.IDLE && !boss.captureState() && boss.state() != EntityGardener.RELEASE) {
+        if(reaching || arm == boss.attackArm() && boss.state() != EntityGardener.IDLE && !boss.captureState() && boss.state() != EntityGardener.RELEASE) {
             double time = boss.stateTime(partial);
-            double blend = boss.state() == EntityGardener.REACH ? Math.min(1D, time / 24D)
+            double blend = reaching ? 1D : boss.state() == EntityGardener.REACH ? Math.min(1D, time / 24D)
                     : boss.state() == EntityGardener.RECOVER || boss.state() == EntityGardener.RELEASE ? Math.max(0D, 1D - time / 24D) : 1D;
             double bend = t * t * blend;
             extension += (1D - extension) * blend;
-            Vec3 aim = boss.limbAim(partial);
+            Vec3 aim = reaching ? contact : boss.limbAim(partial);
             x += (aim.xCoord - Math.cos(angle) * RADIAL[4]) * bend;
             z += (aim.zCoord - Math.sin(angle) * RADIAL[4]) * bend;
             y += (aim.yCoord - HEIGHT[4]) * bend;
@@ -65,7 +73,7 @@ public final class GardenerPose {
                 y = y * (1D - blend) + aim.yCoord * blend;
                 z = z * (1D - blend) + aim.zCoord * blend;
             }
-            if(boss.state() == EntityGardener.SLAM)
+            if(!reaching && boss.state() == EntityGardener.SLAM)
                 y += Math.sin(Math.min(1D, time / 26D) * Math.PI) * 4D * t;
         }
         // Fold optional limbs back toward their shoulder when an egg is used in a smaller cave.

@@ -131,3 +131,7 @@ mods/RX-RNTM*.jar
 A running JVM can have a stalled server thread. Before forced termination on Linux, use `jstack <pid> > thread-dump.txt` as the JVM's operating-system user, or `kill -3 <pid>` and retain JVM console/log output. Capture two or three dumps several seconds apart where possible. Inspect `"Server thread"` for an unchanged loop, monitor owner or blocking electrical callback. On Java 8 Windows, use the JDK's `jstack.exe <pid>`.
 
 Keep preceding logs, mod versions, machine JSON, recipes and network arrangement. Electrical guard warnings identify network/source/destination, transfer quantities, work and elapsed time; `/ntmpowerstats` retains the latest abnormal report. Enable `1.45_enablePowerNetDiagnostics` for additional topology/transfer counters when needed. Normal zero electrical acceptance does not warn every tick.
+
+## Underground Gardener capture diagnostics
+
+Add `-Dhbm.gardenerCaptureDiagnostics=true` to the server's JVM arguments (or the client JVM for an integrated server) to log nearby capture rejections. This is disabled by default and requires a restart. Each Gardener emits at most one rejection per 100 world ticks, with the actual eligibility, reach, obstruction, missed-contact or cooldown reason, entity IDs, distances, bounding-box separation, state and current captive. Existing capture-ending and ceiling-fallback messages remain available without this option. Remove the JVM argument after diagnosis.
