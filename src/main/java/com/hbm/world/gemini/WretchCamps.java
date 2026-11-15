@@ -323,6 +323,8 @@ public final class WretchCamps extends WorldSavedData {
         }
         @SubscribeEvent(priority = EventPriority.LOWEST) public void place(BlockEvent.PlaceEvent event) {
             if(event.world.isRemote || event.isCanceled()) return;
+            // Checked organic nest generation uses Forge placement events, but is not player construction.
+            if(GardenerNests.placingNest() && event.player instanceof net.minecraftforge.common.util.FakePlayer) return;
             WretchCamps data = get(event.world);
             if(event instanceof BlockEvent.MultiPlaceEvent) {
                 for(BlockSnapshot snapshot : ((BlockEvent.MultiPlaceEvent) event).getReplacedBlockSnapshots()) data.protect(snapshot.x, snapshot.z);

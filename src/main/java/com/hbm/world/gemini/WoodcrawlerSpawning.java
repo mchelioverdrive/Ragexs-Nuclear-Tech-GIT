@@ -29,8 +29,11 @@ public final class WoodcrawlerSpawning {
 		return GeminiPopulation.canAdmit(world, EntityWoodcrawler.class, candidate, GeminiConfig.woodcrawlerMaxLoaded);
 	}
 	public static boolean canConvert(World world) {
+		return canConvert(world, null);
+	}
+	public static boolean canConvert(World world, net.minecraft.entity.Entity source) {
 		return GeminiInvasionManager.canActivityOccur(world) && world.difficultySetting != EnumDifficulty.PEACEFUL
-				&& GeminiPopulation.canAdmit(world, EntityWoodcrawler.class, null, GeminiConfig.woodcrawlerMaxLoaded);
+				&& GeminiPopulation.canAdmitHatch(world, EntityWoodcrawler.class, GeminiConfig.woodcrawlerMaxLoaded, source);
 	}
 
 	@SubscribeEvent(priority = EventPriority.LOWEST)
@@ -47,7 +50,9 @@ public final class WoodcrawlerSpawning {
 		if(event.world.isRemote || !(event.entity instanceof EntityWoodcrawler)) return;
 		EntityWoodcrawler mob = (EntityWoodcrawler) event.entity;
 		if(!mob.addedToChunk && !(mob.getEntityData().getBoolean("WoodcrawlerConverted")
-				? canConvert(event.world) : canSpawn(event.world, mob))) event.setCanceled(true);
+				? GeminiInvasionManager.canActivityOccur(event.world) && event.world.difficultySetting != EnumDifficulty.PEACEFUL
+					&& GeminiPopulation.canAdmit(event.world, EntityWoodcrawler.class, mob, GeminiConfig.woodcrawlerMaxLoaded)
+				: canSpawn(event.world, mob))) event.setCanceled(true);
 	}
 
 	@SubscribeEvent

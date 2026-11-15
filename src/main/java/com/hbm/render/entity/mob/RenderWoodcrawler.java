@@ -23,15 +23,16 @@ public final class RenderWoodcrawler extends RenderLiving {
 	@Override
 	protected void preRenderCallback(EntityLivingBase entity, float partial) {
 		EntityWoodcrawler mob = (EntityWoodcrawler) entity;
-		shadowSize = 0.4F * (1 - mob.prevBurrowDepth - (mob.burrowDepth - mob.prevBurrowDepth) * partial);
+		shadowSize = 0.4F * (1 - mob.burrowProgress(partial));
 	}
 
 	@Override
 	public void doRender(Entity entity, double x, double y, double z, float yaw, float partial) {
-		if(((EntityWoodcrawler) entity).isDormant() || ((EntityWoodcrawler) entity).isUndergroundEmerging()) { shadowSize = 0; return; }
+		EntityWoodcrawler crawler = (EntityWoodcrawler) entity;
+		if(crawler.isUndergroundEmerging() || crawler.isDormant() && crawler.burrowProgress(partial) >= 0.999F) { shadowSize = 0; return; }
 		super.doRender(entity, x, y, z, yaw, partial);
 		EntityWoodcrawler mob = (EntityWoodcrawler) entity;
-		if(mob.isProbing() && !mob.isInvisible() && mob.isEntityAlive()) renderProboscis(mob, x, y, z, partial);
+		if(mob.isProbing() && !mob.isBurrowing() && !mob.isInvisible() && mob.isEntityAlive()) renderProboscis(mob, x, y, z, partial);
 		EntityLivingBase target = mob.getTendrilTarget();
 		if(!mob.isGrabbing() || target == null || mob.isInvisible() || !mob.isEntityAlive()
 				|| mob.isBurrowing() || mob.getDistanceSqToEntity(target) > 36 || !mob.hasClearTendrils(target, partial)) return;

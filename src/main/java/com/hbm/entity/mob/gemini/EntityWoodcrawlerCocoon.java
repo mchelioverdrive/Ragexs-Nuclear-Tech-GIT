@@ -83,7 +83,8 @@ public final class EntityWoodcrawlerCocoon extends Entity implements IGeminiCrea
 	/** Does not alter terrain, load chunks, or consume the source on a vetoed spawn. */
 	public static EntityWoodcrawlerCocoon place(EntityWoodcrawler carrier, NBTTagCompound snapshot, double x, double y, double z,
 			int elapsed, byte previousDecision) {
-		if(carrier.worldObj.isRemote || !GeminiSpawning.canAct(carrier, 1)) return null;
+		if(carrier.worldObj.isRemote || !GeminiSpawning.canAct(carrier, 1)
+				|| !GeminiPopulation.canAdmitWoodcrawlerCocoon(carrier.worldObj)) return null;
 		EntityWoodcrawlerCocoon nest = new EntityWoodcrawlerCocoon(carrier.worldObj);
 		nest.victim = (NBTTagCompound) snapshot.copy();
 		nest.remainingTicks = Math.max(0, GeminiConfig.woodcrawlerConversionSeconds * 20 - elapsed);
@@ -154,8 +155,8 @@ public final class EntityWoodcrawlerCocoon extends Entity implements IGeminiCrea
 			if(!releasing) {
 				boolean fake = shouldConvertToFakePerson(); // Commit the outcome before admission/event retries.
 				// Population pressure is temporary, including a zero cap. It must not consume failure time.
-				if(!GeminiPopulation.canAdmit(worldObj, fake ? EntityFakePerson.class : EntityWoodcrawler.class,
-						null, fake ? GeminiConfig.fakePersonMaxLoaded : GeminiConfig.woodcrawlerMaxLoaded)) return;
+				if(!GeminiPopulation.canAdmitHatch(worldObj, fake ? EntityFakePerson.class : EntityWoodcrawler.class,
+						fake ? GeminiConfig.fakePersonMaxLoaded : GeminiConfig.woodcrawlerMaxLoaded, this)) return;
 				WoodcrawlerConversionEvent event = new WoodcrawlerConversionEvent(this, victim);
 				MinecraftForge.EVENT_BUS.post(event);
 				output = event.getReplacement();
@@ -186,7 +187,7 @@ public final class EntityWoodcrawlerCocoon extends Entity implements IGeminiCrea
 					if(other != original && !other.isDead && other.preventEntitySpawning) { occupied = true; break; }
 				}
 				if(occupied) continue;
-				if(worldObj.spawnEntityInWorld(output)) {
+				if(GeminiPopulation.spawnFromCocoon(output, this)) {
 					if(original != null) {
 						original.setDead();
 						if(!original.isDead) { output.setDead(); beginRelease(); return; }

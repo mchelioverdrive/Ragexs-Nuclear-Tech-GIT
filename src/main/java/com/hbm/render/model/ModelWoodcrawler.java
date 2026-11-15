@@ -98,7 +98,7 @@ public final class ModelWoodcrawler extends ModelBase {
 		setRotationAngles(stride, amount, age, yaw, pitch, scale, entity);
 		EntityWoodcrawler mob = (EntityWoodcrawler) entity;
 		float partial = MathHelper.clamp_float(age - mob.ticksExisted, 0, 1);
-		float depth = mob.prevBurrowDepth + (mob.burrowDepth - mob.prevBurrowDepth) * partial;
+		float depth = mob.burrowProgress(partial);
 		GL11.glPushMatrix();
 		try {
 			// Positive model Y points into the ground. Keep the authoritative hitbox at the surface.
@@ -127,9 +127,12 @@ public final class ModelWoodcrawler extends ModelBase {
 		float climb = mob.prevClimbBlend + (mob.climbBlend - mob.prevClimbBlend) * partial;
 		float crouch = mob.prevCrouchBlend + (mob.crouchBlend - mob.prevCrouchBlend) * partial;
 		float stalk = mob.prevStalkBlend + (mob.stalkBlend - mob.prevStalkBlend) * partial;
-		float attack = mob.getGrabExtension(partial);
-		float depth = mob.prevBurrowDepth + (mob.burrowDepth - mob.prevBurrowDepth) * partial;
-		float movement = MathHelper.clamp_float(amount * 2, 0, 1) * (1 - depth);
+		float depth = mob.burrowProgress(partial);
+		float burrow = mob.isBurrowing() ? 1F : 0F;
+		climb *= 1 - burrow;
+		stalk *= 1 - burrow;
+		float attack = mob.getGrabExtension(partial) * (1 - burrow);
+		float movement = MathHelper.clamp_float(amount * 2, 0, 1) * (1 - burrow);
 		thorax.rotationPointY = mob.getBodyModelY(partial);
 		// The central strut remains stable; small independent motions live in the neck and appendages.
 		thorax.rotateAngleX = thorax.rotateAngleZ = 0;
@@ -142,12 +145,12 @@ public final class ModelWoodcrawler extends ModelBase {
 		cocoon.rotateAngleX = MathHelper.sin(stride * 0.65F) * movement * 0.06F;
 		for(int i = 0; i < feelers.length; i++) {
 			feelers[i].rotateAngleX = 0.15F + MathHelper.sin(age * 0.045F + i * 1.7F) * 0.09F;
-			feelers[i].rotateAngleZ = (i % 2 == 0 ? 1 : -1) * (0.18F + MathHelper.sin(age * 0.031F + i) * 0.07F);
+			feelers[i].rotateAngleZ = (i % 2 == 0 ? 1 : -1) * (0.18F + MathHelper.sin(age * 0.031F + i) * 0.07F) * (1 - depth);
 		}
 		for(int i = 0; i < tendrils.length; i++) {
 			// Active hooks are drawn by the renderer from these exact sockets to live prey.
 			tendrils[i].showModel = !mob.isGrabbing() || mob.getTendrilTarget() == null;
-			tendrils[i].rotateAngleX = -0.14F - crouch * 1.2F + MathHelper.sin(age * 0.04F + i * 2) * 0.09F;
+			tendrils[i].rotateAngleX = -0.14F - crouch * 1.2F + MathHelper.sin(age * 0.04F + i * 2) * 0.09F - depth * 1.2F;
 			tendrils[i].rotateAngleZ = (i == 0 ? 1 : -1) * (0.12F + MathHelper.sin(age * 0.033F) * 0.05F);
 			tips[i].rotateAngleX = -0.2F + MathHelper.sin(age * 0.05F + i) * 0.1F;
 			hooks[i].rotateAngleX = 0.75F;
@@ -178,14 +181,17 @@ public final class ModelWoodcrawler extends ModelBase {
 				footZ = -14 - attack * 20 + MathHelper.sin(age * 0.027F + i) * 1.5F;
 				footY += (-26 - footY) * climb;
 				footZ += (-28 - footZ) * climb;
-				if(mob.getHuntState() == EntityWoodcrawler.BANG) {
+				if(!mob.isBurrowing() && mob.getHuntState() == EntityWoodcrawler.BANG) {
 					float impact = Math.max(0, MathHelper.sin(age * 0.55F + i * 2));
 					footZ -= impact * 14; footY += impact * 9;
 				}
 			}
-			footX *= 1 - depth * 0.3F;
-			footY -= depth * 12;
-			solveLeg(i, side, footX - hips[i].rotationPointX, footY - hips[i].rotationPointY, footZ - hipZ, crouch, climb);
+			// Pull feet and knees under the body during descent; reverse the same pose during the rise.
+			footX += (side * 3F - footX) * depth;
+			footZ += (hipZ - footZ) * depth;
+			footY += (hips[i].rotationPointY + 8F - footY) * depth;
+			solveLeg(i, side, footX - hips[i].rotationPointX, footY - hips[i].rotationPointY, footZ - hipZ,
+					Math.max(crouch, depth), climb);
 		}
 	}
 

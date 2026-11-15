@@ -90,7 +90,6 @@ public final class EntityGardenerCocoon extends Entity implements IGeminiCreatur
     }
     private static boolean enabled(EntityGardener parent) {
         return !parent.isOcean() && GeminiSpawning.canAct(parent, 3)
-                && (GeminiSpawning.manualAdmission(parent) || parent.worldObj.getGameRules().getGameRuleBooleanValue("doMobSpawning"))
                 && GeminiPopulation.canAdmitCocoon(parent.worldObj);
     }
     static void failure(EntityGardener parent, String reason) {
@@ -100,8 +99,7 @@ public final class EntityGardenerCocoon extends Entity implements IGeminiCreatur
     static boolean admission(EntityGardener parent) {
         if(enabled(parent)) { parent.reportCocoonAdmission(null); return true; }
         parent.reportCocoonAdmission(!GeminiSpawning.canAct(parent, 3) ? "activity/progression rejects cocoon"
-                : !GeminiSpawning.manualAdmission(parent) && !parent.worldObj.getGameRules().getGameRuleBooleanValue("doMobSpawning")
-                ? "doMobSpawning rejects natural cocoon" : "population limits reject cocoon");
+                : "population limits reject cocoon");
         return false;
     }
     private static boolean naturalSupport(World world, int x, int y, int z, boolean hanging) {
@@ -325,7 +323,7 @@ public final class EntityGardenerCocoon extends Entity implements IGeminiCreatur
             // Stable across retries/reloads, but distinct from the briefly coexisting empty shell.
             UUID outputId = outputIdentity(getUniqueID());
             if(GeminiPopulation.find(worldObj, outputId) != null) { finish(); return; }
-            if(!worldObj.getGameRules().getGameRuleBooleanValue("doMobSpawning") || !WoodcrawlerSpawning.canConvert(worldObj)) return;
+            if(!WoodcrawlerSpawning.canConvert(worldObj, this)) return;
             EntityWoodcrawler output = new EntityWoodcrawler(worldObj);
             NBTTagCompound identity = new NBTTagCompound();
             identity.setLong("UUIDMost", outputId.getMostSignificantBits());
@@ -355,7 +353,7 @@ public final class EntityGardenerCocoon extends Entity implements IGeminiCreatur
                 }
                 if(occupied) continue;
                 if(underground) output.beginCocoonEmergence();
-                if(worldObj.spawnEntityInWorld(output)) finish();
+                if(GeminiPopulation.spawnFromCocoon(output, this)) finish();
                 return; // Protection vetoes wait for the next retry, rather than trying every coordinate.
             }
         } finally { resolving = false; }

@@ -16,7 +16,7 @@ public final class GeminiConfig {
 	public static int woodcrawlerStalkSeconds = 6;
 	public static int woodcrawlerMemorySeconds = 20;
 	public static int woodcrawlerSpawnWeight = 2;
-	public static int woodcrawlerMaxLoaded = 8;
+	public static int woodcrawlerMaxLoaded = 16, woodcrawlerMaxPending = 16;
 	public static int fakePersonMaxLoaded = 16;
 	public static float fakePersonConversionChance = 0.80F;
 	public static int woodcrawlerConversionSeconds = 30;
@@ -33,9 +33,10 @@ public final class GeminiConfig {
 	public static boolean gardenerEnabled = true;
 	public static int gardenerNestChance = 8;
 	public static int gardenerNestLimit = 32;
+	public static int gardenerNestMinDistance = 64, gardenerNestMaxDistance = 160, gardenerNestsPerArea = 3;
 	public static int gardenerSupportLimit = 4;
 	public static int gardenerBlocksPerSlam = 12;
-	public static int gardenerCocoonSeconds = 120, gardenerCocoonMaxLoaded = 8;
+	public static int gardenerCocoonSeconds = 120, gardenerCocoonMaxLoaded = 16;
 	public static boolean oceanGardenerEnabled = true;
 	public static int oceanGardenerMaxLoaded = 1, oceanGardenerChance = 32;
 	public static boolean wretchEnabled = true;
@@ -83,8 +84,10 @@ public final class GeminiConfig {
 				"How long a Woodcrawler remembers the last observed target position after losing sight.");
 		woodcrawlerSpawnWeight = config.getInt("woodcrawlerSpawnWeight", CATEGORY, 2, 0, 20,
 				"Forest monster spawn weight after Mars. Zero disables both natural and invasion Woodcrawler spawns.");
-		woodcrawlerMaxLoaded = config.getInt("woodcrawlerMaxLoaded", CATEGORY, 8, 0, 64,
-				"Maximum loaded Woodcrawlers for admitting natural spawns in the Overworld. Zero disables natural spawns; manual spawn eggs bypass the cap and saved creatures are retained.");
+		woodcrawlerMaxLoaded = config.getInt("woodcrawlerMaxLoaded", CATEGORY, 16, 0, 64,
+				"Maximum loaded Woodcrawlers for natural and reproduction admissions. Manual spawn eggs bypass the cap; saved creatures are retained.");
+		woodcrawlerMaxPending = config.getInt("woodcrawlerMaxPending", CATEGORY, 16, 0, 64,
+				"Combined loaded Gardener and villager-processing cocoons. Undecided outputs reserve biomass conservatively. Also bounded by the combined Gemini cap; existing cocoons are retained.");
 		fakePersonMaxLoaded = config.getInt("fakePersonMaxLoaded", CATEGORY, 16, 0, 128,
 				"Maximum loaded Fake People for admitting conversions. Zero disables conversions; manual spawn eggs bypass the cap and saved creatures are retained. No independent natural or invasion spawns are added.");
 		fakePersonConversionChance = config.getFloat("fakePersonConversionChance", CATEGORY, 0.80F, 0F, 1F,
@@ -156,15 +159,33 @@ public final class GeminiConfig {
 		gardenerNestChance = config.getInt("nestChance", gardener, 8, 1, 10000,
 				"One-in-N roll per active Overworld minute for up to eight loaded cave columns. No chunk loading or offline catch-up.");
 		gardenerNestLimit = config.getInt("nestLimit", gardener, 32, 0, 64,
-				"World lifetime nest limit, including abandoned partial nests and defeated bosses. Zero disables new nests; saved jobs can finish. Nests stay 256 blocks apart.");
+				"World lifetime nest limit, including abandoned partial nests and defeated bosses. Zero disables new nests; saved jobs can finish. Nests stay at least 64 blocks apart.");
+		gardenerNestMinDistance = config.getInt("nestMinDistance", gardener, 64, 48, 512,
+				"Minimum nest-center distance from a saved survival anchor. Beds are preferred; bedless anchors require sustained construction activity.");
+		gardenerNestMaxDistance = config.getInt("nestMaxDistance", gardener, 160, 48, 512,
+				"Maximum nest-center distance from a survival anchor. Raised to the minimum if smaller. Only loaded terrain is searched.");
+		gardenerNestMaxDistance = Math.max(gardenerNestMinDistance, gardenerNestMaxDistance);
+		gardenerNestsPerArea = config.getInt("nestsPerArea", gardener, 3, 0, 8,
+				"Lifetime nests per shared survival area, distributed in angular sectors. Nearby players share anchors; travel never moves an established anchor.");
 		gardenerSupportLimit = config.getInt("supportLimit", gardener, 4, 0, 16,
 				"Lifetime successful sterile Nature's Mockery summons per Gardener. Also respects Mockery and disease admission settings.");
 		gardenerBlocksPerSlam = config.getInt("blocksPerSlam", gardener, 12, 0, 32,
 				"Maximum natural/tissue block removals per major slam inside the nest. Four coordinates per tick; respects mobGriefing and protection events.");
 		gardenerCocoonSeconds = config.getInt("cocoonSeconds", gardener, 120, 1, 3600,
 				"Loaded active seconds after five-second cocoon growth to produce a Woodcrawler. Saved per cocoon; unrelated to Woodcrawler-to-Fake-Person conversion.");
-		gardenerCocoonMaxLoaded = config.getInt("cocoonMaxLoaded", gardener, 8, 0, 64,
+		gardenerCocoonMaxLoaded = config.getInt("cocoonMaxLoaded", gardener, 16, 0, 64,
 				"Maximum loaded Gardener cocoons, also bounded by the combined Gemini cap. Zero disables new cocoons. Hatchlings obey normal Woodcrawler conversion admission limits, including for manual parents.");
+		int populationVersion = config.getInt("woodcrawlerPopulationDefaultsVersion", CATEGORY, 0, 0, 1,
+				"One-time migration of previous default active/biomass limits (8 to 16). Other custom limits and all saved entities are retained.");
+		if(populationVersion == 0) {
+			if(woodcrawlerMaxLoaded == 8) {
+				woodcrawlerMaxLoaded = 16; config.get(CATEGORY, "woodcrawlerMaxLoaded", 16).set(16);
+			}
+			if(gardenerCocoonMaxLoaded == 8) {
+				gardenerCocoonMaxLoaded = 16; config.get(gardener, "cocoonMaxLoaded", 16).set(16);
+			}
+			config.get(CATEGORY, "woodcrawlerPopulationDefaultsVersion", 0).set(1);
+		}
 		String ocean = CATEGORY + ".oceanGardener";
 		oceanGardenerEnabled = config.getBoolean("enabled", ocean, true,
 				"Enable rare phase-3 Ocean Gardeners in loaded deep Overworld oceans after Mars. Saved residents remain dormant when disabled.");

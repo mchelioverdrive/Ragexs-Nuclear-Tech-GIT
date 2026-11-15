@@ -204,6 +204,11 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 	public boolean isBurrowing() { return getBurrowTick() != 0; }
 	public boolean isDormant() { return getBurrowTick() == 70; }
 	public boolean isUndergroundEmerging() { return getBurrowTick() == 71; }
+	/** Same synchronized 20-tick entry/rise timeline on every client; ease the endpoints without moving the hitbox. */
+	public float burrowProgress(float partial) {
+		float depth = MathHelper.clamp_float(prevBurrowDepth + (burrowDepth - prevBurrowDepth) * partial, 0, 1);
+		return depth * depth * (3F - 2F * depth);
+	}
 	public boolean isCocoonEmerging() { return emergence.active(); }
 	public void beginCocoonEmergence() {
 		if(!worldObj.isRemote) { resetHunting(); daytimeBurrow = false; emergence.begin(); }
@@ -675,7 +680,7 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 		getNavigator().clearPathEntity();
 		motionX = motionZ = 0;
 		if(daytimeBurrow) {
-			if(getHealth() <= 0 || !burrowGround(posX, posY, posZ)) { emerge(); return; }
+			if((tick <= 20 || tick == 70) && (getHealth() <= 0 || !burrowGround(posX, posY, posZ))) { emerge(); return; }
 			if(tick < 20) dataWatcher.updateObject(26, Byte.valueOf((byte) (tick + 1)));
 			else if(tick <= 20 || tick == 70) {
 				dataWatcher.updateObject(26, Byte.valueOf((byte) 70));
@@ -687,7 +692,10 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 			return;
 		}
 		if(getHealth() <= 0 || !onGround || !burrowGround(posX, posY, posZ)) {
-			finishBurrow();
+			// Reverse a partial descent instead of snapping the submerged model back to standing.
+			if(tick <= 40) emerge();
+			else if(tick >= 60) finishBurrow();
+			else dataWatcher.updateObject(26, Byte.valueOf((byte) (tick + 1)));
 			return;
 		}
 		if(tick == 32 && burrowRoute(burrowX, burrowY, burrowZ)) {

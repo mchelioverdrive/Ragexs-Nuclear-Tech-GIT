@@ -10,6 +10,7 @@ import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
 import net.minecraft.entity.EntityLiving;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.world.World;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
@@ -20,22 +21,32 @@ import net.minecraftforge.event.entity.living.LivingSpawnEvent;
 /** Server-thread loaded membership. Never scans the world's general entity list or holds chunk tickets. */
 public final class GeminiPopulation {
     private static final Map<World, Map<UUID, EntityLiving>> WORLDS = new HashMap<World, Map<UUID, EntityLiving>>();
-    private static final Map<World, Map<UUID, EntityGardenerCocoon>> COCOONS = new HashMap<World, Map<UUID, EntityGardenerCocoon>>();
+    private static final Map<World, Map<UUID, Entity>> COCOONS = new HashMap<World, Map<UUID, Entity>>();
+    // Only populated around synchronous spawn callbacks, then removed in finally. No saved/source entity references.
+    private static final Map<EntityLiving, Entity> HATCHING = new java.util.IdentityHashMap<EntityLiving, Entity>();
 
     public static boolean hasCocoon(World world, UUID id) {
-        Map<UUID, EntityGardenerCocoon> cocoons = COCOONS.get(world);
-        EntityGardenerCocoon cocoon = cocoons == null ? null : cocoons.get(id);
+        Map<UUID, Entity> cocoons = COCOONS.get(world);
+        Entity cocoon = cocoons == null ? null : cocoons.get(id);
         return cocoon != null && !cocoon.isDead;
     }
 
     public static boolean canAdmitCocoon(World world) {
-        if(world.isRemote || GeminiConfig.gardenerCocoonMaxLoaded <= 0 || GeminiConfig.maxLoadedCreatures <= 0) return false;
-        int count = 0, total = 0;
-        Map<UUID, EntityGardenerCocoon> cocoons = COCOONS.get(world);
-        if(cocoons != null) for(EntityGardenerCocoon cocoon : cocoons.values()) if(!cocoon.isDead) count++;
+        return canAdmitBiomass(world, true);
+    }
+    public static boolean canAdmitWoodcrawlerCocoon(World world) { return canAdmitBiomass(world, false); }
+    private static boolean canAdmitBiomass(World world, boolean gardener) {
+        if(world.isRemote || GeminiConfig.woodcrawlerMaxPending <= 0 || GeminiConfig.maxLoadedCreatures <= 0
+                || gardener && GeminiConfig.gardenerCocoonMaxLoaded <= 0) return false;
+        int count = 0, total = 0, gardens = 0;
+        Map<UUID, Entity> cocoons = COCOONS.get(world);
+        if(cocoons != null) for(Entity cocoon : cocoons.values()) if(!cocoon.isDead) {
+            count++; if(cocoon instanceof EntityGardenerCocoon) gardens++;
+        }
         Map<UUID, EntityLiving> living = WORLDS.get(world);
         if(living != null) for(EntityLiving mob : living.values()) if(!mob.isDead) total++;
-        return count < GeminiConfig.gardenerCocoonMaxLoaded && count + total < GeminiConfig.maxLoadedCreatures;
+        return (!gardener || gardens < GeminiConfig.gardenerCocoonMaxLoaded) && count < GeminiConfig.woodcrawlerMaxPending
+                && count + total < GeminiConfig.maxLoadedCreatures;
     }
 
     private static Map<UUID, EntityLiving> members(World world) {
@@ -51,9 +62,22 @@ public final class GeminiPopulation {
     }
 
     public static boolean canAdmit(World world, Class<? extends EntityLiving> type, EntityLiving candidate, int limit) {
+        return canAdmit(world, type, candidate, limit, HATCHING.get(candidate));
+    }
+    /** The source reservation is exchanged for its output, so full pending/global caps cannot deadlock hatching. */
+    public static boolean canAdmitHatch(World world, Class<? extends EntityLiving> type, int limit, Entity source) {
+        return canAdmit(world, type, null, limit, source);
+    }
+    private static boolean canAdmit(World world, Class<? extends EntityLiving> type, EntityLiving candidate, int limit, Entity source) {
         if(GeminiSpawning.manualAdmission(candidate)) return true;
         if(world.isRemote || limit <= 0 || GeminiConfig.maxLoadedCreatures <= 0) return false;
         int total = 0, same = 0;
+        // Apply pending biomass to Woodcrawler reproduction admissions without changing unrelated creature caps.
+        boolean woodcrawler = type == EntityWoodcrawler.class;
+        Map<UUID, Entity> cocoons = COCOONS.get(world);
+        if(woodcrawler && cocoons != null) for(Entity cocoon : cocoons.values())
+            if(cocoon != source && !cocoon.isDead) total++;
+        if(total >= GeminiConfig.maxLoadedCreatures) return false;
         Map<UUID, EntityLiving> members = WORLDS.get(world);
         if(members == null) return true;
         for(EntityLiving mob : members.values()) {
@@ -62,6 +86,11 @@ public final class GeminiPopulation {
             if(++total >= GeminiConfig.maxLoadedCreatures || (type == EntityGardener.class ? mob.getClass() == type : type.isInstance(mob)) && ++same >= limit) return false;
         }
         return true;
+    }
+    public static boolean spawnFromCocoon(EntityLiving output, Entity source) {
+        HATCHING.put(output, source);
+        try { return output.worldObj.spawnEntityInWorld(output); }
+        finally { HATCHING.remove(output); }
     }
 
     private static int limit(EntityLiving mob) {
@@ -125,13 +154,13 @@ public final class GeminiPopulation {
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void join(EntityJoinWorldEvent event) {
-        if(!event.world.isRemote && event.entity instanceof EntityGardenerCocoon) {
-            EntityGardenerCocoon cocoon = (EntityGardenerCocoon) event.entity;
-            Map<UUID, EntityGardenerCocoon> cocoons = COCOONS.get(event.world);
-            if(cocoons == null) { cocoons = new HashMap<UUID, EntityGardenerCocoon>(); COCOONS.put(event.world, cocoons); }
-            EntityGardenerCocoon duplicate = cocoons.get(cocoon.getUniqueID());
+        if(!event.world.isRemote && (event.entity instanceof EntityGardenerCocoon || event.entity instanceof EntityWoodcrawlerCocoon)) {
+            Entity cocoon = event.entity;
+            Map<UUID, Entity> cocoons = COCOONS.get(event.world);
+            if(cocoons == null) { cocoons = new HashMap<UUID, Entity>(); COCOONS.put(event.world, cocoons); }
+            Entity duplicate = cocoons.get(cocoon.getUniqueID());
             if(duplicate != null && duplicate != cocoon && !duplicate.isDead
-                    || !cocoon.addedToChunk && !canAdmitCocoon(event.world)) { event.setCanceled(true); return; }
+                    || !cocoon.addedToChunk && !canAdmitBiomass(event.world, cocoon instanceof EntityGardenerCocoon)) { event.setCanceled(true); return; }
             cocoons.put(cocoon.getUniqueID(), cocoon);
             return;
         }
@@ -148,9 +177,9 @@ public final class GeminiPopulation {
 
     @SubscribeEvent public void tick(TickEvent.WorldTickEvent event) {
         if(event.phase != TickEvent.Phase.END || event.world.isRemote || event.world.getTotalWorldTime() % 20 != 0) return;
-        Map<UUID, EntityGardenerCocoon> cocoons = COCOONS.get(event.world);
-        if(cocoons != null) for(Iterator<EntityGardenerCocoon> it = cocoons.values().iterator(); it.hasNext();) {
-            EntityGardenerCocoon cocoon = it.next();
+        Map<UUID, Entity> cocoons = COCOONS.get(event.world);
+        if(cocoons != null) for(Iterator<Entity> it = cocoons.values().iterator(); it.hasNext();) {
+            Entity cocoon = it.next();
             if(cocoon.isDead || !cocoon.addedToChunk || event.world.getEntityByID(cocoon.getEntityId()) != cocoon) it.remove();
         }
         Map<UUID, EntityLiving> members = WORLDS.get(event.world);
@@ -175,9 +204,9 @@ public final class GeminiPopulation {
 
     @SubscribeEvent public void unloadChunk(ChunkEvent.Unload event) {
         if(event.world.isRemote) return;
-        Map<UUID, EntityGardenerCocoon> cocoons = COCOONS.get(event.world);
-        if(cocoons != null) for(Iterator<EntityGardenerCocoon> it = cocoons.values().iterator(); it.hasNext();) {
-            EntityGardenerCocoon cocoon = it.next();
+        Map<UUID, Entity> cocoons = COCOONS.get(event.world);
+        if(cocoons != null) for(Iterator<Entity> it = cocoons.values().iterator(); it.hasNext();) {
+            Entity cocoon = it.next();
             if(cocoon.chunkCoordX == event.getChunk().xPosition && cocoon.chunkCoordZ == event.getChunk().zPosition) it.remove();
         }
         Map<UUID, EntityLiving> members = WORLDS.get(event.world);
