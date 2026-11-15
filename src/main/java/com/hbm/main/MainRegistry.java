@@ -1076,7 +1076,9 @@ public class MainRegistry {
 		ModEventHandler commonHandler = new ModEventHandler();
 		FMLCommonHandler.instance().bus().register(commonHandler);
 		MinecraftForge.EVENT_BUS.register(commonHandler);
-		FMLCommonHandler.instance().bus().register(new com.hbm.world.gemini.GeminiInvasionManager());
+		com.hbm.world.gemini.GeminiInvasionManager geminiInvasion = new com.hbm.world.gemini.GeminiInvasionManager();
+		FMLCommonHandler.instance().bus().register(geminiInvasion);
+		MinecraftForge.EVENT_BUS.register(geminiInvasion);
 		MinecraftForge.EVENT_BUS.register(new com.hbm.world.gemini.GeminiHostileSpawning());
 		MinecraftForge.EVENT_BUS.register(new com.hbm.world.gemini.WoodcrawlerSpawning());
 		MinecraftForge.EVENT_BUS.register(new com.hbm.world.gemini.FakePersonSpawning());

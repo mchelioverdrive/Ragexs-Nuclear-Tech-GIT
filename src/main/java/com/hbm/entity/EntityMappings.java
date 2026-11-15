@@ -315,7 +315,7 @@ public class EntityMappings {
 		registerGeminiEgg(com.hbm.entity.mob.gemini.EntityWoodcrawler.class, "woodcrawler", 0x30281F, 0xD8C88A);
 		registerGeminiEntity(com.hbm.entity.mob.gemini.EntityWoodcrawler.class, "woodcrawler", id++, MainRegistry.instance, 96, 3, true);
 		if(com.hbm.config.GeminiConfig.woodcrawlerSpawnWeight > 0) addSpawn(com.hbm.entity.mob.gemini.EntityWoodcrawler.class,
-				com.hbm.config.GeminiConfig.woodcrawlerSpawnWeight, 1, 1, EnumCreatureType.monster, BiomeDictionary.getBiomesForType(Type.FOREST));
+				com.hbm.config.GeminiConfig.woodcrawlerSpawnWeight, 1, 1, EnumCreatureType.monster, com.hbm.world.gemini.WoodcrawlerSpawning.forestBiomes());
 
 		registerGeminiEgg(com.hbm.entity.mob.gemini.EntityFakePerson.class, "fake_person", 0x806B50, 0xAAB68A);
 		registerGeminiEntity(com.hbm.entity.mob.gemini.EntityFakePerson.class, "fake_person", id++, MainRegistry.instance, 96, 3, true);

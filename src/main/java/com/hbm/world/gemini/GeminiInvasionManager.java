@@ -6,14 +6,17 @@ import com.hbm.dim.CelestialBody;
 import com.hbm.dim.duna.WorldProviderDuna;
 
 import cpw.mods.fml.common.eventhandler.Event;
+import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.PlayerEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.util.ChatComponentText;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.entity.player.PlayerSleepInBedEvent;
 
 /** Server-thread entry point for Gemini spawns, spread, generation and events. */
 public final class GeminiInvasionManager {
@@ -89,19 +92,43 @@ public final class GeminiInvasionManager {
 		recordArrival(event.player);
 	}
 
+	private static boolean preventsSleep(EntityPlayer player) {
+		// Forge 1.7.10 has survival/adventure and creative, but no spectator mode.
+		return GeminiConfig.geminiPreventSleeping && !player.capabilities.isCreativeMode
+				&& canActivityOccur(player.worldObj);
+	}
+
+	@SubscribeEvent(priority = EventPriority.LOWEST)
+	public void onSleep(PlayerSleepInBedEvent event) {
+		if(!preventsSleep(event.entityPlayer)) return;
+		// OTHER_PROBLEM returns before vanilla sets sleeping/bed occupancy, and unlike
+		// NOT_POSSIBLE_NOW/NOT_SAFE it does not cause BlockBed to send a second message.
+		event.result = EntityPlayer.EnumStatus.OTHER_PROBLEM;
+		event.entityPlayer.addChatComponentMessage(new ChatComponentText("I don't feel tired for some reason"));
+	}
+
+	@SubscribeEvent
+	public void onPlayerTick(TickEvent.PlayerTickEvent event) {
+		// Also cover players already asleep when the invasion unlocks or config reloads.
+		if(event.phase == TickEvent.Phase.START && event.player.isPlayerSleeping() && preventsSleep(event.player))
+			event.player.wakeUpPlayer(true, true, false);
+	}
+
 	@SubscribeEvent
 	public void onWorldTick(TickEvent.WorldTickEvent event) {
-		// Disabled invasions perform no save lookup or scheduling. Arrival recording
-		// above still remembers genuine Mars visits while the feature is disabled.
-		if(event.phase != TickEvent.Phase.END || !GeminiConfig.enabled
+		if(event.phase != TickEvent.Phase.END
 				|| !(event.world instanceof WorldServer) || event.world.isRemote
 				|| event.world.provider.dimensionId != 0
-				|| event.world.getTotalWorldTime() % 20 != 0
-				|| event.world.playerEntities.isEmpty()) return;
-		if(!canActivityOccur(event.world)) return;
+				|| event.world.getTotalWorldTime() % 20 != 0) return;
+		// Diagnostics are opt-in; disabled invasions still perform no saved-data lookup.
+		if(!GeminiConfig.enabled) { WoodcrawlerSpawning.diagnostic(event.world, "disabled", "Gemini invasion disabled"); return; }
+		if(event.world.playerEntities.isEmpty()) { WoodcrawlerSpawning.diagnostic(event.world, "players", "No players in the Overworld"); return; }
 
 		WorldServer overworld = (WorldServer) event.world;
 		GeminiWorldSavedData data = GeminiWorldSavedData.get(overworld);
+		if(data == null) return;
+		if(!data.hasMarsVisited()) { WoodcrawlerSpawning.diagnostic(overworld, "mars", "Mars visit requirement not satisfied"); return; }
+		if(data.getPhase() < 1) { WoodcrawlerSpawning.diagnostic(overworld, "phase", "Incorrect invasion phase"); return; }
 		data.advancePhase();
 		int remaining = data.getEventSecondsRemaining();
 		if(remaining == 0) {
@@ -120,11 +147,11 @@ public final class GeminiInvasionManager {
 	}
 
 	private static void scheduleNext(WorldServer world, GeminiWorldSavedData data) {
-		int min = GeminiConfig.minEventIntervalSeconds;
-		int max = GeminiConfig.maxEventIntervalSeconds;
+		int phase = Math.max(0, Math.min(3, data.getPhase() - 1));
+		int min = GeminiConfig.woodcrawlerInvasionMinIntervalSeconds[phase];
+		int max = GeminiConfig.woodcrawlerInvasionMaxIntervalSeconds[phase];
 		int interval = min + world.rand.nextInt(max - min + 1);
-		data.setEventSecondsRemaining((int) Math.max(1L, interval * (long) GeminiConfig.phaseEncounterPercent[0]
-				/ Math.max(1, encounterPercent(world))));
+		data.setEventSecondsRemaining(interval);
 	}
 
 	/**

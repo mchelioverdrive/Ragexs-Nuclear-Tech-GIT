@@ -13,8 +13,15 @@ public final class GeminiConfig {
 	public static final int[] phaseEncounterPercent = {25, 50, 75, 100};
 	public static int maxLoadedCreatures = 32;
 	public static int gardenerMaxLoaded = 2, wretchMaxLoaded = 1;
-	public static int minEventIntervalSeconds = 1200;
-	public static int maxEventIntervalSeconds = 2400;
+	/** Legacy API aliases for the phase-1 interval. */
+	public static int minEventIntervalSeconds = 45;
+	public static int maxEventIntervalSeconds = 90;
+	public static final int[] woodcrawlerInvasionMinIntervalSeconds = {45, 30, 20, 15};
+	public static final int[] woodcrawlerInvasionMaxIntervalSeconds = {90, 60, 45, 30};
+	public static final int[] woodcrawlerInvasionMinCount = {2, 2, 3, 4};
+	public static final int[] woodcrawlerInvasionMaxCount = {3, 4, 5, 6};
+	public static int woodcrawlerInvasionMaxSpawnAttempts = 24;
+	public static boolean geminiPreventSleeping = true, woodcrawlerInvasionDiagnostics = false;
 	public static int woodcrawlerDetectionRange = 32;
 	public static int woodcrawlerStalkSeconds = 6;
 	public static int woodcrawlerMemorySeconds = 20;
@@ -85,17 +92,10 @@ public final class GeminiConfig {
 				"Additional active Minecraft days in phase 3 before Wretch camps unlock. Unlocked phases never regress.");
 		for(int i = 0; i < 4; i++) values.phaseEncounterPercent[i] = config.getInt("phase" + (i + 1) + "EncounterPercent",
 				CATEGORY, new int[] {25, 50, 75, 100}[i], 1, 100,
-				"Percent of Woodcrawler natural spawn attempts admitted. Event intervals scale by phase-1 percent / current percent; existing countdowns are retained.");
+				"Acceptance percent for ordinary natural Woodcrawler attempts and existing Gardener discovery. Scripted Woodcrawler encounters use their own phase intervals/counts with no percentage roll; saved countdowns are retained.");
 		values.maxLoadedCreatures = config.getInt("maxLoadedCreatures", CATEGORY, 32, 0, 256,
 				"Combined loaded Gemini creature admission cap, excluding disposable boss parts. Zero stops natural admissions; manual spawn eggs bypass the cap and saved creatures are always retained.");
-		values.minEventIntervalSeconds = config.getInt("minEventIntervalSeconds", CATEGORY, 1200, 1, 86400,
-				"Minimum phase-1 active Overworld seconds between Gemini event opportunities. Later phases scale by relative encounter percent (20 ticks per second).");
-		values.maxEventIntervalSeconds = config.getInt("maxEventIntervalSeconds", CATEGORY, 2400, 1, 86400,
-				"Maximum interval in active Overworld seconds. Raised to the minimum if smaller. Scheduling pauses without Overworld players.");
-		if(values.maxEventIntervalSeconds < values.minEventIntervalSeconds) {
-			values.maxEventIntervalSeconds = values.minEventIntervalSeconds;
-			config.get(CATEGORY, "maxEventIntervalSeconds", 2400).set(values.maxEventIntervalSeconds);
-		}
+		parseWoodcrawlerEncounters(config, values);
 		values.woodcrawlerDetectionRange = config.getInt("woodcrawlerDetectionRange", CATEGORY, 32, 8, 48,
 				"Woodcrawler player/villager detection radius in blocks. Also bounds native path searches.");
 		values.woodcrawlerStalkSeconds = config.getInt("woodcrawlerStalkSeconds", CATEGORY, 6, 1, 30,
@@ -243,6 +243,13 @@ public final class GeminiConfig {
         wretchMaxLoaded = values.wretchMaxLoaded;
         minEventIntervalSeconds = values.minEventIntervalSeconds;
         maxEventIntervalSeconds = values.maxEventIntervalSeconds;
+        System.arraycopy(values.woodcrawlerInvasionMinIntervalSeconds, 0, woodcrawlerInvasionMinIntervalSeconds, 0, 4);
+        System.arraycopy(values.woodcrawlerInvasionMaxIntervalSeconds, 0, woodcrawlerInvasionMaxIntervalSeconds, 0, 4);
+        System.arraycopy(values.woodcrawlerInvasionMinCount, 0, woodcrawlerInvasionMinCount, 0, 4);
+        System.arraycopy(values.woodcrawlerInvasionMaxCount, 0, woodcrawlerInvasionMaxCount, 0, 4);
+        woodcrawlerInvasionMaxSpawnAttempts = values.woodcrawlerInvasionMaxSpawnAttempts;
+        geminiPreventSleeping = values.geminiPreventSleeping;
+        woodcrawlerInvasionDiagnostics = values.woodcrawlerInvasionDiagnostics;
         woodcrawlerDetectionRange = values.woodcrawlerDetectionRange;
         woodcrawlerStalkSeconds = values.woodcrawlerStalkSeconds;
         woodcrawlerMemorySeconds = values.woodcrawlerMemorySeconds;
@@ -313,8 +320,14 @@ public final class GeminiConfig {
         public final int[] phaseEncounterPercent = {25, 50, 75, 100};
         public int maxLoadedCreatures = 32;
         public int gardenerMaxLoaded = 2, wretchMaxLoaded = 1;
-        public int minEventIntervalSeconds = 1200;
-        public int maxEventIntervalSeconds = 2400;
+        public int minEventIntervalSeconds = 45;
+        public int maxEventIntervalSeconds = 90;
+        public final int[] woodcrawlerInvasionMinIntervalSeconds = {45, 30, 20, 15};
+        public final int[] woodcrawlerInvasionMaxIntervalSeconds = {90, 60, 45, 30};
+        public final int[] woodcrawlerInvasionMinCount = {2, 2, 3, 4};
+        public final int[] woodcrawlerInvasionMaxCount = {3, 4, 5, 6};
+        public int woodcrawlerInvasionMaxSpawnAttempts = 24;
+        public boolean geminiPreventSleeping = true, woodcrawlerInvasionDiagnostics = false;
         public int woodcrawlerDetectionRange = 32;
         public int woodcrawlerStalkSeconds = 6;
         public int woodcrawlerMemorySeconds = 20;
@@ -354,6 +367,44 @@ public final class GeminiConfig {
         public int wretchNaturalLimit = 4, wretchBlocksPerStrike = 4, wretchBlocksPerTick = 2;
         public boolean wretchAssimilation = true, wretchLivestockFeeding = false, wretchHealthAggression = false;
         public int wretchVoiceSeconds = 45;
+    }
+
+    private static void parseWoodcrawlerEncounters(Configuration config, Values values) {
+        // Import old customized pacing only when the new keys are absent. Recognizable
+        // old defaults migrate; administrators can retain those exact numbers via new keys.
+        int legacyMin = config.hasKey(CATEGORY, "minEventIntervalSeconds")
+                ? config.getInt("minEventIntervalSeconds", CATEGORY, 1200, 1, 86400,
+                        "Legacy migration input only. Use woodcrawlerInvasionMinIntervalSeconds and phase2/3/4 keys; existing new keys take priority.") : 1200;
+        int legacyMax = config.hasKey(CATEGORY, "maxEventIntervalSeconds")
+                ? config.getInt("maxEventIntervalSeconds", CATEGORY, 2400, 1, 86400,
+                        "Legacy migration input only. Use woodcrawlerInvasionMaxIntervalSeconds and phase2/3/4 keys; saved countdowns are never reset.") : 2400;
+        boolean legacyDefaults = legacyMin == 1200 && legacyMax == 2400;
+        for(int i = 0; i < 4; i++) {
+            String prefix = "woodcrawlerInvasion" + (i == 0 ? "" : "Phase" + (i + 1));
+            int minDefault = legacyDefaults ? values.woodcrawlerInvasionMinIntervalSeconds[i]
+                    : Math.max(1, legacyMin * values.phaseEncounterPercent[0] / values.phaseEncounterPercent[i]);
+            int maxDefault = legacyDefaults ? values.woodcrawlerInvasionMaxIntervalSeconds[i]
+                    : Math.max(1, legacyMax * values.phaseEncounterPercent[0] / values.phaseEncounterPercent[i]);
+            values.woodcrawlerInvasionMinIntervalSeconds[i] = config.getInt(prefix + "MinIntervalSeconds", CATEGORY,
+                    minDefault, 1, 86400, "Minimum active Overworld seconds between phase-" + (i + 1)
+                            + " Woodcrawler encounters. No acceptance roll. Empty/disabled/locked worlds pause scheduling. Live reload preserves the current countdown.");
+            values.woodcrawlerInvasionMaxIntervalSeconds[i] = Math.max(values.woodcrawlerInvasionMinIntervalSeconds[i],
+                    config.getInt(prefix + "MaxIntervalSeconds", CATEGORY, maxDefault, 1, 86400,
+                            "Maximum active seconds between encounters; raised to the minimum if smaller. Legacy default 1200/2400 intervals migrate when new keys are absent; other legacy intervals are imported."));
+            values.woodcrawlerInvasionMinCount[i] = config.getInt(prefix + "MinCount", CATEGORY,
+                    values.woodcrawlerInvasionMinCount[i], 0, 16, "Minimum Woodcrawler target count per encounter. Zero allows empty events. Placement, difficulty, biome and population gates still apply.");
+            values.woodcrawlerInvasionMaxCount[i] = Math.max(values.woodcrawlerInvasionMinCount[i],
+                    config.getInt(prefix + "MaxCount", CATEGORY, values.woodcrawlerInvasionMaxCount[i], 0, 16,
+                            "Maximum target count, raised to the minimum if smaller. Targets are not guaranteed spawns; all attempts share one bounded budget."));
+        }
+        values.minEventIntervalSeconds = values.woodcrawlerInvasionMinIntervalSeconds[0];
+        values.maxEventIntervalSeconds = values.woodcrawlerInvasionMaxIntervalSeconds[0];
+        values.woodcrawlerInvasionMaxSpawnAttempts = config.getInt("woodcrawlerInvasionMaxSpawnAttempts", CATEGORY,
+                24, 1, 24, "Maximum loaded placement probes per entire encounter, including failed probes; never forces chunks or scans surrounding biomes.");
+        values.geminiPreventSleeping = config.getBoolean("geminiPreventSleeping", CATEGORY, true,
+                "Prevent survival/adventure sleeping in the Overworld throughout enabled, Mars-unlocked invasion phases 1-4. Disabled/locked invasions restore normal sleeping immediately.");
+        values.woodcrawlerInvasionDiagnostics = config.getBoolean("woodcrawlerInvasionDiagnostics", CATEGORY, false,
+                "Log encounter results/rejection totals and paused scheduling reasons. Repeated failures are throttled to once per reason per minute per world; no per-position logging.");
     }
 
     private static float multiplier(Configuration config, String key, float fallback) {

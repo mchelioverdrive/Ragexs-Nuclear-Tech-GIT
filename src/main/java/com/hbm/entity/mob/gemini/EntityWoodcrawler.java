@@ -215,6 +215,10 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 	public void beginCocoonEmergence() {
 		if(!worldObj.isRemote) { resetHunting(); daytimeBurrow = false; emergence.begin(); }
 	}
+	/** Successful scripted cave admissions share the existing geological-cover/emergence system. */
+	public void beginUndergroundEmergenceIfNeeded() {
+		if(!worldObj.isRemote && WoodcrawlerEmergence.underground(worldObj, posX, posY, posZ)) beginCocoonEmergence();
+	}
 	void setEmergenceBurrowTick(int tick) { dataWatcher.updateObject(26, Byte.valueOf((byte) tick)); }
 	void finishCocoonEmergence() {
 		finishBurrow(); burrowCooldown = 400;
