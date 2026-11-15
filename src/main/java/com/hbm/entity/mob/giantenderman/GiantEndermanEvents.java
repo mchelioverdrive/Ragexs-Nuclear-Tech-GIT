@@ -78,6 +78,7 @@ public final class GiantEndermanEvents {
         if (!player.isEntityAlive() || player.capabilities.disableDamage) return;
         if (!world.getEntitiesWithinAABB(EntityGiantEnderman.class, player.boundingBox.expand(112, 128, 112)).isEmpty()) return;
         EntityGiantEnderman boss = new EntityGiantEnderman(world);
+        if(!com.hbm.world.gemini.GeminiHostileSpawning.allowAutomaticHostile(boss)) return;
         double angle = world.rand.nextDouble() * Math.PI * 2;
         for (int i = 0; i < 4; i++, angle += Math.PI * 0.5) {
             double x = player.posX + Math.cos(angle) * 48, z = player.posZ + Math.sin(angle) * 48;

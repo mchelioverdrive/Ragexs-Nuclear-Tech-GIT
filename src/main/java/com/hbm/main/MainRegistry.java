@@ -1077,6 +1077,7 @@ public class MainRegistry {
 		FMLCommonHandler.instance().bus().register(commonHandler);
 		MinecraftForge.EVENT_BUS.register(commonHandler);
 		FMLCommonHandler.instance().bus().register(new com.hbm.world.gemini.GeminiInvasionManager());
+		MinecraftForge.EVENT_BUS.register(new com.hbm.world.gemini.GeminiHostileSpawning());
 		MinecraftForge.EVENT_BUS.register(new com.hbm.world.gemini.WoodcrawlerSpawning());
 		MinecraftForge.EVENT_BUS.register(new com.hbm.world.gemini.FakePersonSpawning());
 		MinecraftForge.EVENT_BUS.register(new com.hbm.world.gemini.MockerySpawning());
@@ -1176,6 +1177,7 @@ public class MainRegistry {
 		event.registerServerCommand(new CommandRadiation());
 		event.registerServerCommand(new CommandDisease());
 		event.registerServerCommand(new CommandVisitedMars());
+		event.registerServerCommand(new CommandRNTConfig());
 		event.registerServerCommand(new CommandStations());
 		event.registerServerCommand(new CommandEnableNukes());
 		event.registerServerCommand(new CommandEnableRedstoneGroundNukes());
@@ -1204,9 +1206,23 @@ public class MainRegistry {
 		}
 	}
 
-	private void loadConfig(FMLPreInitializationEvent event) {
+	private static Configuration mainConfiguration;
+
+    /** Invoked by the native server command manager on the owning server thread. */
+    public static void reloadRuntimeConfig() throws java.io.IOException {
+        if(mainConfiguration == null) throw new IllegalStateException("RNT configuration has not initialized.");
+        Configuration candidate = CommonConfig.readForReload(mainConfiguration.getConfigFile(), mainConfiguration);
+        GeminiConfig.Values gemini = GeminiConfig.parse(candidate);
+        GeneralConfig.RuntimeValues general = GeneralConfig.parseRuntime(candidate);
+        // All parsing/validation finishes before these non-throwing field assignments.
+        GeminiConfig.apply(gemini, false);
+        GeneralConfig.applyRuntime(general);
+    }
+
+    private void loadConfig(FMLPreInitializationEvent event) {
 
 		Configuration config = new Configuration(event.getSuggestedConfigurationFile());
+        mainConfiguration = config;
 		config.load();
 
 		GeneralConfig.loadFromConfig(config);

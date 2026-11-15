@@ -8,6 +8,36 @@ RNTM has three main configuration styles:
 
 Always stop the server before editing startup configuration unless a command explicitly supports runtime reloads.
 
+## Live server configuration reload
+
+`/rntconfig reload` (operator level 2, including the server console and integrated server) rereads `config/hbm.cfg` with the existing Forge configuration parser. It validates the file and supported values before applying anything. Invalid types, malformed/non-finite numbers, invalid booleans, unfinished categories/lists and read failures retain the previous runtime configuration and report an error. Finite numeric values use the existing range clamps. The command does not rewrite the file.
+
+Supported live values are all `21_gemini` settings and subcategories **except `woodcrawlerSpawnWeight`**, plus these `01_general` settings: `1.18_enableExtendedLogging`, `1.45_enablePowerNetDiagnostics`, `1.46_enableMachineRuntimeDiagnostics`, `1.36_enableMOTD` and `1.37_enableGuideBook`. These general settings affect subsequent logging, diagnostics and login handling. All other common settings remain unchanged until restart; this includes registration, potion/dimension IDs, radiation implementation selection, sound initialization, blocks, items and startup recipe options. JSON machine/resource configuration remains startup-only for this command. Use the existing `/ntmreload` for supported recipe/item-pool JSON and `/ntmclient` for local `hbmClient.json` preferences.
+
+Gemini admission limits apply to the next admission in every active world without deleting existing creatures, nests or cocoons. Loaded Woodcrawlers refresh their native detection-range attribute on their next server tick, including after loading an older saved entity. Existing infection/cocoon durations, conversion decisions, boss health attributes and event countdowns retain their saved snapshots; new instances use the new settings. In-flight AI timers continue and consult updated thresholds on subsequent ticks. Progression and world gamerules are never reset. Reload registers no listeners or entities. Supported settings govern server decisions; native entity metadata, attributes, disease state and sound packets already convey their results, so no additional client configuration packet is needed.
+
+### Gemini-only mode and hostile spawn suppression
+
+`21_gemini.geminiOnly=false` initializes the `geminionly` gamerule when a server world has no saved value. Existing saved values take precedence and reload never overwrites them. As with vanilla gamerules, dimensions of one save share the rule; different saves retain independent choices. Change it immediately with `/gamerule geminionly true` or `/gamerule geminionly false`.
+
+When true, the rule rejects non-GHE automatic hostile spawn attempts in every dimension. It takes priority over phase suppression and does not require the Mars milestone. The permitted classes come directly from Gemini entity registration, including Woodcrawler, Fake Person, Nature's Mockery, Underground Gardener, Ocean Gardener, Wretch and their registered support entities. Other HBM entities receive no namespace exemption. Passive creatures and villagers are untouched; calm Endermen and zombie pigmen are treated as neutral. Other mods' creatures use their actual Forge monster classification, so a mod declaring a neutral creature as a monster may require its own compatibility support.
+
+With `geminionly=false`, `geminiStageSpawnSuppression=true` enables these default non-GHE hostile spawn-attempt acceptance rates in the Overworld, using the existing saved invasion phase:
+
+| Existing phase | Setting | Default acceptance |
+| --- | --- | --- |
+| 0: locked/no invasion | Fixed | 100% |
+| 1: early encounters | `geminiPhase1HostileSpawnMultiplier` | 75% |
+| 2: infection | `geminiPhase2HostileSpawnMultiplier` | 50% |
+| 3: nests and coordination | `geminiPhase3HostileSpawnMultiplier` | 25% |
+| 4: Wretch camps | `geminiFinalStageHostileSpawnMultiplier` | 0% |
+
+All multiplier settings are in `21_gemini`, clamp to `[0,1]`, and apply after a successful reload. They change attempt acceptance probabilities, not guaranteed population percentages or mob caps. Repeated checks for one candidate share one random roll. Other dimensions keep normal phase-based rates because this invasion's activity is Overworld-only. Suppression uses the saved phase even while invasion scheduling is disabled; set `geminiStageSpawnSuppression=false` to disable it independently. Resetting the Mars gate restores phase-0 rates without erasing retained progression. Disabling suppression and setting `geminionly=false` restores ordinary admissions.
+
+Filtering uses server-side `LivingSpawnEvent.CheckSpawn`, covering vanilla natural spawning and modded automatic spawners that honor that Forge hook. The custom natural Sandworm, Prismarine Colossus and Giant Enderman encounter producers also consult the same policy before insertion; their manual eggs/commands and existing encounters are unchanged. It never removes existing mobs or filters chunk loading, `/summon`, or spawn eggs. Gardener nest construction, emergence/retreat, reproduction, cocoons, Woodcrawler villager conversions, Fake Person creation and infection keep their existing progression, difficulty, protection and population gates, including their existing independence from `doMobSpawning`. GHE rates are not increased.
+
+Forge 1.7.10 does **not** expose a safe universal automatic-spawn veto. Vanilla cage spawners, reinforcements, portals, structures and mods that insert entities directly can bypass `CheckSpawn`; their entities are retained rather than risking cancellation of commands, eggs or saved entities. `SpecialSpawn` cannot fix this: vanilla calls it after insertion, and cancellation only skips spawn initialization. These bypass paths are outside this filter's coverage.
+
 ## Energy, fluid and machine settings
 
 Electrical energy is shown in joules and power in watts. Machine JSON uses exact half-joule counts for migrated capacity keys such as `energyCapacityQuanta`; explicit older settings remain supported where the native loader accepts them. A fresh default does not overwrite a value already saved in the server's configuration.

@@ -8,6 +8,79 @@ import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.common.config.Property;
 
 public class CommonConfig {
+
+	/** Read an isolated candidate. Forge's normal constructor renames malformed files and
+	 * its getters silently replace bad numbers; neither is appropriate for an admin reload. */
+	public static Configuration readForReload(java.io.File file, Configuration schema) throws java.io.IOException {
+		byte[] contents = java.nio.file.Files.readAllBytes(file.toPath());
+		int expected = checkReloadStructure(contents);
+		ReloadConfiguration candidate = new ReloadConfiguration(file);
+		candidate.read();
+		int actual = 0;
+		for(String category : candidate.getCategoryNames()) {
+			for(Property property : candidate.getCategory(category).values()) {
+				actual++;
+				if(!schema.hasKey(category, property.getName())) continue;
+				Property original = schema.getCategory(category).get(property.getName());
+				if(property.getType() != original.getType() || property.isList() != original.isList())
+					throw new IllegalArgumentException(category + "." + property.getName() + ": incorrect property type");
+				String[] values = property.isList() ? property.getStringList() : new String[] {property.getString()};
+				for(String value : values) {
+					try {
+						if(original.getType() == Property.Type.INTEGER) Integer.parseInt(value);
+						// Gemini's STRING settings are getFloat values; Forge also gives
+						// ordinary text properties numeric bounds, so bounds cannot identify them.
+						if(original.getType() == Property.Type.DOUBLE
+								|| original.getType() == Property.Type.STRING && category.startsWith(GeminiConfig.CATEGORY)) {
+							double number = Double.parseDouble(value);
+							if(Double.isNaN(number) || Double.isInfinite(number))
+								throw new NumberFormatException("non-finite number");
+						}
+						if(original.getType() == Property.Type.BOOLEAN && !"true".equalsIgnoreCase(value) && !"false".equalsIgnoreCase(value))
+							throw new IllegalArgumentException("expected true or false");
+					} catch(IllegalArgumentException ex) {
+						throw new IllegalArgumentException(category + "." + property.getName() + ": invalid value '" + value + "'", ex);
+					}
+				}
+			}
+		}
+		// Detect swallowed Forge I/O errors, incomplete reads and duplicate property definitions.
+		if(actual != expected || !java.util.Arrays.equals(contents, java.nio.file.Files.readAllBytes(file.toPath())))
+			throw new java.io.IOException("Configuration was incomplete, duplicated, or changed while reading; retry after saving the file.");
+		return candidate;
+	}
+
+	private static final class ReloadConfiguration extends Configuration {
+		ReloadConfiguration(java.io.File file) { super(file); }
+		@Override public void load() { } // Suppress constructor recovery/renaming; explicitly parse below.
+		void read() { super.load(); }
+	}
+
+	/** Supplement Forge's parser: it does not reject unclosed categories/lists at EOF. */
+	private static int checkReloadStructure(byte[] contents) throws java.io.IOException {
+		int depth = 0, properties = 0;
+		boolean list = false;
+		try(java.io.BufferedReader reader = new java.io.BufferedReader(new Configuration.UnicodeInputStreamReader(
+				new java.io.ByteArrayInputStream(contents), "UTF-8"))) {
+			String line;
+			while((line = reader.readLine()) != null) {
+				if(list) { if(line.trim().startsWith(">")) list = false; continue; }
+				boolean quoted = false;
+				for(int i = 0; i < line.length(); i++) {
+					char c = line.charAt(i);
+					if(c == '"') quoted = !quoted;
+					if(quoted) continue;
+					if(c == '#') break;
+					if(c == '=') { properties++; break; } // Values may contain punctuation.
+					if(c == '<') { properties++; list = true; break; }
+					if(c == '{') depth++;
+					if(c == '}' && --depth < 0) throw new IllegalArgumentException("Unexpected closing configuration category");
+				}
+			}
+		}
+		if(depth != 0 || list || properties == 0) throw new IllegalArgumentException("Empty or unfinished configuration category/list");
+		return properties;
+	}
 	
 	public static final String CATEGORY_GENERAL = "01_general";
 	public static final String CATEGORY_ORES = "02_ores";

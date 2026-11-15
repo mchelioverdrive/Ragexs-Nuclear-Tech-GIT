@@ -69,6 +69,7 @@ public final class ColossusEvents {
         double angle=w.rand.nextDouble()*Math.PI*2,x=p.posX+Math.cos(angle)*64,z=p.posZ+Math.sin(angle)*64;
         if(!EntityPrismarineColossus.loaded(w,x,z,16) || w.getBiomeGenForCoords((int)Math.floor(x),(int)Math.floor(z)).biomeID!=net.minecraft.world.biome.BiomeGenBase.ocean.biomeID) return;
         EntityPrismarineColossus boss=new EntityPrismarineColossus(w);
+        if(!com.hbm.world.gemini.GeminiHostileSpawning.allowAutomaticHostile(boss)) return;
         int bx=(int)Math.floor(x),bz=(int)Math.floor(z),y=w.getHeightValue(bx,bz);
         for(int i=0;i<64 && y>1;i++,y--) if(w.getBlock(bx,y-1,bz).getMaterial().blocksMovement()) break;
         boss.setLocationAndAngles(x,y,z,0,0);

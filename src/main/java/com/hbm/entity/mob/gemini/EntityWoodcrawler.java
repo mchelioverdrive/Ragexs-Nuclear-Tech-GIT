@@ -32,6 +32,8 @@ import net.minecraftforge.common.util.FakePlayerFactory;
 import net.minecraftforge.event.world.BlockEvent;
 
 public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
+    private int configurationRevision = -1;
+
 
 	public static final int WANDER = 0, STALK = 1, CHASE = 2, SEARCH = 3, RETREAT = 4, BANG = 5;
 	public static final float STANDING_HEIGHT = 5.6F, BODY_WIDTH = 0.85F;
@@ -744,6 +746,10 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 
 	@Override
 	public void onUpdate() {
+        if(!worldObj.isRemote && configurationRevision != GeminiConfig.revision) {
+            getEntityAttribute(SharedMonsterAttributes.followRange).setBaseValue(GeminiConfig.woodcrawlerDetectionRange);
+            configurationRevision = GeminiConfig.revision;
+        }
 		previousProbeLength = dataWatcher.getWatchableObjectFloat(28);
 		if(!worldObj.isRemote) {
 			if(checkLoadedClearance) {

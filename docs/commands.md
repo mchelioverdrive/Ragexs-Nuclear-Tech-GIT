@@ -6,6 +6,12 @@ This reference was verified against `src/main/java/com/hbm/commands` and the ser
 
 These commands are registered during server startup.
 
+### `/rntconfig reload`
+
+Requires operator permission level 2. Rereads `config/hbm.cfg`, validates it before applying supported runtime settings, and reports errors while retaining previous valid values. Supports dedicated-server console and integrated servers. Reloads Gemini settings (including hostile suppression multipliers and population limits), server logging/diagnostics and login options. Woodcrawler biome spawn weight and all other startup-only settings are retained until restart; entity/block/item registration, recipes and JSON machine files are not reloaded. Existing world gamerules, invasion progression, entities and saved conversion/incubation timelines remain intact. See [the supported settings and spawn-hook limitations](configuration.md#live-server-configuration-reload).
+
+Use `/gamerule geminionly true|false` to change the current save's automatic hostile spawn filter immediately. Its initial default is `21_gemini.geminiOnly=false`; configuration reload never replaces an existing gamerule value.
+
 ### `/ntmdisease inspect|clear <player|entityId> [rabies|deep_root]`
 
 The optional pathogen defaults to `rabies`, preserving existing command behavior. Select `deep_root` to inspect its saved stage, loaded stage ticks, snapshotted stage duration, active gate and terminal conversion eligibility, or to clear only Deep Root Disease and its movement/visual symptoms. A terminal duration of zero means there is no further timed stage: non-player hosts attempt conversion, while players take gradual disease damage. Deep Root inspection does not advance time or cause conversion. Targets must be loaded living entities in the sender's dimension or online players. Both variants require operator permission level 2.

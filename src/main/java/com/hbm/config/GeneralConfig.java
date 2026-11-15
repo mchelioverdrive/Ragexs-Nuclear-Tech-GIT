@@ -88,7 +88,32 @@ public class GeneralConfig {
 		return enableNuking && enableRedstoneGroundNukes;
 	}
 
-	public static void loadFromConfig(Configuration config) {
+	/** Server-only values read directly by runtime callers; no registration or client caches. */
+    public static final class RuntimeValues {
+        boolean enableExtendedLogging, enablePowerNetDiagnostics, enableMachineRuntimeDiagnostics, enableMOTD, enableGuideBook;
+    }
+
+    public static RuntimeValues parseRuntime(Configuration config) {
+        RuntimeValues values = new RuntimeValues();
+        String CATEGORY_GENERAL = CommonConfig.CATEGORY_GENERAL;
+        values.enableExtendedLogging = config.get(CATEGORY_GENERAL, "1.18_enableExtendedLogging", false, "Logs uses of the detonator, nuclear explosions, missile launches, grenades, etc.").getBoolean(false);
+        values.enablePowerNetDiagnostics = config.get(CATEGORY_GENERAL, "1.45_enablePowerNetDiagnostics", false, "Collect low-overhead aggregate MK2 power-network scheduler counters for /ntmpowerstats.").getBoolean(false);
+        values.enableMachineRuntimeDiagnostics = config.get(CATEGORY_GENERAL, "1.46_enableMachineRuntimeDiagnostics", false, "Collect low-overhead aggregate machine-runtime counters for /ntmmachinestats.").getBoolean(false);
+        values.enableMOTD = config.get(CATEGORY_GENERAL, "1.36_enableMOTD", true, "If enabled, shows the 'Loaded mod!' chat message as well as update notifications when joining a world").getBoolean(true);
+        values.enableGuideBook = config.get(CATEGORY_GENERAL, "1.37_enableGuideBook", true, "If enabled, gives players the guide book when joining the world for the first time").getBoolean(true);
+        return values;
+    }
+
+    public static void applyRuntime(RuntimeValues values) {
+        enableExtendedLogging = values.enableExtendedLogging;
+        enablePowerNetDiagnostics = values.enablePowerNetDiagnostics;
+        enableMachineRuntimeDiagnostics = values.enableMachineRuntimeDiagnostics;
+        enableMOTD = values.enableMOTD;
+        enableGuideBook = values.enableGuideBook;
+    }
+
+    public static void loadFromConfig(Configuration config) {
+        applyRuntime(parseRuntime(config));
 
 		final String CATEGORY_GENERAL = CommonConfig.CATEGORY_GENERAL;
 		enableThermosPreventer = config.get(CATEGORY_GENERAL, "0.00_crashOnThermos", true, "When set to true, will prevent the mod to launch on Thermos servers. Only disable this if you understand what \"tileentities.yml\" is, and how it severely cripples the mod.").getBoolean(true);
@@ -106,7 +131,7 @@ public class GeneralConfig {
 		enableBomberShortMode = config.get(CATEGORY_GENERAL, "1.14_enableBomberShortMode", false, "Has bomber planes spawn in closer to the target for use with smaller render distances").getBoolean(false);
 		enableVaults = config.get(CATEGORY_GENERAL, "1.15_enableVaultSpawn", true, "Allows locked safes to spawn").getBoolean(true);
 		enableCataclysm = config.get(CATEGORY_GENERAL, "1.17_enableCataclysm", false, "Causes satellites to fall whenever a mob dies").getBoolean(false);
-		enableExtendedLogging = config.get(CATEGORY_GENERAL, "1.18_enableExtendedLogging", false, "Logs uses of the detonator, nuclear explosions, missile launches, grenades, etc.").getBoolean(false);
+
 		enableHardcoreTaint = config.get(CATEGORY_GENERAL, "1.19_enableHardcoreTaint", false, "Allows tainted mobs to spread taint").getBoolean(false);
 		enableGuns = config.get(CATEGORY_GENERAL, "1.20_enableGuns", true, "Prevents new system guns to be fired").getBoolean(true);
 		enableVirus = config.get(CATEGORY_GENERAL, "1.21_enableVirus", false, "Allows virus blocks to spread").getBoolean(false);
@@ -122,14 +147,12 @@ public class GeneralConfig {
 		enableStatReRegistering = config.get(CATEGORY_GENERAL, "1.33_enableStatReRegistering", true, "If enabled, will re-register item crafting/breaking/usage stats in order to fix a forge bug where modded items just won't show up.").getBoolean(true);
 		enableKeybindOverlap = config.get(CATEGORY_GENERAL, "1.34_enableKeybindOverlap", true, "If enabled, will handle keybinds that would otherwise be ignored due to overlapping.").getBoolean(true);
 		enableFluidContainerCompat = config.get(CATEGORY_GENERAL, "1.35_enableFluidContainerCompat", true, "If enabled, fluid containers will be oredicted and interchangable in recipes with other mods' containers, as well as TrainCraft's diesel being considered a valid diesel canister.").getBoolean(true);
-		enableMOTD = config.get(CATEGORY_GENERAL, "1.36_enableMOTD", true, "If enabled, shows the 'Loaded mod!' chat message as well as update notifications when joining a world").getBoolean(true);
-		enableGuideBook = config.get(CATEGORY_GENERAL, "1.37_enableGuideBook", true, "If enabled, gives players the guide book when joining the world for the first time").getBoolean(true);
+
 		enableSteamParticles = config.get(CATEGORY_GENERAL, "1.38_enableSteamParticles", true, "If disabled, auxiliary cooling towers and large cooling towers will not emit steam particles when in use.").getBoolean(true);
 		enableSoundExtension = config.get(CATEGORY_GENERAL, "1.39_enableSoundExtension", true, "If enabled, will change the limit for how many sounds can play at once.").getBoolean(true);
 		enableMekanismChanges = config.get(CATEGORY_GENERAL, "1.40_enableMekanismChanges", true, "If enabled, will change some of Mekanism's recipes.").getBoolean(true);
 		enableHardcoreDarkness = CommonConfig.createConfigBool(config, CATEGORY_GENERAL, "1.44_hardcoreDarkness", "If enabled, sets night-time minimum fog to zero, to complement hardcore darkness mods", false);
-		enablePowerNetDiagnostics = config.get(CATEGORY_GENERAL, "1.45_enablePowerNetDiagnostics", false, "Collect low-overhead aggregate MK2 power-network scheduler counters for /ntmpowerstats.").getBoolean(false);
-		enableMachineRuntimeDiagnostics = config.get(CATEGORY_GENERAL, "1.46_enableMachineRuntimeDiagnostics", false, "Collect low-overhead aggregate machine-runtime counters for /ntmmachinestats.").getBoolean(false);
+
 		normalSoundChannels = CommonConfig.createConfigInt(config, CATEGORY_GENERAL, "1.41_normalSoundChannels",
 				"The amount of channels to create while 1.39_enableSoundExtension is enabled.\n" +
 				"Note that a value below 28 or above 200 can cause buggy sounds and issues with other mods running out of sound memory.", 100);

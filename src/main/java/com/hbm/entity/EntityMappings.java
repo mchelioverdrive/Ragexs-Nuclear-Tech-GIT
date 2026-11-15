@@ -313,30 +313,42 @@ public class EntityMappings {
 		}
 
 		registerGeminiEgg(com.hbm.entity.mob.gemini.EntityWoodcrawler.class, "woodcrawler", 0x30281F, 0xD8C88A);
-		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityWoodcrawler.class, "woodcrawler", id++, MainRegistry.instance, 96, 3, true);
+		registerGeminiEntity(com.hbm.entity.mob.gemini.EntityWoodcrawler.class, "woodcrawler", id++, MainRegistry.instance, 96, 3, true);
 		if(com.hbm.config.GeminiConfig.woodcrawlerSpawnWeight > 0) addSpawn(com.hbm.entity.mob.gemini.EntityWoodcrawler.class,
 				com.hbm.config.GeminiConfig.woodcrawlerSpawnWeight, 1, 1, EnumCreatureType.monster, BiomeDictionary.getBiomesForType(Type.FOREST));
 
 		registerGeminiEgg(com.hbm.entity.mob.gemini.EntityFakePerson.class, "fake_person", 0x806B50, 0xAAB68A);
-		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityFakePerson.class, "fake_person", id++, MainRegistry.instance, 96, 3, true);
+		registerGeminiEntity(com.hbm.entity.mob.gemini.EntityFakePerson.class, "fake_person", id++, MainRegistry.instance, 96, 3, true);
 
 		registerGeminiEgg(com.hbm.entity.mob.gemini.EntityNaturesMockery.class, "natures_mockery", 0x75342E, 0xC36A60);
-		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityNaturesMockery.class, "natures_mockery", id++, MainRegistry.instance, 96, 2, true);
+		registerGeminiEntity(com.hbm.entity.mob.gemini.EntityNaturesMockery.class, "natures_mockery", id++, MainRegistry.instance, 96, 2, true);
 
 		registerGeminiEgg(com.hbm.entity.mob.gemini.EntityGardener.class, "gardener", 0x59332E, 0xD7C584);
-		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityGardener.class, "gardener", id++, MainRegistry.instance, 192, 2, true);
-		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityGardenerTentacle.class, "gardener_tentacle", id++, MainRegistry.instance, 192, 2, false);
+		registerGeminiEntity(com.hbm.entity.mob.gemini.EntityGardener.class, "gardener", id++, MainRegistry.instance, 192, 2, true);
+		registerGeminiEntity(com.hbm.entity.mob.gemini.EntityGardenerTentacle.class, "gardener_tentacle", id++, MainRegistry.instance, 192, 2, false);
 		registerGeminiEgg(com.hbm.entity.mob.gemini.EntityWretch.class, "wretch", 0x49372D, 0xB86B63);
-		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityWretch.class, "wretch", id++, MainRegistry.instance, 256, 2, true);
-		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityWretchPart.class, "wretch_part", id++, MainRegistry.instance, 256, 2, false);
-		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityWoodcrawlerCocoon.class, "woodcrawler_cocoon", id++, MainRegistry.instance, 96, 20, false);
+		registerGeminiEntity(com.hbm.entity.mob.gemini.EntityWretch.class, "wretch", id++, MainRegistry.instance, 256, 2, true);
+		registerGeminiEntity(com.hbm.entity.mob.gemini.EntityWretchPart.class, "wretch_part", id++, MainRegistry.instance, 256, 2, false);
+		registerGeminiEntity(com.hbm.entity.mob.gemini.EntityWoodcrawlerCocoon.class, "woodcrawler_cocoon", id++, MainRegistry.instance, 96, 20, false);
 		registerGeminiEgg(com.hbm.entity.mob.gemini.EntityOceanGardener.class, "ocean_gardener", 0x161C20, 0xF6E7A0);
-		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityOceanGardener.class, "ocean_gardener", id++, MainRegistry.instance, 192, 2, true);
-		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityWoodcrawlerProboscis.class, "woodcrawler_proboscis", id++, MainRegistry.instance, 96, 2, false);
-		EntityRegistry.registerModEntity(com.hbm.entity.mob.gemini.EntityGardenerCocoon.class, "gardener_cocoon", id++, MainRegistry.instance, 96, 20, false);
+		registerGeminiEntity(com.hbm.entity.mob.gemini.EntityOceanGardener.class, "ocean_gardener", id++, MainRegistry.instance, 192, 2, true);
+		registerGeminiEntity(com.hbm.entity.mob.gemini.EntityWoodcrawlerProboscis.class, "woodcrawler_proboscis", id++, MainRegistry.instance, 96, 2, false);
+		registerGeminiEntity(com.hbm.entity.mob.gemini.EntityGardenerCocoon.class, "gardener_cocoon", id++, MainRegistry.instance, 96, 20, false);
 	}
 
-	private static void registerGeminiEgg(Class<? extends Entity> clazz, String name, int color1, int color2) {
+	private static final java.util.Set<Class<?>> GEMINI_ENTITIES = new java.util.HashSet<Class<?>>();
+
+    public static boolean isGeminiEntity(Class<?> type) {
+        return GEMINI_ENTITIES.contains(type);
+    }
+
+    private static void registerGeminiEntity(Class<? extends Entity> type, String name, int id,
+            Object mod, int range, int frequency, boolean velocity) {
+        EntityRegistry.registerModEntity(type, name, id, mod, range, frequency, velocity);
+        GEMINI_ENTITIES.add(type);
+    }
+
+    private static void registerGeminiEgg(Class<? extends Entity> clazz, String name, int color1, int color2) {
 		// Match the existing FML save name instead of renaming already-saved creatures.
 		EntityRegistry.registerGlobalEntityID(clazz, RefStrings.MODID + "." + name, EntityRegistry.findGlobalUniqueEntityId(), color1, color2);
 	}

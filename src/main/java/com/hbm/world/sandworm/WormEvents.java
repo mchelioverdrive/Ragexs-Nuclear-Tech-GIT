@@ -33,6 +33,7 @@ public final class WormEvents {
             BiomeGenBase b = overworld.getBiomeGenForCoords(x, z);
             if(b != BiomeGenBase.desert && b != BiomeGenBase.desertHills) return;
             EntitySandworm worm = new EntitySandworm(overworld);
+            if(!com.hbm.world.gemini.GeminiHostileSpawning.allowAutomaticHostile(worm)) return;
             worm.setLocationAndAngles(x + 0.5, Math.max(8, overworld.getHeightValue(x, z) - 35), z + 0.5, overworld.rand.nextFloat() * 360, -35);
             if(!overworld.spawnEntityInWorld(worm)) {
                 data.cancel(worm.getUniqueID()); WormEncounter e = data.find(worm.getUniqueID()); if(e != null) { e.exteriorRetired = true; data.markDirty(); }
