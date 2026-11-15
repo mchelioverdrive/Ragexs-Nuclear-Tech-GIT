@@ -710,3 +710,9 @@
 - Save and revalidate the traversed Gardener tunnel, guide surface retreat to its entrance and reuse the corridor across reloads. Favor direct progress in bounded replacement searches so cheap surface-air cells do not exhaust the search budget above deep homes.
 - Keep an intact underground home valid when its own entrance shaft exposes the center to the sky; check surrounding cover and preserve the assigned nest floor during route planning.
 - Respect native block collision shapes in Gardener passage checks, walking through harmless non-colliding flora without excavating it. Continue rejecting fluid, fire, web, portal and tile hazards; keep all solid-block protection checks.
+
+2026-11-15 01:20 — Advance Underground Gardener feeding per captive
+
+- Start each slot's feeding clock on arrival within the existing bite tolerance, after server-owned transport. Preserve progress independently of acquisition and other slots, retain the existing 4-damage/20-tick bites and confirmed-death cocoon handoff, and clear only the completed capture.
+- Stop treating corrective movement as feeding or approach progress. Count meaningful approach and completed route waypoints so stalls reach the existing controlled-traversal or ceiling-fallback recovery; keep each underground attachment independent of other captives' widths and use the cocoon handoff's existing arrival tolerance.
+- Include slot, owner/victim UUIDs, state age, feeding progress, attachment distance, terrain obstruction and transport recovery in capture diagnostics. Throttle repeated stall reports and retain opt-in transition diagnostics. Preserve Ocean Gardener transport/feeding, terrain handling, animations, transient capture saves and cocoon population limits.

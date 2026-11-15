@@ -573,6 +573,7 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
         ChunkCoordinates selectedAttachment = new ChunkCoordinates(0, -1, 0);
         double captureBestDistance;
         int captureProgressTick, lastFeedingTick, captureSneakTicks, captureTicks, movementObstructionTicks;
+        int feedingTicks = -1, lastStallDiagnostic;
         List<Vec3> captiveRoute;
         Vec3 routeGoal, safeCaptivePosition;
         Vec3 releaseAim = Vec3.createVectorHelper(0, 0, 0);
@@ -587,8 +588,11 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
                     && (worldObj.isRemote || entity.getUniqueID().equals(captiveUUID)) ? entity : null;
         }
         void begin(int next) {
+            int previous = state;
             state = next; stateStart = (int) worldObj.getTotalWorldTime(); attackTicks = 0;
             syncCaptures();
+            if(!isOcean() && CAPTURE_DIAGNOSTICS && previous != next)
+                captureDiagnostic("Transition " + previous + " -> " + next);
         }
         void tick() {
             if(state == IDLE) return;
@@ -609,6 +613,7 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
                     MathHelper.floor_double(pendingCocoon.posX), MathHelper.floor_double(pendingCocoon.boundingBox.maxY),
                     MathHelper.floor_double(pendingCocoon.posZ));
             captureBestDistance = captureDistance(); captureTicks = captureProgressTick = lastFeedingTick = captureSneakTicks = 0;
+            feedingTicks = -1; lastStallDiagnostic = 0;
             resetTransport(); safeCaptivePosition = captiveCenter();
             begin(state); restrainCaptive();
             if(victim instanceof EntityLivingBase) GeminiInfections.expose((EntityLivingBase) victim, "gardener_capture:" + getUniqueID(), "gardener");
@@ -632,8 +637,19 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
         }
         private void captureDiagnostic(String reason) {
             if(captive != null || holdingState(state)) MainRegistry.logger.info("[Gardener capture] gardener=" + getUniqueID()
-                    + " captive=" + (captive == null ? "unknown" : captive.getUniqueID()) + " state=" + state
-                    + " ticks=" + captureTicks + ": " + reason);
+                    + " captive=" + (captive == null ? "unknown" : captive.getUniqueID()) + " slot=" + index + " state=" + state
+                    + " stateTicks=" + Math.max(0, (int) worldObj.getTotalWorldTime() - stateStart)
+                    + " ticks=" + captureTicks + " noProgressTicks=" + (captureTicks - captureProgressTick)
+                    + " feedingTicks=" + feedingTicks + " biteInterval=20"
+                    + " distance=" + (captive == null ? -1D : captureDistance())
+                    + " obstructed=" + (captive != null && !clearCaptiveSegment(captiveCenter(), captureGoal()))
+                    + " recovery=" + (traversingBlocks ? "block traversal" : captiveRoute != null ? "waypoints" : "direct")
+                    + ": " + reason);
+        }
+        private void diagnoseStall(String reason) {
+            if(captureTicks - lastStallDiagnostic < 100) return;
+            lastStallDiagnostic = captureTicks;
+            captureDiagnostic(reason);
         }
         private void release(String reason) {
             captureDiagnostic(reason);
@@ -658,13 +674,16 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
             selectedAttachment = new ChunkCoordinates(0, -1, 0);
             resetTransport(); safeCaptivePosition = null;
             captiveId = -1; captiveUUID = null;
+            feedingTicks = -1; feeding = false; feedingDeath = null;
             if(state != IDLE && state != RELEASE) begin(RELEASE);
         }
         private Vec3 captureGoal() {
             if(pendingCocoon != null) return pendingCocoon.victimGoal(captive);
             double angle = Math.toRadians(rotationYaw) + index * Math.PI * 2D / CAPTURE_SLOTS;
             double widest = captive.width;
-            for(CaptureSlot slot : captures) if(slot.captive != null) widest = Math.max(widest, slot.captive.width);
+            // Underground attachments belong to this slot; acquiring/releasing another prey must
+            // not move an existing meal or invalidate its route. Retain ocean spacing behavior.
+            if(isOcean()) for(CaptureSlot slot : captures) if(slot.captive != null) widest = Math.max(widest, slot.captive.width);
             double radius = !isOcean() && captive instanceof EntityLivingBase ? Math.max(1.6D, widest * 0.85D + 0.35D)
                     : Math.max(2.8D, width * 0.5D + widest * 0.5D + 0.75D);
             double height = !isOcean() && captive instanceof EntityLivingBase ? Math.max(0.8D, captive.height * 0.5D + 0.1D)
@@ -706,8 +725,10 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
             }
             // The appendage follows the live grip. Terrain along its straight visual skeleton
             // must not veto the captive's independent route out of a trench.
+            moveCaptive();
+            if(captive == null) return;
             double distance = captureDistance();
-            if(distance < captureBestDistance - 0.25D) {
+            if(feedingTicks < 0 && distance < captureBestDistance - 0.25D) {
                 captureBestDistance = distance; captureProgressTick = captureTicks;
             }
             if(pendingCocoon != null && state == LIFT
@@ -715,7 +736,7 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
                 abandonCeiling("Capture stall timeout at ceiling; feeding fallback"); distance = captureDistance();
             }
             if(pendingCocoon != null) {
-                if(state == LIFT && distance <= 0.12D) {
+                if(state == LIFT && distance <= 0.4D) {
                     boolean attached = pendingCocoon.attach(EntityGardener.this, captive);
                     if(captive == null) return; // Protection/admission callbacks may interrupt ownership.
                     if(attached) { movementObstructionTicks = 0; begin(ATTACH); }
@@ -731,15 +752,24 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
                         captureProgressTick = captureTicks; // Actual wrapping, rather than positional jitter.
                     }
                     if(pendingCocoon.fullyWrapped()) {
-                        if(pendingCocoon.seal(EntityGardener.this, captive)) { release(false); return; }
+                        if(pendingCocoon.seal(EntityGardener.this, captive)) {
+                            if(CAPTURE_DIAGNOSTICS) captureDiagnostic("Wrapping completed");
+                            release(false); return;
+                        }
                         if(captive == null) return;
                         if(pendingCocoon.placementObstructed()) { captureObstruction(); return; }
                         abandonCeiling("Cocoon placement rejection at sealing"); distance = captureDistance();
                     }
                 }
             }
-            if(pendingCocoon == null && distance <= 1.25D && captureTicks - lastFeedingTick >= 20) {
-                lastFeedingTick = captureTicks;
+            if(pendingCocoon == null && distance <= 1.25D) {
+                if(feedingTicks < 0) {
+                    feedingTicks = 0; captureProgressTick = captureTicks;
+                    if(CAPTURE_DIAGNOSTICS) captureDiagnostic("Dragging -> feeding");
+                } else feedingTicks++;
+            }
+            if(pendingCocoon == null && distance <= 1.25D && feedingTicks >= 20) {
+                feedingTicks -= 20;
                 Entity victim = captive;
                 boolean fed, consumed;
                 feeding = true; feedingDeath = null;
@@ -756,19 +786,21 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
                     if(fed && consumed) EntityGardenerCocoon.afterFeeding(EntityGardener.this, captive);
                     else EntityGardenerCocoon.failure(EntityGardener.this, "feeding death does not qualify: damage=" + fed
                             + ", confirmed uncanceled death=" + consumed);
-                    release(false); return;
+                    if(captive == victim) {
+                        if(CAPTURE_DIAGNOSTICS) captureDiagnostic("Feeding completed");
+                        release(false);
+                    }
+                    return;
                 }
             }
-            boolean actionProgressing = pendingCocoon == null && distance <= 1.25D && captureTicks - captureProgressTick < 120
-                    || state == WRAP && distance <= 0.4D;
             if(captureTicks - captureProgressTick >= (pendingCocoon == null ? 120 : 160)) {
+                diagnoseStall("No approach, feeding or wrapping progress");
                 if(pendingCocoon != null) abandonCeiling("Capture stall timeout at attachment; feeding fallback");
                 else if(distance > 1.25D) {
                     // A detour may initially increase distance. Escalate transport, retaining the grip.
                     captiveRoute = null; traversingBlocks = true;
-                } else if(!actionProgressing) { release("Feeding made no progress"); return; }
+                } else { release("Feeding made no progress"); return; }
             }
-            moveCaptive();
         }
         private void moveCaptive() {
             Vec3 goal = captureGoal();
@@ -789,8 +821,10 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
                     captureDiagnostic("No bounded clear prey route; controlled block traversal");
                 }
             }
-            while(captiveRoute != null && !captiveRoute.isEmpty() && here.distanceTo(captiveRoute.get(0)) <= 0.05D)
+            while(captiveRoute != null && !captiveRoute.isEmpty() && here.distanceTo(captiveRoute.get(0)) <= 0.05D) {
                 captiveRoute.remove(0);
+                if(feedingTicks < 0) captureProgressTick = captureTicks;
+            }
             Vec3 next = captiveRoute != null && !captiveRoute.isEmpty() ? captiveRoute.get(0) : goal;
             double distance = here.distanceTo(next);
             double scale = distance > 0 ? Math.min(0.24D / distance, 1D) : 0;
@@ -816,7 +850,8 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
                 safe.setDouble("X", safeCaptivePosition.xCoord); safe.setDouble("Y", safeCaptivePosition.yCoord);
                 safe.setDouble("Z", safeCaptivePosition.zCoord); captive.getEntityData().setTag("GardenerDragSafe", safe);
             }
-            if(distance > 0.05D && here.distanceTo(captiveCenter()) >= 0.01D) captureProgressTick = captureTicks;
+            // Moving back and forth (or correcting pushes at the mouth) is not feeding progress.
+            // Approach distance and completed route waypoints are measured by the owning slot.
             captive.motionX = captive.motionY = captive.motionZ = 0; captive.fallDistance = 0;
             syncHeldPlayer();
             // The normal entity tracker sends position deltas; zero-velocity packets each tick add no support.
@@ -910,6 +945,7 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
             begin(HOLD);
             resetTransport();
             captureBestDistance = captureDistance(); captureProgressTick = lastFeedingTick = captureTicks;
+            feedingTicks = -1;
         }
         /** Ocean capture retains collision-resolved lifting, damage, escape and timeout behavior. */
         private void tickOceanCapture() {
