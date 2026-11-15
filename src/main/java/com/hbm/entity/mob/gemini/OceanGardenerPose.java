@@ -11,6 +11,7 @@ public final class OceanGardenerPose {
     private OceanGardenerPose() { }
     public static Vec3 point(EntityGardener boss, int arm, int joint, float partial) {
         double t = joint / 4D, angle = ANGLE[arm];
+        int state = boss.armState(arm);
         double age = boss.isAwake() ? boss.worldObj.getTotalWorldTime() + partial : 0;
         double wave = Math.sin(age * 0.017D - joint * 0.8D + arm * 1.9D);
         boolean submerged = boss.isInWater();
@@ -28,22 +29,22 @@ public final class OceanGardenerPose {
             z += Math.cos(angle) * stride * t * 0.7D;
             y += Math.max(0, Math.cos(age * 0.075D + arm * Math.PI + (arm / 2) * 0.8D)) * boss.crawlAmount(partial) * t * 0.65D;
         }
-        if(arm == boss.attackArm() && boss.state() == EntityGardener.HOLD) {
+        if(state == EntityGardener.HOLD) {
             // Retract toward the actual captive. Keeping the idle hanging knees here puts
             // intermediate joints below a rising victim and can spuriously hit the seabed.
-            Vec3 aim = boss.limbAim(partial);
+            Vec3 aim = boss.limbAim(arm, partial);
             double rootX = Math.cos(angle) * RADIAL[0], rootZ = Math.sin(angle) * RADIAL[0] * 0.85D;
             double rootY = HEIGHT[0] + boss.bodyShift(partial);
             x = rootX + (aim.xCoord - rootX) * t;
             y = rootY + (aim.yCoord - rootY) * t;
             z = rootZ + (aim.zCoord - rootZ) * t;
         }
-        if(arm == boss.attackArm() && boss.state() != EntityGardener.IDLE && boss.state() != EntityGardener.HOLD) {
-            double blend = boss.state() == EntityGardener.REACH ? Math.min(1, boss.stateTime(partial) / 24D)
-                    : boss.state() == EntityGardener.RECOVER ? Math.max(0, 1D - boss.stateTime(partial) / 24D) : 1;
+        if(state != EntityGardener.IDLE && state != EntityGardener.HOLD) {
+            double blend = state == EntityGardener.REACH ? Math.min(1, boss.armStateTime(arm, partial) / 24D)
+                    : state == EntityGardener.RECOVER || state == EntityGardener.RELEASE ? Math.max(0, 1D - boss.armStateTime(arm, partial) / 24D) : 1;
             // Only downstream joints bend; the root remains embedded in the moving body.
             double bend = t * t * blend;
-            Vec3 aim = boss.limbAim(partial);
+            Vec3 aim = boss.limbAim(arm, partial);
             x += (aim.xCoord - Math.cos(angle) * RADIAL[4]) * bend;
             z += (aim.zCoord - Math.sin(angle) * RADIAL[4]) * bend;
             y += (aim.yCoord - HEIGHT[4]) * bend;

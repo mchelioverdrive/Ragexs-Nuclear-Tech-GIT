@@ -12,7 +12,6 @@ import com.hbm.world.gemini.GardenerNests;
 import com.hbm.world.gemini.GeminiInfections;
 import com.hbm.world.gemini.MockerySpawning;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.DataWatcher;
 import net.minecraft.entity.IEntityLivingData;
 import com.hbm.world.gemini.GeminiSpawning;
 import net.minecraft.entity.EntityLiving;
@@ -38,26 +37,17 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
     private final float[] limbHealth = {32, 32, 32, 32, 32, 32};
     private final int[] recovery = new int[6], limbHurt = new int[6];
     private final Set<UUID> struck = new HashSet<UUID>();
-    private Entity captive, preyTarget;
-    private EntityGardenerCocoon pendingCocoon;
-    private ChunkCoordinates selectedAttachment = new ChunkCoordinates(0, -1, 0);
+    private static final int CAPTURE_SLOTS = 3;
+    private final CaptureSlot[] captures = {new CaptureSlot(0), new CaptureSlot(1), new CaptureSlot(2)};
+    private Entity preyTarget;
     private final List<SurfaceBiomass> surfaceBiomass = new ArrayList<SurfaceBiomass>();
     private boolean placingSurface;
-    private boolean feeding;
     private String cocoonAdmissionFailure;
-    private net.minecraftforge.event.entity.living.LivingDeathEvent feedingDeath;
     protected double nestX, nestY, nestZ;
     private double travelX, travelY, travelZ;
     private float previousCrawl, crawl;
     private boolean anchored, fromSave;
     private int cooldown = 60, attackTicks, summons, summonTicks;
-    private double captureSideX, captureSideZ, captureBestDistance;
-    private int captureProgressTick, lastFeedingTick, captureSneakTicks, captureTicks;
-    private int movementObstructionTicks;
-    private List<Vec3> captiveRoute;
-    private Vec3 routeGoal, safeCaptivePosition;
-    private boolean traversingBlocks;
-    private HeldNavigation heldNavigation;
     private int smashCursor = -1, smashX, smashY, smashZ, smashRemoved;
     private static final boolean CAPTURE_DIAGNOSTICS = Boolean.getBoolean("hbm.gardenerCaptureDiagnostics");
     private long nextCaptureDiagnostic;
@@ -81,7 +71,7 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
         dataWatcher.addObject(28, (byte) 0); // Server-owned activity, also freezes dormant presentation
         dataWatcher.addObject(29, 0F); // Locomotion intensity, interpolated by the client
         dataWatcher.addObject(30, 0xFFFFFF); // Six four-bit underground limb extensions
-        dataWatcher.addObject(31, new ChunkCoordinates(0, -1, 0)); // Selected hanging attachment, or feeding.
+        dataWatcher.addObject(31, ""); // Event-driven captive/arm snapshots; positions use native tracking.
     }
     @Override protected void applyEntityAttributes() {
         super.applyEntityAttributes();
@@ -137,20 +127,57 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
     public float aimY() { return dataWatcher.getWatchableObjectFloat(25); }
     public float aimZ() { return dataWatcher.getWatchableObjectFloat(26); }
     public double limbExtension(int arm) { return (dataWatcher.getWatchableObjectInt(30) >> (arm * 4) & 15) / 15D; }
-    public boolean captureState() { return state() == HOLD || state() >= CAPTURE && state() <= WRAP; }
-    public boolean hangingCapture() { return !isOcean() && captureState() && selectedAttachment.posY >= 0; }
-    public ChunkCoordinates cocoonAttachment() { return new ChunkCoordinates(selectedAttachment); }
+    public boolean captureState() {
+        for(CaptureSlot slot : captures) if(slot.victim() != null) return true;
+        return false;
+    }
+    public boolean hangingCapture() {
+        for(CaptureSlot slot : captures) if(slot.victim() != null && slot.selectedAttachment.posY >= 0) return true;
+        return false;
+    }
+    public ChunkCoordinates cocoonAttachment() {
+        for(CaptureSlot slot : captures) if(slot.victim() != null) return new ChunkCoordinates(slot.selectedAttachment);
+        return new ChunkCoordinates(0, -1, 0);
+    }
     @Override public void func_145781_i(int id) {
         super.func_145781_i(id);
-        // 1.7.10 supports coordinate metadata but has no typed coordinate getter.
-        if(id == 31) for(Object entry : dataWatcher.getAllWatched()) {
-            DataWatcher.WatchableObject value = (DataWatcher.WatchableObject) entry;
-            if(value.getDataValueId() == 31) { selectedAttachment = new ChunkCoordinates((ChunkCoordinates) value.getObject()); break; }
+        if(id == 31 && worldObj.isRemote && captures != null) {
+            String[] entries = dataWatcher.getWatchableObjectString(31).split(";", -1);
+            for(int i = 0; i < captures.length; i++) captures[i].readSnapshot(i < entries.length ? entries[i] : "");
         }
     }
-    public Vec3 limbAim(float partial) {
-        Entity target = eyeTarget();
-        if(target != null && (captureState() || state() == REACH)) {
+    private CaptureSlot captureFor(Entity victim) {
+        if(victim != null) for(CaptureSlot slot : captures) if(slot.captive == victim) return slot;
+        return null;
+    }
+    private CaptureSlot captureForArm(int arm) {
+        for(CaptureSlot slot : captures) if(slot.arm == arm && slot.state != IDLE) return slot;
+        return null;
+    }
+    private CaptureSlot freeCapture() {
+        for(CaptureSlot slot : captures) if(slot.state == IDLE) return slot;
+        return null;
+    }
+    public int armState(int arm) {
+        CaptureSlot slot = captureForArm(arm);
+        if(slot != null) return slot.state == RELEASE || slot.victim() != null ? slot.state : IDLE;
+        return arm == attackArm() ? state() : IDLE;
+    }
+    public float armStateTime(int arm, float partial) {
+        CaptureSlot slot = captureForArm(arm);
+        return slot == null ? stateTime(partial) : Math.max(0, (int) worldObj.getTotalWorldTime() - slot.stateStart + partial);
+    }
+    public Entity armCaptive(int arm) {
+        CaptureSlot slot = captureForArm(arm);
+        return slot == null ? null : slot.victim();
+    }
+    public static boolean holdingState(int state) { return state == HOLD || state >= CAPTURE && state <= WRAP; }
+    public Vec3 limbAim(float partial) { return limbAim(attackArm(), partial); }
+    public Vec3 limbAim(int arm, float partial) {
+        CaptureSlot slot = captureForArm(arm);
+        Entity target = slot == null ? eyeTarget() : slot.victim();
+        int pose = armState(arm);
+        if(target != null && (holdingState(pose) || pose == REACH)) {
             double x = target.lastTickPosX + (target.posX - target.lastTickPosX) * partial
                     - lastTickPosX - (posX - lastTickPosX) * partial;
             double y = target.lastTickPosY + (target.posY - target.lastTickPosY) * partial
@@ -158,20 +185,32 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
                     - lastTickPosY - (posY - lastTickPosY) * partial;
             double z = target.lastTickPosZ + (target.posZ - target.lastTickPosZ) * partial
                     - lastTickPosZ - (posZ - lastTickPosZ) * partial;
-            // During the ocean lift the real victim owns the contact point, including escape slack.
-            if(captureState()) return Vec3.createVectorHelper(x,
+            if(holdingState(pose)) return Vec3.createVectorHelper(x,
                     y + (isOcean() ? 0 : gripHeight(target) - target.height * 0.5D), z);
-            if(!isOcean() && state() == REACH) y += gripHeight(target) - target.height * 0.5D;
+            if(!isOcean()) y += gripHeight(target) - target.height * 0.5D;
             double length = Math.sqrt(x * x + z * z), scale = length > attackReach() ? attackReach() / length : 1D;
             return Vec3.createVectorHelper(x * scale, MathHelper.clamp_double(y,
                     bodyOffset() + (isOcean() ? -28 : -8), bodyOffset() + (isOcean() ? 31 : 8)), z * scale);
         }
-        return Vec3.createVectorHelper(aimX(), aimY(), aimZ());
+        return slot == null ? Vec3.createVectorHelper(aimX(), aimY(), aimZ()) : slot.releaseAim;
     }
+    private void syncCaptures() {
+        if(worldObj.isRemote) return;
+        StringBuilder snapshot = new StringBuilder();
+        for(CaptureSlot slot : captures) { if(slot.index > 0) snapshot.append(';'); snapshot.append(slot.snapshot()); }
+        dataWatcher.updateObject(31, snapshot.toString());
+    }
+    private void release(String reason) { for(CaptureSlot slot : captures) if(slot.state != IDLE) slot.release(reason); }
+
     public boolean armDisabled(int arm) { return arm < 0 || arm >= 6 || (dataWatcher.getWatchableObjectByte(27) & (1 << arm)) != 0; }
     public Entity eyeTarget() {
         Entity entity = worldObj.getEntityByID(dataWatcher.getWatchableObjectInt(20));
-        return entity != null && entity.isEntityAlive() ? entity : null;
+        if(entity != null && entity.isEntityAlive()) return entity;
+        for(CaptureSlot slot : captures) {
+            Entity victim = slot.victim();
+            if(victim != null) return victim;
+        }
+        return null;
     }
     public void anchor(double x, double y, double z) {
         nestX = x; nestY = y; nestZ = z; anchored = true;
@@ -211,13 +250,15 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
     private boolean prey(Entity target) {
         return preyRejection(target) == null;
     }
-    private String preyRejection(Entity target) {
+    private String preyRejection(Entity target) { return preyRejection(target, true); }
+    private String preyRejection(Entity target, boolean acquiring) {
         if(target == null) return "No target";
         if(target == this || target instanceof IGeminiCreature || target instanceof IBossDisplayData) return "Excluded creature";
         if(!target.isEntityAlive() || target.worldObj != worldObj || !target.addedToChunk) return "Dead or unloaded prey";
         if(!suitablePrey(target)) return "Unsuitable size or mount";
         if(target.getEntityData().hasKey("MockeryCaptor")) return "Held by Mockery";
         if(target.getEntityData().getLong("WoodcrawlerCocoonUntil") > worldObj.getTotalWorldTime()) return "Woodcrawler cocoon cooldown";
+        if(acquiring && captureFor(target) != null) return "Already captured";
         if(heldByOtherGardener(target)) return "Held by another Gardener";
         if(target.getEntityData().getLong("GardenerEscapeUntil") > worldObj.getTotalWorldTime()) return "Gardener escape cooldown";
         if(target instanceof EntityPlayer && (((EntityPlayer) target).capabilities.disableDamage
@@ -324,11 +365,6 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
         dataWatcher.updateObject(22, (int) worldObj.getTotalWorldTime());
         attackTicks = 0; struck.clear();
     }
-    private void captureDiagnostic(String reason) {
-        if(captive != null || captureState()) MainRegistry.logger.info("[Gardener capture] gardener=" + getUniqueID()
-                + " captive=" + (captive == null ? "unknown" : captive.getUniqueID()) + " state=" + state()
-                + " ticks=" + captureTicks + ": " + reason);
-    }
     private void captureRejection(Entity target, String reason) {
         if(isOcean() || !CAPTURE_DIAGNOSTICS || reason == null || target == null || !suitablePrey(target)
                 || preyDistanceSq(target) > attackReach() * attackReach()
@@ -338,36 +374,8 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
         MainRegistry.logger.info("[Gardener capture rejected] gardener=" + getEntityId() + " target=" + target.getEntityId()
                 + " horizontal=" + Math.sqrt(dx * dx + dz * dz) + " vertical=" + (target.boundingBox.minY - boundingBox.minY)
                 + " boxSeparation=" + Math.sqrt(preyDistanceSq(target)) + " eligible=" + prey(target)
-                + " state=" + state() + " cooldown=" + cooldown + " captive=" + (captive == null ? -1 : captive.getEntityId())
+                + " state=" + state() + " cooldown=" + cooldown + " captures=" + (CAPTURE_SLOTS - availableCaptures())
                 + " escapeUntil=" + target.getEntityData().getLong("GardenerEscapeUntil") + ": " + reason);
-    }
-    private void release(String reason) {
-        captureDiagnostic(reason);
-        release(true);
-    }
-    private void release(boolean escaped) {
-        if(!isOcean() && captive != null) restoreCaptivePosition();
-        if(!isOcean() && captive != null) {
-            dataWatcher.updateObject(24, (float) (captive.posX - posX));
-            dataWatcher.updateObject(25, (float) (captive.boundingBox.minY + gripHeight(captive) - posY));
-            dataWatcher.updateObject(26, (float) (captive.posZ - posZ));
-        }
-        if(heldNavigation != null) { heldNavigation.restore(); heldNavigation = null; }
-        if(captive != null) {
-            if(getUniqueID().toString().equals(captive.getEntityData().getString("GardenerCaptor"))) {
-                captive.getEntityData().removeTag("GardenerCaptor"); captive.getEntityData().removeTag("GardenerCaptorId");
-                captive.getEntityData().removeTag("GardenerDragSafe");
-            }
-            if(escaped) captive.getEntityData().setLong("GardenerEscapeUntil", worldObj.getTotalWorldTime() + 400L);
-            captive.velocityChanged = true;
-        }
-        captive = null;
-        if(pendingCocoon != null) pendingCocoon.cancelWrapping();
-        pendingCocoon = null;
-        dataWatcher.updateObject(31, new ChunkCoordinates(0, -1, 0));
-        resetTransport(); safeCaptivePosition = null;
-        preyTarget = null; setAttackTarget(null); dataWatcher.updateObject(20, -1);
-        if(state() != IDLE && state() != RECOVER && state() != RELEASE) { begin(isOcean() ? RECOVER : RELEASE); cooldown = 45; }
     }
 
     @Override public void onUpdate() {
@@ -395,19 +403,20 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
             if(recovery[arm] > 0) mask |= 1 << arm;
         }
         dataWatcher.updateObject(27, (byte) mask);
+        for(CaptureSlot slot : captures) slot.tick();
         if(ticksExisted % 20 == 1) {
             maintainParts();
-            if(captive == null && (isOcean() ? state() != RELEASE : state() == IDLE)) findTarget();
+            if(freeCapture() != null && state() == IDLE) findTarget();
         }
         Entity target = preyTarget;
-        if(captive == null && !prey(target)) {
+        if(!prey(target) || freeCapture() == null) {
             captureRejection(target, preyRejection(target));
             preyTarget = null; setAttackTarget(null); dataWatcher.updateObject(20, -1); target = null;
         }
         tickLocomotion(target);
         if(ticksExisted % 10 == 1 || dataWatcher.getWatchableObjectFloat(29) > 0) adaptLimbs();
         if(cooldown > 0) cooldown--;
-        if(state() == IDLE && target != null && cooldown == 0 && reach(target, attackReach()) && (isOcean() || tipInReach(target))) {
+        if(state() == IDLE && freeCapture() != null && target != null && cooldown == 0 && reach(target, attackReach()) && (isOcean() || tipInReach(target))) {
             int arm = captureArm(target);
             if(arm >= 0) {
                 dataWatcher.updateObject(23, (byte) arm);
@@ -432,12 +441,8 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
     private void tickAttack() {
         attackTicks++;
         if(state() == RECOVER || state() == RELEASE) { if(attackTicks >= 24) begin(IDLE); return; }
-        if(armDisabled(attackArm())) { release("Disabled tentacle"); return; }
+        if(armDisabled(attackArm())) { begin(RECOVER); return; }
         Entity target = preyTarget;
-        if(captureState()) {
-            tickCapture();
-            return;
-        }
         if(state() == REACH && attackTicks <= 34 && reach(target, attackReach())) aim(target, false);
         if(state() == REACH && attackTicks >= 24 && attackTicks <= 34) {
             Vec3 a = GardenerPose.point(this, attackArm(), 3, 1), b = GardenerPose.point(this, attackArm(), 4, 1);
@@ -450,26 +455,12 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
                 if(rejection == null && !clear) rejection = "Reaching tentacle obstructed";
                 if(rejection == null && !GardenerPose.touches(a, b, victim.boundingBox, GardenerPose.RADIUS)) rejection = "Reaching tip missed prey bounds";
                 if(rejection != null) { if(attackTicks == 34 && victim == target) captureRejection(victim, rejection); continue; }
-                captive = preyTarget = victim; setAttackTarget(victim instanceof EntityLivingBase ? (EntityLivingBase) victim : null); dataWatcher.updateObject(20, victim.getEntityId());
-                begin(isOcean() ? HOLD : CAPTURE);
-                victim.getEntityData().setString("GardenerCaptor", getUniqueID().toString());
-                victim.getEntityData().setInteger("GardenerCaptorId", getEntityId());
-                pendingCocoon = EntityGardenerCocoon.findCeiling(this, victim);
-                if(pendingCocoon != null) dataWatcher.updateObject(31, new ChunkCoordinates(
-                        MathHelper.floor_double(pendingCocoon.posX), MathHelper.floor_double(pendingCocoon.boundingBox.maxY),
-                        MathHelper.floor_double(pendingCocoon.posZ)));
-                {
-                    double dx = victim.posX - posX, dz = victim.posZ - posZ;
-                    double distance = Math.sqrt(dx * dx + dz * dz);
-                    captureSideX = distance > 0.01D ? dx / distance : 1D;
-                    captureSideZ = distance > 0.01D ? dz / distance : 0D;
-                    captureBestDistance = captureDistance(); captureTicks = captureProgressTick = lastFeedingTick = captureSneakTicks = 0;
-                    resetTransport();
-                    if(!isOcean()) safeCaptivePosition = captiveCenter();
-                }
-                if(!isOcean()) restrainCaptive();
-                if(victim instanceof EntityLivingBase) GeminiInfections.expose((EntityLivingBase) victim, "gardener_capture:" + getUniqueID(), "gardener");
-                else wound(victim, 10F);
+                CaptureSlot slot = freeCapture();
+                if(slot == null || captureFor(victim) != null) return;
+                slot.capture(victim, attackArm());
+                preyTarget = null; setAttackTarget(null); dataWatcher.updateObject(20, -1);
+                // The captured arm now belongs to its slot; another arm can start reaching.
+                begin(IDLE); cooldown = 0;
                 return;
             }
         }
@@ -506,7 +497,7 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
     private int captureArm(Entity target) {
         int arm = -1;
         double best = Double.MAX_VALUE;
-        for(int i = 0; i < 6; i++) if(!armDisabled(i)) {
+        for(int i = 0; i < 6; i++) if(!armDisabled(i) && captureForArm(i) == null) {
             Vec3 shoulder = GardenerPose.point(this, i, 1, 1);
             double score = shoulder.squareDistanceTo(Vec3.createVectorHelper(target.posX, target.posY, target.posZ));
             if(score < best && (isOcean() || clearReachLimb(i, target))) { best = score; arm = i; }
@@ -550,7 +541,7 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
         if(isOcean() || !GeminiSpawning.isManual(this)) return;
         int extensions = dataWatcher.getWatchableObjectInt(30);
         for(int arm = 0; arm < GardenerPose.ARMS; arm++) {
-            if((arm == attackArm() && state() != IDLE) || armDisabled(arm)) continue;
+            if(armState(arm) != IDLE || armDisabled(arm)) continue;
             int extension = 15;
             while(extension > 0 && !clearLimb(arm, extension / 15D)) extension--;
             // Leave room for idle sway between probes instead of resting the tip against a wall.
@@ -559,223 +550,419 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
         }
         dataWatcher.updateObject(30, extensions);
     }
-    private Vec3 captureGoal() {
-        if(pendingCocoon != null) return pendingCocoon.victimGoal(captive);
-        if(!isOcean() && captive instanceof EntityLivingBase) {
-            // The model narrows to its underside at y=0.8. Feed there, with feet above the
-            // nest floor, rather than dragging underbody prey out around the collision column.
-            return Vec3.createVectorHelper(posX, posY + Math.max(0.8D, captive.height * 0.5D + 0.1D), posZ);
+    /** Each slot owns its captive, transport, AI suspension and feeding/cocoon lifecycle. */
+    private final class CaptureSlot {
+        final int index;
+        Entity captive;
+        int captiveId = -1, arm = -1, state = IDLE, stateStart, attackTicks;
+        UUID captiveUUID;
+        EntityGardenerCocoon pendingCocoon;
+        ChunkCoordinates selectedAttachment = new ChunkCoordinates(0, -1, 0);
+        double captureBestDistance;
+        int captureProgressTick, lastFeedingTick, captureSneakTicks, captureTicks, movementObstructionTicks;
+        List<Vec3> captiveRoute;
+        Vec3 routeGoal, safeCaptivePosition;
+        Vec3 releaseAim = Vec3.createVectorHelper(0, 0, 0);
+        boolean traversingBlocks, feeding;
+        HeldNavigation heldNavigation;
+        net.minecraftforge.event.entity.living.LivingDeathEvent feedingDeath;
+        CaptureSlot(int index) { this.index = index; }
+        Entity victim() {
+            Entity entity = worldObj.isRemote ? worldObj.getEntityByID(captiveId) : captive;
+            // 1.7.10 mob spawn packets carry runtime IDs, not the server's entity UUID.
+            return entity != null && entity.worldObj == worldObj && entity.isEntityAlive()
+                    && (worldObj.isRemote || entity.getUniqueID().equals(captiveUUID)) ? entity : null;
         }
-        // Finish beside the upper body, outside its collision column even for a wide vehicle.
-        double radius = Math.max(2.8D, width * 0.5D + captive.width * 0.5D + 0.75D);
-        return Vec3.createVectorHelper(posX + captureSideX * radius, posY + bodyOffset() + (isOcean() ? 2D : 2.5D),
-                posZ + captureSideZ * radius);
-    }
-    private double captureDistance() {
-        return captureGoal().distanceTo(Vec3.createVectorHelper(captive.posX,
-                captive.boundingBox.minY + captive.height * 0.5D, captive.posZ));
-    }
-    private void tickCapture() {
-        if(isOcean()) { tickOceanCapture(); return; }
-        captureTicks++;
-        if(captive == null) { release("Lost entity reference"); return; }
-        if(!captive.isEntityAlive() || captive.worldObj != worldObj || captive.noClip || !suitablePrey(captive)) {
-            release("Invalid captive"); return;
+        void begin(int next) {
+            state = next; stateStart = (int) worldObj.getTotalWorldTime(); attackTicks = 0;
+            syncCaptures();
         }
-        if(!captive.addedToChunk || !GardenerNests.loaded(worldObj, captive.boundingBox.expand(1, 0, 1))) {
-            release("Chunk unloading"); return;
+        void tick() {
+            if(state == IDLE) return;
+            attackTicks++;
+            if(state == RELEASE) { if(attackTicks >= 24) { arm = -1; begin(IDLE); } return; }
+            if(armDisabled(arm)) { release("Disabled tentacle"); return; }
+            tickCapture();
         }
-        if(worldObj.getEntityByID(captive.getEntityId()) != captive) { release("Lost entity reference"); return; }
-        if(!getUniqueID().toString().equals(captive.getEntityData().getString("GardenerCaptor"))
-                || captive.getEntityData().getLong("GardenerEscapeUntil") > worldObj.getTotalWorldTime()
-                || captive instanceof EntityPlayer && (((EntityPlayer) captive).capabilities.disableDamage
-                    || ((EntityPlayer) captive).capabilities.isCreativeMode)
-                || preyDistanceSq(captive) > (attackReach() + 7D) * (attackReach() + 7D)
-                    && !canTransportTo(Vec3.createVectorHelper(captive.posX, captive.boundingBox.minY + captive.height * 0.5D, captive.posZ))) {
-            release("Victim escape"); return;
+        void capture(Entity victim, int arm) {
+            this.arm = arm; captive = victim; captiveId = victim.getEntityId(); captiveUUID = victim.getUniqueID();
+            victim.getEntityData().setString("GardenerCaptor", getUniqueID().toString());
+            victim.getEntityData().setInteger("GardenerCaptorId", getEntityId());
+            state = isOcean() ? HOLD : CAPTURE;
+            EntityGardenerCocoon candidate = EntityGardenerCocoon.findCeiling(EntityGardener.this, victim);
+            if(captive != victim) { if(candidate != null) candidate.cancelWrapping(); return; }
+            pendingCocoon = candidate;
+            if(pendingCocoon != null) selectedAttachment = new ChunkCoordinates(
+                    MathHelper.floor_double(pendingCocoon.posX), MathHelper.floor_double(pendingCocoon.boundingBox.maxY),
+                    MathHelper.floor_double(pendingCocoon.posZ));
+            captureBestDistance = captureDistance(); captureTicks = captureProgressTick = lastFeedingTick = captureSneakTicks = 0;
+            resetTransport(); safeCaptivePosition = captiveCenter();
+            begin(state); restrainCaptive();
+            if(victim instanceof EntityLivingBase) GeminiInfections.expose((EntityLivingBase) victim, "gardener_capture:" + getUniqueID(), "gardener");
+            else wound(victim, 10F);
         }
-        restrainCaptive();
-        captureSneakTicks = captive instanceof EntityPlayer && captive.isSneaking() ? captureSneakTicks + 1 : 0;
-        if(captureSneakTicks >= 20) { release("Victim escape"); return; }
-        if(state() == CAPTURE) {
-            if(attackTicks < 16) return;
-            begin(pendingCocoon == null ? HOLD : LIFT);
+        String snapshot() {
+            return captiveId + "," + (captiveUUID == null ? "" : captiveUUID) + "," + state + "," + stateStart + "," + arm
+                    + "," + selectedAttachment.posX + "," + selectedAttachment.posY + "," + selectedAttachment.posZ
+                    + "," + releaseAim.xCoord + "," + releaseAim.yCoord + "," + releaseAim.zCoord;
         }
-        if(pendingCocoon != null && (pendingCocoon.isDead || !pendingCocoon.attachmentValid())) {
-            abandonCeiling("Invalid ceiling attachment");
+        void readSnapshot(String entry) {
+            captive = null; captiveId = -1; captiveUUID = null; state = IDLE; arm = -1;
+            if(entry.isEmpty()) return;
+            String[] fields = entry.split(",", -1);
+            if(fields.length != 11) return;
+            captiveId = Integer.parseInt(fields[0]);
+            captiveUUID = fields[1].isEmpty() ? null : UUID.fromString(fields[1]);
+            state = Integer.parseInt(fields[2]); stateStart = Integer.parseInt(fields[3]); arm = Integer.parseInt(fields[4]);
+            selectedAttachment = new ChunkCoordinates(Integer.parseInt(fields[5]), Integer.parseInt(fields[6]), Integer.parseInt(fields[7]));
+            releaseAim = Vec3.createVectorHelper(Double.parseDouble(fields[8]), Double.parseDouble(fields[9]), Double.parseDouble(fields[10]));
         }
-        // The appendage follows the live grip. Terrain along its straight visual skeleton
-        // must not veto the captive's independent route out of a trench.
-        double distance = captureDistance();
-        if(distance < captureBestDistance - 0.25D) {
-            captureBestDistance = distance; captureProgressTick = captureTicks;
+        private void captureDiagnostic(String reason) {
+            if(captive != null || holdingState(state)) MainRegistry.logger.info("[Gardener capture] gardener=" + getUniqueID()
+                    + " captive=" + (captive == null ? "unknown" : captive.getUniqueID()) + " state=" + state
+                    + " ticks=" + captureTicks + ": " + reason);
         }
-        if(pendingCocoon != null && state() == LIFT
-                && captureTicks - captureProgressTick >= 160) {
-            abandonCeiling("Capture stall timeout at ceiling; feeding fallback"); distance = captureDistance();
+        private void release(String reason) {
+            captureDiagnostic(reason);
+            release(true);
         }
-        if(pendingCocoon != null) {
-            if(state() == LIFT && distance <= 0.12D) {
-                boolean attached = pendingCocoon.attach(this, captive);
-                if(captive == null) return; // Protection/admission callbacks may interrupt ownership.
-                if(attached) { movementObstructionTicks = 0; begin(ATTACH); }
-                else if(pendingCocoon.placementObstructed()) { captureObstruction(); return; }
-                else {
-                    abandonCeiling("Cocoon placement rejection"); distance = captureDistance();
+        private void release(boolean escaped) {
+            if(!isOcean() && captive != null) restoreCaptivePosition();
+            if(captive != null) releaseAim = Vec3.createVectorHelper(captive.posX - posX,
+                    captive.boundingBox.minY + (isOcean() ? captive.height * 0.5D : gripHeight(captive)) - posY, captive.posZ - posZ);
+            if(heldNavigation != null) { heldNavigation.restore(); heldNavigation = null; }
+            if(captive != null) {
+                if(getUniqueID().toString().equals(captive.getEntityData().getString("GardenerCaptor"))) {
+                    captive.getEntityData().removeTag("GardenerCaptor"); captive.getEntityData().removeTag("GardenerCaptorId");
+                    captive.getEntityData().removeTag("GardenerDragSafe");
+                }
+                if(escaped) captive.getEntityData().setLong("GardenerEscapeUntil", worldObj.getTotalWorldTime() + 400L);
+                captive.velocityChanged = true;
+            }
+            captive = null;
+            if(pendingCocoon != null) pendingCocoon.cancelWrapping();
+            pendingCocoon = null;
+            selectedAttachment = new ChunkCoordinates(0, -1, 0);
+            resetTransport(); safeCaptivePosition = null;
+            captiveId = -1; captiveUUID = null;
+            if(state != IDLE && state != RELEASE) begin(RELEASE);
+        }
+        private Vec3 captureGoal() {
+            if(pendingCocoon != null) return pendingCocoon.victimGoal(captive);
+            double angle = Math.toRadians(rotationYaw) + index * Math.PI * 2D / CAPTURE_SLOTS;
+            double widest = captive.width;
+            for(CaptureSlot slot : captures) if(slot.captive != null) widest = Math.max(widest, slot.captive.width);
+            double radius = !isOcean() && captive instanceof EntityLivingBase ? Math.max(1.6D, widest * 0.85D + 0.35D)
+                    : Math.max(2.8D, width * 0.5D + widest * 0.5D + 0.75D);
+            double height = !isOcean() && captive instanceof EntityLivingBase ? Math.max(0.8D, captive.height * 0.5D + 0.1D)
+                    : bodyOffset() + (isOcean() ? 2D : 2.5D);
+            return Vec3.createVectorHelper(posX + Math.cos(angle) * radius, posY + height, posZ + Math.sin(angle) * radius);
+        }
+        private double captureDistance() {
+            return captureGoal().distanceTo(Vec3.createVectorHelper(captive.posX,
+                    captive.boundingBox.minY + captive.height * 0.5D, captive.posZ));
+        }
+        private void tickCapture() {
+            if(isOcean()) { tickOceanCapture(); return; }
+            captureTicks++;
+            if(captive == null) { release("Lost entity reference"); return; }
+            if(!captive.isEntityAlive() || captive.worldObj != worldObj || captive.noClip || !suitablePrey(captive)) {
+                release("Invalid captive"); return;
+            }
+            if(!captive.addedToChunk || !GardenerNests.loaded(worldObj, captive.boundingBox.expand(1, 0, 1))) {
+                release("Chunk unloading"); return;
+            }
+            if(worldObj.getEntityByID(captive.getEntityId()) != captive) { release("Lost entity reference"); return; }
+            if(!getUniqueID().toString().equals(captive.getEntityData().getString("GardenerCaptor"))
+                    || captive.getEntityData().getLong("GardenerEscapeUntil") > worldObj.getTotalWorldTime()
+                    || captive instanceof EntityPlayer && (((EntityPlayer) captive).capabilities.disableDamage
+                        || ((EntityPlayer) captive).capabilities.isCreativeMode)
+                    || preyDistanceSq(captive) > (attackReach() + 7D) * (attackReach() + 7D)
+                        && !canTransportTo(Vec3.createVectorHelper(captive.posX, captive.boundingBox.minY + captive.height * 0.5D, captive.posZ))) {
+                release("Victim escape"); return;
+            }
+            restrainCaptive();
+            captureSneakTicks = captive instanceof EntityPlayer && captive.isSneaking() ? captureSneakTicks + 1 : 0;
+            if(captureSneakTicks >= 20) { release("Victim escape"); return; }
+            if(state == CAPTURE) {
+                if(attackTicks < 16) return;
+                begin(pendingCocoon == null ? HOLD : LIFT);
+            }
+            if(pendingCocoon != null && (pendingCocoon.isDead || !pendingCocoon.attachmentValid())) {
+                abandonCeiling("Invalid ceiling attachment");
+            }
+            // The appendage follows the live grip. Terrain along its straight visual skeleton
+            // must not veto the captive's independent route out of a trench.
+            double distance = captureDistance();
+            if(distance < captureBestDistance - 0.25D) {
+                captureBestDistance = distance; captureProgressTick = captureTicks;
+            }
+            if(pendingCocoon != null && state == LIFT
+                    && captureTicks - captureProgressTick >= 160) {
+                abandonCeiling("Capture stall timeout at ceiling; feeding fallback"); distance = captureDistance();
+            }
+            if(pendingCocoon != null) {
+                if(state == LIFT && distance <= 0.12D) {
+                    boolean attached = pendingCocoon.attach(EntityGardener.this, captive);
+                    if(captive == null) return; // Protection/admission callbacks may interrupt ownership.
+                    if(attached) { movementObstructionTicks = 0; begin(ATTACH); }
+                    else if(pendingCocoon.placementObstructed()) { captureObstruction(); return; }
+                    else {
+                        abandonCeiling("Cocoon placement rejection"); distance = captureDistance();
+                    }
+                }
+                if(state == ATTACH && attackTicks >= 15 && distance <= 0.4D) begin(WRAP);
+                if(state == WRAP && distance <= 0.4D) {
+                    if(!pendingCocoon.fullyWrapped()) {
+                        pendingCocoon.growWrapping();
+                        captureProgressTick = captureTicks; // Actual wrapping, rather than positional jitter.
+                    }
+                    if(pendingCocoon.fullyWrapped()) {
+                        if(pendingCocoon.seal(EntityGardener.this, captive)) { release(false); return; }
+                        if(captive == null) return;
+                        if(pendingCocoon.placementObstructed()) { captureObstruction(); return; }
+                        abandonCeiling("Cocoon placement rejection at sealing"); distance = captureDistance();
+                    }
                 }
             }
-            if(state() == ATTACH && attackTicks >= 15 && distance <= 0.4D) begin(WRAP);
-            if(state() == WRAP && distance <= 0.4D) {
-                if(!pendingCocoon.fullyWrapped()) {
-                    pendingCocoon.growWrapping();
-                    captureProgressTick = captureTicks; // Actual wrapping, rather than positional jitter.
+            if(pendingCocoon == null && distance <= 1.25D && captureTicks - lastFeedingTick >= 20) {
+                lastFeedingTick = captureTicks;
+                Entity victim = captive;
+                boolean fed, consumed;
+                feeding = true; feedingDeath = null;
+                try {
+                    fed = wound(victim, 4F);
+                    consumed = feedingDeath != null && !feedingDeath.isCanceled();
+                } finally { feeding = false; feedingDeath = null; }
+                if(captive != victim) return;
+                if(fed) {
+                    captureProgressTick = captureTicks;
+                    playSound("mob.slime.attack", 0.8F, 0.75F);
                 }
-                if(pendingCocoon.fullyWrapped()) {
-                    if(pendingCocoon.seal(this, captive)) { release(false); return; }
-                    if(captive == null) return;
-                    if(pendingCocoon.placementObstructed()) { captureObstruction(); return; }
-                    abandonCeiling("Cocoon placement rejection at sealing"); distance = captureDistance();
+                if(!captive.isEntityAlive()) {
+                    if(fed && consumed) EntityGardenerCocoon.afterFeeding(EntityGardener.this, captive);
+                    else EntityGardenerCocoon.failure(EntityGardener.this, "feeding death does not qualify: damage=" + fed
+                            + ", confirmed uncanceled death=" + consumed);
+                    release(false); return;
+                }
+            }
+            boolean actionProgressing = pendingCocoon == null && distance <= 1.25D && captureTicks - captureProgressTick < 120
+                    || state == WRAP && distance <= 0.4D;
+            if(captureTicks - captureProgressTick >= (pendingCocoon == null ? 120 : 160)) {
+                if(pendingCocoon != null) abandonCeiling("Capture stall timeout at attachment; feeding fallback");
+                else if(distance > 1.25D) {
+                    // A detour may initially increase distance. Escalate transport, retaining the grip.
+                    captiveRoute = null; traversingBlocks = true;
+                } else if(!actionProgressing) { release("Feeding made no progress"); return; }
+            }
+            moveCaptive();
+        }
+        private void moveCaptive() {
+            Vec3 goal = captureGoal();
+            Vec3 here = captiveCenter();
+            if(routeGoal != null && routeGoal.distanceTo(goal) > 0.5D) resetTransport();
+            // Prefer a clear point within bite range if terrain has covered the exact underside.
+            if(pendingCocoon == null && !clearCaptiveSegment(goal, goal)) {
+                Vec3 clear = clearNear(goal, 1);
+                if(clear != null && clear.distanceTo(goal) <= 1.25D) goal = clear;
+            }
+            if(clearCaptiveSegment(here, goal)) {
+                captiveRoute = null; traversingBlocks = false;
+            } else if(captiveRoute == null && !traversingBlocks) {
+                captiveRoute = findCaptiveRoute(here, goal);
+                routeGoal = captureGoal();
+                if(captiveRoute == null) {
+                    traversingBlocks = true;
+                    captureDiagnostic("No bounded clear prey route; controlled block traversal");
+                }
+            }
+            while(captiveRoute != null && !captiveRoute.isEmpty() && here.distanceTo(captiveRoute.get(0)) <= 0.05D)
+                captiveRoute.remove(0);
+            Vec3 next = captiveRoute != null && !captiveRoute.isEmpty() ? captiveRoute.get(0) : goal;
+            double distance = here.distanceTo(next);
+            double scale = distance > 0 ? Math.min(0.24D / distance, 1D) : 0;
+            Vec3 step = here.addVector((next.xCoord - here.xCoord) * scale,
+                    (next.yCoord - here.yCoord) * scale, (next.zCoord - here.zCoord) * scale);
+            if(!loadedCaptiveSegment(here, step)) { release("Chunk unloading"); return; }
+            if(!traversingBlocks && !clearCaptiveSegment(here, step)) {
+                // Terrain changed after planning. Replan once, then traverse instead of retrying a wall.
+                captiveRoute = null;
+                if(++movementObstructionTicks >= 2) traversingBlocks = true;
+                return;
+            }
+            // Collision-safe waypoints are preferred. The fallback bypasses blocks only for this
+            // owned movement operation: no noClip flag can survive an interruption, save or release.
+            positionCaptive(step);
+            if(clearCaptiveSegment(step, step)) {
+                safeCaptivePosition = step;
+                captive.getEntityData().removeTag("GardenerDragSafe");
+            } else if(safeCaptivePosition != null && !captive.getEntityData().hasKey("GardenerDragSafe")) {
+                // Captures are intentionally transient across saves. An orphan loaded mid-wall must
+                // return to its last clear grip before resuming ordinary movement.
+                NBTTagCompound safe = new NBTTagCompound();
+                safe.setDouble("X", safeCaptivePosition.xCoord); safe.setDouble("Y", safeCaptivePosition.yCoord);
+                safe.setDouble("Z", safeCaptivePosition.zCoord); captive.getEntityData().setTag("GardenerDragSafe", safe);
+            }
+            if(distance > 0.05D && here.distanceTo(captiveCenter()) >= 0.01D) captureProgressTick = captureTicks;
+            captive.motionX = captive.motionY = captive.motionZ = 0; captive.fallDistance = 0;
+            syncHeldPlayer();
+            // The normal entity tracker sends position deltas; zero-velocity packets each tick add no support.
+        }
+        private void captureObstruction() {
+            // Only cocoon placement occupancy uses this retry budget; transport never releases on terrain.
+            if(++movementObstructionTicks >= 40) abandonCeiling("Cocoon occupancy; feeding fallback");
+        }
+        private void resetTransport() {
+            captiveRoute = null; routeGoal = null; traversingBlocks = false; movementObstructionTicks = 0;
+        }
+        private Vec3 captiveCenter() {
+            return Vec3.createVectorHelper(captive.posX, captive.boundingBox.minY + captive.height * 0.5D, captive.posZ);
+        }
+        private void positionCaptive(Vec3 center) {
+            // Preserve the native feet/origin offset, including players' yOffset.
+            double offset = captive.posY - captive.boundingBox.minY;
+            captive.setPosition(center.xCoord, center.yCoord - captive.height * 0.5D + offset, center.zCoord);
+        }
+        private AxisAlignedBB captiveSweep(Vec3 from, Vec3 to) {
+            AxisAlignedBB box = captive.boundingBox.getOffsetBoundingBox(from.xCoord - captive.posX,
+                    from.yCoord - captive.boundingBox.minY - captive.height * 0.5D, from.zCoord - captive.posZ);
+            return box.addCoord(to.xCoord - from.xCoord, to.yCoord - from.yCoord, to.zCoord - from.zCoord);
+        }
+        private boolean loadedCaptiveSegment(Vec3 from, Vec3 to) {
+            AxisAlignedBB box = captiveSweep(from, to);
+            return box.minY >= 0 && box.maxY <= worldObj.getActualHeight() && GardenerNests.loaded(worldObj, box.expand(1, 0, 1));
+        }
+        private boolean clearCaptiveSegment(Vec3 from, Vec3 to) {
+            // Block shapes only: neither the large parent AABB nor its own appendages obstruct feeding.
+            return loadedCaptiveSegment(from, to) && worldObj.func_147461_a(captiveSweep(from, to)).isEmpty();
+        }
+        /** Bounded six-axis A* for the held volume, independent of the victim's walking AI. */
+        private List<Vec3> findCaptiveRoute(Vec3 start, Vec3 goal) {
+            PriorityQueue<CaptiveStep> open = new PriorityQueue<CaptiveStep>();
+            Set<ChunkCoordinates> visited = new HashSet<ChunkCoordinates>();
+            open.add(new CaptiveStep(0, 0, 0, start, null, goal));
+            int[][] directions = {{0, 1, 0}, {1, 0, 0}, {-1, 0, 0}, {0, 0, 1}, {0, 0, -1}, {0, -1, 0}};
+            for(int examined = 0; !open.isEmpty() && examined < 768; examined++) {
+                CaptiveStep node = open.poll();
+                if(!visited.add(new ChunkCoordinates(node.x, node.y, node.z))) continue;
+                if(node.point.distanceTo(goal) <= 1.75D && clearCaptiveSegment(node.point, goal)) {
+                    List<Vec3> route = new ArrayList<Vec3>(); route.add(goal);
+                    for(CaptiveStep part = node; part.parent != null; part = part.parent) route.add(0, part.point);
+                    return route;
+                }
+                for(int[] direction : directions) {
+                    int x = node.x + direction[0], y = node.y + direction[1], z = node.z + direction[2];
+                    if(visited.contains(new ChunkCoordinates(x, y, z))) continue;
+                    Vec3 point = start.addVector(x, y, z);
+                    if(point.xCoord < Math.min(start.xCoord, goal.xCoord) - 4 || point.xCoord > Math.max(start.xCoord, goal.xCoord) + 4
+                            || point.zCoord < Math.min(start.zCoord, goal.zCoord) - 4 || point.zCoord > Math.max(start.zCoord, goal.zCoord) + 4
+                            || point.yCoord < Math.min(start.yCoord, goal.yCoord) - 2 || point.yCoord > Math.max(start.yCoord, goal.yCoord) + 6
+                            || node.cost > start.distanceTo(goal) + 18 || !clearCaptiveSegment(node.point, point)) continue;
+                    open.add(new CaptiveStep(x, y, z, point, node, goal));
+                }
+            }
+            return null;
+        }
+        private Vec3 clearNear(Vec3 center, int radius) {
+            if(clearCaptiveSegment(center, center)) return center;
+            Vec3 best = null;
+            double distance = Double.MAX_VALUE;
+            for(int y = radius; y >= -radius; y--) for(int x = -radius; x <= radius; x++) for(int z = -radius; z <= radius; z++) {
+                double squared = x * x + y * y + z * z;
+                if(squared >= distance) continue;
+                Vec3 point = center.addVector(x, y, z);
+                if(clearCaptiveSegment(point, point)) { best = point; distance = squared; }
+            }
+            return best;
+        }
+        private void restoreCaptivePosition() {
+            if(captive.worldObj != worldObj || captive.isDead || clearCaptiveSegment(captiveCenter(), captiveCenter())) return;
+            // Roll back to the last clear grip before restoring AI, even on escape/death/unload.
+            Vec3 safe = safeCaptivePosition == null ? null : clearNear(safeCaptivePosition, 2);
+            if(safe == null) safe = clearNear(captiveCenter(), 4);
+            if(safe != null) {
+                positionCaptive(safe);
+                if(captive instanceof net.minecraft.entity.player.EntityPlayerMP) {
+                    net.minecraft.entity.player.EntityPlayerMP player = (net.minecraft.entity.player.EntityPlayerMP) captive;
+                    if(player.playerNetServerHandler != null) player.playerNetServerHandler.setPlayerLocation(
+                            player.posX, player.posY, player.posZ, player.rotationYaw, player.rotationPitch);
                 }
             }
         }
-        if(pendingCocoon == null && distance <= 1.25D && captureTicks - lastFeedingTick >= 20) {
-            lastFeedingTick = captureTicks;
-            Entity victim = captive;
-            boolean fed, consumed;
-            feeding = true; feedingDeath = null;
-            try {
-                fed = wound(victim, 4F);
-                consumed = feedingDeath != null && !feedingDeath.isCanceled();
-            } finally { feeding = false; feedingDeath = null; }
-            if(captive != victim) return;
-            if(fed) {
-                captureProgressTick = captureTicks;
-                playSound("mob.slime.attack", 0.8F, 0.75F);
+        private void abandonCeiling(String reason) {
+            captureDiagnostic(reason);
+            if(pendingCocoon != null) pendingCocoon.cancelWrapping();
+            pendingCocoon = null;
+            selectedAttachment = new ChunkCoordinates(0, -1, 0);
+            begin(HOLD);
+            resetTransport();
+            captureBestDistance = captureDistance(); captureProgressTick = lastFeedingTick = captureTicks;
+        }
+        /** Ocean capture retains collision-resolved lifting, damage, escape and timeout behavior. */
+        private void tickOceanCapture() {
+            captureTicks++;
+            if(captive != null && !captive.isEntityAlive()) { release(false); return; }
+            if(captive == null || preyRejection(captive, false) != null || worldObj.getEntityByID(captive.getEntityId()) != captive
+                    || preyDistanceSq(captive) > (attackReach() + 2D) * (attackReach() + 2D)
+                    || !GardenerNests.loaded(worldObj, captive.boundingBox.expand(1, 0, 1))) {
+                release("Invalid captive"); return;
             }
-            if(!captive.isEntityAlive()) {
-                if(fed && consumed) EntityGardenerCocoon.afterFeeding(this, captive);
-                else EntityGardenerCocoon.failure(this, "feeding death does not qualify: damage=" + fed
-                        + ", confirmed uncanceled death=" + consumed);
-                release(false); return;
+            if(!clearLimb(arm)) { release("Tentacle obstruction"); return; }
+            restrainCaptive();
+            captureSneakTicks = captive instanceof EntityPlayer && captive.isSneaking() ? captureSneakTicks + 1 : 0;
+            if(captureSneakTicks >= 20) { release("Victim escape"); return; }
+            double distance = captureDistance();
+            if(distance <= 1.25D && captureTicks - lastFeedingTick >= 20) {
+                lastFeedingTick = captureTicks;
+                Entity victim = captive;
+                boolean fed = wound(victim, 8F);
+                if(captive != victim) return;
+                if(fed) {
+                    captureProgressTick = captureTicks;
+                    playSound("mob.slime.attack", 0.8F, 0.6F);
+                }
+                if(!captive.isEntityAlive()) { release(false); return; }
             }
-        }
-        boolean actionProgressing = pendingCocoon == null && distance <= 1.25D && captureTicks - captureProgressTick < 120
-                || state() == WRAP && distance <= 0.4D;
-        if(captureTicks - captureProgressTick >= (pendingCocoon == null ? 120 : 160)) {
-            if(pendingCocoon != null) abandonCeiling("Capture stall timeout at attachment; feeding fallback");
-            else if(distance > 1.25D) {
-                // A detour may initially increase distance. Escalate transport, retaining the grip.
-                captiveRoute = null; traversingBlocks = true;
-            } else if(!actionProgressing) { release("Feeding made no progress"); return; }
-        }
-        moveCaptive();
-    }
-    private void moveCaptive() {
-        Vec3 goal = captureGoal();
-        Vec3 here = captiveCenter();
-        if(routeGoal != null && routeGoal.distanceTo(goal) > 0.5D) resetTransport();
-        // Prefer a clear point within bite range if terrain has covered the exact underside.
-        if(pendingCocoon == null && !clearCaptiveSegment(goal, goal)) {
-            Vec3 clear = clearNear(goal, 1);
-            if(clear != null && clear.distanceTo(goal) <= 1.25D) goal = clear;
-        }
-        if(clearCaptiveSegment(here, goal)) {
-            captiveRoute = null; traversingBlocks = false;
-        } else if(captiveRoute == null && !traversingBlocks) {
-            captiveRoute = findCaptiveRoute(here, goal);
-            routeGoal = captureGoal();
-            if(captiveRoute == null) {
-                traversingBlocks = true;
-                captureDiagnostic("No bounded clear prey route; controlled block traversal");
+            if(distance < captureBestDistance - 0.25D) {
+                captureBestDistance = distance; captureProgressTick = captureTicks;
             }
-        }
-        while(captiveRoute != null && !captiveRoute.isEmpty() && here.distanceTo(captiveRoute.get(0)) <= 0.05D)
-            captiveRoute.remove(0);
-        Vec3 next = captiveRoute != null && !captiveRoute.isEmpty() ? captiveRoute.get(0) : goal;
-        double distance = here.distanceTo(next);
-        double scale = distance > 0 ? Math.min(0.24D / distance, 1D) : 0;
-        Vec3 step = here.addVector((next.xCoord - here.xCoord) * scale,
-                (next.yCoord - here.yCoord) * scale, (next.zCoord - here.zCoord) * scale);
-        if(!loadedCaptiveSegment(here, step)) { release("Chunk unloading"); return; }
-        if(!traversingBlocks && !clearCaptiveSegment(here, step)) {
-            // Terrain changed after planning. Replan once, then traverse instead of retrying a wall.
-            captiveRoute = null;
-            if(++movementObstructionTicks >= 2) traversingBlocks = true;
-            return;
-        }
-        // Collision-safe waypoints are preferred. The fallback bypasses blocks only for this
-        // owned movement operation: no noClip flag can survive an interruption, save or release.
-        positionCaptive(step);
-        if(clearCaptiveSegment(step, step)) {
-            safeCaptivePosition = step;
-            captive.getEntityData().removeTag("GardenerDragSafe");
-        } else if(safeCaptivePosition != null && !captive.getEntityData().hasKey("GardenerDragSafe")) {
-            // Captures are intentionally transient across saves. An orphan loaded mid-wall must
-            // return to its last clear grip before resuming ordinary movement.
-            NBTTagCompound safe = new NBTTagCompound();
-            safe.setDouble("X", safeCaptivePosition.xCoord); safe.setDouble("Y", safeCaptivePosition.yCoord);
-            safe.setDouble("Z", safeCaptivePosition.zCoord); captive.getEntityData().setTag("GardenerDragSafe", safe);
-        }
-        if(distance > 0.05D && here.distanceTo(captiveCenter()) >= 0.01D) captureProgressTick = captureTicks;
-        captive.motionX = captive.motionY = captive.motionZ = 0; captive.fallDistance = 0;
-        syncHeldPlayer();
-        // The normal entity tracker sends position deltas; zero-velocity packets each tick add no support.
-    }
-    private void captureObstruction() {
-        // Only cocoon placement occupancy uses this retry budget; transport never releases on terrain.
-        if(++movementObstructionTicks >= 40) abandonCeiling("Cocoon occupancy; feeding fallback");
-    }
-    private void resetTransport() {
-        captiveRoute = null; routeGoal = null; traversingBlocks = false; movementObstructionTicks = 0;
-    }
-    private Vec3 captiveCenter() {
-        return Vec3.createVectorHelper(captive.posX, captive.boundingBox.minY + captive.height * 0.5D, captive.posZ);
-    }
-    private void positionCaptive(Vec3 center) {
-        // Preserve the native feet/origin offset, including players' yOffset.
-        double offset = captive.posY - captive.boundingBox.minY;
-        captive.setPosition(center.xCoord, center.yCoord - captive.height * 0.5D + offset, center.zCoord);
-    }
-    private AxisAlignedBB captiveSweep(Vec3 from, Vec3 to) {
-        AxisAlignedBB box = captive.boundingBox.getOffsetBoundingBox(from.xCoord - captive.posX,
-                from.yCoord - captive.boundingBox.minY - captive.height * 0.5D, from.zCoord - captive.posZ);
-        return box.addCoord(to.xCoord - from.xCoord, to.yCoord - from.yCoord, to.zCoord - from.zCoord);
-    }
-    private boolean loadedCaptiveSegment(Vec3 from, Vec3 to) {
-        AxisAlignedBB box = captiveSweep(from, to);
-        return box.minY >= 0 && box.maxY <= worldObj.getActualHeight() && GardenerNests.loaded(worldObj, box.expand(1, 0, 1));
-    }
-    private boolean clearCaptiveSegment(Vec3 from, Vec3 to) {
-        // Block shapes only: neither the large parent AABB nor its own appendages obstruct feeding.
-        return loadedCaptiveSegment(from, to) && worldObj.func_147461_a(captiveSweep(from, to)).isEmpty();
-    }
-    /** Bounded six-axis A* for the held volume, independent of the victim's walking AI. */
-    private List<Vec3> findCaptiveRoute(Vec3 start, Vec3 goal) {
-        PriorityQueue<CaptiveStep> open = new PriorityQueue<CaptiveStep>();
-        Set<ChunkCoordinates> visited = new HashSet<ChunkCoordinates>();
-        open.add(new CaptiveStep(0, 0, 0, start, null, goal));
-        int[][] directions = {{0, 1, 0}, {1, 0, 0}, {-1, 0, 0}, {0, 0, 1}, {0, 0, -1}, {0, -1, 0}};
-        for(int examined = 0; !open.isEmpty() && examined < 768; examined++) {
-            CaptiveStep node = open.poll();
-            if(!visited.add(new ChunkCoordinates(node.x, node.y, node.z))) continue;
-            if(node.point.distanceTo(goal) <= 1.75D && clearCaptiveSegment(node.point, goal)) {
-                List<Vec3> route = new ArrayList<Vec3>(); route.add(goal);
-                for(CaptiveStep part = node; part.parent != null; part = part.parent) route.add(0, part.point);
-                return route;
+            if(captureTicks >= 1200 || captureTicks - captureProgressTick >= 120) { release("Capture timeout"); return; }
+            Vec3 goal = captureGoal();
+            double dx = goal.xCoord - captive.posX, dz = goal.zCoord - captive.posZ;
+            double horizontal = Math.sqrt(dx * dx + dz * dz);
+            double scale = horizontal > 0 ? Math.min(0.24D / horizontal, 0.12D) : 0;
+            double vy = MathHelper.clamp_double((goal.yCoord - captive.boundingBox.minY - captive.height * 0.5D) * 0.12D, -0.2D, 0.36D);
+            if(!GardenerNests.loaded(worldObj, captive.boundingBox.addCoord(dx * scale, vy, dz * scale).expand(1, 0, 1))) {
+                release("Chunk unloading"); return;
             }
-            for(int[] direction : directions) {
-                int x = node.x + direction[0], y = node.y + direction[1], z = node.z + direction[2];
-                if(visited.contains(new ChunkCoordinates(x, y, z))) continue;
-                Vec3 point = start.addVector(x, y, z);
-                if(point.xCoord < Math.min(start.xCoord, goal.xCoord) - 4 || point.xCoord > Math.max(start.xCoord, goal.xCoord) + 4
-                        || point.zCoord < Math.min(start.zCoord, goal.zCoord) - 4 || point.zCoord > Math.max(start.zCoord, goal.zCoord) + 4
-                        || point.yCoord < Math.min(start.yCoord, goal.yCoord) - 2 || point.yCoord > Math.max(start.yCoord, goal.yCoord) + 6
-                        || node.cost > start.distanceTo(goal) + 18 || !clearCaptiveSegment(node.point, point)) continue;
-                open.add(new CaptiveStep(x, y, z, point, node, goal));
+            captive.moveEntity(dx * scale, vy, dz * scale);
+            captive.motionX = captive.motionY = captive.motionZ = 0; captive.fallDistance = 0;
+            syncHeldPlayer();
+        }
+        private void restrainCaptive() {
+            if(captive instanceof EntityLiving) {
+                if(heldNavigation == null) heldNavigation = new HeldNavigation((EntityLiving) captive);
+                heldNavigation.suspend();
+            }
+            if(captive instanceof EntityLivingBase) {
+                EntityLivingBase living = (EntityLivingBase) captive;
+                living.moveForward = living.moveStrafing = 0;
+                living.setJumping(false);
+            }
+            // The tentacle supports the real entity. No persistent collision or gravity flags.
+            captive.motionX = captive.motionY = captive.motionZ = 0;
+            captive.fallDistance = 0;
+        }
+        private void syncHeldPlayer() {
+            if(captive instanceof net.minecraft.entity.player.EntityPlayerMP) {
+                net.minecraft.entity.player.EntityPlayerMP player = (net.minecraft.entity.player.EntityPlayerMP) captive;
+                HeldPlayer.support(player);
+                if(attackTicks % 2 == 0 && player.playerNetServerHandler != null)
+                    player.playerNetServerHandler.setPlayerLocation(captive.posX, captive.posY, captive.posZ, captive.rotationYaw, captive.rotationPitch);
             }
         }
-        return null;
     }
+
     private static final class CaptiveStep implements Comparable<CaptiveStep> {
         final int x, y, z, cost;
         final double score;
@@ -787,94 +974,7 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
         }
         @Override public int compareTo(CaptiveStep other) { return Double.compare(score, other.score); }
     }
-    private Vec3 clearNear(Vec3 center, int radius) {
-        if(clearCaptiveSegment(center, center)) return center;
-        Vec3 best = null;
-        double distance = Double.MAX_VALUE;
-        for(int y = radius; y >= -radius; y--) for(int x = -radius; x <= radius; x++) for(int z = -radius; z <= radius; z++) {
-            double squared = x * x + y * y + z * z;
-            if(squared >= distance) continue;
-            Vec3 point = center.addVector(x, y, z);
-            if(clearCaptiveSegment(point, point)) { best = point; distance = squared; }
-        }
-        return best;
-    }
-    private void restoreCaptivePosition() {
-        if(captive.worldObj != worldObj || captive.isDead || clearCaptiveSegment(captiveCenter(), captiveCenter())) return;
-        // Roll back to the last clear grip before restoring AI, even on escape/death/unload.
-        Vec3 safe = safeCaptivePosition == null ? null : clearNear(safeCaptivePosition, 2);
-        if(safe == null) safe = clearNear(captiveCenter(), 4);
-        if(safe != null) {
-            positionCaptive(safe);
-            if(captive instanceof net.minecraft.entity.player.EntityPlayerMP) {
-                net.minecraft.entity.player.EntityPlayerMP player = (net.minecraft.entity.player.EntityPlayerMP) captive;
-                if(player.playerNetServerHandler != null) player.playerNetServerHandler.setPlayerLocation(
-                        player.posX, player.posY, player.posZ, player.rotationYaw, player.rotationPitch);
-            }
-        }
-    }
-    private void abandonCeiling(String reason) {
-        captureDiagnostic(reason);
-        if(pendingCocoon != null) pendingCocoon.cancelWrapping();
-        pendingCocoon = null;
-        dataWatcher.updateObject(31, new ChunkCoordinates(0, -1, 0));
-        begin(HOLD);
-        resetTransport();
-        captureBestDistance = captureDistance(); captureProgressTick = lastFeedingTick = captureTicks;
-    }
-    /** Ocean capture retains its original movement, damage, escape and timeout behavior. */
-    private void tickOceanCapture() {
-        captureTicks++;
-        if(captive != null && !captive.isEntityAlive()) { release(false); return; }
-        if(captive == null || !prey(captive) || worldObj.getEntityByID(captive.getEntityId()) != captive
-                || preyDistanceSq(captive) > (attackReach() + 2D) * (attackReach() + 2D)
-                || !GardenerNests.loaded(worldObj, captive.boundingBox.expand(1, 0, 1))) {
-            release("Invalid captive"); return;
-        }
-        if(!clearLimb(attackArm())) { release("Tentacle obstruction"); return; }
-        aim(captive, false);
-        captureSneakTicks = captive instanceof EntityPlayer && captive.isSneaking() ? captureSneakTicks + 1 : 0;
-        if(captureSneakTicks >= 20) { release("Victim escape"); return; }
-        double distance = captureDistance();
-        if(distance <= 1.25D && captureTicks - lastFeedingTick >= 20) {
-            lastFeedingTick = captureTicks;
-            if(wound(captive, 8F)) {
-                captureProgressTick = captureTicks;
-                playSound("mob.slime.attack", 0.8F, 0.6F);
-            }
-            if(!captive.isEntityAlive()) { release(false); return; }
-        }
-        if(distance < captureBestDistance - 0.25D) {
-            captureBestDistance = distance; captureProgressTick = captureTicks;
-        }
-        if(captureTicks >= 1200 || captureTicks - captureProgressTick >= 120) { release("Capture timeout"); return; }
-        Vec3 goal = captureGoal();
-        double dx = goal.xCoord - captive.posX, dz = goal.zCoord - captive.posZ;
-        double horizontal = Math.sqrt(dx * dx + dz * dz);
-        double scale = horizontal > 0 ? Math.min(0.24D / horizontal, 0.12D) : 0;
-        double vy = MathHelper.clamp_double((goal.yCoord - captive.boundingBox.minY - captive.height * 0.5D) * 0.12D, -0.2D, 0.36D);
-        if(!GardenerNests.loaded(worldObj, captive.boundingBox.addCoord(dx * scale, vy, dz * scale).expand(1, 0, 1))) {
-            release("Chunk unloading"); return;
-        }
-        captive.moveEntity(dx * scale, vy, dz * scale);
-        captive.motionX = captive.motionY = captive.motionZ = 0; captive.fallDistance = 0;
-        syncHeldPlayer();
-        captive.velocityChanged = true;
-    }
-    private void restrainCaptive() {
-        if(captive instanceof EntityLiving) {
-            if(heldNavigation == null) heldNavigation = new HeldNavigation((EntityLiving) captive);
-            heldNavigation.suspend();
-        }
-        if(captive instanceof EntityLivingBase) {
-            EntityLivingBase living = (EntityLivingBase) captive;
-            living.moveForward = living.moveStrafing = 0;
-            living.setJumping(false);
-        }
-        // The tentacle supports the real entity. No persistent collision or gravity flags.
-        captive.motionX = captive.motionY = captive.motionZ = 0;
-        captive.fallDistance = 0;
-    }
+
     /** Called before native living AI/physics; stale saved ownership never immobilizes a reloaded victim. */
     public static void updateCaptive(EntityLivingBase victim) {
         updateCaptiveMovement(victim);
@@ -885,9 +985,10 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
         if(owner instanceof EntityGardener && owner.getUniqueID().toString().equals(victim.getEntityData().getString("GardenerCaptor"))
                 && ((EntityGardener) owner).isHolding(victim)) {
             EntityGardener gardener = (EntityGardener) owner;
-            if(!gardener.isOcean()) {
-                if(!gardener.active()) gardener.release("Gardener deactivation");
-                else { gardener.restrainCaptive(); return true; }
+            if(!gardener.active()) gardener.release("Gardener deactivation");
+            else {
+                CaptureSlot slot = gardener.captureFor(victim);
+                slot.restrainCaptive(); return true;
             }
         } else {
             restoreSavedCaptive(victim);
@@ -911,7 +1012,8 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
         Entity owner = victim.worldObj.getEntityByID(victim.getEntityData().getInteger("GardenerCaptorId"));
         if(!(owner instanceof EntityGardener)) return false;
         EntityGardener gardener = (EntityGardener) owner;
-        return !gardener.isOcean() && gardener.traversingBlocks && gardener.isHolding(victim)
+        CaptureSlot slot = gardener.captureFor(victim);
+        return !gardener.isOcean() && slot != null && slot.traversingBlocks && gardener.isHolding(victim)
                 && gardener.getUniqueID().toString().equals(victim.getEntityData().getString("GardenerCaptor"));
     }
     /** Only the held mob's task instances/path are suspended; constructors/NBT remain unchanged. */
@@ -960,7 +1062,8 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
         }
     }
     public void recordFeedingDeath(net.minecraftforge.event.entity.living.LivingDeathEvent event) {
-        if(feeding && captive == event.entityLiving && event.source.getEntity() == this) feedingDeath = event;
+        CaptureSlot slot = captureFor(event.entityLiving);
+        if(slot != null && slot.feeding && event.source.getEntity() == this) slot.feedingDeath = event;
     }
     void queueSurfaceCocoon(Entity victim) {
         if(worldObj.isRemote || isOcean() || placingSurface) return;
@@ -1026,27 +1129,27 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
             catch(IllegalAccessException ex) { throw new IllegalStateException("Cannot validate Gardener tentacle support", ex); }
         }
     }
-    private void syncHeldPlayer() {
-        if(captive instanceof net.minecraft.entity.player.EntityPlayerMP) {
-            net.minecraft.entity.player.EntityPlayerMP player = (net.minecraft.entity.player.EntityPlayerMP) captive;
-            HeldPlayer.support(player);
-            if(attackTicks % 2 == 0 && player.playerNetServerHandler != null)
-                player.playerNetServerHandler.setPlayerLocation(captive.posX, captive.posY, captive.posZ, captive.rotationYaw, captive.rotationPitch);
-        }
-    }
     public boolean isHolding(Entity entity) {
-        return entity != null && captive == entity && entity.worldObj == worldObj && captureState() && isEntityAlive();
+        return captureFor(entity) != null && entity.worldObj == worldObj && isEntityAlive();
     }
     boolean isPreparingCocoon(EntityGardenerCocoon cocoon, Entity victim) {
-        return pendingCocoon == cocoon && isHolding(victim) && (state() == ATTACH || state() == WRAP);
+        CaptureSlot slot = captureFor(victim);
+        return slot != null && slot.pendingCocoon == cocoon && isHolding(victim) && (slot.state == ATTACH || slot.state == WRAP);
     }
     public void releaseForChunkUnload(int x, int z) {
-        if(chunkCoordX == x && chunkCoordZ == z || captive != null && captive.chunkCoordX == x && captive.chunkCoordZ == z) release("Chunk unloading");
+        if(chunkCoordX == x && chunkCoordZ == z) release("Chunk unloading");
+        else for(CaptureSlot slot : captures)
+            if(slot.captive != null && slot.captive.chunkCoordX == x && slot.captive.chunkCoordZ == z) slot.release("Chunk unloading");
     }
     public void releaseForWorldUnload() { release("Chunk unloading: world unload"); }
+    private int availableCaptures() {
+        int free = 0;
+        for(CaptureSlot slot : captures) if(slot.captive == null) free++;
+        return free;
+    }
     /** Short collision-tested steering probes instead of an enormous vanilla cave path search. */
     private void tickLocomotion(Entity target) {
-        if(captive != null || state() != IDLE || !isOcean() && target != null && tipInReach(target) && reach(target, attackReach())) {
+        if(captureState() || state() != IDLE || !isOcean() && target != null && tipInReach(target) && reach(target, attackReach())) {
             if(!isOcean()) travelX = travelY = travelZ = 0;
             dataWatcher.updateObject(29, 0F); return;
         }
@@ -1168,7 +1271,9 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
         if(limbHealth[arm] <= 0) {
             recovery[arm] = 300;
             dataWatcher.updateObject(27, (byte) (dataWatcher.getWatchableObjectByte(27) | 1 << arm));
-            if(attackArm() == arm) release("Disabled tentacle");
+            CaptureSlot capture = captureForArm(arm);
+            if(capture != null) capture.release("Disabled tentacle");
+            if(attackArm() == arm && state() != IDLE) begin(RECOVER);
         }
         return true;
     }
@@ -1215,6 +1320,6 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
             recovery[i] = MathHelper.clamp_int(nbt.getInteger("LimbRecovery" + i), 0, 300);
             if(limbHealth[i] <= 0 && recovery[i] == 0) recovery[i] = 300;
         }
-        captive = null; begin(IDLE);
+        release("Capture reset on load"); begin(IDLE);
     }
 }

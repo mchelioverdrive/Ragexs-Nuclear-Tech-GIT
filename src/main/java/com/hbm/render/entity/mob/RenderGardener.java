@@ -39,10 +39,11 @@ public final class RenderGardener extends Render {
                     tube(tess, GardenerPose.point(boss, arm, segment, partial), GardenerPose.point(boss, arm, segment + 1, partial), GardenerPose.RADIUS);
                 // Fine forks add the skeletal silhouette without independent decorative entities.
                 Vec3 root = GardenerPose.point(boss, arm, 2, partial), tip = GardenerPose.point(boss, arm, 4, partial);
-                if(!boss.isOcean() && arm == boss.attackArm() && (boss.captureState() || boss.state() == EntityGardener.RELEASE)) {
-                    float close = boss.state() == EntityGardener.CAPTURE ? Math.min(1F, boss.stateTime(partial) / 16F)
-                            : boss.state() == EntityGardener.RELEASE ? Math.max(0F, 1F - boss.stateTime(partial) / 24F) : 1F;
-                    Entity victim = boss.eyeTarget();
+                int state = boss.armState(arm);
+                if(!boss.isOcean() && (EntityGardener.holdingState(state) || state == EntityGardener.RELEASE)) {
+                    float close = state == EntityGardener.CAPTURE ? Math.min(1F, boss.armStateTime(arm, partial) / 16F)
+                            : state == EntityGardener.RELEASE ? Math.max(0F, 1F - boss.armStateTime(arm, partial) / 24F) : 1F;
+                    Entity victim = boss.armCaptive(arm);
                     double grip = victim == null ? 0.4D : Math.max(0.25D, victim.width * 0.55D);
                     for(int hook = 0; hook < 3; hook++) {
                         double angle = hook * Math.PI * 2 / 3;
