@@ -68,6 +68,7 @@ public class GUIMachineDischarger extends GuiInfoContainer {
 	        int j1 = diFurnace.getProgressScaled(88);
 	        Minecraft.getMinecraft().getTextureManager().bindTexture(geer);
 	        drawTexturedModalRect(guiLeft - 36, guiTop + 109 - j1, 176, 88 - j1, 185, 108);
+	        Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
 	    }
 	    if(diFurnace.getProjectedTemp() > 20) {
 	    	 int i = (int) diFurnace.getTempScaled(88);

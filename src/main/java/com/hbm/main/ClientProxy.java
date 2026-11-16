@@ -169,6 +169,9 @@ public class ClientProxy extends ServerProxy {
 		IReloadableResourceManager resourceMan = (IReloadableResourceManager) Minecraft.getMinecraft().getResourceManager();
 		resourceMan.registerReloadListener(new PreparedModelReloader());
 		resourceMan.registerReloadListener(darkAdaptation);
+		com.hbm.inventory.gui.GuiTextureDiagnostics guiTextures = new com.hbm.inventory.gui.GuiTextureDiagnostics();
+		registerClientEventHandler(guiTextures);
+		resourceMan.registerReloadListener(guiTextures);
 
 		registerTileEntitySpecialRenderer();
 		registerItemRenderer();

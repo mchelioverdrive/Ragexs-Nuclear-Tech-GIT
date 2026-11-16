@@ -736,3 +736,8 @@
 
 - Replace non-destructive door harassment with cached crawling approaches, repeated wooden knocks, existing synchronized arm movement and per-hunter progressive damage. Break wooden doors after five seconds only with mobGriefing and block/Forge protection permission; retain knocking without griefing, reject iron doors and resume after opened or destroyed doors without restarting the same interaction.
 - Keep remembered hunts through partial paths and lost sight, investigate bounded entrance sweeps and alternate routes, and limit nearby activity sensing to one obstructing cell. Add short stalking observations and committed pursuit on detection, escape or proximity; expire hunts without evidence or approach progress. Shrink native path searches at loaded-chunk edges instead of rejecting nearby routes. Defer idle daylight dormancy during active hunts, clear stale escape steering at doors and give ground navigation priority over frame-triggered climbs/probes during entry while preserving dangerous-light/fire/UV avoidance, captures, probes, conversions and invasion/population rules.
+
+2026-11-15 22:18 — Restore Discharger temperature texture binding and diagnose GUI resources
+
+- Rebind the Discharger's original GUI atlas after its animated gear layer so temperature bars and indicators continue sampling their intended artwork. Preserve coordinates, animation, containers and machine behavior.
+- Check custom GUI texture fields through the active Forge resource manager when screens initialize, including inherited and non-machine interfaces. Report unreadable resources with the GUI class and exact path once per resource reload, without per-frame lookups, replacement artwork or changes to shader state.
