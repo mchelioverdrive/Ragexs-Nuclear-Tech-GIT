@@ -389,7 +389,8 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
         if(worldObj.isRemote) return;
         tickSurfaceBiomass();
         if(!anchored) anchor(posX, posY, posZ);
-        if(!isOcean() && !GeminiSpawning.isManual(this) && nestY >= 8 && nestY <= 44) burrowing.enable();
+        if(!isOcean() && !GeminiSpawning.isManual(this) && nestY >= 8
+                && (nestY <= 44 || GeminiSpawning.structureDebugAdmission(this) && nestY + 13 < worldObj.getActualHeight())) burrowing.enable();
         if(!active()) {
             release(GardenerNests.loaded(worldObj, GeminiSpawning.isManual(this) ? boundingBox : visualBounds())
                     ? "Gardener deactivation" : "Chunk unloading");

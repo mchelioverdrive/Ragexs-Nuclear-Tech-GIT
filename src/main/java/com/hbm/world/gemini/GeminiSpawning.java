@@ -21,7 +21,7 @@ public final class GeminiSpawning {
     }
     public static boolean structureDebugAdmission(EntityLivingBase mob) {
         return mob != null && mob.getEntityData().getBoolean("GeminiDebugStructure")
-                && mob.worldObj instanceof WorldServer && !mob.worldObj.isRemote && mob.worldObj.provider.dimensionId == 0
+                && mob.worldObj instanceof WorldServer && !mob.worldObj.isRemote
                 && GeminiConfig.enabled && mob.worldObj.difficultySetting != EnumDifficulty.PEACEFUL
                 && (mob instanceof EntityWretch && GeminiConfig.wretchEnabled
                     || mob instanceof EntityGardener && !(mob instanceof EntityOceanGardener) && GeminiConfig.gardenerEnabled);

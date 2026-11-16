@@ -7,6 +7,8 @@ import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import com.hbm.blocks.ModBlocks;
 import com.hbm.config.GeminiConfig;
 import com.hbm.entity.mob.gemini.EntityGardener;
@@ -52,21 +54,25 @@ public final class GardenerNests extends WorldSavedData {
     private int searchTicks = 1200;
 
     public GardenerNests(String name) { super(name); }
+    private static String saveName(World world) {
+        return NAME + (world.provider.dimensionId == 0 ? "" : "_" + world.provider.dimensionId);
+    }
     private static GardenerNests get(World world) {
-        GardenerNests data = (GardenerNests) world.mapStorage.loadData(GardenerNests.class, NAME);
-        if(data == null) { data = new GardenerNests(NAME); world.mapStorage.setData(NAME, data); }
+        String name = saveName(world);
+        GardenerNests data = (GardenerNests) world.mapStorage.loadData(GardenerNests.class, name);
+        if(data == null) { data = new GardenerNests(name); world.mapStorage.setData(name, data); }
         return data;
     }
     public static List<GeminiInvasionManager.StructureInfo> known(World world) {
         List<GeminiInvasionManager.StructureInfo> result = new ArrayList<GeminiInvasionManager.StructureInfo>();
-        if(!(world instanceof WorldServer) || world.provider.dimensionId != 0) return result;
-        GardenerNests data = (GardenerNests) world.mapStorage.loadData(GardenerNests.class, NAME);
+        if(!(world instanceof WorldServer) || world.isRemote) return result;
+        GardenerNests data = (GardenerNests) world.mapStorage.loadData(GardenerNests.class, saveName(world));
         if(data != null) for(Nest nest : data.nests) if(nest.built)
-            result.add(info(nest, nest.phase == 2 ? "waiting for Gardener" : nest.phase == 3 ? "Gardener spawned" : "abandoned"));
+            result.add(info(world, nest, nest.phase == 2 ? "waiting for Gardener" : nest.phase == 3 ? "Gardener spawned" : "abandoned"));
         return result;
     }
-    private static GeminiInvasionManager.StructureInfo info(Nest nest, String status) {
-        return new GeminiInvasionManager.StructureInfo("underground_gardener", nest.x, nest.y, nest.z, 0, status);
+    private static GeminiInvasionManager.StructureInfo info(World world, Nest nest, String status) {
+        return new GeminiInvasionManager.StructureInfo("underground_gardener", nest.x, nest.y, nest.z, world.provider.dimensionId, status);
     }
     public static String eligibility(World world) {
         if(!(world instanceof WorldServer) || world.isRemote || world.provider.dimensionId != 0) return "Overworld server only";
@@ -81,65 +87,160 @@ public final class GardenerNests extends WorldSavedData {
         return "no established survival area with nest capacity";
     }
 
-    /** Complete the existing organic layout immediately, retaining natural placement/protection rules. */
     public static GeminiInvasionManager.StructureInfo debugSpawn(EntityPlayer player) {
+        return debugSpawn(player, null);
+    }
+
+    /** Build the canonical room, with explicit excavation and a bounded access shaft. */
+    public static GeminiInvasionManager.StructureInfo debugSpawn(EntityPlayer player, ChunkCoordinates requested) {
+        if(!(player.worldObj instanceof WorldServer) || player.worldObj.isRemote)
+            throw new net.minecraft.command.CommandException("Nest placement requires a server world.");
         WorldServer world = (WorldServer) player.worldObj;
-        if(world.provider.dimensionId != 0) throw GeminiInvasionManager.rejected(world, "nest", "Nests require the Overworld (invalid dimension).");
         if(!world.getGameRules().getGameRuleBooleanValue("mobGriefing"))
             throw GeminiInvasionManager.rejected(world, "nest", "Nest placement requires mobGriefing=true.");
         GardenerNests data = get(world);
-        if(data.nests.size() >= Math.min(64, GeminiConfig.gardenerNestLimit))
-            throw GeminiInvasionManager.rejected(world, "nest", "Nest tracking limit reached (or nests disabled by nestLimit=0).");
-        GeminiInvasionManager.debug(world, "nest-attempt", "Searching loaded underground terrain for a debug nest.");
-        java.util.Map<String, Integer> rejected = new java.util.LinkedHashMap<String, Integer>();
-        for(int attempt = 0; attempt < 48; attempt++) {
+        if(data.nests.size() >= 64) throw GeminiInvasionManager.rejected(world, "nest", "Nest save capacity reached (64 records).");
+        ForcedPlan best = null;
+        Map<String, Integer> rejected = new LinkedHashMap<String, Integer>();
+        int attempts = requested == null ? 32 : 1;
+        for(int attempt = 0; attempt < attempts; attempt++) {
             double angle = attempt * 2.399963229728653D;
-            int radius = GeminiConfig.gardenerNestMinDistance + (int) ((long) attempt * 17
-                    % (GeminiConfig.gardenerNestMaxDistance - GeminiConfig.gardenerNestMinDistance + 1));
-            int x = MathHelper.floor_double(player.posX + Math.cos(angle) * radius);
-            int z = MathHelper.floor_double(player.posZ + Math.sin(angle) * radius);
-            String reason = null;
-            if(Math.abs((long) x) > 29999900 || Math.abs((long) z) > 29999900) reason = "world boundary";
-            else if(!loaded(world, AxisAlignedBB.getBoundingBox(x - 20, 0, z - 20, x + 21, 64, z + 21))) reason = "unloaded terrain";
-            else if(data.tooClose(x, z)) reason = "existing nest spacing";
+            int radius = attempt == 0 ? 0 : 16 + attempt * 7 % 33;
+            int x = requested == null ? MathHelper.floor_double(player.posX + Math.cos(angle) * radius) : requested.posX;
+            int z = requested == null ? MathHelper.floor_double(player.posZ + Math.sin(angle) * radius) : requested.posZ;
+            int y;
+            if(requested != null) y = requested.posY;
             else {
-                reason = "no covered cave floor at Y=12..42";
-                for(int y = 42; y >= 12; y--) {
-                    if(world.getBlock(x, y, z) != Blocks.air || !natural(world.getBlock(x, y - 1, z))
-                            || !world.getBlock(x, y - 1, z).getMaterial().blocksMovement()
-                            || world.getBlock(x, y + 1, z) != Blocks.air || world.canBlockSeeTheSky(x, y + 13, z)) continue;
-                    Nest nest = new Nest(x, y, z);
-                    if(overlapsStructure(world, nest) || WretchCamps.hasPlayerPlacement(world, nest.bounds())) {
-                        reason = "protected structure or player construction"; break;
-                    }
-                    if(!world.getEntitiesWithinAABBExcludingEntity(null, nest.bounds()).isEmpty()) { reason = "occupied nest volume"; continue; }
-                    List<Placement> plan = new ArrayList<Placement>();
-                    boolean safe = true;
-                    for(int i = 0; i < VOLUME; i++) {
-                        int dx = i % WIDTH - 14, dz = i / WIDTH % WIDTH - 14, dy = i / (WIDTH * WIDTH) - 2;
-                        if(!safe(world, x + dx, y + dy, z + dz, false)) { safe = false; break; }
-                        Block desired = desired(dx, dy, dz);
-                        if(desired != null) plan.add(new Placement(x + dx, y + dy, z + dz, desired, 0));
-                    }
-                    if(!safe) { reason = "unsafe geology, liquid, tile or insufficient space"; continue; }
-                    reason = place(world, plan, true, true);
-                    if(reason != null) {
-                        // A claim veto can affect every nearby candidate; do not repeat thousands of callbacks.
-                        GeminiInvasionManager.debug(world, "nest-failure", "Nest rejected: " + reason);
-                        throw new net.minecraft.command.CommandException("Nest placement rejected and rolled back: " + reason);
-                    }
-                    nest.phase = 2; nest.built = true; nest.debug = true;
-                    nest.homeX = MathHelper.floor_double(player.posX); nest.homeZ = MathHelper.floor_double(player.posZ); nest.hasHome = true;
-                    data.nests.add(nest); data.markDirty();
-                    GeminiInvasionManager.debug(world, "nest-register", "Registered debug nest at " + x + ", " + y + ", " + z + ".");
-                    data.spawn(world, nest); data.markDirty();
-                    return info(nest, nest.phase == 3 ? "Gardener spawned" : "waiting for normal Gardener admission");
+                if(Math.abs((long) x) > 29999960 || Math.abs((long) z) > 29999960) {
+                    countRejection(rejected, "unsafe world boundaries"); continue;
                 }
+                if(!loadedVolume(world, AxisAlignedBB.getBoundingBox(x - 22, 0, z - 22, x + 23, world.getActualHeight(), z + 23))) {
+                    countRejection(rejected, "unloaded chunks intersect the resident clearance area"); continue;
+                }
+                // Stay near an underground player at any safe elevation; descend below the surface for outdoor/flying players.
+                y = MathHelper.clamp_int(Math.min(MathHelper.floor_double(player.boundingBox.minY) - attempt % 3 * 4,
+                        surface(world, x + 15, z) - 15), 12, world.getActualHeight() - 15);
             }
-            Integer count = rejected.get(reason); rejected.put(reason, count == null ? 1 : count + 1);
+            Nest nest = new Nest(x, y, z);
+            ForcedPlan plan = data.plan(world, nest, StructurePlacementMode.FORCED_DEBUG, player);
+            String reason = plan.reason;
+            if(reason == null) {
+                plan.cost += radius * 8;
+                if(best == null || plan.cost < best.cost) best = plan;
+            } else countRejection(rejected, reason);
         }
-        GeminiInvasionManager.debug(world, "nest-failure", "No suitable debug nest position: " + rejected);
-        throw new net.minecraft.command.CommandException("No suitable loaded nest position near player: " + rejected);
+        if(best == null) throw searchFailure(world, "nest", requested != null, rejected);
+        Nest nest = new Nest(best.x, best.y, best.z);
+        String reason = place(world, best.cells(), true, StructurePlacementMode.FORCED_DEBUG);
+        if(reason != null) throw GeminiInvasionManager.rejected(world, "nest", "Nest placement failed; changed blocks restored: " + reason);
+        nest.phase = 2; nest.built = true; nest.debug = true;
+        nest.homeX = MathHelper.floor_double(player.posX); nest.homeZ = MathHelper.floor_double(player.posZ); nest.hasHome = true;
+        data.nests.add(nest); data.markDirty();
+        String resident;
+        try {
+            data.spawn(world, nest);
+            resident = nest.phase == 3 ? "Gardener spawned" : "Gardener pending normal admission (settings, player, population or clearance/Forge veto)";
+        } catch(RuntimeException failure) {
+            com.hbm.main.MainRegistry.logger.error("Debug nest resident initialization failed", failure);
+            resident = "resident initialization failed; registered nest retained for retry (see server log)";
+        }
+        data.markDirty();
+        GeminiInvasionManager.debug(world, "nest-register", "Completed and registered debug nest at " + nest.x + ", " + nest.y + ", " + nest.z + ".");
+        return info(world, nest, "registered=true; terrain preparation=" + (best.prepared ? "yes" : "no") + "; " + resident);
+    }
+
+    private ForcedPlan plan(WorldServer world, Nest nest, StructurePlacementMode mode, EntityPlayer player) {
+        if(mode != StructurePlacementMode.FORCED_DEBUG) throw new IllegalArgumentException("Immediate nest preparation requires FORCED_DEBUG");
+        ForcedPlan plan = new ForcedPlan(nest.x, nest.y, nest.z);
+        if(nest.y < 8 || nest.y > world.getActualHeight() - 15) {
+            plan.reason = "unsafe world height for complete nest; origin Y must be 8.." + (world.getActualHeight() - 15); return plan;
+        }
+        plan.regions.add(nest.bounds());
+        // Native spawn/AI reads the limb envelope beyond the excavated room.
+        plan.readBounds = nest.bounds().expand(8, 0, 8);
+        plan.reason = plan.checkBounds(world);
+        if(plan.reason != null) return plan;
+        int[] exitX = {1, -1, 0, 0}, exitZ = {0, 0, 1, -1};
+        int entrance = -1;
+        for(int side = 0; side < 4; side++) {
+            int ex = nest.x + exitX[side] * 18, ez = nest.z + exitZ[side] * 18;
+            if(world.isAirBlock(ex, nest.y, ez) && world.isAirBlock(ex, nest.y + 1, ez)
+                    && world.isAirBlock(ex - exitX[side], nest.y, ez - exitZ[side])
+                    && connectedAccess(world, nest, ex, ez, player)) { entrance = side; break; }
+        }
+        int top = surface(world, nest.x + 15, nest.z);
+        if(entrance < 0 && top >= world.getActualHeight() - 1) {
+            plan.reason = world.getBlock(nest.x + 15, world.getActualHeight() - 1, nest.z) == Blocks.bedrock
+                    ? "bedrock obstruction above required access shaft" : "unsafe world boundary above required access shaft";
+            return plan;
+        }
+        if(top < nest.y + 13) {
+            plan.reason = "unsafe underground cover/access boundary; choose a deeper origin"; return plan;
+        }
+        if(entrance >= 0) {
+            int ex = exitX[entrance], ez = exitZ[entrance];
+            plan.regions.add(AxisAlignedBB.getBoundingBox(nest.x + Math.min(ex * 11, ex * 18) - 1, nest.y - 1,
+                    nest.z + Math.min(ez * 11, ez * 18) - 1, nest.x + Math.max(ex * 11, ex * 18) + 2,
+                    nest.y + 3, nest.z + Math.max(ez * 11, ez * 18) + 2));
+        } else {
+            plan.regions.add(AxisAlignedBB.getBoundingBox(nest.x + 12, nest.y - 1, nest.z - 1, nest.x + 17, nest.y + 3, nest.z + 2));
+            plan.regions.add(AxisAlignedBB.getBoundingBox(nest.x + 14, nest.y - 1, nest.z - 1, nest.x + 17, top + 2, nest.z + 2));
+        }
+        plan.reason = plan.inspect(world);
+        if(plan.reason != null) return plan;
+        for(int i = 0; i < VOLUME; i++) {
+            int dx = i % WIDTH - 14, dz = i / WIDTH % WIDTH - 14, dy = i / (WIDTH * WIDTH) - 2;
+            Block block = desired(dx, dy, dz);
+            if(block == null && world.getBlock(nest.x + dx, nest.y + dy, nest.z + dz) instanceof net.minecraft.block.BlockFalling)
+                block = Blocks.stone; // Keep loose roof/backing terrain from collapsing into the prepared room.
+            if(block != null) plan.put(nest.x + dx, nest.y + dy, nest.z + dz, block, 0);
+            if(world.isAirBlock(nest.x + dx, nest.y + dy, nest.z + dz)) plan.cost++;
+        }
+        if(entrance >= 0) {
+            int ex = exitX[entrance], ez = exitZ[entrance];
+            for(int step = 11; step <= 18; step++) for(int width = -1; width <= 1; width++) {
+                int x = nest.x + ex * step + ez * width, z = nest.z + ez * step + ex * width;
+                plan.put(x, nest.y - 1, z, Blocks.stone, 0);
+                for(int dy = 0; dy < 3; dy++) plan.put(x, nest.y + dy, z, Blocks.air, 0);
+            }
+            plan.finish(world);
+            return plan;
+        }
+        // Preparation only: a short doorway and a lined ladder shaft for player access.
+        // The existing Gardener burrow controller retains its body-sized travel tunnels.
+        for(int x = nest.x + 14; x <= nest.x + 16; x++) for(int z = nest.z - 1; z <= nest.z + 1; z++) {
+            plan.put(x, nest.y - 1, z, Blocks.stone, 0);
+            for(int y = nest.y; y <= top; y++)
+                plan.put(x, y, z, x == nest.x + 15 && z == nest.z ? Blocks.ladder : Blocks.stone,
+                        x == nest.x + 15 && z == nest.z ? 4 : 0);
+        }
+        // Metadata 4 attaches to the east wall; the top opens onto the surface.
+        plan.put(nest.x + 16, top + 1, nest.z, Blocks.stone, 0);
+        plan.put(nest.x + 15, top + 1, nest.z, Blocks.air, 0);
+        plan.put(nest.x + 14, top, nest.z, Blocks.air, 0);
+        plan.put(nest.x + 14, top + 1, nest.z, Blocks.air, 0);
+        for(int x = nest.x + 12; x <= nest.x + 14; x++) for(int z = nest.z - 1; z <= nest.z + 1; z++) {
+            plan.put(x, nest.y - 1, z, Blocks.stone, 0);
+            for(int dy = 0; dy < 3; dy++) plan.put(x, nest.y + dy, z, Blocks.air, 0);
+        }
+        plan.finish(world);
+        return plan;
+    }
+
+    /** Do not mistake an isolated air pocket for access. Reuse a known clear route to the outside sender. */
+    private static boolean connectedAccess(World world, Nest nest, int x, int z, EntityPlayer player) {
+        if(nest.bounds().intersectsWith(player.boundingBox) || Math.abs(player.boundingBox.minY - nest.y) > 1) return false;
+        double dx = player.posX - x - 0.5D, dz = player.posZ - z - 0.5D;
+        double distance = Math.sqrt(dx * dx + dz * dz);
+        if(distance > 48) return false;
+        int steps = Math.max(1, (int) Math.ceil(distance * 2));
+        for(int step = 0; step <= steps; step++) {
+            int px = MathHelper.floor_double(x + 0.5D + dx * step / steps);
+            int pz = MathHelper.floor_double(z + 0.5D + dz * step / steps);
+            if(!world.getChunkProvider().chunkExists(px >> 4, pz >> 4)
+                    || !world.isAirBlock(px, nest.y, pz) || !world.isAirBlock(px, nest.y + 1, pz)) return false;
+        }
+        return true;
     }
 
     /** Shared checked placement of the real layouts; roll back every changed cell on rejection. */
@@ -147,23 +248,170 @@ public final class GardenerNests extends WorldSavedData {
         final int x, y, z, meta; final Block block;
         Placement(int x, int y, int z, Block block, int meta) { this.x = x; this.y = y; this.z = z; this.block = block; this.meta = meta; }
     }
-    static String place(WorldServer world, List<Placement> plan, boolean nest, boolean bypassPhase) {
+    /** A command-local plan for the two real layouts, including their bounded preparation areas. */
+    static final class ForcedPlan {
+        final int x, y, z;
+        final List<AxisAlignedBB> regions = new ArrayList<AxisAlignedBB>();
+        final Map<Long, Placement> edits = new LinkedHashMap<Long, Placement>();
+        AxisAlignedBB readBounds;
+        String reason;
+        int cost;
+        boolean prepared;
+        ForcedPlan(int x, int y, int z) { this.x = x; this.y = y; this.z = z; }
+        void put(int x, int y, int z, Block block, int meta) {
+            long key = ((long) (x & 0x3FFFFFF) << 34) | ((long) (z & 0x3FFFFFF) << 8) | (y & 255);
+            edits.put(key, new Placement(x, y, z, block, meta));
+        }
+        List<Placement> cells() {
+            List<Placement> result = new ArrayList<Placement>();
+            // Attachment supports must exist before ladder onBlockAdded/Forge callbacks.
+            for(Placement cell : edits.values()) if(cell.block != Blocks.ladder) result.add(cell);
+            for(Placement cell : edits.values()) if(cell.block == Blocks.ladder) result.add(cell);
+            return result;
+        }
+        String checkBounds(WorldServer world) {
+            for(AxisAlignedBB box : regions) {
+                if(box.minX < -29999984 || box.maxX > 29999984 || box.minZ < -29999984 || box.maxZ > 29999984
+                        || box.minY < 1 || box.maxY >= world.getActualHeight()) return "unsafe world boundaries for the complete placement volume";
+                if(!loadedVolume(world, box.expand(1, 0, 1))) return "unloaded chunks intersect the preparation area; move closer/load them before retrying";
+            }
+            if(readBounds != null && !loadedVolume(world, readBounds)) return "unloaded chunks intersect the resident clearance area";
+            return null;
+        }
+        String inspect(WorldServer world) {
+            String failure = checkBounds(world);
+            if(failure != null) return failure;
+            GardenerNests data = get(world);
+            for(AxisAlignedBB box : regions) {
+                if(WretchCamps.hasPlayerPlacement(world, box) || overlapsStructure(world, box)) return "protected player construction or registered world structure";
+                for(Nest nest : data.nests) if(nest.bounds().intersectsWith(box)) return "protected existing nest reservation";
+                for(GeminiInvasionManager.StructureInfo camp : WretchCamps.known(world))
+                    if(AxisAlignedBB.getBoundingBox(camp.x - 7, camp.y - 9, camp.z - 7, camp.x + 8, camp.y + 21, camp.z + 8).intersectsWith(box))
+                        return "protected existing camp";
+                for(int x = (int) box.minX; x < box.maxX; x++) for(int z = (int) box.minZ; z < box.maxZ; z++)
+                    for(int y = (int) box.minY; y < box.maxY; y++) {
+                        String unsafe = forcedRejection(world, x, y, z);
+                        if(unsafe != null) return unsafe + " at " + x + ", " + y + ", " + z;
+                    }
+                // Reject fluid beside the excavation as well as inside it. No drain/flood side effects.
+                AxisAlignedBB edge = box.expand(1, 1, 1);
+                for(int x = (int) edge.minX; x < edge.maxX; x++) for(int z = (int) edge.minZ; z < edge.maxZ; z++)
+                    for(int y = Math.max(1, (int) edge.minY); y < Math.min(world.getActualHeight(), edge.maxY); y++) {
+                        if(x >= box.minX && x < box.maxX && z >= box.minZ && z < box.maxZ && y >= box.minY && y < box.maxY) continue;
+                        Block block = world.getBlock(x, y, z);
+                        if(block.getMaterial().isLiquid()) return "liquid beside preparation area; drain or choose a dry site";
+                        if(y >= box.maxY && block instanceof net.minecraft.block.BlockFalling)
+                            return "unsafe falling terrain above preparation area";
+                    }
+            }
+            return null;
+        }
+        void finish(WorldServer world) {
+            EntityPlayer actor = FakePlayerFactory.getMinecraft(world);
+            AxisAlignedBB entitiesBox = readBounds;
+            if(entitiesBox == null) throw new IllegalStateException("Missing structure read bounds");
+            for(AxisAlignedBB region : regions) entitiesBox = AxisAlignedBB.getBoundingBox(
+                    Math.min(entitiesBox.minX, region.minX), Math.min(entitiesBox.minY, region.minY), Math.min(entitiesBox.minZ, region.minZ),
+                    Math.max(entitiesBox.maxX, region.maxX), Math.max(entitiesBox.maxY, region.maxY), Math.max(entitiesBox.maxZ, region.maxZ));
+            List<net.minecraft.entity.Entity> occupants = world.getEntitiesWithinAABBExcludingEntity(null, entitiesBox);
+            for(Placement cell : edits.values()) {
+                Block old = world.getBlock(cell.x, cell.y, cell.z);
+                if(old == cell.block && world.getBlockMetadata(cell.x, cell.y, cell.z) == cell.meta) continue;
+                cost++;
+                if(old != Blocks.air || cell.y < y) prepared = true;
+                if(!world.canMineBlock(actor, cell.x, cell.y, cell.z)) { reason = "protected block (server mining/spawn protection)"; return; }
+                if(cell.block != Blocks.air) for(net.minecraft.entity.Entity entity : occupants)
+                    if(entity.boundingBox != null && entity.boundingBox.intersectsWith(AxisAlignedBB.getBoundingBox(cell.x, cell.y, cell.z, cell.x + 1, cell.y + 1, cell.z + 1))) {
+                        reason = "entity obstructs a solid structure/foundation block"; return;
+                    }
+            }
+        }
+    }
+    static boolean loadedVolume(World world, AxisAlignedBB box) {
+        for(int x = MathHelper.floor_double(box.minX) >> 4; x <= (MathHelper.ceiling_double_int(box.maxX) - 1) >> 4; x++)
+            for(int z = MathHelper.floor_double(box.minZ) >> 4; z <= (MathHelper.ceiling_double_int(box.maxZ) - 1) >> 4; z++)
+                if(!world.getChunkProvider().chunkExists(x, z)) return false;
+        return true;
+    }
+    static String forcedRejection(World world, int x, int y, int z) {
+        if(y < 1 || y >= world.getActualHeight()) return "unsafe world height";
+        if(!world.getChunkProvider().chunkExists(x >> 4, z >> 4)) return "unloaded chunk";
+        Block block = world.getBlock(x, y, z);
+        if(block == Blocks.bedrock) return "bedrock obstruction";
+        if(block.hasTileEntity(world.getBlockMetadata(x, y, z)) || world.getTileEntity(x, y, z) != null) return "protected tile entity";
+        if(block.getMaterial().isLiquid()) return "liquid obstruction; drain before retrying";
+        if(block.getBlockHardness(world, x, y, z) < 0) return "protected unbreakable block";
+        boolean ordinary = natural(block) || block == Blocks.grass || block == Blocks.sand || block == Blocks.sandstone
+                || block == Blocks.clay || block == Blocks.hardened_clay || block == Blocks.stained_hardened_clay
+                || block == Blocks.mycelium || block == Blocks.netherrack || block == Blocks.end_stone || block == Blocks.soul_sand
+                || block == Blocks.snow || block == Blocks.snow_layer || block.isWood(world, x, y, z) || block.isLeaves(world, x, y, z)
+                || block.getMaterial() == net.minecraft.block.material.Material.plants
+                || block.getMaterial() == net.minecraft.block.material.Material.vine;
+        return ordinary ? null : "protected construction or non-terrain block " + Block.blockRegistry.getNameForObject(block);
+    }
+    /** First solid terrain above the ground, ignoring tree canopies and vegetation; independent of player Y. */
+    static int surface(World world, int x, int z) {
+        for(int y = Math.min(world.getActualHeight() - 1, world.getHeightValue(x, z)); y >= 1; y--) {
+            Block block = world.getBlock(x, y, z);
+            if(block.isWood(world, x, y, z) || block.isLeaves(world, x, y, z)) continue;
+            if(block.getMaterial().blocksMovement() || block.getMaterial().isLiquid()) return y + 1;
+        }
+        return -1;
+    }
+    static void countRejection(Map<String, Integer> reasons, String reason) {
+        // Include the obstruction coordinates in the single opt-in candidate summary.
+        Integer count = reasons.get(reason); reasons.put(reason, count == null ? 1 : count + 1);
+    }
+    static net.minecraft.command.CommandException searchFailure(World world, String kind, boolean exact, Map<String, Integer> reasons) {
+        GeminiInvasionManager.debug(world, kind + "-candidates", "Forced " + kind + " candidate rejections: " + reasons);
+        String blocking = null;
+        int count = -1;
+        for(Map.Entry<String, Integer> entry : reasons.entrySet()) {
+            if(blocking == null || !entry.getKey().startsWith("unloaded") && (blocking.startsWith("unloaded") || entry.getValue() > count)) {
+                blocking = entry.getKey(); count = entry.getValue();
+            }
+        }
+        return GeminiInvasionManager.rejected(world, kind, (exact ? "Requested " : "No safe nearby ") + kind + " placement: " + blocking
+                + (exact ? ". Origin was not moved." : ". Use explicit x y z or /gemini debug true for candidate details."));
+    }
+
+    static String place(WorldServer world, List<Placement> plan, boolean nest, StructurePlacementMode mode) {
+        boolean bypassPhase = mode == StructurePlacementMode.FORCED_DEBUG;
         EntityPlayer actor = FakePlayerFactory.getMinecraft(world);
         List<BlockSnapshot> snapshots = new ArrayList<BlockSnapshot>();
         boolean complete = false;
         placementDepth++;
         try {
+            if(bypassPhase) {
+                // Resolve all ordinary safety/mining/break vetoes before the first mutation.
+                for(Placement cell : plan) {
+                    String unsafe = forcedRejection(world, cell.x, cell.y, cell.z);
+                    if(unsafe != null) return unsafe;
+                    Block old = world.getBlock(cell.x, cell.y, cell.z);
+                    int meta = world.getBlockMetadata(cell.x, cell.y, cell.z);
+                    if(old == cell.block && meta == cell.meta) continue;
+                    AxisAlignedBB box = AxisAlignedBB.getBoundingBox(cell.x, cell.y, cell.z, cell.x + 1, cell.y + 1, cell.z + 1);
+                    if(WretchCamps.hasPlayerPlacement(world, box) || !world.canMineBlock(actor, cell.x, cell.y, cell.z)
+                            || MinecraftForge.EVENT_BUS.post(new BlockEvent.BreakEvent(cell.x, cell.y, cell.z, world, old, meta, actor)))
+                        return "protected block/Forge break veto at " + cell.x + ", " + cell.y + ", " + cell.z;
+                    if(world.getBlock(cell.x, cell.y, cell.z) != old || world.getBlockMetadata(cell.x, cell.y, cell.z) != meta)
+                        return "terrain changed during protection preflight";
+                }
+            }
             for(Placement cell : plan) {
                 if(!world.getGameRules().getGameRuleBooleanValue("mobGriefing")
                         || !bypassPhase && !(nest ? active(world) : WretchCamps.active(world))) return "generation gate changed";
-                if(!(nest ? safe(world, cell.x, cell.y, cell.z, true) : WretchCamps.safe(world, cell.x, cell.y, cell.z))) return "terrain changed";
+                if(bypassPhase) {
+                    String unsafe = forcedRejection(world, cell.x, cell.y, cell.z);
+                    if(unsafe != null) return unsafe + " at " + cell.x + ", " + cell.y + ", " + cell.z;
+                } else if(!(nest ? safe(world, cell.x, cell.y, cell.z, true) : WretchCamps.safe(world, cell.x, cell.y, cell.z))) return "terrain changed";
                 Block old = world.getBlock(cell.x, cell.y, cell.z);
                 int meta = world.getBlockMetadata(cell.x, cell.y, cell.z);
                 if(old == cell.block && meta == cell.meta) continue;
                 AxisAlignedBB box = AxisAlignedBB.getBoundingBox(cell.x, cell.y, cell.z, cell.x + 1, cell.y + 1, cell.z + 1);
                 if(cell.block != Blocks.air && !world.getEntitiesWithinAABBExcludingEntity(null, box).isEmpty()) return "occupied block placement";
                 if(((nest || bypassPhase) && WretchCamps.hasPlayerPlacement(world, box)) || !world.canMineBlock(actor, cell.x, cell.y, cell.z)
-                        || MinecraftForge.EVENT_BUS.post(new BlockEvent.BreakEvent(cell.x, cell.y, cell.z, world, old, meta, actor))) return "block protection/Forge break veto";
+                        || !bypassPhase && MinecraftForge.EVENT_BUS.post(new BlockEvent.BreakEvent(cell.x, cell.y, cell.z, world, old, meta, actor))) return "block protection/Forge break veto";
                 if(world.getBlock(cell.x, cell.y, cell.z) != old || world.getBlockMetadata(cell.x, cell.y, cell.z) != meta
                         || world.getTileEntity(cell.x, cell.y, cell.z) != null
                         || (nest || bypassPhase) && WretchCamps.hasPlayerPlacement(world, box)) return "block changed during protection callback";
@@ -177,7 +425,15 @@ public final class GardenerNests extends WorldSavedData {
                 if(world.getBlock(cell.x, cell.y, cell.z) != cell.block || world.getBlockMetadata(cell.x, cell.y, cell.z) != cell.meta)
                     return "block changed during placement callback";
             }
+            if(nest) for(Placement cell : plan) world.notifyBlocksOfNeighborChange(cell.x, cell.y, cell.z, cell.block);
+            // Neighbor/placement callbacks must not silently remove part of the completed layout.
+            if(bypassPhase) for(Placement cell : plan)
+                if(world.getBlock(cell.x, cell.y, cell.z) != cell.block || world.getBlockMetadata(cell.x, cell.y, cell.z) != cell.meta)
+                    return "structure initialization changed a planned block";
             complete = true;
+        } catch(RuntimeException failure) {
+            com.hbm.main.MainRegistry.logger.error("Gemini structure placement failed", failure);
+            return "internal generation error (see server log)";
         } finally {
             try {
                 if(!complete) for(int i = snapshots.size() - 1; i >= 0; i--) snapshots.get(i).restore(true, false);
@@ -186,7 +442,6 @@ public final class GardenerNests extends WorldSavedData {
                 for(BlockSnapshot snapshot : snapshots) world.markBlockForUpdate(snapshot.x, snapshot.y, snapshot.z);
             }
         }
-        if(nest) for(Placement cell : plan) world.notifyBlocksOfNeighborChange(cell.x, cell.y, cell.z, cell.block);
         return null;
     }
     public static boolean active(World world) {
@@ -293,12 +548,12 @@ public final class GardenerNests extends WorldSavedData {
         @SubscribeEvent
         public void tick(TickEvent.WorldTickEvent event) {
             if(event.phase != TickEvent.Phase.END || event.world.isRemote || !(event.world instanceof WorldServer)
-                    || event.world.provider.dimensionId != 0 || !GeminiConfig.enabled || event.world.playerEntities.isEmpty()) return;
+                    || !GeminiConfig.enabled || event.world.playerEntities.isEmpty()) return;
             World world = event.world;
             GardenerNests data = get(world);
-            if(world.getTotalWorldTime() % 1200 == 0) data.observeResidences(world);
+            if(world.provider.dimensionId == 0 && world.getTotalWorldTime() % 1200 == 0) data.observeResidences(world);
             if(world.getGameRules().getGameRuleBooleanValue("mobGriefing")) {
-                if(active(world)) data.tick((WorldServer) world);
+                if(active(world)) data.tick((WorldServer) world, StructurePlacementMode.NATURAL);
                 else if(world.getTotalWorldTime() % 100 == 0)
                     for(Nest nest : data.nests) if(nest.debug && nest.phase == 2 && loaded(world, nest.bounds().expand(5, 0, 5))) {
                         data.spawn((WorldServer) world, nest); data.markDirty(); break;
@@ -306,7 +561,8 @@ public final class GardenerNests extends WorldSavedData {
             }
         }
     }
-    private void tick(WorldServer world) {
+    private void tick(WorldServer world, StructurePlacementMode mode) {
+        if(mode != StructurePlacementMode.NATURAL) throw new IllegalArgumentException("Forced nests are completed by command placement");
         for(Iterator<Nest> it = nests.iterator(); it.hasNext();) {
             Nest nest = it.next();
             if(nest.phase >= 3) continue;
@@ -539,7 +795,9 @@ public final class GardenerNests extends WorldSavedData {
         for(int i = 0; i < Math.min(64, list.tagCount()); i++) {
             NBTTagCompound tag = list.getCompoundTagAt(i);
             Nest nest = new Nest(tag.getInteger("X"), tag.getInteger("Y"), tag.getInteger("Z"));
-            if(nest.y < 12 || nest.y > 42 || Math.abs((long) nest.x) > 29999900 || Math.abs((long) nest.z) > 29999900) continue;
+            boolean debug = tag.getBoolean("Debug");
+            if(nest.y < (debug ? 8 : 12) || nest.y > (debug ? 241 : 42)
+                    || Math.abs((long) nest.x) > (debug ? 29999960 : 29999900) || Math.abs((long) nest.z) > (debug ? 29999960 : 29999900)) continue;
             nest.phase = MathHelper.clamp_int(tag.getInteger("Phase"), 0, 4);
             nest.built = tag.getBoolean("Built") || nest.phase == 2 || nest.phase == 3;
             nest.debug = tag.getBoolean("Debug");

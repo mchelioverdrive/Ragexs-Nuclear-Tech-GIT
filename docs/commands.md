@@ -8,7 +8,7 @@ These commands are registered during server startup.
 
 ### `/gemini`
 
-Administrator invasion controls for Forge 1.7.10. Every subcommand requires operator permission level 2. Changes use the shared Overworld `GeminiInvasion` save; status also identifies the sender's dimension. Console senders can inspect and control progression, locate records relative to the console position, and list camps. Structure spawning requires a player in the Overworld.
+Administrator invasion controls for Forge 1.7.10. Every subcommand requires operator permission level 2. Changes use the shared Overworld `GeminiInvasion` save; status also identifies the sender's dimension. Console senders can inspect and control progression, locate records relative to the console position, and list camps. Structure spawning requires a player and uses that player's dimension; natural structures remain Overworld-only.
 
 ```text
 /gemini help
@@ -18,9 +18,9 @@ Administrator invasion controls for Forge 1.7.10. Every subcommand requires oper
 /gemini phase reset
 /gemini time add <ticks>
 /gemini time set <ticks>
-/gemini nest spawn
+/gemini nest spawn [x y z]
 /gemini nest locate
-/gemini camp spawn [wretch]
+/gemini camp spawn [wretch] [x y z]
 /gemini camp locate
 /gemini camp list [page]
 /gemini debug <true|false>
@@ -32,7 +32,15 @@ Administrator invasion controls for Forge 1.7.10. Every subcommand requires oper
 
 Timer arguments are nonnegative signed 64-bit tick counts; overflowing additions are rejected. `time add` advances from retained phase-local progress through at most three phase transitions. `time set` recalculates the phase from the configured cumulative delays and supports rewinding. Neither changes the day/night clock. Skipped encounters, chunk population, incremental construction, AI, infections and other live cooldowns are not simulated or replayed; the encounter countdown is retained on forward jumps and rescheduled on rewinds to an earlier phase. Natural advancement retains its existing loaded, enabled, player-present Overworld timing and one-transition/full-delay rule. Existing saves retain their phase and phase-local time; their initial cumulative prefix uses the currently configured delays because historical durations were not saved. Subsequent elapsed time is persisted, including in Phase 4.
 
-Nest and camp spawning reuse the complete existing organic nest and Wretch camp layouts. `wretch` is the only existing camp type and is selected when omitted. Searches are bounded and use already loaded terrain near the player. They bypass natural phase, probability, residence-discovery and search-cooldown gates while preserving world bounds, dimension, geology/clearing, spacing, tracking capacity, `mobGriefing` and protection checks. Rejected block placements roll back the command's changed cells. Natural camp placements use the same rollback path. Successful structures retain their usual boss identities and persistent tracking. Debug residents carry a saved, per-creature phase/Mars bypass while retaining natural anatomy and AI; they still require enabled invasion/species settings, non-Peaceful difficulty, population/reservation capacity, body/limb clearance and Forge insertion permission. Wretch admission also retains `doMobSpawning`. A blocked resident remains pending under the existing retry rules. Debug structures do not globally start the invasion or unlock other activity.
+Nest and camp spawning reuse the existing organic nest and Wretch camp layouts through an explicit forced placement mode. `wretch` is the only camp type and is selected when omitted. Natural phase, probability, forest/clearing, cave-floor, residence, spacing and configured natural nest-capacity requirements do not apply to forced placement. Natural generation retains its existing checks and incremental nest construction. Debug structures do not start the invasion or change its progression.
+
+Without coordinates, camps sample at most 48 positions within 64 blocks and derive elevation from terrain, even when the player is flying. They prefer less disruptive sites, clear the 13-by-13 footprint up to the Wretch's 20-block height, level the foundation and fill gaps up to eight blocks deep. Nests sample at most 32 local positions within 48 blocks, prefer the player's underground elevation with bedrock/roof clearance, descend below terrain for outdoor/flying players, and excavate the existing 29-by-29 organic room. They open a short passage into an adjacent cave/tunnel when available, otherwise prepare a narrow, lined ladder shaft to the surface. The shaft is player access; the Gardener retains its normal body-sized burrowing behavior. Loose room backing is stabilized where needed.
+
+Optional coordinates accept vanilla absolute/relative `~` notation. They select one exact origin with no relocation search. Fractional coordinates round down to blocks. The origin is the first structure layer/air level; the foundation or organic floor lies at Y-1. Camp origins must leave room for their foundation and resident (Y=10..235 in a 256-block world); nest origins must fit underground with cover and access (Y=8..241). The complete preparation and resident-read areas must already be loaded, including any shaft. Commands never request chunks or keep tickets. Move closer or load the required area before retrying an unavailable exact location.
+
+Both commands retain `mobGriefing=true`, save capacity (256 camps/64 nests per dimension), recorded construction, registered structures, tile entities, bedrock/unbreakable-block and Forge protection checks. Only ordinary terrain, safe ores and vegetation can be replaced; unrecognized blocks and liquid hazards inside or beside preparation are rejected. Drain liquids or choose a dry site. These guards are deliberately conservative, including column-based recorded construction. Full-volume checks and break-permission preflight precede edits. Later placement vetoes/errors restore the command's changed cells; external callbacks and their side effects cannot be made transactional. Preparation stays inside the checked clearing, room and access regions.
+
+Successful feedback gives the actual origin, dimension, terrain-preparation status, registration and resident status. Residents retain saved identities, natural anatomy/AI, enabled invasion/species settings, non-Peaceful difficulty, population/reservation capacity, clearance and Forge insertion checks; Wretches also retain `doMobSpawning`. A player can remain inside the excavated nest, but Gardener insertion waits until players leave it. Pending residents use the existing retry rules rather than duplicating entities. Forced records and their per-creature phase/Mars bypass persist in the selected dimension without altering natural records. Failure feedback identifies the blocking category; `/gemini debug true` adds aggregated candidate rejection details.
 
 Locate commands read existing saved records in the current dimension without generating structures or loading their chunks. Nest locating includes completed structures, including those with blocked resident spawning, and excludes unfinished/abandoned construction. Older abandoned nests without a saved completion marker cannot be distinguished reliably and are omitted. Camp listing includes saved tracking status, including legacy abandoned construction, and displays eight entries per page. Records describe tracked history, not an inspection of whether every block or resident still exists.
 
