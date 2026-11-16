@@ -30,8 +30,13 @@ final class WoodcrawlerLocomotion {
 
     void goal(double x, double y, double z) { goalX = x; goalY = y; goalZ = z; goalAge = 0; }
     boolean recovering() { return escapeTicks > 0; }
-    boolean keepCrawling() { return crawlTicks > 0 || recovering() || surface.active() || mob.isEnteringDoorway(); }
+    boolean keepCrawling() { return crawlTicks > 0 || recovering() || surface.active() || mob.isEnteringDoorway() || mob.isLeaping(); }
     boolean traversing() { return surface.active(); }
+    void returnToGround() { surface.returnToGround(); }
+    boolean leapContact() { return surface.leapContact(); }
+    void suspendForLeap() {
+        surface.suspendForLeap(); onDoorInteraction(); crawlTicks = Math.max(crawlTicks, 40);
+    }
     boolean controlsMovement() { return recovering() || surface.active(); }
     void onDoorInteraction() {
         escapeTicks = stuckTicks = 0; digging = null; sampled = false; retryTicks = 40;
@@ -103,7 +108,8 @@ final class WoodcrawlerLocomotion {
             boolean trying = blocked || goalAge < 60 && mob.getDistanceSq(goalX, goalY, goalZ) > 2D;
             stuckTicks = sampled && trying && dx * dx + dy * dy + dz * dz < 0.04D ? Math.min(400, stuckTicks + 10) : 0;
             sampledX = mob.posX; sampledY = mob.posY; sampledZ = mob.posZ; sampled = true;
-            if(stuckTicks >= 20 && !recovering() && retryTicks == 0) chooseEscape();
+            // Hunting excavation/entry selection belongs to the controller, not random escape steering.
+            if(stuckTicks >= 20 && !recovering() && retryTicks == 0 && !mob.hasActiveHunt()) chooseEscape();
         }
         double tx = recovering() ? escapeX : goalX, tz = recovering() ? escapeZ : goalZ;
         double dx = tx - mob.posX, dz = tz - mob.posZ, distance = Math.sqrt(dx * dx + dz * dz);
@@ -149,7 +155,8 @@ final class WoodcrawlerLocomotion {
     }
 
     private boolean diggable(int x, int y, int z, boolean protection) {
-        if(!world.blockExists(x, y, z) || !world.getGameRules().getGameRuleBooleanValue("mobGriefing")) return false;
+        if(world.isRemote || !(world instanceof WorldServer) || !world.blockExists(x, y, z)
+                || !world.getGameRules().getGameRuleBooleanValue("mobGriefing")) return false;
         Block block = world.getBlock(x, y, z);
         int meta = world.getBlockMetadata(x, y, z);
         float hardness = block.getBlockHardness(world, x, y, z);
@@ -159,6 +166,13 @@ final class WoodcrawlerLocomotion {
         if(!protection) return true;
         EntityPlayer actor = FakePlayerFactory.getMinecraft((WorldServer) world);
         return world.canMineBlock(actor, x, y, z) && !MinecraftForge.EVENT_BUS.post(new BlockEvent.BreakEvent(x, y, z, world, block, meta, actor));
+    }
+    boolean canBreach(int x, int y, int z) { return diggable(x, y, z, false); }
+    boolean breakBreach(int x, int y, int z) {
+        if(!canBreach(x, y, z)) return false;
+        Block before = world.getBlock(x, y, z); int meta = world.getBlockMetadata(x, y, z);
+        return diggable(x, y, z, true) && world.getBlock(x, y, z) == before
+                && world.getBlockMetadata(x, y, z) == meta && canBreach(x, y, z) && world.func_147480_a(x, y, z, true);
     }
     boolean canExcavateNatural(int x, int y, int z) {
         return world.blockExists(x, y, z) && WoodcrawlerEmergence.natural(world.getBlock(x, y, z)) && diggable(x, y, z, false);

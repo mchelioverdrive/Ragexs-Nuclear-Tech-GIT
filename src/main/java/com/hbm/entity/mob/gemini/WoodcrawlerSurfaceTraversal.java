@@ -21,7 +21,7 @@ final class WoodcrawlerSurfaceTraversal {
     private final World world;
     private int mode, nx, nz, ticks, blockedTicks, climbDelay, ladderDelay, landingTicks;
     private int ladderX, ladderZ, ladderBottom, ladderTop;
-    private boolean ladderFound, barrierContact;
+    private boolean ladderFound, barrierContact, returningToGround;
     private double plane, vx, vy, vz, exitX, exitY, exitZ, descentStartY;
     private double savedGoalX, savedGoalY, savedGoalZ;
     private double progressX, progressY, progressZ, climbX, climbY, climbZ;
@@ -33,6 +33,24 @@ final class WoodcrawlerSurfaceTraversal {
 
     WoodcrawlerSurfaceTraversal(EntityWoodcrawler mob) { this.mob = mob; world = mob.worldObj; }
     boolean active() { return mode != NONE; }
+    boolean leapContact() {
+        if(!active()) return false;
+        if(mode == LADDER) return ladder(ladderX, MathHelper.floor_double(mob.posY), ladderZ);
+        return wall(0.35D, mob.posY, mob.height);
+    }
+    void suspendForLeap() {
+        // Detach without finish(): that method cancels velocity, fall distance and the hunt route.
+        mode = NONE; returningToGround = climbEpisode = ladderFound = approachFound = false;
+        landingTicks = 0; climbDelay = ladderDelay = 40; approachScan = 0;
+        mob.setClimbing(false);
+    }
+    void returnToGround() {
+        if(!active()) return;
+        if(mob.onGround || !Double.isNaN(floor(mob.posX, mob.posY, mob.posZ, 0.18D))) { finish(); return; }
+        returningToGround = true;
+        if(mode == LADDER) { savedGoalY = ladderBottom; return; }
+        if(mode != DOWN && mode != DISMOUNT) { climbDelay = 100; attach(DOWN); }
+    }
 
     private AxisAlignedBB body(double x, double y, double z) {
         double half = mob.width / 2D - 0.001D;
@@ -270,6 +288,7 @@ final class WoodcrawlerSurfaceTraversal {
         mob.setClimbing(true); mob.fallDistance = 0;
     }
     private void finish() {
+        returningToGround = false;
         if(climbEpisode) retryTicks = 300;
         climbEpisode = false;
         mode = NONE; ladderFound = false; ladderDelay = 40; landingTicks = 4;
@@ -284,9 +303,31 @@ final class WoodcrawlerSurfaceTraversal {
                 && Math.abs(mob.posY - climbY) < 1.25D && dx * dx + dz * dz < 9D;
     }
 
+    /** Contact alone is insufficient: require a nearby ledge with useful access beyond it. */
+    private boolean usefulClimb(double gx, double gy, double gz) {
+        double x = nx == 0 ? mob.posX : plane - nx * (mob.width / 2D + 0.15D);
+        double z = nz == 0 ? mob.posZ : plane - nz * (mob.width / 2D + 0.15D);
+        for(int rise = 1; rise <= 8; rise++) {
+            double y = mob.posY + rise;
+            if(!clear(body(mob.posX, y, mob.posZ))) return false;
+            if(!clear(body(x, y, z)) || Double.isNaN(floor(x, y, z, 0.3D))) continue;
+            if(mob.isHazardAt(x, y, z)) return false;
+            if(barrierContact && rise <= 2) return true;
+            // Elevated prey or a clear attack/entry ray makes this ledge useful.
+            if(Math.abs(gy - y) < Math.abs(gy - mob.posY) - 0.5D) return true;
+            Vec3 from = Vec3.createVectorHelper(x, y + 1, z), to = Vec3.createVectorHelper(gx, gy + 1, gz);
+            AxisAlignedBB corridor = body(x, y, z).addCoord(gx - x, gy - y, gz - z);
+            if(!GardenerNests.loaded(world, corridor)) return false;
+            MovingObjectPosition hit = world.func_147447_a(from, to, false, true, false);
+            return hit == null || mob.canBreachBlock(hit.blockX, hit.blockY, hit.blockZ);
+        }
+        return false;
+    }
+
     boolean tick(double gx, double gy, double gz, boolean hasGoal, boolean allowed) {
-        if(active()) { gx = savedGoalX; gy = savedGoalY; gz = savedGoalZ; }
-        else if(hasGoal) { savedGoalX = gx; savedGoalY = gy; savedGoalZ = gz; }
+        if(hasGoal) { savedGoalX = gx; savedGoalY = gy; savedGoalZ = gz; }
+        else if(active()) { gx = savedGoalX; gy = savedGoalY; gz = savedGoalZ; }
+        if(returningToGround && mode == LADDER) gy = ladderBottom;
         if(retryTicks > 0) retryTicks--;
         if(approachScan > 0) approachScan--;
         if(dismountDelay > 0) dismountDelay--;
@@ -294,7 +335,8 @@ final class WoodcrawlerSurfaceTraversal {
         if(ladderDelay > 0) ladderDelay--;
         if(landingTicks > 0) { landingTicks--; mob.fallDistance = 0; }
         if(!allowed || mob.isInWater() || mob.handleLavaMovement()) { if(active()) finish(); return false; }
-        if(mode == NONE && hasGoal) {
+        boolean useful = mob.hasActiveHunt() ? mob.allowsHuntClimbing() : gy > mob.posY + 1;
+        if(mode == NONE && hasGoal && useful) {
             findLadder(gx, gy, gz);
             if(ladderFound && Math.abs(gy - mob.posY) > 0.5D
                     && mob.getDistanceSq(ladderX + 0.5D, mob.posY, ladderZ + 0.5D) < 0.3D
@@ -309,11 +351,14 @@ final class WoodcrawlerSurfaceTraversal {
                     }
                     if(!repeatedClimb() && wall(0.35D, mob.posY, mob.height)
                             && (gy >= mob.posY - 1D || barrierContact)
-                            && clear(body(mob.posX, mob.posY + 0.25D, mob.posZ))) attach(UP);
+                            && clear(body(mob.posX, mob.posY + 0.25D, mob.posZ)) && usefulClimb(gx, gy, gz)) attach(UP);
                 }
             }
         }
         if(mode == NONE) return false;
+        if(mode == UP && climbEpisode && mob.posY > Math.max(climbY + 8, gy + 3)) {
+            climbDelay = 100; attach(DOWN);
+        }
         vx = vy = vz = 0;
         double progress = (mob.posX - progressX) * (mob.posX - progressX) + (mob.posY - progressY) * (mob.posY - progressY)
                 + (mob.posZ - progressZ) * (mob.posZ - progressZ);

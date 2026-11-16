@@ -25,6 +25,8 @@ public final class GeminiConfig {
 	public static int woodcrawlerDetectionRange = 32;
 	public static int woodcrawlerStalkSeconds = 6;
 	public static int woodcrawlerMemorySeconds = 20;
+	public static int woodcrawlerLeapMaxHorizontal = 12, woodcrawlerLeapMaxUp = 6, woodcrawlerLeapMaxDown = 16;
+	public static int woodcrawlerLeapCooldownSeconds = 3, woodcrawlerLeapMinDistance = 3;
 	public static int woodcrawlerSpawnWeight = 2;
 	public static int woodcrawlerMaxLoaded = 16, woodcrawlerMaxPending = 16;
 	public static int fakePersonMaxLoaded = 16;
@@ -101,7 +103,17 @@ public final class GeminiConfig {
 		values.woodcrawlerStalkSeconds = config.getInt("woodcrawlerStalkSeconds", CATEGORY, 6, 1, 30,
 				"Initial silent stalking duration; noticed, escaping or nearby prey can trigger pursuit sooner.");
 		values.woodcrawlerMemorySeconds = config.getInt("woodcrawlerMemorySeconds", CATEGORY, 20, 2, 60,
-				"How long a Woodcrawler remembers the last observed target position after losing sight.");
+				"How long a Woodcrawler remembers the last observed target position after losing sight, before a final five-second search.");
+		values.woodcrawlerLeapMaxHorizontal = config.getInt("woodcrawlerLeapMaxHorizontal", CATEGORY, 12, 1, 24,
+				"Maximum horizontal leap displacement in blocks. Collision, available launch/landing space and native physics may reduce actual reach.");
+		values.woodcrawlerLeapMaxUp = config.getInt("woodcrawlerLeapMaxUp", CATEGORY, 6, 1, 12,
+				"Maximum leap apex above takeoff in blocks, also limiting upward landing height.");
+		values.woodcrawlerLeapMaxDown = config.getInt("woodcrawlerLeapMaxDown", CATEGORY, 16, 1, 32,
+				"Maximum planned downward landing displacement in blocks. Ordinary fall damage is unchanged.");
+		values.woodcrawlerLeapCooldownSeconds = config.getInt("woodcrawlerLeapCooldownSeconds", CATEGORY, 3, 1, 60,
+				"Minimum active seconds between targeted leaps; failed attempts wait longer.");
+		values.woodcrawlerLeapMinDistance = config.getInt("woodcrawlerLeapMinDistance", CATEGORY, 3, 1, 12,
+				"Minimum straight-line launch-to-landing distance in blocks; close prey uses ordinary attacks.");
 		values.woodcrawlerSpawnWeight = config.getInt("woodcrawlerSpawnWeight", CATEGORY, 2, 0, 20,
 				"Forest monster spawn weight after Mars. Zero disables both natural and invasion Woodcrawler spawns.");
 		values.woodcrawlerMaxLoaded = config.getInt("woodcrawlerMaxLoaded", CATEGORY, 16, 0, 64,
@@ -253,6 +265,11 @@ public final class GeminiConfig {
         woodcrawlerDetectionRange = values.woodcrawlerDetectionRange;
         woodcrawlerStalkSeconds = values.woodcrawlerStalkSeconds;
         woodcrawlerMemorySeconds = values.woodcrawlerMemorySeconds;
+        woodcrawlerLeapMaxHorizontal = values.woodcrawlerLeapMaxHorizontal;
+        woodcrawlerLeapMaxUp = values.woodcrawlerLeapMaxUp;
+        woodcrawlerLeapMaxDown = values.woodcrawlerLeapMaxDown;
+        woodcrawlerLeapCooldownSeconds = values.woodcrawlerLeapCooldownSeconds;
+        woodcrawlerLeapMinDistance = values.woodcrawlerLeapMinDistance;
         if(startup) woodcrawlerSpawnWeight = values.woodcrawlerSpawnWeight;
         woodcrawlerMaxLoaded = values.woodcrawlerMaxLoaded;
         woodcrawlerMaxPending = values.woodcrawlerMaxPending;
@@ -331,6 +348,8 @@ public final class GeminiConfig {
         public int woodcrawlerDetectionRange = 32;
         public int woodcrawlerStalkSeconds = 6;
         public int woodcrawlerMemorySeconds = 20;
+        public int woodcrawlerLeapMaxHorizontal = 12, woodcrawlerLeapMaxUp = 6, woodcrawlerLeapMaxDown = 16;
+        public int woodcrawlerLeapCooldownSeconds = 3, woodcrawlerLeapMinDistance = 3;
         public int woodcrawlerSpawnWeight = 2;
         public int woodcrawlerMaxLoaded = 16, woodcrawlerMaxPending = 16;
         public int fakePersonMaxLoaded = 16;

@@ -36,7 +36,7 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
     private int configurationRevision = -1;
 
 
-	public static final int WANDER = 0, STALK = 1, CHASE = 2, SEARCH = 3, RETREAT = 4, BANG = 5;
+	public static final int WANDER = 0, STALK = 1, CHASE = 2, SEARCH = 3, RETREAT = 4, BANG = 5, BREACH = 6;
 	public static final float STANDING_HEIGHT = 5.6F, BODY_WIDTH = 0.85F;
 	public static final float CRAWLING_HEIGHT = 1.8F, CRAWLING_WIDTH = 0.6F;
 	public static final int GRAB_WINDUP = 12, GRAB_HOLD_END = 26, GRAB_END = 36;
@@ -59,6 +59,7 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 	public float burrowDepth, prevBurrowDepth;
 	public float travelPhase, prevTravelPhase;
 	public float climbBlend, prevClimbBlend, crouchBlend, prevCrouchBlend, stalkBlend, prevStalkBlend;
+	public float leapBlend, prevLeapBlend;
 	private boolean daytimeBurrow;
 	private int darkTicks, shelterTicks, disturbanceTicks, environmentDelay, flameTicks, uvTicks;
 	private int cachedLight, mimicDelay = 160;
@@ -140,8 +141,18 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 		controller.resetTask();
 	}
 	@Override
-	public boolean isOnLadder() { return dataWatcher.getWatchableObjectByte(21) != 0 || super.isOnLadder(); }
-	public void setClimbing(boolean climbing) { dataWatcher.updateObject(21, Byte.valueOf((byte) (climbing ? 1 : 0))); }
+	public boolean isOnLadder() { return !isLeapAirborne() && ((dataWatcher.getWatchableObjectByte(21) & 1) != 0 || super.isOnLadder()); }
+	public void setClimbing(boolean climbing) {
+		dataWatcher.updateObject(21, Byte.valueOf((byte) ((dataWatcher.getWatchableObjectByte(21) & ~1) | (climbing ? 1 : 0))));
+	}
+	// Share the existing byte: bit 0 remains climbing, bits 1-4 are windup, bit 5 is flight.
+	public void setLeapAnimation(int windup, boolean airborne) {
+		dataWatcher.updateObject(21, Byte.valueOf((byte) ((dataWatcher.getWatchableObjectByte(21) & 1)
+				| MathHelper.clamp_int(windup, 0, 10) << 1 | (airborne ? 32 : 0))));
+	}
+	public boolean isLeaping() { return (dataWatcher.getWatchableObjectByte(21) & 62) != 0; }
+	public boolean isLeapAirborne() { return (dataWatcher.getWatchableObjectByte(21) & 32) != 0; }
+	public float getLeapPose(float partial) { return prevLeapBlend + (leapBlend - prevLeapBlend) * partial; }
 	public boolean hasCapturedVillager() { return capturedVillager != null; }
 	public boolean isCarrying() { return dataWatcher.getWatchableObjectByte(22) != 0; }
 	public boolean wasLoadedFromNBT() { return loadedFromNBT; }
@@ -166,13 +177,26 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 	public void setMovementGoal(double x, double y, double z) { locomotion.goal(x, y, z); }
 	public void onDoorInteraction() { locomotion.onDoorInteraction(); }
 	public boolean isEnteringDoorway() { return controller != null && controller.isEnteringDoorway(); }
+	public boolean hasActiveHunt() { return controller != null && controller.hasActiveHunt(); }
+	public boolean allowsHuntClimbing() { return controller != null && controller.allowsClimbing(); }
+	public Vec3 getSiegeEntry() { return controller == null ? null : controller.getSiegeEntry(); }
+	public boolean canBreachBlock(int x, int y, int z) { return locomotion.canBreach(x, y, z); }
+	public boolean breakBreachBlock(int x, int y, int z) { return locomotion.breakBreach(x, y, z); }
 	public boolean isSurfaceTraversal() { return locomotion.traversing(); }
+	public boolean hasLeapWallContact() { return locomotion.leapContact(); }
+	public void suspendSurfaceForLeap() { locomotion.suspendForLeap(); }
+	public void returnToGround() { locomotion.returnToGround(); }
 	void onSurfaceTraversalFinished() {
 		locomotion.onSurfaceFinished();
 		controller.onSurfaceTraversalFinished();
 	}
 	public Vec3 getClimbWaypoint(double x, double y, double z) { return locomotion.waypoint(x, y, z); }
 	@Override public void moveEntity(double x, double y, double z) {
+		if(!worldObj.isRemote && isLeaping()) {
+			if(!isLeapAirborne()) { super.moveEntity(0, 0, 0); return; }
+			if(!controller.allowsLeapMovement(x, y, z)) { x = z = 0; motionX = motionZ = 0; }
+			super.moveEntity(x, y, z); return;
+		}
 		if(locomotion != null && !worldObj.isRemote && ridingEntity == null && isEntityAlive() && GeminiSpawning.canAct(this, 1)) locomotion.move(x, y, z);
 		else super.moveEntity(x, y, z);
 	}
@@ -263,10 +287,10 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 	public float getBodyModelY(float partial) {
 		float crouch = prevCrouchBlend + (crouchBlend - prevCrouchBlend) * partial;
 		float stalk = prevStalkBlend + (stalkBlend - prevStalkBlend) * partial;
-		return -36 + crouch * 46 + stalk * 3;
+		return -36 + crouch * 46 + stalk * 3 + getLeapPose(partial) * 4;
 	}
 	public float getBodyVerticalScale(float partial) {
-		return 1 - (prevCrouchBlend + (crouchBlend - prevCrouchBlend) * partial) * 0.5F;
+		return 1 - (prevCrouchBlend + (crouchBlend - prevCrouchBlend) * partial) * 0.5F - getLeapPose(partial) * 0.08F;
 	}
 	public Vec3 getTendrilOrigin(int side, float partial) {
 		double yaw = (prevRenderYawOffset + MathHelper.wrapAngleTo180_float(renderYawOffset - prevRenderYawOffset) * partial) * Math.PI / 180;
@@ -336,7 +360,7 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 
 	public void beginStrike(EntityLivingBase target) {
 		if(worldObj.isRemote || !GeminiSpawning.canAct(this, 1) || getHuntState() != CHASE
-				|| isSurfaceTraversal()
+				|| isSurfaceTraversal() || isLeaping() && !isLeapAirborne()
 				|| getHealth() <= 0 || isCaptureBusy() || hasCapturedVillager() || isGrabbing() || isProbing() || strikeCooldown > 0 || !canStrike(target)) return;
 		strikeTarget = target;
 		captureState(CaptureState.GRABBING);
@@ -407,6 +431,38 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 		return super.attackEntityAsMob(target);
 	}
 
+	/** One final-approach contact, using the same capture and wound pipeline as ordinary hooks. */
+	public boolean tryLeapStrike(EntityLivingBase target) {
+		if(worldObj.isRemote || !isLeapAirborne() || !GeminiSpawning.canAct(this, 1) || !isPrey(target)
+				|| target != getAttackTarget() || isCaptureBusy() || isGrabbing() || isProbing() || strikeCooldown > 0
+				|| !boundingBox.expand(0.8D, 0.4D, 0.8D).intersectsWith(target.boundingBox)) return false;
+		setHuntState(CHASE);
+		if(canStrike(target)) {
+			beginStrike(target);
+			if(!isGrabbing()) return false;
+			// The leap already supplied its visible windup. Resolve this contact now, then retain
+			// the ordinary hold/retraction (or cocoon transfer) without a second airborne hit.
+			dataWatcher.updateObject(24, Byte.valueOf((byte) GRAB_WINDUP));
+			tickGrab();
+			return true;
+		}
+		// Actual body contact can wound when the articulated hooks cannot extend. Do not
+		// bypass weak-villager capture or protection checks with an alternative damage path.
+		if(target instanceof EntityVillager && target.getHealth() <= target.getMaxHealth() * 0.5F) return false;
+		Vec3 from = Vec3.createVectorHelper(posX, boundingBox.minY + height * 0.5D, posZ);
+		Vec3 to = Vec3.createVectorHelper(target.posX, target.boundingBox.minY + target.height * 0.5D, target.posZ);
+		if(!com.hbm.world.gemini.GardenerNests.loaded(worldObj, boundingBox.addCoord(target.posX - posX,
+				target.posY - posY, target.posZ - posZ).expand(1, 1, 1))
+				|| worldObj.func_147447_a(from, to, false, true, false) != null) return false;
+		strikeCooldown = 72;
+		if(super.attackEntityAsMob(target)) {
+			double dx = target.posX - posX, dz = target.posZ - posZ, length = Math.max(0.1D, Math.hypot(dx, dz));
+			target.addVelocity(dx / length * 0.3D, 0.12D, dz / length * 0.3D);
+			target.velocityChanged = true;
+		}
+		return true;
+	}
+
 	/** Existing FEL/UV projectile contacts call this; ordinary light never does. */
 	public void receiveUltraviolet(double sourceX, double sourceZ) {
 		if(worldObj.isRemote || isDormant()) return;
@@ -441,7 +497,7 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 		// Native fire/lava contact already damages burning bodies. Only add radiant heat off-contact.
 		if(flameTicks > 0 && nearest < 4 && !isBurning() && !handleLavaMovement())
 			attackEntityFrom(DamageSource.inFire, 1F + flameTicks / 80F);
-		if(!isBurrowing() && !isGrabbing() && !isProbing() && !isCaptureBusy() && !hasCapturedVillager()) {
+		if(!isLeaping() && !isBurrowing() && !isGrabbing() && !isProbing() && !isCaptureBusy() && !hasCapturedVillager()) {
 			shelterTicks = wantsShelter() ? shelterTicks + 20 : 0;
 			if(shelterTicks >= 40 && burrowCooldown == 0 && onGround && !isInWater() && !isOnLadder() && burrowGround(posX, posY, posZ)) {
 				burrowCooldown = 100;
@@ -495,7 +551,7 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 		return dataWatcher.getWatchableObjectByte(31) == 2 && target == strikeTarget && probeContact(target);
 	}
 	public boolean beginProbe(EntityLivingBase target) {
-		if(worldObj.isRemote || !GeminiSpawning.canAct(this, 1) || isSurfaceTraversal() || isCaptureBusy() || hasCapturedVillager()
+		if(worldObj.isRemote || !GeminiSpawning.canAct(this, 1) || isLeaping() || isSurfaceTraversal() || isCaptureBusy() || hasCapturedVillager()
 				|| isBurrowing() || isGrabbing() || isProbing() || strikeCooldown > 0 || !isPrey(target)
 				|| getDistanceSqToEntity(target) > 36 || !onGround) return false;
 		Vec3 origin = getProboscisOrigin(1);
@@ -758,14 +814,22 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 	public void moveEntityWithHeading(float strafe, float forward) {
 		if(isDormant() || isUndergroundEmerging() || emergence.active()) { motionX = motionY = motionZ = 0; return; }
 		if(!worldObj.isRemote && GeminiSpawning.canAct(this, 1)) {
-			locomotion.tick();
+			if(!isLeaping()) locomotion.tick();
 			if(locomotion.controlsMovement()) strafe = forward = 0;
 		}
-		if(isBurrowing() || isGrabbing() || isProbing() || getHuntState() == BANG) {
+		if(isLeaping()) {
+			if(!isLeapAirborne()) motionX = motionY = motionZ = 0;
+			// Suppress helper acceleration and vanilla ladder clamping, retaining native gravity,
+			// drag and collision. A successful airborne grab keeps its own prey timeline.
+			super.moveEntityWithHeading(0, 0);
+		} else if(isBurrowing() || isGrabbing() || isProbing() || getHuntState() == BANG) {
 			motionX = motionZ = 0;
 			super.moveEntityWithHeading(0, 0);
 		} else super.moveEntityWithHeading(strafe, forward);
-		if(!worldObj.isRemote) locomotion.afterPhysics();
+		if(!worldObj.isRemote) {
+			if(isLeaping()) controller.afterLeapPhysics();
+			else locomotion.afterPhysics();
+		}
 	}
 
 	@Override
@@ -834,6 +898,9 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 		prevClimbBlend = climbBlend;
 		prevCrouchBlend = crouchBlend;
 		prevStalkBlend = stalkBlend;
+		prevLeapBlend = leapBlend;
+		float leapPose = isLeapAirborne() ? -0.35F : ((dataWatcher.getWatchableObjectByte(21) >> 1) & 15) / 10F;
+		leapBlend += (leapPose - leapBlend) * 0.45F;
 		climbBlend += ((isOnLadder() ? 1F : 0F) - climbBlend) * 0.2F;
 		crouchBlend += ((isCrouching() ? 1F : 0F) - crouchBlend) * 0.25F;
 		stalkBlend += ((getHuntState() == STALK ? 1F : 0F) - stalkBlend) * 0.15F;
@@ -961,6 +1028,7 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 		nbt.setInteger("WoodcrawlerBurrowTick", getBurrowTick());
 		nbt.setInteger("WoodcrawlerDisturbed", disturbanceTicks);
 		locomotion.write(nbt);
+		controller.writeLeap(nbt);
 		emergence.write(nbt);
 	}
 	@Override
@@ -994,6 +1062,7 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 		}
 		disturbanceTicks = MathHelper.clamp_int(nbt.getInteger("WoodcrawlerDisturbed"), 0, 200);
 		locomotion.read(nbt);
+		controller.readLeap(nbt);
 		emergence.read(nbt);
 		if(emergence.active()) {
 			daytimeBurrow = false; checkLoadedClearance = false;

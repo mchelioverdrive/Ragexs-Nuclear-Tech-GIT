@@ -133,6 +133,7 @@ public final class ModelWoodcrawler extends ModelBase {
 		stalk *= 1 - burrow;
 		float attack = mob.getGrabExtension(partial) * (1 - burrow);
 		float movement = MathHelper.clamp_float(amount * 2, 0, 1) * (1 - burrow);
+		if(mob.isLeaping()) movement = 0;
 		thorax.rotationPointY = mob.getBodyModelY(partial);
 		// The central strut remains stable; small independent motions live in the neck and appendages.
 		thorax.rotateAngleX = thorax.rotateAngleZ = 0;
@@ -190,6 +191,11 @@ public final class ModelWoodcrawler extends ModelBase {
 			footX += (side * 3F - footX) * depth;
 			footZ += (hipZ - footZ) * depth;
 			footY += (hips[i].rotationPointY + 8F - footY) * depth;
+			if(mob.isLeapAirborne()) {
+				// Extend from the compressed takeoff, then fold the support legs during flight.
+				footZ -= Math.max(0, -mob.getLeapPose(partial)) * 12;
+				footY -= Math.max(0, -mob.getLeapPose(partial)) * 8;
+			}
 			solveLeg(i, side, footX - hips[i].rotationPointX, footY - hips[i].rotationPointY, footZ - hipZ,
 					Math.max(crouch, depth), climb);
 		}
