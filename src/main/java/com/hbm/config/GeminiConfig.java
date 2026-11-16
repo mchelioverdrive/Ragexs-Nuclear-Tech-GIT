@@ -99,7 +99,7 @@ public final class GeminiConfig {
 		values.woodcrawlerDetectionRange = config.getInt("woodcrawlerDetectionRange", CATEGORY, 32, 8, 48,
 				"Woodcrawler player/villager detection radius in blocks. Also bounds native path searches.");
 		values.woodcrawlerStalkSeconds = config.getInt("woodcrawlerStalkSeconds", CATEGORY, 6, 1, 30,
-				"Minimum silent stalking time before a Woodcrawler can sprint and attack.");
+				"Initial silent stalking duration; noticed, escaping or nearby prey can trigger pursuit sooner.");
 		values.woodcrawlerMemorySeconds = config.getInt("woodcrawlerMemorySeconds", CATEGORY, 20, 2, 60,
 				"How long a Woodcrawler remembers the last observed target position after losing sight.");
 		values.woodcrawlerSpawnWeight = config.getInt("woodcrawlerSpawnWeight", CATEGORY, 2, 0, 20,

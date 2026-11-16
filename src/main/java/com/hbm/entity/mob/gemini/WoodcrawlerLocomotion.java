@@ -30,9 +30,12 @@ final class WoodcrawlerLocomotion {
 
     void goal(double x, double y, double z) { goalX = x; goalY = y; goalZ = z; goalAge = 0; }
     boolean recovering() { return escapeTicks > 0; }
-    boolean keepCrawling() { return crawlTicks > 0 || recovering() || surface.active(); }
+    boolean keepCrawling() { return crawlTicks > 0 || recovering() || surface.active() || mob.isEnteringDoorway(); }
     boolean traversing() { return surface.active(); }
     boolean controlsMovement() { return recovering() || surface.active(); }
+    void onDoorInteraction() {
+        escapeTicks = stuckTicks = 0; digging = null; sampled = false; retryTicks = 40;
+    }
     Vec3 waypoint(double x, double y, double z) { return surface.waypoint(x, y, z); }
     void move(double x, double y, double z) { surface.move(x, y, z); }
     void afterPhysics() { surface.afterPhysics(); }
@@ -74,6 +77,8 @@ final class WoodcrawlerLocomotion {
         if(!surface.active()) goalAge = Math.min(100, goalAge + 1);
         if(retryTicks > 0) retryTicks--;
         if(digDelay > 0) digDelay--;
+        // Native ground navigation owns the opened passage; frame collisions must not start a roof climb.
+        if(mob.isEnteringDoorway()) { mob.setClimbing(false); return; }
         boolean allowed = !mob.isBurrowing() && !mob.isGrabbing() && !mob.isProbing() && !mob.isCaptureBusy()
                 && (mob.getHuntState() != EntityWoodcrawler.BANG || digging != null);
         if(surface.tick(recovering() ? escapeX : goalX, recovering() ? escapeY : goalY,

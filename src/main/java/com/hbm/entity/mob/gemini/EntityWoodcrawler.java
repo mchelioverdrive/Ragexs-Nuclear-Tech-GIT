@@ -6,6 +6,7 @@ import com.hbm.world.gemini.WoodcrawlerSpawning;
 import java.util.UUID;
 
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockDoor;
 import net.minecraft.init.Blocks;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.IEntityLivingData;
@@ -163,6 +164,8 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 				posX + width / 2D, boundingBox.minY + height, posZ + width / 2D);
 	}
 	public void setMovementGoal(double x, double y, double z) { locomotion.goal(x, y, z); }
+	public void onDoorInteraction() { locomotion.onDoorInteraction(); }
+	public boolean isEnteringDoorway() { return controller != null && controller.isEnteringDoorway(); }
 	public boolean isSurfaceTraversal() { return locomotion.traversing(); }
 	void onSurfaceTraversalFinished() {
 		locomotion.onSurfaceFinished();
@@ -228,6 +231,7 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 	boolean excavateForEmergence(int x, int y, int z) { return locomotion.excavateNatural(x, y, z); }
 	public boolean isProbing() { return dataWatcher.getWatchableObjectByte(31) != 0; }
 	public boolean wantsShelter() { return !emergence.active() && !emergence.initialHunt()
+			&& (controller == null || !controller.hasActiveHunt())
 			&& worldObj.isDaytime() && !worldObj.provider.hasNoSky && disturbanceTicks == 0; }
 	public boolean avoidsExposure() { return nearbyFire || uvUntil >= worldObj.getTotalWorldTime()
 			|| !emergence.initialHunt() && cachedLight >= 12; }
@@ -529,6 +533,22 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 		if(!protection) return true;
 		EntityPlayer actor = FakePlayerFactory.getMinecraft((WorldServer) worldObj);
 		return worldObj.canMineBlock(actor, x, y, z) && !MinecraftForge.EVENT_BUS.post(new BlockEvent.BreakEvent(x, y, z, worldObj, block, meta, actor));
+	}
+	/** Called only by the hunt controller, on the server, with a canonical lower door half. */
+	public boolean breakHuntDoor(int x, int y, int z) {
+		if(worldObj.isRemote || !worldObj.getGameRules().getGameRuleBooleanValue("mobGriefing")
+				|| !worldObj.blockExists(x, y + 1, z)) return false;
+		Block door = worldObj.getBlock(x, y, z);
+		int lower = worldObj.getBlockMetadata(x, y, z), upper = worldObj.getBlockMetadata(x, y + 1, z);
+		if(!(door instanceof BlockDoor) || door.getMaterial() != net.minecraft.block.material.Material.wood
+				|| (lower & 8) != 0 || (upper & 8) == 0 || worldObj.getBlock(x, y + 1, z) != door
+				|| ((BlockDoor) door).func_150015_f(worldObj, x, y, z)
+				|| !probeBlockAllowed(x, y, z, true) || !probeBlockAllowed(x, y + 1, z, true)) return false;
+		// Protection callbacks may replace/open the door or change the gamerule.
+		if(!worldObj.getGameRules().getGameRuleBooleanValue("mobGriefing") || worldObj.getBlock(x, y, z) != door
+				|| worldObj.getBlock(x, y + 1, z) != door || worldObj.getBlockMetadata(x, y, z) != lower
+				|| worldObj.getBlockMetadata(x, y + 1, z) != upper) return false;
+		return worldObj.func_147480_a(x, y, z, true); // Native neighbor notifications remove the upper half.
 	}
 	private void retractProbe() {
 		if(isProbing()) dataWatcher.updateObject(31, Byte.valueOf((byte) 3));
@@ -876,6 +896,7 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 	public void setDead() {
 		// A vetoed/obstructed release retains the saved carrier for a later retry.
 		if(!worldObj.isRemote && hasCapturedVillager() && !releaseCapturedVillager()) return;
+		if(!worldObj.isRemote && controller != null) controller.resetTask();
 		for(EntityWoodcrawlerProboscis part : proboscisParts) if(part != null) part.setDead();
 		super.setDead();
 	}
