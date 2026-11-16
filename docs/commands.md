@@ -6,6 +6,38 @@ This reference was verified against `src/main/java/com/hbm/commands` and the ser
 
 These commands are registered during server startup.
 
+### `/gemini`
+
+Administrator invasion controls for Forge 1.7.10. Every subcommand requires operator permission level 2. Changes use the shared Overworld `GeminiInvasion` save; status also identifies the sender's dimension. Console senders can inspect and control progression, locate records relative to the console position, and list camps. Structure spawning requires a player in the Overworld.
+
+```text
+/gemini help
+/gemini status
+/gemini phase set <1|2|3|4>
+/gemini phase next
+/gemini phase reset
+/gemini time add <ticks>
+/gemini time set <ticks>
+/gemini nest spawn
+/gemini nest locate
+/gemini camp spawn [wretch]
+/gemini camp locate
+/gemini camp list [page]
+/gemini debug <true|false>
+```
+
+`status` reports the Mars milestone, progression activity, `geminionly`, phase, elapsed invasion ticks/days, remaining phase delay, encounter countdown, generation unlocks/eligibility, known structure counts and world context. Eligibility reports global gates; it does not probe terrain or guarantee a successful random placement. Natural nest construction and discovery still require loaded terrain near established survival areas; natural camps still require newly populated forest clearings.
+
+`phase set` unlocks the Mars milestone and enters the selected phase at its beginning, using the configured phase delays for elapsed time. Forward changes apply phase unlocks in order, including the real Phase 3 mechanics; selecting the current phase is a no-op. `phase next` starts Phase 1 when locked and stops at Phase 4. `phase reset` clears phase-local time, total elapsed time and the encounter countdown, returning to Phase 1 if Mars is unlocked or Phase 0 otherwise. Reset retains the Mars milestone, `geminionly`, configuration, existing creatures and structure records. Use `/visitedmars false` to lock activity while retaining progression.
+
+Timer arguments are nonnegative signed 64-bit tick counts; overflowing additions are rejected. `time add` advances from retained phase-local progress through at most three phase transitions. `time set` recalculates the phase from the configured cumulative delays and supports rewinding. Neither changes the day/night clock. Skipped encounters, chunk population, incremental construction, AI, infections and other live cooldowns are not simulated or replayed; the encounter countdown is retained on forward jumps and rescheduled on rewinds to an earlier phase. Natural advancement retains its existing loaded, enabled, player-present Overworld timing and one-transition/full-delay rule. Existing saves retain their phase and phase-local time; their initial cumulative prefix uses the currently configured delays because historical durations were not saved. Subsequent elapsed time is persisted, including in Phase 4.
+
+Nest and camp spawning reuse the complete existing organic nest and Wretch camp layouts. `wretch` is the only existing camp type and is selected when omitted. Searches are bounded and use already loaded terrain near the player. They bypass natural phase, probability, residence-discovery and search-cooldown gates while preserving world bounds, dimension, geology/clearing, spacing, tracking capacity, `mobGriefing` and protection checks. Rejected block placements roll back the command's changed cells. Natural camp placements use the same rollback path. Successful structures retain their usual boss identities and persistent tracking. Debug residents carry a saved, per-creature phase/Mars bypass while retaining natural anatomy and AI; they still require enabled invasion/species settings, non-Peaceful difficulty, population/reservation capacity, body/limb clearance and Forge insertion permission. Wretch admission also retains `doMobSpawning`. A blocked resident remains pending under the existing retry rules. Debug structures do not globally start the invasion or unlock other activity.
+
+Locate commands read existing saved records in the current dimension without generating structures or loading their chunks. Nest locating includes completed structures, including those with blocked resident spawning, and excludes unfinished/abandoned construction. Older abandoned nests without a saved completion marker cannot be distinguished reliably and are omitted. Camp listing includes saved tracking status, including legacy abandoned construction, and displays eight entries per page. Records describe tracked history, not an inspection of whether every block or resident still exists.
+
+Debug mode is saved server-side and reports activation, transitions, command timer changes, structure attempts/rejections/registration and resident/Woodcrawler admissions to level-2 administrators and the server log. Repeated messages with the same event key are throttled to once per ten seconds of server world ticks. The existing independent Woodcrawler diagnostic configuration remains available; no per-tick chat output is added.
+
 ### `/rntconfig reload`
 
 Requires operator permission level 2. Rereads `config/hbm.cfg`, validates it before applying supported runtime settings, and reports errors while retaining previous valid values. Supports dedicated-server console and integrated servers. Reloads Gemini settings (including hostile suppression multipliers and population limits), server logging/diagnostics and login options. Woodcrawler biome spawn weight and all other startup-only settings are retained until restart; entity/block/item registration, recipes and JSON machine files are not reloaded. Existing world gamerules, invasion progression, entities and saved conversion/incubation timelines remain intact. See [the supported settings and spawn-hook limitations](configuration.md#live-server-configuration-reload).

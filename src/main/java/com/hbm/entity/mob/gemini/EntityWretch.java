@@ -162,7 +162,8 @@ public final class EntityWretch extends EntityCreature implements IMob, IBossDis
     public int attackArm() { return dataWatcher.getWatchableObjectByte(27); }
     public int phase() { return dataWatcher.getWatchableObjectByte(28) & 3; }
     private boolean active() {
-        return isEntityAlive() && (GeminiSpawning.manualAdmission(this) || WretchCamps.active(worldObj) && WretchCamps.owns(this))
+        return isEntityAlive() && (GeminiSpawning.manualAdmission(this)
+                || (WretchCamps.active(worldObj) || GeminiSpawning.structureDebugAdmission(this)) && WretchCamps.owns(this))
                 && GardenerNests.loaded(worldObj, boundingBox.expand(9, 1, 9));
     }
     private void stop() { navigation.halt(); }

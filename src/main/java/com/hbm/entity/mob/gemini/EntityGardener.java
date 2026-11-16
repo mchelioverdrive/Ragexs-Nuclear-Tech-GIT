@@ -106,7 +106,7 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
     protected double attackReach() { return 17D; }
     protected double territoryRadius() { return burrowing.surface() ? GeminiConfig.gardenerNestMaxDistance + 32D : 22D; }
     protected boolean environmentActive() {
-        return GeminiSpawning.manualAdmission(this) || burrowing.enabled() && GardenerNests.active(worldObj)
+        return GeminiSpawning.manualAdmission(this) || GeminiSpawning.structureDebugAdmission(this) || burrowing.enabled() && GardenerNests.active(worldObj)
                 || nestY >= 8 && nestY <= 44 && GardenerNests.active(worldObj)
                 && worldObj.blockExists(MathHelper.floor_double(nestX), MathHelper.floor_double(nestY + 9), MathHelper.floor_double(nestZ))
                 && !worldObj.canBlockSeeTheSky(MathHelper.floor_double(nestX), MathHelper.floor_double(nestY + 9), MathHelper.floor_double(nestZ));

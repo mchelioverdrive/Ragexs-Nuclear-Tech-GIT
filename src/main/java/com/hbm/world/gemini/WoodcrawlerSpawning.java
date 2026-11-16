@@ -88,6 +88,10 @@ public final class WoodcrawlerSpawning {
 				? GeminiInvasionManager.canActivityOccur(event.world) && event.world.difficultySetting != EnumDifficulty.PEACEFUL
 					&& GeminiPopulation.canAdmit(event.world, EntityWoodcrawler.class, mob, GeminiConfig.woodcrawlerMaxLoaded)
 				: canSpawn(event.world, mob))) event.setCanceled(true);
+		if(!mob.addedToChunk && GeminiInvasionManager.debugging(event.world))
+			GeminiInvasionManager.debug(event.world, "woodcrawler-join", "Woodcrawler join " + (event.isCanceled() ? "vetoed" : "admitted")
+					+ " at " + MathHelper.floor_double(mob.posX) + ", " + MathHelper.floor_double(mob.posY) + ", " + MathHelper.floor_double(mob.posZ)
+					+ (mob.getEntityData().getBoolean("WoodcrawlerConverted") ? " (conversion)." : "."));
 	}
 
 	@SubscribeEvent
@@ -180,7 +184,7 @@ public final class WoodcrawlerSpawning {
 				mob = null;
 			}
 		}
-		if(GeminiConfig.woodcrawlerInvasionDiagnostics) diagnostic(world, spawned > 0 ? "success" : "encounter",
+		if(GeminiConfig.woodcrawlerInvasionDiagnostics || GeminiInvasionManager.debugging(world)) diagnostic(world, spawned > 0 ? "success" : "encounter",
 				"Phase " + (phase + 1) + " encounter spawned " + spawned + "/" + target
 				+ "; Unsupported biome=" + unsupported + "; No valid loaded spawn position=" + unavailable
 				+ "; Population limit reached=" + population + "; Spawn placement rejected=" + placement
@@ -199,6 +203,7 @@ public final class WoodcrawlerSpawning {
 	}
 
 	static void diagnostic(World world, String reason, String message) {
+		if(!world.isRemote && GeminiInvasionManager.debugging(world)) GeminiInvasionManager.debug(world, "woodcrawler-" + reason, message);
 		if(!GeminiConfig.woodcrawlerInvasionDiagnostics || world.isRemote) return;
 		Map<String, Long> last = DIAGNOSTICS.get(world);
 		if(last == null) { last = new HashMap<String, Long>(); DIAGNOSTICS.put(world, last); }

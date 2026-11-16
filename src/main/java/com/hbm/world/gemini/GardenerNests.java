@@ -52,6 +52,143 @@ public final class GardenerNests extends WorldSavedData {
     private int searchTicks = 1200;
 
     public GardenerNests(String name) { super(name); }
+    private static GardenerNests get(World world) {
+        GardenerNests data = (GardenerNests) world.mapStorage.loadData(GardenerNests.class, NAME);
+        if(data == null) { data = new GardenerNests(NAME); world.mapStorage.setData(NAME, data); }
+        return data;
+    }
+    public static List<GeminiInvasionManager.StructureInfo> known(World world) {
+        List<GeminiInvasionManager.StructureInfo> result = new ArrayList<GeminiInvasionManager.StructureInfo>();
+        if(!(world instanceof WorldServer) || world.provider.dimensionId != 0) return result;
+        GardenerNests data = (GardenerNests) world.mapStorage.loadData(GardenerNests.class, NAME);
+        if(data != null) for(Nest nest : data.nests) if(nest.built)
+            result.add(info(nest, nest.phase == 2 ? "waiting for Gardener" : nest.phase == 3 ? "Gardener spawned" : "abandoned"));
+        return result;
+    }
+    private static GeminiInvasionManager.StructureInfo info(Nest nest, String status) {
+        return new GeminiInvasionManager.StructureInfo("underground_gardener", nest.x, nest.y, nest.z, 0, status);
+    }
+    public static String eligibility(World world) {
+        if(!(world instanceof WorldServer) || world.isRemote || world.provider.dimensionId != 0) return "Overworld server only";
+        if(!active(world)) return "requires enabled invasion/Gardener, phase 3 and non-Peaceful difficulty";
+        if(world.playerEntities.isEmpty()) return "no players in the Overworld";
+        if(!world.getGameRules().getGameRuleBooleanValue("mobGriefing")) return "mobGriefing is false";
+        GardenerNests data = get(world);
+        if(data.nests.size() >= GeminiConfig.gardenerNestLimit) return "nest limit reached";
+        if(GeminiConfig.gardenerNestsPerArea == 0) return "nests per survival area is zero";
+        for(Residence area : data.residences) if(area.established && data.areaNests(area) < GeminiConfig.gardenerNestsPerArea)
+            return "eligible for loaded-terrain search; next opportunity in " + data.searchTicks + " live discovery ticks; chance, spacing and placement still apply";
+        return "no established survival area with nest capacity";
+    }
+
+    /** Complete the existing organic layout immediately, retaining natural placement/protection rules. */
+    public static GeminiInvasionManager.StructureInfo debugSpawn(EntityPlayer player) {
+        WorldServer world = (WorldServer) player.worldObj;
+        if(world.provider.dimensionId != 0) throw GeminiInvasionManager.rejected(world, "nest", "Nests require the Overworld (invalid dimension).");
+        if(!world.getGameRules().getGameRuleBooleanValue("mobGriefing"))
+            throw GeminiInvasionManager.rejected(world, "nest", "Nest placement requires mobGriefing=true.");
+        GardenerNests data = get(world);
+        if(data.nests.size() >= Math.min(64, GeminiConfig.gardenerNestLimit))
+            throw GeminiInvasionManager.rejected(world, "nest", "Nest tracking limit reached (or nests disabled by nestLimit=0).");
+        GeminiInvasionManager.debug(world, "nest-attempt", "Searching loaded underground terrain for a debug nest.");
+        java.util.Map<String, Integer> rejected = new java.util.LinkedHashMap<String, Integer>();
+        for(int attempt = 0; attempt < 48; attempt++) {
+            double angle = attempt * 2.399963229728653D;
+            int radius = GeminiConfig.gardenerNestMinDistance + (int) ((long) attempt * 17
+                    % (GeminiConfig.gardenerNestMaxDistance - GeminiConfig.gardenerNestMinDistance + 1));
+            int x = MathHelper.floor_double(player.posX + Math.cos(angle) * radius);
+            int z = MathHelper.floor_double(player.posZ + Math.sin(angle) * radius);
+            String reason = null;
+            if(Math.abs((long) x) > 29999900 || Math.abs((long) z) > 29999900) reason = "world boundary";
+            else if(!loaded(world, AxisAlignedBB.getBoundingBox(x - 20, 0, z - 20, x + 21, 64, z + 21))) reason = "unloaded terrain";
+            else if(data.tooClose(x, z)) reason = "existing nest spacing";
+            else {
+                reason = "no covered cave floor at Y=12..42";
+                for(int y = 42; y >= 12; y--) {
+                    if(world.getBlock(x, y, z) != Blocks.air || !natural(world.getBlock(x, y - 1, z))
+                            || !world.getBlock(x, y - 1, z).getMaterial().blocksMovement()
+                            || world.getBlock(x, y + 1, z) != Blocks.air || world.canBlockSeeTheSky(x, y + 13, z)) continue;
+                    Nest nest = new Nest(x, y, z);
+                    if(overlapsStructure(world, nest) || WretchCamps.hasPlayerPlacement(world, nest.bounds())) {
+                        reason = "protected structure or player construction"; break;
+                    }
+                    if(!world.getEntitiesWithinAABBExcludingEntity(null, nest.bounds()).isEmpty()) { reason = "occupied nest volume"; continue; }
+                    List<Placement> plan = new ArrayList<Placement>();
+                    boolean safe = true;
+                    for(int i = 0; i < VOLUME; i++) {
+                        int dx = i % WIDTH - 14, dz = i / WIDTH % WIDTH - 14, dy = i / (WIDTH * WIDTH) - 2;
+                        if(!safe(world, x + dx, y + dy, z + dz, false)) { safe = false; break; }
+                        Block desired = desired(dx, dy, dz);
+                        if(desired != null) plan.add(new Placement(x + dx, y + dy, z + dz, desired, 0));
+                    }
+                    if(!safe) { reason = "unsafe geology, liquid, tile or insufficient space"; continue; }
+                    reason = place(world, plan, true, true);
+                    if(reason != null) {
+                        // A claim veto can affect every nearby candidate; do not repeat thousands of callbacks.
+                        GeminiInvasionManager.debug(world, "nest-failure", "Nest rejected: " + reason);
+                        throw new net.minecraft.command.CommandException("Nest placement rejected and rolled back: " + reason);
+                    }
+                    nest.phase = 2; nest.built = true; nest.debug = true;
+                    nest.homeX = MathHelper.floor_double(player.posX); nest.homeZ = MathHelper.floor_double(player.posZ); nest.hasHome = true;
+                    data.nests.add(nest); data.markDirty();
+                    GeminiInvasionManager.debug(world, "nest-register", "Registered debug nest at " + x + ", " + y + ", " + z + ".");
+                    data.spawn(world, nest); data.markDirty();
+                    return info(nest, nest.phase == 3 ? "Gardener spawned" : "waiting for normal Gardener admission");
+                }
+            }
+            Integer count = rejected.get(reason); rejected.put(reason, count == null ? 1 : count + 1);
+        }
+        GeminiInvasionManager.debug(world, "nest-failure", "No suitable debug nest position: " + rejected);
+        throw new net.minecraft.command.CommandException("No suitable loaded nest position near player: " + rejected);
+    }
+
+    /** Shared checked placement of the real layouts; roll back every changed cell on rejection. */
+    static final class Placement {
+        final int x, y, z, meta; final Block block;
+        Placement(int x, int y, int z, Block block, int meta) { this.x = x; this.y = y; this.z = z; this.block = block; this.meta = meta; }
+    }
+    static String place(WorldServer world, List<Placement> plan, boolean nest, boolean bypassPhase) {
+        EntityPlayer actor = FakePlayerFactory.getMinecraft(world);
+        List<BlockSnapshot> snapshots = new ArrayList<BlockSnapshot>();
+        boolean complete = false;
+        placementDepth++;
+        try {
+            for(Placement cell : plan) {
+                if(!world.getGameRules().getGameRuleBooleanValue("mobGriefing")
+                        || !bypassPhase && !(nest ? active(world) : WretchCamps.active(world))) return "generation gate changed";
+                if(!(nest ? safe(world, cell.x, cell.y, cell.z, true) : WretchCamps.safe(world, cell.x, cell.y, cell.z))) return "terrain changed";
+                Block old = world.getBlock(cell.x, cell.y, cell.z);
+                int meta = world.getBlockMetadata(cell.x, cell.y, cell.z);
+                if(old == cell.block && meta == cell.meta) continue;
+                AxisAlignedBB box = AxisAlignedBB.getBoundingBox(cell.x, cell.y, cell.z, cell.x + 1, cell.y + 1, cell.z + 1);
+                if(cell.block != Blocks.air && !world.getEntitiesWithinAABBExcludingEntity(null, box).isEmpty()) return "occupied block placement";
+                if(((nest || bypassPhase) && WretchCamps.hasPlayerPlacement(world, box)) || !world.canMineBlock(actor, cell.x, cell.y, cell.z)
+                        || MinecraftForge.EVENT_BUS.post(new BlockEvent.BreakEvent(cell.x, cell.y, cell.z, world, old, meta, actor))) return "block protection/Forge break veto";
+                if(world.getBlock(cell.x, cell.y, cell.z) != old || world.getBlockMetadata(cell.x, cell.y, cell.z) != meta
+                        || world.getTileEntity(cell.x, cell.y, cell.z) != null
+                        || (nest || bypassPhase) && WretchCamps.hasPlayerPlacement(world, box)) return "block changed during protection callback";
+                if(!world.getGameRules().getGameRuleBooleanValue("mobGriefing")
+                        || !bypassPhase && !(nest ? active(world) : WretchCamps.active(world))) return "generation gate changed during callback";
+                if(cell.block != Blocks.air && !world.getEntitiesWithinAABBExcludingEntity(null, box).isEmpty()) return "placement occupied during callback";
+                BlockSnapshot snapshot = BlockSnapshot.getBlockSnapshot(world, cell.x, cell.y, cell.z);
+                snapshots.add(snapshot);
+                if(!world.setBlock(cell.x, cell.y, cell.z, cell.block, cell.meta, 0)) return "world rejected block placement";
+                if(cell.block != Blocks.air && ForgeEventFactory.onPlayerBlockPlace(actor, snapshot, ForgeDirection.UP).isCanceled()) return "Forge placement veto";
+                if(world.getBlock(cell.x, cell.y, cell.z) != cell.block || world.getBlockMetadata(cell.x, cell.y, cell.z) != cell.meta)
+                    return "block changed during placement callback";
+            }
+            complete = true;
+        } finally {
+            try {
+                if(!complete) for(int i = snapshots.size() - 1; i >= 0; i--) snapshots.get(i).restore(true, false);
+            } finally {
+                placementDepth--;
+                for(BlockSnapshot snapshot : snapshots) world.markBlockForUpdate(snapshot.x, snapshot.y, snapshot.z);
+            }
+        }
+        if(nest) for(Placement cell : plan) world.notifyBlocksOfNeighborChange(cell.x, cell.y, cell.z, cell.block);
+        return null;
+    }
     public static boolean active(World world) {
         return GeminiConfig.gardenerEnabled && GeminiInvasionManager.canActivityOccur(world, 3)
                 && world.difficultySetting != EnumDifficulty.PEACEFUL;
@@ -103,7 +240,8 @@ public final class GardenerNests extends WorldSavedData {
         return mutate(world, boss, x, y, z, replacement, false);
     }
     private static boolean mutate(World world, EntityGardener boss, int x, int y, int z, Block replacement, boolean tunnel) {
-        if(world.isRemote || !(world instanceof WorldServer) || !active(world) || !world.getGameRules().getGameRuleBooleanValue("mobGriefing")
+        if(world.isRemote || !(world instanceof WorldServer) || !(active(world) || GeminiSpawning.structureDebugAdmission(boss))
+                || !world.getGameRules().getGameRuleBooleanValue("mobGriefing")
                 || !loaded(world, AxisAlignedBB.getBoundingBox(x - 1, y, z - 1, x + 2, y + 1, z + 2))
                 || !(tunnel ? canExcavate(world, boss, x, y, z) : safe(world, x, y, z, true))) return false;
         Block old = world.getBlock(x, y, z);
@@ -114,7 +252,7 @@ public final class GardenerNests extends WorldSavedData {
         EntityPlayer actor = FakePlayerFactory.getMinecraft((WorldServer) world);
         if(!world.canMineBlock(actor, x, y, z)
                 || MinecraftForge.EVENT_BUS.post(new BlockEvent.BreakEvent(x, y, z, world, old, meta, actor))) return false;
-        if(!active(world) || !(tunnel ? canExcavate(world, boss, x, y, z) : safe(world, x, y, z, true))
+        if(!(active(world) || GeminiSpawning.structureDebugAdmission(boss)) || !(tunnel ? canExcavate(world, boss, x, y, z) : safe(world, x, y, z, true))
                 || WretchCamps.hasPlayerPlacement(world, cell) || world.getBlock(x, y, z) != old
                 || world.getBlockMetadata(x, y, z) != meta) return false;
         BlockSnapshot snapshot = BlockSnapshot.getBlockSnapshot(world, x, y, z);
@@ -148,7 +286,7 @@ public final class GardenerNests extends WorldSavedData {
             if(!event.world.isRemote && event.entity instanceof EntityGardener && !(event.entity instanceof EntityOceanGardener)) {
                 EntityGardener boss = (EntityGardener) event.entity;
                 // Natural bosses retain progression/caps; manually initialized creatures are independent.
-                if(!boss.addedToChunk && ((!GeminiSpawning.manualAdmission(boss) && (!active(event.world) || !GeminiPopulation.canAdmit(event.world,
+                if(!boss.addedToChunk && ((!GeminiSpawning.manualAdmission(boss) && (!(active(event.world) || GeminiSpawning.structureDebugAdmission(boss)) || !GeminiPopulation.canAdmit(event.world,
                         EntityGardener.class, boss, GeminiConfig.gardenerMaxLoaded))) || !boss.hasSpawnSpace())) event.setCanceled(true);
             }
         }
@@ -157,10 +295,15 @@ public final class GardenerNests extends WorldSavedData {
             if(event.phase != TickEvent.Phase.END || event.world.isRemote || !(event.world instanceof WorldServer)
                     || event.world.provider.dimensionId != 0 || !GeminiConfig.enabled || event.world.playerEntities.isEmpty()) return;
             World world = event.world;
-            GardenerNests data = (GardenerNests) world.mapStorage.loadData(GardenerNests.class, NAME);
-            if(data == null) { data = new GardenerNests(NAME); world.mapStorage.setData(NAME, data); }
+            GardenerNests data = get(world);
             if(world.getTotalWorldTime() % 1200 == 0) data.observeResidences(world);
-            if(active(world) && world.getGameRules().getGameRuleBooleanValue("mobGriefing")) data.tick((WorldServer) world);
+            if(world.getGameRules().getGameRuleBooleanValue("mobGriefing")) {
+                if(active(world)) data.tick((WorldServer) world);
+                else if(world.getTotalWorldTime() % 100 == 0)
+                    for(Nest nest : data.nests) if(nest.debug && nest.phase == 2 && loaded(world, nest.bounds().expand(5, 0, 5))) {
+                        data.spawn((WorldServer) world, nest); data.markDirty(); break;
+                    }
+            }
         }
     }
     private void tick(WorldServer world) {
@@ -171,27 +314,39 @@ public final class GardenerNests extends WorldSavedData {
             if(nest.phase == 2 && world.getTotalWorldTime() % 100 != 0) continue;
             if(!loaded(world, nest.bounds().expand(2, 0, 2))) continue; // Unloaded jobs must not starve other loaded nests.
             if(nest.phase == 0 && nest.cursor == 0 && (overlapsStructure(world, nest)
-                    || WretchCamps.hasPlayerPlacement(world, nest.bounds()))) { it.remove(); markDirty(); return; }
+                    || WretchCamps.hasPlayerPlacement(world, nest.bounds()))) {
+                GeminiInvasionManager.debug(world, "nest-failure", "Nest validation rejected: protected structure or player construction.");
+                it.remove(); markDirty(); return;
+            }
             for(int work = 0; work < 32 && nest.phase < 2; work++) {
                 int index = nest.cursor;
                 int dx = index % WIDTH - 14, dz = index / WIDTH % WIDTH - 14, dy = index / (WIDTH * WIDTH) - 2;
                 int x = nest.x + dx, y = nest.y + dy, z = nest.z + dz;
                 if(!safe(world, x, y, z, true)) {
+                    GeminiInvasionManager.debug(world, "nest-failure", "Nest rejected: unsafe geology/liquid/tile or unloaded cell at " + x + ", " + y + ", " + z + ".");
                     if(nest.phase == 0) it.remove(); else nest.phase = 4;
                     markDirty(); return;
                 }
                 if(nest.phase == 1) {
                     Block desired = desired(dx, dy, dz);
                     if(desired != null && world.getBlock(x, y, z) != desired
-                            && !change(world, null, x, y, z, desired)) { nest.phase = 4; markDirty(); return; }
+                            && !change(world, null, x, y, z, desired)) {
+                        GeminiInvasionManager.debug(world, "nest-failure", "Nest build blocked: placement/protection veto, occupied or changed terrain at " + x + ", " + y + ", " + z + ".");
+                        nest.phase = 4; markDirty(); return;
+                    }
                 }
                 if(++nest.cursor >= VOLUME) {
                     nest.cursor = 0; nest.phase++;
                     if(nest.phase == 1) {
                         if(overlapsStructure(world, nest) || WretchCamps.hasPlayerPlacement(world, nest.bounds())
                                 || !world.getEntitiesWithinAABBExcludingEntity(null, nest.bounds()).isEmpty()) {
+                            GeminiInvasionManager.debug(world, "nest-failure", "Nest rejected after validation: protected or occupied volume.");
                             it.remove(); markDirty(); return;
                         }
+                    }
+                    if(nest.phase == 2) {
+                        nest.built = true;
+                        GeminiInvasionManager.debug(world, "nest-built", "Completed natural nest at " + nest.x + ", " + nest.y + ", " + nest.z + ".");
                     }
                 }
             }
@@ -203,9 +358,14 @@ public final class GardenerNests extends WorldSavedData {
         searchTicks = 1200; markDirty();
         if(world.rand.nextInt(GeminiConfig.gardenerNestChance) != 0
                 || world.rand.nextInt(100) >= GeminiInvasionManager.encounterPercent(world)) return;
-        if(GeminiConfig.gardenerNestsPerArea == 0 || residences.isEmpty()) return;
+        GeminiInvasionManager.debug(world, "nest-attempt", "Natural nest search opportunity (loaded cave terrain near established residences).");
+        if(GeminiConfig.gardenerNestsPerArea == 0 || residences.isEmpty()) {
+            GeminiInvasionManager.debug(world, "nest-failure", "Nest search unavailable: no residence records or nests per area disabled."); return;
+        }
         Residence area = residences.get(world.rand.nextInt(residences.size()));
-        if(!area.established || areaNests(area) >= GeminiConfig.gardenerNestsPerArea) return;
+        if(!area.established || areaNests(area) >= GeminiConfig.gardenerNestsPerArea) {
+            GeminiInvasionManager.debug(world, "nest-failure", "Nest search unavailable: selected residence not established or area nest limit reached."); return;
+        }
         int sector = area.sector++ % GeminiConfig.gardenerNestsPerArea;
         // Eight loaded columns and at most 32 vertical cells per column per minute-long opportunity.
         for(int attempt = 0; attempt < 8; attempt++) {
@@ -225,9 +385,12 @@ public final class GardenerNests extends WorldSavedData {
                 Nest nest = new Nest(x, y, z);
                 nest.homeX = area.x; nest.homeZ = area.z; nest.hasHome = true;
                 if(overlapsStructure(world, nest) || WretchCamps.hasPlayerPlacement(world, nest.bounds())) break;
-                nests.add(nest); markDirty(); return;
+                nests.add(nest); markDirty();
+                GeminiInvasionManager.debug(world, "nest-register", "Reserved natural nest at " + x + ", " + y + ", " + z + "; incremental validation/build pending.");
+                return;
             }
         }
+        GeminiInvasionManager.debug(world, "nest-failure", "Nest search failed: no loaded, spaced, covered cave floor free of construction and structures in the sampled area.");
     }
     private boolean tooClose(int x, int z) {
         for(Nest nest : nests) {
@@ -326,15 +489,27 @@ public final class GardenerNests extends WorldSavedData {
         return false;
     }
     private void spawn(WorldServer world, Nest nest) {
+        if(!active(world) && !(nest.debug && GeminiConfig.enabled && GeminiConfig.gardenerEnabled
+                && world.difficultySetting != EnumDifficulty.PEACEFUL)) return;
         if(GeminiPopulation.find(world, nest.boss) != null) { nest.phase = 3; return; }
-        if(!GeminiPopulation.canAdmit(world, EntityGardener.class, null, GeminiConfig.gardenerMaxLoaded)) return;
-        if(!world.getEntitiesWithinAABB(EntityPlayer.class, nest.bounds()).isEmpty()) return;
+        if(!GeminiPopulation.canAdmit(world, EntityGardener.class, null, GeminiConfig.gardenerMaxLoaded)) {
+            GeminiInvasionManager.debug(world, "gardener-spawn", "Underground Gardener waiting: population limit."); return;
+        }
+        if(!world.getEntitiesWithinAABB(EntityPlayer.class, nest.bounds()).isEmpty()) {
+            GeminiInvasionManager.debug(world, "gardener-spawn", "Underground Gardener waiting: player inside nest."); return;
+        }
         EntityGardener boss = new EntityGardener(world);
+        if(nest.debug) GeminiSpawning.markStructureDebugSpawn(boss);
         boss.setNestIdentity(nest.boss); boss.anchor(nest.x + 0.5D, nest.y, nest.z + 0.5D);
         if(nest.hasHome) boss.setHuntingGround(nest.homeX + 0.5D, nest.homeZ + 0.5D);
         if(boss.hasSpawnSpace()
-                && world.spawnEntityInWorld(boss)) nest.phase = 3;
-        else if(++nest.retries >= 12) nest.phase = 4;
+                && world.spawnEntityInWorld(boss)) {
+            nest.phase = 3;
+            GeminiInvasionManager.debug(world, "gardener-spawn", "Underground Gardener spawned at " + nest.x + ", " + nest.y + ", " + nest.z + ".");
+        } else {
+            if(++nest.retries >= 12) nest.phase = 4;
+            GeminiInvasionManager.debug(world, "gardener-spawn", "Underground Gardener rejected: body/limb clearance or Forge insertion veto; retry=" + nest.retries + ".");
+        }
     }
     private static final class Nest {
         final int x, y, z;
@@ -342,6 +517,8 @@ public final class GardenerNests extends WorldSavedData {
         int phase, cursor, retries; // validate, build, spawn, complete, abandoned
         int homeX, homeZ;
         boolean hasHome;
+        boolean built;
+        boolean debug;
         Nest(int x, int y, int z) { this.x = x; this.y = y; this.z = z; }
         AxisAlignedBB bounds() { return AxisAlignedBB.getBoundingBox(x - 14, y - 2, z - 14, x + 15, y + 13, z + 15); }
     }
@@ -364,11 +541,13 @@ public final class GardenerNests extends WorldSavedData {
             Nest nest = new Nest(tag.getInteger("X"), tag.getInteger("Y"), tag.getInteger("Z"));
             if(nest.y < 12 || nest.y > 42 || Math.abs((long) nest.x) > 29999900 || Math.abs((long) nest.z) > 29999900) continue;
             nest.phase = MathHelper.clamp_int(tag.getInteger("Phase"), 0, 4);
+            nest.built = tag.getBoolean("Built") || nest.phase == 2 || nest.phase == 3;
+            nest.debug = tag.getBoolean("Debug");
             nest.cursor = MathHelper.clamp_int(tag.getInteger("Cursor"), 0, VOLUME - 1);
             nest.retries = MathHelper.clamp_int(tag.getInteger("Retries"), 0, 12);
             nest.hasHome = tag.getBoolean("HasHome"); nest.homeX = tag.getInteger("HomeX"); nest.homeZ = tag.getInteger("HomeZ");
             // Restart unfinished legacy jobs through full expanded validation; never respawn completed bosses.
-            if(tag.getInteger("Layout") < 2 && nest.phase < 3) { nest.phase = 0; nest.cursor = 0; nest.retries = 0; }
+            if(tag.getInteger("Layout") < 2 && nest.phase < 3) { nest.phase = 0; nest.cursor = 0; nest.retries = 0; nest.built = false; }
             try { nest.boss = UUID.fromString(tag.getString("Boss")); } catch(IllegalArgumentException ignored) { }
             nests.add(nest);
         }
@@ -387,6 +566,8 @@ public final class GardenerNests extends WorldSavedData {
             NBTTagCompound tag = new NBTTagCompound();
             tag.setInteger("X", nest.x); tag.setInteger("Y", nest.y); tag.setInteger("Z", nest.z);
             tag.setInteger("Phase", nest.phase); tag.setInteger("Cursor", nest.cursor); tag.setInteger("Retries", nest.retries);
+            tag.setBoolean("Built", nest.built);
+            tag.setBoolean("Debug", nest.debug);
             tag.setInteger("Layout", 2);
             tag.setBoolean("HasHome", nest.hasHome); tag.setInteger("HomeX", nest.homeX); tag.setInteger("HomeZ", nest.homeZ);
             tag.setString("Boss", nest.boss.toString()); list.appendTag(tag);
