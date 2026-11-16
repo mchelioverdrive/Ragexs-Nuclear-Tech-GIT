@@ -121,7 +121,7 @@ public final class GeminiConfig {
 		values.woodcrawlerMaxPending = config.getInt("woodcrawlerMaxPending", CATEGORY, 16, 0, 64,
 				"Combined loaded Gardener and villager-processing cocoons. Undecided outputs reserve biomass conservatively. Also bounded by the combined Gemini cap; existing cocoons are retained.");
 		values.fakePersonMaxLoaded = config.getInt("fakePersonMaxLoaded", CATEGORY, 16, 0, 128,
-				"Maximum loaded Fake People for admitting conversions. Zero disables conversions; manual spawn eggs bypass the cap and saved creatures are retained. No independent natural or invasion spawns are added.");
+				"Maximum loaded Fake People for conversions and initial camp residents. Zero disables these admissions; manual spawn eggs bypass the cap and saved creatures are retained. No independent biome spawn entries are added.");
 		values.fakePersonConversionChance = config.getFloat("fakePersonConversionChance", CATEGORY, 0.80F, 0F, 1F,
 				"Saved conversion outcome: Fake Person probability; the remainder produces a Woodcrawler (default 80/20). Population-limited cocoons wait without rerolling. Previous defaults 0.35/0.90 migrate once to 0.80; other custom values are retained.");
 		int conversionDefaultsVersion = config.getInt("woodcrawlerConversionDefaultsVersion", CATEGORY, 0, 0, 1,

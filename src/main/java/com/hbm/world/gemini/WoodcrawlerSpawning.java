@@ -33,6 +33,7 @@ public final class WoodcrawlerSpawning {
 
 	// Scoped to synchronous scripted callbacks; never saved, and removed even on a veto.
 	private static final Set<EntityWoodcrawler> INVASION = Collections.newSetFromMap(new IdentityHashMap<EntityWoodcrawler, Boolean>());
+	private static final Set<EntityWoodcrawler> CAMP = Collections.newSetFromMap(new IdentityHashMap<EntityWoodcrawler, Boolean>());
 	private static final Map<World, Map<String, Long>> DIAGNOSTICS = new WeakHashMap<World, Map<String, Long>>();
 
 	public static boolean isForest(BiomeGenBase biome) {
@@ -73,7 +74,7 @@ public final class WoodcrawlerSpawning {
 	public void onCheckSpawn(LivingSpawnEvent.CheckSpawn event) {
 		if(event.world.isRemote) return;
 		if(event.entityLiving instanceof EntityWoodcrawler && (!canSpawn(event.world, (EntityWoodcrawler) event.entityLiving)
-				|| !isForest(event.world, MathHelper.floor_float(event.x), MathHelper.floor_float(event.z))
+				|| !CAMP.contains(event.entityLiving) && !isForest(event.world, MathHelper.floor_float(event.x), MathHelper.floor_float(event.z))
 				|| !INVASION.contains(event.entityLiving)
 					&& event.world.rand.nextInt(100) >= GeminiInvasionManager.encounterPercent(event.world))) {
 			event.setResult(Event.Result.DENY);
@@ -191,10 +192,26 @@ public final class WoodcrawlerSpawning {
 				+ "; Forge spawn event rejected=" + forge + "; World insertion rejected=" + insertion);
 	}
 
+	/** Finite camp admission uses the existing scripted encounter policy and native posture/AI. */
+	static boolean spawnCampResident(WorldServer world, EntityWoodcrawler mob) {
+		if(!WretchCamps.active(world) || !canSpawn(world, mob)) return false;
+		mob.setCrouching(true);
+		CAMP.add(mob);
+		INVASION.add(mob);
+		try {
+			if(!validInvasionPlacement(world, mob)) return false;
+			if(ForgeEventFactory.canEntitySpawn(mob, world, (float) mob.posX, (float) mob.posY, (float) mob.posZ) == Event.Result.DENY) return false;
+			GeminiSpawning.markNatural(mob);
+			if(!ForgeEventFactory.doSpecialSpawn(mob, world, (float) mob.posX, (float) mob.posY, (float) mob.posZ)) mob.onSpawnWithEgg(null);
+			return WretchCamps.active(world) && world.getGameRules().getGameRuleBooleanValue("doMobSpawning")
+					&& canSpawn(world, mob) && validInvasionPlacement(world, mob) && world.spawnEntityInWorld(mob);
+		} finally { INVASION.remove(mob); CAMP.remove(mob); }
+	}
+
 	private static boolean validInvasionPlacement(WorldServer world, EntityWoodcrawler mob) {
 		int x = MathHelper.floor_double(mob.posX), y = MathHelper.floor_double(mob.posY), z = MathHelper.floor_double(mob.posZ);
 		return y >= 2 && mob.boundingBox.maxY < world.getHeight()
-				&& world.checkChunksExist(x - 2, y - 1, z - 2, x + 2, y + 3, z + 2) && isForest(world, x, z)
+				&& world.checkChunksExist(x - 2, y - 1, z - 2, x + 2, y + 3, z + 2) && (CAMP.contains(mob) || isForest(world, x, z))
 				&& World.doesBlockHaveSolidTopSurface(world, x, y - 1, z)
 				// Artificial lighting still protects bases; daylight is handled by existing burrowing AI.
 				&& world.getSavedLightValue(EnumSkyBlock.Block, x, y, z) <= 7

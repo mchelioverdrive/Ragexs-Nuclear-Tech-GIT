@@ -15,7 +15,7 @@ import net.minecraft.world.EnumDifficulty;
 import net.minecraft.world.World;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 
-/** Conversion only: no biome spawn entry, breeding, infection or independent invasion producer. */
+/** Shared conversion/camp admission; no biome spawn entry, breeding or independent invasion producer. */
 public final class FakePersonSpawning {
 
 	public static boolean canSpawn(World world, EntityFakePerson candidate) {

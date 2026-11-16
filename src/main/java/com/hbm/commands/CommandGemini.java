@@ -62,14 +62,14 @@ public final class CommandGemini extends CommandBase {
         }
         if(!Double.isFinite(x) || !Double.isFinite(y) || !Double.isFinite(z)
                 || x < -29999984 || x >= 29999984 || z < -29999984 || z >= 29999984
-                || y < 1 || y >= player.worldObj.getActualHeight())
-            throw new CommandException("Invalid coordinates: origin must be inside world X/Z boundaries and Y=1.." + (player.worldObj.getActualHeight() - 1) + ".");
+                || y < 0 || y >= player.worldObj.getActualHeight())
+            throw new CommandException("Invalid coordinates: origin must be inside world X/Z boundaries and Y=0.." + (player.worldObj.getActualHeight() - 1) + ".");
         return new ChunkCoordinates(MathHelper.floor_double(x), MathHelper.floor_double(y), MathHelper.floor_double(z));
     }
     private static void generated(ICommandSender sender, StructureInfo result, boolean exact, boolean camp) {
         reply(sender, "Generated " + result + ".");
         if(exact) reply(sender, "Exact origin retained (coordinates rounded down to blocks); "
-                + (camp ? "origin is the first camp layer, with foundation at Y-1." : "origin is the nest floor's air level, with organic floor at Y-1."));
+                + (camp ? "origin is the camp foundation elevation." : "origin is the nest floor's air level, with organic floor at Y-1."));
     }
 
     @Override public void processCommand(ICommandSender sender, String[] args) {
@@ -77,8 +77,8 @@ public final class CommandGemini extends CommandBase {
             reply(sender, "/gemini help | status | debug <true|false>");
             reply(sender, "/gemini phase set <1|2|3|4> | phase next | phase reset");
             reply(sender, "/gemini time <add|set> <ticks>");
-            reply(sender, "/gemini nest spawn [x y z] | nest locate");
-            reply(sender, "/gemini camp spawn [" + WretchCamps.TYPE + "] [x y z] | camp locate | camp list [page]");
+            reply(sender, "/gemini nest spawn [x y z] [force] | nest locate");
+            reply(sender, "/gemini camp spawn [" + WretchCamps.TYPE + "] [x y z] [force] | camp locate | camp list [page]");
             return;
         }
         WorldServer world = world(sender);
@@ -114,23 +114,28 @@ public final class CommandGemini extends CommandBase {
             return;
         }
         if("nest".equals(args[0])) {
-            if((args.length == 2 || args.length == 5) && "spawn".equals(args[1])) {
+            if(args.length >= 2 && "spawn".equals(args[1])) {
+                int end = args.length - ("force".equals(args[args.length - 1]) ? 1 : 0);
+                if(end != 2 && end != 5) throw new WrongUsageException("/gemini nest spawn [x y z] [force]");
                 EntityPlayerMP player = player(sender);
-                ChunkCoordinates requested = origin(sender, player, args, 2);
+                ChunkCoordinates requested = end == 2 ? null : origin(sender, player, args, 2);
                 generated(sender, GardenerNests.debugSpawn(player, requested), requested != null, false); return;
             }
             if(args.length == 2 && "locate".equals(args[1])) {
                 locate(sender, GardenerNests.known(world), "nest"); return;
             }
-            throw new WrongUsageException("/gemini nest spawn [x y z] | /gemini nest locate");
+            throw new WrongUsageException("/gemini nest spawn [x y z] [force] | /gemini nest locate");
         }
         if("camp".equals(args[0])) {
-            if((args.length == 2 || args.length == 3 || args.length == 5 || args.length == 6) && "spawn".equals(args[1])) {
-                boolean typed = args.length == 3 || args.length == 6;
+            if(args.length >= 2 && "spawn".equals(args[1])) {
+                int end = args.length - ("force".equals(args[args.length - 1]) ? 1 : 0);
+                boolean typed = end == 3 || end == 6;
+                if(end != 2 && end != 3 && end != 5 && end != 6)
+                    throw new WrongUsageException("/gemini camp spawn [" + WretchCamps.TYPE + "] [x y z] [force]");
                 if(typed && !WretchCamps.TYPE.equals(args[2]))
                     throw new CommandException("Unknown camp type '" + args[2] + "'. Available: " + WretchCamps.TYPE + ".");
                 EntityPlayerMP player = player(sender);
-                ChunkCoordinates requested = origin(sender, player, args, typed ? 3 : 2);
+                ChunkCoordinates requested = end <= 3 ? null : origin(sender, player, args, typed ? 3 : 2);
                 generated(sender, WretchCamps.debugSpawn(player, requested), requested != null, true); return;
             }
             if(args.length == 2 && "locate".equals(args[1])) {
@@ -145,7 +150,7 @@ public final class CommandGemini extends CommandBase {
                 if(page < pages) reply(sender, "Next: /gemini camp list " + (page + 1));
                 return;
             }
-            throw new WrongUsageException("/gemini camp spawn [" + WretchCamps.TYPE + "] [x y z] | /gemini camp locate | /gemini camp list [page]");
+            throw new WrongUsageException("/gemini camp spawn [" + WretchCamps.TYPE + "] [x y z] [force] | /gemini camp locate | /gemini camp list [page]");
         }
         if("debug".equals(args[0])) {
             if(args.length != 2 || !("true".equals(args[1]) || "false".equals(args[1])))
@@ -201,10 +206,11 @@ public final class CommandGemini extends CommandBase {
         }
         if(args.length == 3) {
             if("phase".equals(args[0]) && "set".equals(args[1])) return getListOfStringsMatchingLastWord(args, "1", "2", "3", "4");
-            if("camp".equals(args[0]) && "spawn".equals(args[1])) return getListOfStringsMatchingLastWord(args, WretchCamps.TYPE, "~");
+            if("camp".equals(args[0]) && "spawn".equals(args[1])) return getListOfStringsMatchingLastWord(args, WretchCamps.TYPE, "~", "force");
         }
         if(args.length >= 3 && "spawn".equals(args[1]) && ("camp".equals(args[0]) || "nest".equals(args[0]))) {
             int start = "camp".equals(args[0]) && WretchCamps.TYPE.equals(args[2]) ? 3 : 2;
+            if(args.length == start + 1 || args.length == start + 4) return getListOfStringsMatchingLastWord(args, "~", "force");
             if(args.length <= start + 3) return getListOfStringsMatchingLastWord(args, "~");
         }
         return null;
