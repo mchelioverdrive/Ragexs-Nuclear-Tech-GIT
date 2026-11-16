@@ -54,6 +54,9 @@ public final class GeminiConfig {
 	public static boolean wretchEnabled = true;
 	public static float wretchHealth = 900F;
 	public static int wretchCampChance = 256;
+	public static int wretchCampIntervalSeconds = 300, wretchCampLimit = 256;
+	public static int wretchCampMinDistance = 80, wretchCampMaxDistance = 160, wretchCampSpacing = 256;
+	public static int gardenerNestIntervalSeconds = 120;
 	public static boolean wretchTerrainDestruction = true;
 	public static int wretchDetectionRange = 96, wretchHearingRange = 128, wretchTerritoryRadius = 128;
 	public static int wretchMemorySeconds = 120, wretchSearchSeconds = 60, wretchQuietSeconds = 240;
@@ -157,7 +160,7 @@ public final class GeminiConfig {
 		values.wretchHealth = config.getFloat("health", wretch, 900F, 100F, 1024F,
 				"Maximum health of newly spawned Wretches. Existing bosses retain their saved health attributes.");
 		values.wretchCampChance = config.getInt("campChance", wretch, 256, 0, 100000,
-				"One-in-N chance per newly populated phase-4 forest chunk, before clearing and 512-block spacing checks. Zero disables new camps. No retrogen; at most 256 lifetime camps per world.");
+				"Legacy pacing input when campIntervalSeconds is absent (256 maps to 300 seconds). Zero still disables automatic camps. Loaded-area scheduling replaces the old new-chunk roll.");
 		values.wretchTerrainDestruction = config.getBoolean("terrainDestruction", wretch, true,
 				"Allow contact-limited, provoked Wretch strikes inside its saved territory. Respects mobGriefing, Forge protection events, tiles and construction permissions, including manual Wretches.");
 		values.wretchDetectionRange = config.getInt("detectionRange", wretch, 96, 32, 160, "Visual detection radius in blocks. Sight requires a loaded, unobstructed ray; this is not a path-search radius.");
@@ -185,20 +188,35 @@ public final class GeminiConfig {
 		values.wretchHealthAggression = config.getBoolean("healthBasedAggression", wretch, false, "Optional gameplay aggression/damage modifiers at 65% and 30% health. The mature appearance does not transform; disturbances and hunting drive behavior regardless.");
 		values.wretchVoiceSeconds = config.getInt("ambientVoiceSeconds", wretch, 45, 0, 600, "Minimum seconds between rare distorted human-like ambient vocalizations, randomized up to three times this interval. Zero disables ambient voices, not action sounds. No claim about individual victims' agency.");
 		values.gardenerEnabled = config.getBoolean("enabled", gardener, true,
-				"Enable natural underground Gardeners and incremental cave nests in phase 3. Disabled saved natural bosses remain dormant; manual spawn eggs bypass this setting.");
+				"Enable natural underground Gardeners and excavated nests in phases 3 and 4. Disabled saved natural bosses remain dormant; manual spawn eggs bypass this setting.");
 		values.gardenerMaxLoaded = config.getInt("maxLoaded", gardener, 2, 0, 16,
 				"Loaded natural Gardener admission cap. Completed nests wait at the cap without consuming retries; manual spawn eggs bypass the cap and saved bosses are retained.");
 		values.gardenerNestChance = config.getInt("nestChance", gardener, 8, 1, 10000,
-				"One-in-N roll per active Overworld minute for up to eight loaded cave columns. No chunk loading or offline catch-up.");
+				"Legacy pacing input when nestIntervalSeconds is absent (8 maps to 120 seconds). Loaded-area scheduling replaces the old discovery roll; no chunk loading or offline catch-up.");
 		values.gardenerNestLimit = config.getInt("nestLimit", gardener, 32, 0, 64,
 				"World lifetime nest limit, including abandoned partial nests and defeated bosses. Zero disables new nests; saved jobs can finish. Nests stay at least 64 blocks apart.");
 		values.gardenerNestMinDistance = config.getInt("nestMinDistance", gardener, 64, 48, 512,
-				"Minimum nest-center distance from a saved survival anchor. Beds are preferred; bedless anchors require sustained construction activity.");
+				"Minimum nest-center distance from an active survival area. A nearby established home is preferred; living survival/adventure players provide a fallback.");
 		values.gardenerNestMaxDistance = config.getInt("nestMaxDistance", gardener, 160, 48, 512,
 				"Maximum nest-center distance from a survival anchor. Raised to the minimum if smaller. Only loaded terrain is searched.");
 		values.gardenerNestMaxDistance = Math.max(values.gardenerNestMinDistance, values.gardenerNestMaxDistance);
 		values.gardenerNestsPerArea = config.getInt("nestsPerArea", gardener, 3, 0, 8,
-				"Lifetime nests per shared survival area, distributed in angular sectors. Nearby players share anchors; travel never moves an established anchor.");
+				"Lifetime nests per survival area within nestMaxDistance plus 32 blocks. Existing homes remain fixed; active players away from home can seed other areas.");
+        values.gardenerNestIntervalSeconds = config.getInt("nestIntervalSeconds", gardener,
+                Math.max(60, Math.min(86400, values.gardenerNestChance * 120 / 8)), 60, 86400,
+                "Active seconds between successful automatic nests. First eligible attempt within 20 seconds; failures retry after 60 seconds. Saves retain countdowns; phase changes shorten them to 20 seconds; reload clamps to the new interval/retry delay.");
+        values.wretchCampIntervalSeconds = config.getInt("campIntervalSeconds", wretch,
+                Math.max(60, Math.min(86400, values.wretchCampChance * 300 / 256)), 60, 86400,
+                "Active seconds between successful automatic camps in loaded terrain near survival players in phase 4. First attempt within 20 seconds; failed searches retry after 60 seconds. No biome or new-chunk requirement.");
+        values.wretchCampLimit = config.getInt("campLimit", wretch, 256, 0, 256,
+                "Lifetime registered camp limit per dimension. Zero pauses new automatic camps; existing camps/residents are retained.");
+        values.wretchCampMinDistance = config.getInt("campMinDistance", wretch, 80, 64, 512,
+                "Minimum camp-center distance from an active survival/adventure player, in blocks. Complete settlement and neighboring chunks must already be loaded.");
+        values.wretchCampMaxDistance = Math.max(values.wretchCampMinDistance,
+                config.getInt("campMaxDistance", wretch, 160, 64, 512,
+                        "Maximum camp-center distance from an active survival/adventure player; raised to the minimum if smaller. No chunks are requested."));
+        values.wretchCampSpacing = config.getInt("campSpacing", wretch, 256, 208, 1024,
+                "Minimum center spacing between camps in blocks, including legacy queued settlements. The minimum prevents overlap of the largest layouts.");
 		values.gardenerSupportLimit = config.getInt("supportLimit", gardener, 4, 0, 16,
 				"Lifetime successful sterile Nature's Mockery summons per Gardener. Also respects Mockery and disease admission settings.");
 		values.gardenerBlocksPerSlam = config.getInt("blocksPerSlam", gardener, 12, 0, 32,
@@ -302,6 +320,12 @@ public final class GeminiConfig {
         wretchEnabled = values.wretchEnabled;
         wretchHealth = values.wretchHealth;
         wretchCampChance = values.wretchCampChance;
+        wretchCampIntervalSeconds = values.wretchCampIntervalSeconds;
+        wretchCampLimit = values.wretchCampLimit;
+        wretchCampMinDistance = values.wretchCampMinDistance;
+        wretchCampMaxDistance = values.wretchCampMaxDistance;
+        wretchCampSpacing = values.wretchCampSpacing;
+        gardenerNestIntervalSeconds = values.gardenerNestIntervalSeconds;
         wretchTerrainDestruction = values.wretchTerrainDestruction;
         wretchDetectionRange = values.wretchDetectionRange;
         wretchHearingRange = values.wretchHearingRange;
@@ -377,6 +401,9 @@ public final class GeminiConfig {
         public boolean wretchEnabled = true;
         public float wretchHealth = 900F;
         public int wretchCampChance = 256;
+        public int wretchCampIntervalSeconds = 300, wretchCampLimit = 256;
+        public int wretchCampMinDistance = 80, wretchCampMaxDistance = 160, wretchCampSpacing = 256;
+        public int gardenerNestIntervalSeconds = 120;
         public boolean wretchTerrainDestruction = true;
         public int wretchDetectionRange = 96, wretchHearingRange = 128, wretchTerritoryRadius = 128;
         public int wretchMemorySeconds = 120, wretchSearchSeconds = 60, wretchQuietSeconds = 240;

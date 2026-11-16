@@ -51,7 +51,7 @@ public final class GardenerNests extends WorldSavedData {
     public static boolean placingNest() { return placementDepth > 0; }
     private final List<Nest> nests = new ArrayList<Nest>();
     private final List<Residence> residences = new ArrayList<Residence>();
-    private int searchTicks = 1200;
+    private final GeminiStructureSchedule schedule = new GeminiStructureSchedule();
 
     public GardenerNests(String name) { super(name); }
     private static String saveName(World world) {
@@ -74,17 +74,38 @@ public final class GardenerNests extends WorldSavedData {
     private static GeminiInvasionManager.StructureInfo info(World world, Nest nest, String status) {
         return new GeminiInvasionManager.StructureInfo("underground_gardener", nest.x, nest.y, nest.z, world.provider.dimensionId, status);
     }
-    public static String eligibility(World world) {
+    private static String generationGate(World world) {
         if(!(world instanceof WorldServer) || world.isRemote || world.provider.dimensionId != 0) return "Overworld server only";
-        if(!active(world)) return "requires enabled invasion/Gardener, phase 3 and non-Peaceful difficulty";
-        if(world.playerEntities.isEmpty()) return "no players in the Overworld";
+        if(!active(world)) return "requires enabled invasion/Gardener, phase 3+ and non-Peaceful difficulty";
         if(!world.getGameRules().getGameRuleBooleanValue("mobGriefing")) return "mobGriefing is false";
-        GardenerNests data = get(world);
-        if(data.nests.size() >= GeminiConfig.gardenerNestLimit) return "nest limit reached";
+        if(get(world).nests.size() >= GeminiConfig.gardenerNestLimit) return "nest limit reached";
         if(GeminiConfig.gardenerNestsPerArea == 0) return "nests per survival area is zero";
-        for(Residence area : data.residences) if(area.established && data.areaNests(area) < GeminiConfig.gardenerNestsPerArea)
-            return "eligible for loaded-terrain search; next opportunity in " + data.searchTicks + " live discovery ticks; chance, spacing and placement still apply";
-        return "no established survival area with nest capacity";
+        if(GeminiStructureSchedule.players(world).isEmpty()) return "no living survival/adventure players";
+        return null;
+    }
+    public static String eligibility(World world) {
+        String gate = generationGate(world);
+        return gate == null ? "eligible in loaded terrain around survival areas" : gate;
+    }
+    public static String diagnostics(World world) {
+        if(!(world instanceof WorldServer) || world.isRemote) return "server only";
+        return "Automatic nests enabled=" + (GeminiConfig.enabled && GeminiConfig.gardenerEnabled
+                && GeminiConfig.gardenerNestLimit > 0 && GeminiConfig.gardenerNestsPerArea > 0)
+                + "; " + get(world).schedule.status() + "; " + GeminiStructureSchedule.availability(world,
+                        GeminiConfig.gardenerNestMinDistance, GeminiConfig.gardenerNestMaxDistance, 23);
+    }
+    static void reschedule(WorldServer world) { GardenerNests data = get(world); data.schedule.reschedule(data); }
+    static void schedule(WorldServer world) {
+        if(generationGate(world) != null) return;
+        GardenerNests data = get(world);
+        if(!data.schedule.due(data, GeminiConfig.gardenerNestIntervalSeconds)) return;
+        try {
+            String reason = data.generateNearPlayers(world);
+            if(reason != null) data.schedule.failed(data, world, "nest", reason);
+        } catch(RuntimeException failure) {
+            com.hbm.main.MainRegistry.logger.error("Automatic Gemini nest generation failed", failure);
+            data.schedule.failed(data, world, "nest", "engine/block callback exception (see server log)");
+        }
     }
 
     public static GeminiInvasionManager.StructureInfo debugSpawn(EntityPlayer player) {
@@ -477,54 +498,55 @@ public final class GardenerNests extends WorldSavedData {
                     PlacementPlan preparation = plan(world, nest);
                     String reason = place(world, preparation, true, StructurePlacementMode.NATURAL);
                     if(reason != null) {
-                        GeminiInvasionManager.debug(world, "nest-failure", "Natural nest placement failed: " + reason);
+                        schedule.failed(this, world, "nest", "legacy construction: " + reason);
                         it.remove(); markDirty(); return;
                     }
                     nest.phase = 2; nest.built = true;
-                    GeminiInvasionManager.debug(world, "nest-built", "Completed and registered natural nest at " + nest.x + ", " + nest.y + ", " + nest.z
-                            + "; replaced blocks=" + preparation.replaced + ".");
+                    schedule.success(this, world, "nest", nest.x, nest.y, nest.z, GeminiConfig.gardenerNestIntervalSeconds);
                 }
             }
             if(nest.phase == 2 && world.getTotalWorldTime() % 100 == 0) spawn(world, nest);
             markDirty(); return; // One job's paced delay per tick; commit only a complete preflighted plan.
         }
-        if(nests.size() >= GeminiConfig.gardenerNestLimit) return;
-        if(--searchTicks > 0) { if(searchTicks % 20 == 0) markDirty(); return; }
-        searchTicks = 1200; markDirty();
-        if(world.rand.nextInt(GeminiConfig.gardenerNestChance) != 0
-                || world.rand.nextInt(100) >= GeminiInvasionManager.encounterPercent(world)) return;
-        GeminiInvasionManager.debug(world, "nest-attempt", "Natural nest search opportunity (loaded underground terrain near established residences).");
-        if(GeminiConfig.gardenerNestsPerArea == 0 || residences.isEmpty()) {
-            GeminiInvasionManager.debug(world, "nest-failure", "Nest search unavailable: no residence records or nests per area disabled."); return;
-        }
-        Residence area = residences.get(world.rand.nextInt(residences.size()));
-        if(!area.established || areaNests(area) >= GeminiConfig.gardenerNestsPerArea) {
-            GeminiInvasionManager.debug(world, "nest-failure", "Nest search unavailable: selected residence not established or area nest limit reached."); return;
-        }
-        int sector = area.sector++ % GeminiConfig.gardenerNestsPerArea;
-        // Eight loaded columns and at most 32 vertical cells per column per minute-long opportunity.
-        for(int attempt = 0; attempt < 8; attempt++) {
-            double angle = (sector + 0.2D + world.rand.nextDouble() * 0.6D) * Math.PI * 2D / GeminiConfig.gardenerNestsPerArea;
-            int radius = GeminiConfig.gardenerNestMinDistance + world.rand.nextInt(
-                    GeminiConfig.gardenerNestMaxDistance - GeminiConfig.gardenerNestMinDistance + 1);
-            int x = MathHelper.floor_double(area.x + Math.cos(angle) * radius);
-            int z = MathHelper.floor_double(area.z + Math.sin(angle) * radius);
-            double distance = area.distance(x, z);
-            if(distance < (double) GeminiConfig.gardenerNestMinDistance * GeminiConfig.gardenerNestMinDistance
-                    || distance > (double) GeminiConfig.gardenerNestMaxDistance * GeminiConfig.gardenerNestMaxDistance) continue;
-            if(!loaded(world, AxisAlignedBB.getBoundingBox(x - 17, 0, z - 17, x + 18, 64, z + 18)) || tooClose(x, z)) continue;
-            for(int y = 42; y >= 12; y--) {
-                if(world.canBlockSeeTheSky(x, y + 13, z)) continue;
-                Nest nest = new Nest(x, y, z);
-                nest.homeX = area.x; nest.homeZ = area.z; nest.hasHome = true;
-                PlacementPlan preparation = plan(world, nest);
-                if(preparation.reason != null) continue;
-                nests.add(nest); markDirty();
-                GeminiInvasionManager.debug(world, "nest-register", "Scheduled natural nest at " + x + ", " + y + ", " + z + "; existing paced construction pending.");
-                return;
+    }
+
+    /** Discovery runs independently of legacy construction jobs and resident population waits. */
+    private String generateNearPlayers(WorldServer world) {
+        List<EntityPlayer> players = GeminiStructureSchedule.players(world);
+        Map<String, Integer> rejected = new LinkedHashMap<String, Integer>();
+        int start = world.rand.nextInt(players.size()), plans = 0;
+        for(int attempt = 0; attempt < GeminiStructureSchedule.ATTEMPTS && plans < 2; attempt++) {
+            EntityPlayer player = players.get((start + attempt) % players.size());
+            int homeX = MathHelper.floor_double(player.posX), homeZ = MathHelper.floor_double(player.posZ);
+            for(Residence area : residences) if(area.owner.equals(player.getUniqueID()) && area.established
+                    && area.distance(player.posX, player.posZ) <= 32D * 32D) {
+                homeX = area.x; homeZ = area.z; break;
             }
+            if(areaNests(homeX, homeZ) >= GeminiConfig.gardenerNestsPerArea) {
+                countRejection(rejected, "survival area nest limit"); continue;
+            }
+            ChunkCoordinates point = GeminiStructureSchedule.candidate(world, homeX, homeZ,
+                    GeminiConfig.gardenerNestMinDistance, GeminiConfig.gardenerNestMaxDistance);
+            int x = point.posX, z = point.posZ;
+            if(tooClose(x, z)) { countRejection(rejected, "nest spacing (64 blocks)"); continue; }
+            if(!GeminiStructureSchedule.footprint(world, x, z, 23)) {
+                countRejection(rejected, "complete chamber/access footprint not loaded or outside world bounds"); continue;
+            }
+            int surface = surface(world, x, z);
+            if(surface < 17) { countRejection(rejected, "insufficient terrain depth for an underground chamber"); continue; }
+            int y = Math.max(1, Math.min(42, surface - 17 - world.rand.nextInt(12)));
+            Nest nest = new Nest(x, y, z);
+            nest.homeX = homeX; nest.homeZ = homeZ; nest.hasHome = true;
+            plans++;
+            String reason = place(world, plan(world, nest), true, StructurePlacementMode.NATURAL);
+            if(reason != null) { countRejection(rejected, reason); continue; }
+            // Only complete verified structures enter the authoritative registry.
+            nest.built = true; nest.phase = 2;
+            nests.add(nest);
+            schedule.success(this, world, "nest", x, y, z, GeminiConfig.gardenerNestIntervalSeconds);
+            return null;
         }
-        GeminiInvasionManager.debug(world, "nest-failure", "Nest search failed: no loaded, spaced underground footprint in the sampled area.");
+        return "bounded loaded-area search: " + rejected;
     }
     private boolean tooClose(int x, int z) {
         for(Nest nest : nests) {
@@ -533,10 +555,13 @@ public final class GardenerNests extends WorldSavedData {
         }
         return false;
     }
-    private int areaNests(Residence area) {
+    private int areaNests(int x, int z) {
         int count = 0;
         double radius = GeminiConfig.gardenerNestMaxDistance + 32D;
-        for(Nest nest : nests) if(area.distance(nest.x, nest.z) <= radius * radius) count++;
+        for(Nest nest : nests) {
+            double dx = (double) nest.x - x, dz = (double) nest.z - z;
+            if(dx * dx + dz * dz <= radius * radius) count++;
+        }
         return count;
     }
     /** A bed is explicit residence evidence. Otherwise require twenty loaded minutes near recorded construction. */
@@ -582,7 +607,7 @@ public final class GardenerNests extends WorldSavedData {
     }
     private static final class Residence {
         final UUID owner;
-        int x, z, dwell, sector;
+        int x, z, dwell;
         boolean established;
         Residence(UUID owner, int x, int z) { this.owner = owner; this.x = x; this.z = z; }
         double distance(double px, double pz) { double dx = px - x, dz = pz - z; return dx * dx + dz * dz; }
@@ -661,17 +686,16 @@ public final class GardenerNests extends WorldSavedData {
                 Residence area = new Residence(UUID.fromString(tag.getString("Owner")), tag.getInteger("X"), tag.getInteger("Z"));
                 if(Math.abs((long) area.x) > 29999900 || Math.abs((long) area.z) > 29999900) continue;
                 area.established = tag.getBoolean("Established"); area.dwell = MathHelper.clamp_int(tag.getInteger("Dwell"), 0, 24000);
-                area.sector = MathHelper.clamp_int(tag.getInteger("Sector"), 0, 1000000); residences.add(area);
+                residences.add(area);
             } catch(IllegalArgumentException ignored) { }
         }
-        nests.clear(); searchTicks = MathHelper.clamp_int(nbt.getInteger("SearchTicks"), 1, 1200);
+        nests.clear(); schedule.read(nbt);
         NBTTagList list = nbt.getTagList("Nests", 10);
         for(int i = 0; i < list.tagCount(); i++) {
             NBTTagCompound tag = list.getCompoundTagAt(i);
             Nest nest = new Nest(tag.getInteger("X"), tag.getInteger("Y"), tag.getInteger("Z"));
-            boolean debug = tag.getBoolean("Debug");
-            if(nest.y < (debug ? 1 : 12) || nest.y > (debug ? 243 : 42)
-                    || Math.abs((long) nest.x) > (debug ? 29999984 : 29999900) || Math.abs((long) nest.z) > (debug ? 29999984 : 29999900)) continue;
+            if(nest.y < 1 || nest.y > 243
+                    || Math.abs((long) nest.x) > 29999984 || Math.abs((long) nest.z) > 29999984) continue;
             nest.phase = MathHelper.clamp_int(tag.getInteger("Phase"), 0, 4);
             nest.built = tag.getBoolean("Built") || nest.phase == 2 || nest.phase == 3;
             nest.debug = tag.getBoolean("Debug");
@@ -689,10 +713,10 @@ public final class GardenerNests extends WorldSavedData {
         for(Residence area : residences) {
             NBTTagCompound tag = new NBTTagCompound(); tag.setString("Owner", area.owner.toString());
             tag.setInteger("X", area.x); tag.setInteger("Z", area.z); tag.setInteger("Dwell", area.dwell);
-            tag.setInteger("Sector", area.sector); tag.setBoolean("Established", area.established); homes.appendTag(tag);
+            tag.setBoolean("Established", area.established); homes.appendTag(tag);
         }
         nbt.setTag("Residences", homes);
-        nbt.setInteger("SearchTicks", searchTicks);
+        schedule.write(nbt);
         NBTTagList list = new NBTTagList();
         for(Nest nest : nests) {
             NBTTagCompound tag = new NBTTagCompound();

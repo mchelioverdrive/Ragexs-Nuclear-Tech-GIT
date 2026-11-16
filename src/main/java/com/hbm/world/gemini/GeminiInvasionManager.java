@@ -69,8 +69,13 @@ public final class GeminiInvasionManager {
 		debug(world, "timer", "Invasion timer advanced from " + previous + " to " + data.getElapsedTicks() + " ticks.");
 	}
 
-	/** Unlock consumers query the saved phase directly; there is no client phase cache or init job. */
+	/** Unlock consumers query the saved phase; transitions also shorten pending structure countdowns. */
 	static void phaseChanged(World world, int from, int to) {
+		WorldServer overworld = net.minecraftforge.common.DimensionManager.getWorld(0);
+		if(overworld != null) {
+			WretchCamps.reschedule(overworld);
+			GardenerNests.reschedule(overworld);
+		}
 		debug(world, "phase-" + from + "-" + to, "Invasion phase " + from + " -> " + to + ".");
 	}
 	static net.minecraft.command.CommandException rejected(World world, String kind, String reason) {
@@ -222,6 +227,9 @@ public final class GeminiInvasionManager {
 		if(!data.hasMarsVisited()) { WoodcrawlerSpawning.diagnostic(overworld, "mars", "Mars visit requirement not satisfied"); return; }
 		if(data.getPhase() < 1) { WoodcrawlerSpawning.diagnostic(overworld, "phase", "Incorrect invasion phase"); return; }
 		data.advancePhase(overworld);
+		// Independent saved structure opportunities must run before encounter-countdown returns.
+		GardenerNests.schedule(overworld);
+		WretchCamps.schedule(overworld);
 		int remaining = data.getEventSecondsRemaining();
 		if(remaining == 0) {
 			scheduleNext(overworld, data);

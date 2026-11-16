@@ -77,7 +77,7 @@ public final class CommandGemini extends CommandBase {
             reply(sender, "/gemini help | status | debug <true|false>");
             reply(sender, "/gemini phase set <1|2|3|4> | phase next | phase reset");
             reply(sender, "/gemini time <add|set> <ticks>");
-            reply(sender, "/gemini nest spawn [x y z] [force] | nest locate");
+            reply(sender, "/gemini nest spawn [x y z] [force] | nest locate | nest list [page]");
             reply(sender, "/gemini camp spawn [" + WretchCamps.TYPE + "] [x y z] [force] | camp locate | camp list [page]");
             return;
         }
@@ -110,7 +110,7 @@ public final class CommandGemini extends CommandBase {
             } else GeminiInvasionManager.setElapsedTicks(world, target);
             target = GeminiInvasionManager.getElapsedTicks(world);
             reply(sender, "Elapsed ticks=" + target + "; phase=" + GeminiInvasionManager.getPhase(world) + ". World clock unchanged.");
-            reply(sender, "Skipped encounters, chunk population, nest construction, mob AI, infections and cooldowns require live simulation; none were replayed.");
+            reply(sender, "Structure schedules follow phase changes on live server ticks. Skipped encounters, construction, mob AI, infections and cooldowns were not replayed.");
             return;
         }
         if("nest".equals(args[0])) {
@@ -124,7 +124,10 @@ public final class CommandGemini extends CommandBase {
             if(args.length == 2 && "locate".equals(args[1])) {
                 locate(sender, GardenerNests.known(world), "nest"); return;
             }
-            throw new WrongUsageException("/gemini nest spawn [x y z] [force] | /gemini nest locate");
+            if((args.length == 2 || args.length == 3) && "list".equals(args[1])) {
+                list(sender, world, GardenerNests.known(world), "nest", args); return;
+            }
+            throw new WrongUsageException("/gemini nest spawn [x y z] [force] | /gemini nest locate | /gemini nest list [page]");
         }
         if("camp".equals(args[0])) {
             if(args.length >= 2 && "spawn".equals(args[1])) {
@@ -142,12 +145,7 @@ public final class CommandGemini extends CommandBase {
                 locate(sender, WretchCamps.known(world), "camp"); return;
             }
             if((args.length == 2 || args.length == 3) && "list".equals(args[1])) {
-                List<StructureInfo> camps = WretchCamps.known(world);
-                int pages = Math.max(1, (camps.size() + PAGE_SIZE - 1) / PAGE_SIZE);
-                int page = args.length == 3 ? parseIntBounded(sender, args[2], 1, pages) : 1;
-                reply(sender, "Known camps in dimension " + world.provider.dimensionId + ": " + camps.size() + "; page " + page + "/" + pages + ".");
-                for(int i = (page - 1) * PAGE_SIZE; i < Math.min(camps.size(), page * PAGE_SIZE); i++) reply(sender, camps.get(i).toString());
-                if(page < pages) reply(sender, "Next: /gemini camp list " + (page + 1));
+                list(sender, world, WretchCamps.known(world), "camp", args);
                 return;
             }
             throw new WrongUsageException("/gemini camp spawn [" + WretchCamps.TYPE + "] [x y z] [force] | /gemini camp locate | /gemini camp list [page]");
@@ -175,8 +173,19 @@ public final class CommandGemini extends CommandBase {
                 + "; encounter countdown=" + GeminiInvasionManager.getEventSecondsRemaining(world) + " seconds.");
         reply(sender, "Nests unlocked=" + (phase >= 3) + "; generation: " + GardenerNests.eligibility(world) + ".");
         reply(sender, "Camps unlocked=" + (phase >= 4) + "; generation: " + WretchCamps.eligibility(world) + ".");
+        reply(sender, GardenerNests.diagnostics(world));
+        reply(sender, WretchCamps.diagnostics(world));
         reply(sender, "Known generated nests=" + GardenerNests.known(world).size() + "; camp records=" + WretchCamps.known(world).size()
                 + " in sender dimension " + world.provider.dimensionId + ". Invasion world=Overworld (0), shared saved progression.");
+    }
+
+    private static void list(ICommandSender sender, WorldServer world, List<StructureInfo> structures, String kind, String[] args) {
+        int pages = Math.max(1, (structures.size() + PAGE_SIZE - 1) / PAGE_SIZE);
+        int page = args.length == 3 ? parseIntBounded(sender, args[2], 1, pages) : 1;
+        reply(sender, "Known " + kind + "s in dimension " + world.provider.dimensionId + ": " + structures.size()
+                + "; page " + page + "/" + pages + ".");
+        for(int i = (page - 1) * PAGE_SIZE; i < Math.min(structures.size(), page * PAGE_SIZE); i++) reply(sender, structures.get(i).toString());
+        if(page < pages) reply(sender, "Next: /gemini " + kind + " list " + (page + 1));
     }
 
     private static void locate(ICommandSender sender, List<StructureInfo> structures, String kind) {
@@ -200,7 +209,7 @@ public final class CommandGemini extends CommandBase {
         if(args.length == 2) {
             if("phase".equals(args[0])) return getListOfStringsMatchingLastWord(args, "set", "next", "reset");
             if("time".equals(args[0])) return getListOfStringsMatchingLastWord(args, "add", "set");
-            if("nest".equals(args[0])) return getListOfStringsMatchingLastWord(args, "spawn", "locate");
+            if("nest".equals(args[0])) return getListOfStringsMatchingLastWord(args, "spawn", "locate", "list");
             if("camp".equals(args[0])) return getListOfStringsMatchingLastWord(args, "spawn", "locate", "list");
             if("debug".equals(args[0])) return getListOfStringsMatchingLastWord(args, "true", "false");
         }
