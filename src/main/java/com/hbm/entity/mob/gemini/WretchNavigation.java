@@ -12,13 +12,16 @@ import net.minecraft.util.Vec3;
 
 /** Bounded surface A*, anatomical clearance and accelerated steering. Native movement owns steps/gravity. */
 final class WretchNavigation {
+    static final double FOOT_HEIGHT = 0.8, EPSILON = 0.0001, MAX_DROP = 1.6;
     private final EntityWretch boss;
     private final ArrayList<Node> path = new ArrayList<Node>();
     private int cursor, nextPlan, progressTick, collisions, nextDiagnostic;
     int failures;
     private double goalX, goalY, goalZ, speed, vx, vz, progressX, progressY, progressZ, displacement, steerX, steerZ;
     private String blockedBy = "navigation";
-    private boolean moving;
+    private String routeBlock = "no ground support";
+    private double requestedX, requestedY, requestedZ, actualX, actualY, actualZ, destinationY;
+    private boolean moving, noRoute;
     private final long[] avoided = new long[16];
     private final int[] avoidUntil = new int[16];
     private int avoidCursor;
@@ -32,6 +35,7 @@ final class WretchNavigation {
     void goal(double x, double y, double z, double speed) {
         if(!Double.isFinite(x) || !Double.isFinite(y) || !Double.isFinite(z) || !boss.inTerritory(x, z, boss.territoryRadius())) { halt(); return; }
         if(!moving || square(goalX - x, goalZ - z) > 9) {
+            noRoute = false;
             path.clear(); cursor = 0; nextPlan = Math.min(nextPlan, boss.ticksExisted + 5);
             if(!moving) {
                 if(progressTick == 0) {
@@ -49,17 +53,20 @@ final class WretchNavigation {
     boolean arrived(double distance) { return moving && square(goalX - boss.posX, goalZ - boss.posZ) <= distance * distance; }
     boolean isMoving() { return moving; }
     void obstructionRemoved() {
+        noRoute = false;
         path.clear(); cursor = 0; nextPlan = boss.ticksExisted + 1;
         collisions = 0;
         // A changed corridor invalidates both the route and its temporary avoidance entries.
         java.util.Arrays.fill(avoidUntil, 0);
     }
-    void collision(boolean anatomy, double requestedX, double requestedZ, double actualX, double actualZ) {
+    void collision(String reason, double requestedX, double requestedY, double requestedZ, double actualX, double actualY, double actualZ) {
         if(!moving || square(requestedX, requestedZ) < 0.0001) return;
-        if(anatomy || square(actualX, actualZ) < square(requestedX, requestedZ) * 0.1) {
-            blockedBy = anatomy ? "anatomical collision" : "native feet collision";
+        this.requestedX = requestedX; this.requestedY = requestedY; this.requestedZ = requestedZ;
+        this.actualX = actualX; this.actualY = actualY; this.actualZ = actualZ;
+        if(reason != null || square(actualX, actualZ) < square(requestedX, requestedZ) * 0.1) {
+            blockedBy = reason == null ? feetBlock(boss.posX, boss.boundingBox.minY, boss.posZ, requestedX, requestedZ) : reason;
             collisions++;
-        }
+        } else { collisions = 0; blockedBy = "none"; }
     }
     Vec3 obstruction() {
         double dx = steerX, dz = steerZ;
@@ -101,6 +108,11 @@ final class WretchNavigation {
                             + " target=" + (target == null ? goalX + "," + goalY + "," + goalZ : target.posX + "," + target.posY + "," + target.posZ)
                             + " state=" + boss.behavior() + "/" + boss.state() + " navigation=" + (cursor < path.size() ? "following" : "waiting for route")
                             + " path=" + cursor + "/" + path.size()
+                            + " currentY=" + boss.posY + " destinationY=" + (cursor < path.size() ? destinationY : goalY)
+                            + " groundY=" + surface(boss.posX, boss.boundingBox.minY, boss.posZ)
+                            + " request=" + requestedX + "," + requestedY + "," + requestedZ
+                            + " direction=" + steerX + "," + steerZ
+                            + " actual=" + actualX + "," + actualY + "," + actualZ
                             + " failures=" + failures + " displacement=" + displacement + " preventedBy=" + blockedBy
                             + " obstruction=" + boss.brain.building.lastObstruction() + " rejection=" + boss.brain.building.lastRejection());
                 }
@@ -111,15 +123,16 @@ final class WretchNavigation {
         if((path.isEmpty() || cursor >= path.size()) && boss.ticksExisted >= nextPlan) plan();
         if(cursor >= path.size()) {
             steerX = goalX - boss.posX; steerZ = goalZ - boss.posZ;
-            blockedBy = collisions > 0 ? blockedBy : "navigation (no route)";
+            if(!noRoute && collisions == 0) blockedBy = "waiting for path search";
             vx = vz = 0; boss.motionX = boss.motionZ = 0; return;
         }
         Node node = path.get(cursor);
-        if(square(node.x + 0.5 - boss.posX, node.z + 0.5 - boss.posZ) < 0.5) {
+        if(square(node.x + 0.5 - boss.posX, node.z + 0.5 - boss.posZ) < 0.09 && Math.abs(node.y - boss.boundingBox.minY) < 0.6) {
             if(++cursor >= path.size()) { vx = vz = 0; return; }
             node = path.get(cursor);
         }
         double dx = node.x + 0.5 - boss.posX, dz = node.z + 0.5 - boss.posZ;
+        destinationY = node.y;
         steerX = dx; steerZ = dz;
         double length = Math.max(0.001, Math.sqrt(dx * dx + dz * dz));
         float desired = (float) Math.toDegrees(Math.atan2(-dx, dz));
@@ -130,12 +143,11 @@ final class WretchNavigation {
         double acceleration = speed > 0.3 ? 0.065 : speed > 0.15 ? 0.04 : 0.012;
         vx += MathHelper.clamp_double(wantedX - vx, -acceleration, acceleration);
         vz += MathHelper.clamp_double(wantedZ - vz, -acceleration, acceleration);
-        if(!movementClear(boss.posX + vx, boss.posY, boss.posZ + vz)) {
-            vx = vz = 0; collisions++; blockedBy = "anatomical collision"; failCurrent();
-        } else {
-            if(boss.isCollidedHorizontally) { collisions++; if(collisions >= 3) failCurrent(); }
-            else collisions = Math.max(0, collisions - 1);
-        }
+        // Count actual failed native movement attempts, not a pre-step anatomy guess or
+        // last frame's horizontal-collision flag. Give stepping several frames to resolve.
+        if(collisions >= 6) { failCurrent(); return; }
+        double limit = Math.min(1, length / Math.max(0.001, Math.sqrt(square(vx, vz))));
+        vx *= limit; vz *= limit;
         boss.motionX = vx; boss.motionZ = vz;
     }
     private void failCurrent() {
@@ -144,7 +156,8 @@ final class WretchNavigation {
             avoidCursor = (avoidCursor + 1) % avoided.length;
         }
         failures = Math.min(12, failures + 1); path.clear(); cursor = 0;
-        nextPlan = Math.min(nextPlan, boss.ticksExisted + 8);
+        collisions = 0; vx = vz = 0; boss.motionX = boss.motionZ = 0;
+        nextPlan = boss.ticksExisted + 8;
     }
     private boolean avoided(long key) {
         for(int i = 0; i < avoided.length; i++) if(avoided[i] == key && avoidUntil[i] > boss.ticksExisted) return true;
@@ -158,26 +171,28 @@ final class WretchNavigation {
         double scale = range > 14 ? 14 / range : 1;
         double tx = boss.posX + dx * scale, tz = boss.posZ + dz * scale;
         // Prefer a fully sampled direct segment before the bounded surface search.
-        double directY = boss.posY;
+        double directY = boss.boundingBox.minY;
         boolean direct = true;
         int samples = Math.max(1, (int) Math.ceil(Math.min(range, 14) / 0.75));
         for(int i = 1; i <= samples; i++) {
             double t = i / (double) samples;
             double px = Math.floor(boss.posX + (tx - boss.posX) * t) + 0.5, pz = Math.floor(boss.posZ + (tz - boss.posZ) * t) + 0.5;
-            double py = surface(px, directY, pz);
             double previousX = path.isEmpty() ? boss.posX : path.get(path.size() - 1).x + 0.5;
             double previousZ = path.isEmpty() ? boss.posZ : path.get(path.size() - 1).z + 0.5;
-            if(!Double.isFinite(py) || !canStand(px, py, pz)
-                    || !segmentClear(previousX, directY, previousZ, px, py, pz)
-                    || avoided(key(MathHelper.floor_double(px), py, MathHelper.floor_double(pz)))) { direct = false; break; }
+            double py = segmentSurface(previousX, directY, previousZ, px, pz);
+            if(!Double.isFinite(py)) { direct = false; break; }
+            if(avoided(key(MathHelper.floor_double(px), py, MathHelper.floor_double(pz)))) {
+                routeBlock = "temporarily avoided failed node"; direct = false; break;
+            }
             if(path.isEmpty() || px != previousX || pz != previousZ) path.add(new Node(MathHelper.floor_double(px), py, MathHelper.floor_double(pz)));
             directY = py;
         }
-        if(direct) return;
+        if(direct) { noRoute = false; blockedBy = "none"; return; }
+        String directBlock = routeBlock;
         path.clear();
         PriorityQueue<Node> open = new PriorityQueue<Node>();
         Map<Long, Node> nodes = new HashMap<Long, Node>();
-        Node start = new Node(sx, boss.posY, sz), best = start;
+        Node start = new Node(sx, boss.boundingBox.minY, sz), best = start;
         start.h = Math.sqrt(square(tx - sx - 0.5, tz - sz - 0.5));
         open.add(start); nodes.put(key(sx, boss.posY, sz), start);
         int expanded = 0;
@@ -190,55 +205,79 @@ final class WretchNavigation {
                 int oz = side < 4 ? (side == 2 ? 1 : side == 3 ? -1 : 0) : (side % 2 == 0 ? 1 : -1);
                 int x = current.x + ox, z = current.z + oz;
                 if(Math.abs(x - sx) > 16 || Math.abs(z - sz) > 16 || !boss.inTerritory(x + 0.5, z + 0.5, boss.territoryRadius())) continue;
-                double y = surface(x + 0.5, current.y, z + 0.5);
-                if(!Double.isFinite(y) || y - current.y > boss.stepHeight || current.y - y > 1.6) continue;
+                double y = segmentSurface(current == start ? boss.posX : current.x + 0.5, current.y,
+                        current == start ? boss.posZ : current.z + 0.5, x + 0.5, z + 0.5);
+                if(!Double.isFinite(y)) continue;
                 long key = key(x, y, z); Node node = nodes.get(key);
                 if(avoided(key)) continue;
                 if(node != null && node.closed) continue;
                 if(node == null) {
                     node = new Node(x, y, z); nodes.put(key, node);
-                    if(!canStand(x + 0.5, y, z + 0.5)) { node.closed = true; continue; }
                     node.g = Double.POSITIVE_INFINITY;
                 }
-                if(!segmentClear(current.x + 0.5, current.y, current.z + 0.5, x + 0.5, y, z + 0.5)) continue;
                 double cost = current.g + Math.sqrt(ox * ox + oz * oz) + Math.abs(current.y - node.y) * 2;
                 if(cost >= node.g) continue;
                 open.remove(node); node.g = cost; node.parent = current;
                 node.h = Math.sqrt(square(tx - x - 0.5, tz - z - 0.5)); open.add(node);
             }
         }
-        if(best == start || best.h > start.h - 0.5) { failures = Math.min(12, failures + 1); return; }
+        if(best == start || best.h > start.h - 0.5) {
+            noRoute = true;
+            blockedBy = "no valid path (" + directBlock + ")";
+            failures = Math.min(12, failures + 1); return;
+        }
         for(Node n = best; n.parent != null; n = n.parent) path.add(n);
         Collections.reverse(path);
+        noRoute = false; blockedBy = "none";
     }
     boolean canStand(double x, double y, double z) {
         return y >= 1 && y + WretchPose.HEIGHT < 256 && anatomyClear(x, y, z)
-                && clear(AxisAlignedBB.getBoundingBox(x - 1.6, y + 0.02, z - 1.6, x + 1.6, y + 0.8, z + 1.6));
+                && clear(feet(x, y + EPSILON, z))
+                && !boss.worldObj.getCollidingBoundingBoxes(boss, feet(x, y, z).addCoord(0, -0.05, 0)).isEmpty();
     }
-    private boolean segmentClear(double x, double y, double z, double tx, double ty, double tz) {
-        if(ty - y > boss.stepHeight || y - ty > 1.6) return false;
-        if(ty > y && !anatomyClear(x, y + boss.stepHeight, z)) return false;
-        int steps = Math.max(1, (int) Math.ceil(Math.sqrt(square(tx - x, tz - z)) / 0.4));
+    private double segmentSurface(double x, double y, double z, double tx, double tz) {
+        int steps = Math.max(1, (int) Math.ceil(Math.sqrt(square(tx - x, tz - z)) / 0.25));
+        double dx = (tx - x) / steps, dz = (tz - z) / steps;
         for(int i = 1; i <= steps; i++) {
-            double t = i / (double) steps;
-            if(!canStand(x + (tx - x) * t, Math.max(y, ty), z + (tz - z) * t)) return false;
-            if(ty > y && !anatomyClear(x + (tx - x) * t, y + boss.stepHeight, z + (tz - z) * t)) return false;
+            double nx = x + dx, nz = z + dz, ny = surface(nx, y, nz);
+            if(!Double.isFinite(ny)) return Double.NaN;
+            if(y - ny > MAX_DROP + EPSILON) { routeBlock = "elevation exceeds safe drop"; return Double.NaN; }
+            if(!canStand(nx, ny, nz)) {
+                String reason = anatomyBlock(nx, ny, nz, 0, 0, 0);
+                routeBlock = reason == null ? feetBlock(x, y, z, dx, dz) : reason; return Double.NaN;
+            }
+            double step = Math.max(0, verticalMovement(x, y, z, boss.stepHeight));
+            Motion move = nativeMovement(x, y, z, dx, -0.08, dz, step, true);
+            if(Math.abs(move.x - dx) > EPSILON || Math.abs(move.z - dz) > EPSILON) {
+                routeBlock = ny > y + EPSILON ? "elevation exceeds stepping capability" : "feet collision"; return Double.NaN;
+            }
+            String reason = anatomyMovement(x, y, z, move);
+            if(reason == null && ny < y + move.y)
+                reason = anatomyBlock(nx, y + move.y, nz, 0, ny - y - move.y, 0);
+            if(reason != null) { routeBlock = reason; return Double.NaN; }
+            x = nx; y = ny; z = nz;
         }
-        // A lower destination is only reachable if gravity can settle the same colliders
-        // through the intermediate elevations, not just fit at the two endpoints.
-        int drops = (int) Math.ceil((y - ty) / 0.4);
-        for(int i = 1; i < drops; i++) if(!canStand(tx, y + (ty - y) * i / drops, tz)) return false;
-        return true;
+        return y;
     }
     /** Identical upper-body clearance for planning and physical movement, including foliage. */
     boolean anatomyClear(double x, double y, double z) {
-        if(y < 0 || y + WretchPose.HEIGHT > 256) return false;
-        for(AxisAlignedBB box : upperBoxes(x, y, z)) if(!clear(box)) return false;
-        return true;
+        return anatomyBlock(x, y, z, 0, 0, 0) == null;
+    }
+    private String anatomyBlock(double x, double y, double z, double dx, double dy, double dz) {
+        if(y + Math.min(0, dy) < 0 || y + Math.max(0, dy) + WretchPose.HEIGHT > 256) return "world height boundary";
+        AxisAlignedBB[] boxes = upperBoxes(x, y, z);
+        for(int i = 0; i < boxes.length; i++) {
+            AxisAlignedBB swept = boxes[i].addCoord(dx, dy, dz);
+            if(!GardenerNests.loaded(boss.worldObj, swept.expand(1, 0, 1))) return "unloaded terrain";
+            if(boss.worldObj.isAnyLiquid(swept) || !boss.worldObj.getCollidingBoundingBoxes(boss, swept).isEmpty())
+                return i == 0 ? "torso collision" : "leg collision";
+        }
+        return null;
     }
     private AxisAlignedBB[] upperBoxes(double x, double y, double z) {
         AxisAlignedBB[] boxes = new AxisAlignedBB[3];
-        boxes[0] = AxisAlignedBB.getBoundingBox(x - 1.6, y + 8.3, z - 1.6, x + 1.6, y + 20, z + 1.6);
+        double half = boss.width * 0.5;
+        boxes[0] = AxisAlignedBB.getBoundingBox(x - half, y + 8.3, z - half, x + half, y + 20, z + half);
         double angle = Math.toRadians(boss.rotationYaw);
         for(int leg = 0; leg < 2; leg++) {
             double side = leg == 0 ? -1.15 : 1.15, lx = x + side * Math.cos(angle), lz = z + side * Math.sin(angle);
@@ -248,47 +287,99 @@ final class WretchNavigation {
     }
     /** Clip vertical travel to contact rather than zeroing every fall near an upper limb. */
     double verticalMovement(double dy) {
-        for(AxisAlignedBB box : upperBoxes(boss.posX, boss.posY, boss.posZ))
+        return verticalMovement(boss.posX, boss.boundingBox.minY, boss.posZ, dy);
+    }
+    private double verticalMovement(double x, double y, double z, double dy) {
+        for(AxisAlignedBB box : upperBoxes(x, y, z))
             for(Object entry : boss.worldObj.getCollidingBoundingBoxes(boss, box.addCoord(0, dy, 0)))
                 dy = ((AxisAlignedBB) entry).calculateYOffset(box, dy);
         return dy;
     }
-    boolean movementClear(double x, double y, double z) {
-        boolean upperClear = anatomyClear(x, y, z);
-        if(!boss.onGround) return upperClear;
-        // Native stepping rises, advances and settles on the highest foot collision. Check
-        // that actual support height, not an unrelated hard-coded one-block upper pose.
-        AxisAlignedBB feet = AxisAlignedBB.getBoundingBox(x - 1.6, boss.posY, z - 1.6, x + 1.6, boss.posY + 0.8, z + 1.6);
+    String movementBlock(double dx, double dy, double dz, double step) {
+        return anatomyMovement(boss.posX, boss.boundingBox.minY, boss.posZ,
+                nativeMovement(boss.posX, boss.boundingBox.minY, boss.posZ, dx, dy, dz, step, boss.onGround));
+    }
+    private String anatomyMovement(double x, double y, double z, Motion move) {
+        // Vanilla resolves Y, X, Z; a step instead rises, advances X/Z, then settles.
+        double up = move.rise > 0 ? move.rise : move.y;
+        String reason = anatomyBlock(x, y, z, 0, up, 0);
+        if(reason == null) reason = anatomyBlock(x, y + up, z, move.x, 0, 0);
+        if(reason == null) reason = anatomyBlock(x + move.x, y + up, z, 0, 0, move.z);
+        if(reason == null && move.rise > 0) reason = anatomyBlock(x + move.x, y + up, z + move.z, 0, move.y - up, 0);
+        return reason;
+    }
+    private AxisAlignedBB feet(double x, double y, double z) {
+        double half = boss.width * 0.5;
+        return AxisAlignedBB.getBoundingBox(x - half, y, z - half, x + half, y + FOOT_HEIGHT, z + half);
+    }
+    private String feetBlock(double x, double y, double z, double dx, double dz) {
         double rise = 0;
-        for(Object entry : boss.worldObj.getCollidingBoundingBoxes(boss, feet.addCoord(0, boss.stepHeight, 0))) {
-            AxisAlignedBB box = (AxisAlignedBB) entry;
-            if(box.maxY > boss.posY && box.minY < boss.posY + 0.8) rise = Math.max(rise, box.maxY - boss.posY);
+        for(Object entry : boss.worldObj.getCollidingBoundingBoxes(boss, feet(x, y, z).addCoord(dx, boss.stepHeight, dz)))
+            rise = Math.max(rise, ((AxisAlignedBB) entry).maxY - y);
+        if(rise > boss.stepHeight + EPSILON) return "elevation exceeds stepping capability (feet collision)";
+        if(rise > EPSILON) {
+            String upper = anatomyBlock(x, y, z, 0, boss.stepHeight, 0);
+            if(upper != null) return upper + " prevents foot step";
         }
-        if(rise == 0) return upperClear;
-        if(rise > boss.stepHeight) return upperClear; // Native feet stop at an unsteppable wall.
-        return anatomyClear(x, boss.posY + rise, z)
-                && anatomyClear(boss.posX, boss.posY + boss.stepHeight, boss.posZ)
-                && anatomyClear(x, boss.posY + boss.stepHeight, z);
+        return "feet collision";
+    }
+    private static final class Motion {
+        double x, y, z, rise;
+    }
+    /** Read-only preview of Forge 1.7.10 Entity.moveEntity's native foot resolution. */
+    private Motion nativeMovement(double x, double y, double z, double dx, double dy, double dz, double step, boolean grounded) {
+        AxisAlignedBB origin = feet(x, y, z), box = origin.copy();
+        java.util.List<?> collisions = boss.worldObj.getCollidingBoundingBoxes(boss, box.addCoord(dx, dy, dz));
+        Motion normal = resolve(box, collisions, dx, dy, dz);
+        if(step <= 0 || !(grounded || dy < 0 && normal.y != dy)
+                || Math.abs(normal.x - dx) < EPSILON && Math.abs(normal.z - dz) < EPSILON) return normal;
+        box = origin.copy();
+        collisions = boss.worldObj.getCollidingBoundingBoxes(boss, box.addCoord(dx, step, dz));
+        Motion raised = resolve(box, collisions, dx, step, dz);
+        raised.rise = raised.y;
+        double down = -step;
+        for(Object entry : collisions) down = ((AxisAlignedBB) entry).calculateYOffset(box, down);
+        raised.y += down;
+        return square(raised.x, raised.z) > square(normal.x, normal.z) ? raised : normal;
+    }
+    private Motion resolve(AxisAlignedBB box, java.util.List<?> collisions, double dx, double dy, double dz) {
+        Motion move = new Motion();
+        for(Object entry : collisions) dy = ((AxisAlignedBB) entry).calculateYOffset(box, dy);
+        box.offset(0, dy, 0);
+        for(Object entry : collisions) dx = ((AxisAlignedBB) entry).calculateXOffset(box, dx);
+        box.offset(dx, 0, 0);
+        for(Object entry : collisions) dz = ((AxisAlignedBB) entry).calculateZOffset(box, dz);
+        box.offset(0, 0, dz);
+        move.x = dx; move.y = dy; move.z = dz; return move;
     }
     private boolean clear(AxisAlignedBB box) {
         if(!GardenerNests.loaded(boss.worldObj, box.expand(1, 0, 1)) || boss.worldObj.isAnyLiquid(box)) return false;
         return boss.worldObj.getCollidingBoundingBoxes(boss, box).isEmpty();
     }
     double surface(double x, double y, double z) {
-        if(!boss.worldObj.getChunkProvider().chunkExists(MathHelper.floor_double(x) >> 4, MathHelper.floor_double(z) >> 4)) return Double.NaN;
-        // Foliage is physical, but never a permanent destination. Search below it without
-        // promising a large drop: segmentClear still enforces native step/drop limits.
-        for(int by = Math.min(254, MathHelper.floor_double(y + boss.stepHeight)); by >= Math.max(1, y - 12); by--) {
-            int bx = MathHelper.floor_double(x), bz = MathHelper.floor_double(z);
-            net.minecraft.block.Block block = boss.worldObj.getBlock(bx, by, bz);
-            if(block.isLeaves(boss.worldObj, bx, by, bz)) continue;
-            AxisAlignedBB support = block.getCollisionBoundingBoxFromPool(boss.worldObj, bx, by, bz);
-            if(support != null && support.maxY <= y + boss.stepHeight + 0.001 && support.maxY >= y - 12
-                    && x >= support.minX && x <= support.maxX && z >= support.minZ && z <= support.maxZ) return support.maxY;
-            if(block.getMaterial().isLiquid()) return Double.NaN;
+        // Support belongs to the entire native footprint, not the centre column. Ask
+        // each block for its actual shapes (stairs have multiple collision boxes).
+        AxisAlignedBB column = feet(x, y, z).addCoord(0, boss.stepHeight, 0).addCoord(0, -12, 0);
+        if(!GardenerNests.loaded(boss.worldObj, column.expand(1, 0, 1))) { routeBlock = "unloaded terrain"; return Double.NaN; }
+        ArrayList<AxisAlignedBB> shapes = new ArrayList<AxisAlignedBB>(4);
+        for(int by = Math.min(254, MathHelper.floor_double(y + boss.stepHeight)); by >= Math.max(0, MathHelper.floor_double(y - 12) - 1); by--) {
+            double highest = Double.NEGATIVE_INFINITY;
+            for(int bx = MathHelper.floor_double(column.minX); bx <= MathHelper.floor_double(column.maxX); bx++)
+                for(int bz = MathHelper.floor_double(column.minZ); bz <= MathHelper.floor_double(column.maxZ); bz++) {
+                    net.minecraft.block.Block block = boss.worldObj.getBlock(bx, by, bz);
+                    if(block.isLeaves(boss.worldObj, bx, by, bz)) continue;
+                    if(block.getMaterial().isLiquid()) { routeBlock = "liquid terrain"; return Double.NaN; }
+                    shapes.clear(); block.addCollisionBoxesToList(boss.worldObj, bx, by, bz, column, shapes, boss);
+                    for(AxisAlignedBB support : shapes)
+                        if(support.maxY <= y + boss.stepHeight + EPSILON && support.maxY >= y - 12)
+                            highest = Math.max(highest, support.maxY);
+                }
+            if(Double.isFinite(highest)) return highest;
         }
+        routeBlock = "no ground support";
         return Double.NaN;
     }
+    boolean walkingUnavailable() { return moving && noRoute && failures >= 2; }
     private static double square(double x, double z) { return x * x + z * z; }
     private static long key(int x, double y, int z) { return ((long) (x & 0x3FFFFFF) << 38) | ((long) (z & 0x3FFFFFF) << 12) | (Math.round(y * 2) & 0xFFF); }
 }

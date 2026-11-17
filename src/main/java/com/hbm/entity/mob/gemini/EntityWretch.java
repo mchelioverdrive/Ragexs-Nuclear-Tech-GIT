@@ -169,21 +169,36 @@ public final class EntityWretch extends EntityCreature implements IMob, IBossDis
     private void stop() { navigation.halt(); }
     @Override public void moveEntity(double x, double y, double z) {
         if(navigation == null) { super.moveEntity(x, y, z); return; }
-        double requestedX = x, requestedZ = z, oldX = posX, oldZ = posZ;
-        boolean anatomyBlocked = false;
+        double requestedX = x, requestedY = y, requestedZ = z, oldX = posX, oldY = posY, oldZ = posZ;
+        String blocked = null;
         if(!worldObj.isRemote && (!operational || !isAwake())) x = z = 0;
-        AxisAlignedBB swept = boundingBox.addCoord(x, y, z).expand(1, 0, 1);
-        if(!GardenerNests.loaded(worldObj, swept)) { motionX = motionZ = 0; return; }
+        AxisAlignedBB swept = boundingBox.addCoord(x, Math.min(0, y), z).addCoord(0, Math.max(0, y) + stepHeight, 0).expand(1, 0, 1);
+        if(!GardenerNests.loaded(worldObj, swept)) {
+            motionX = motionZ = 0;
+            if(!worldObj.isRemote) navigation.collision("unloaded terrain", requestedX, requestedY, requestedZ, 0, 0, 0);
+            return;
+        }
         double clippedY = navigation.verticalMovement(y);
         if(clippedY != y) motionY = 0;
         y = clippedY;
-        if((x != 0 || z != 0) && !navigation.movementClear(posX + x, posY + y, posZ + z)) { x = z = 0; anatomyBlocked = true; }
-        // Native feet collision supplies real stepping, support and gravity. The raised torso and leg
-        // columns are separately swept above; empty space beneath the torso is not a solid collider.
-        boundingBox.setBounds(posX - width * 0.5, posY, posZ - width * 0.5, posX + width * 0.5, posY + 0.8, posZ + width * 0.5);
+        float normalStep = stepHeight;
+        // Let native feet try the step first in the read-only collision preview. Anatomy is
+        // checked along that resolved rise/advance/settle, never at an unstepped destination.
+        stepHeight = (float) Math.min(stepHeight, Math.max(0, navigation.verticalMovement(stepHeight)));
+        if(x != 0 || z != 0) {
+            blocked = navigation.movementBlock(x, y, z, stepHeight);
+            if(blocked != null) x = z = 0;
+        }
+        double feetY = boundingBox.minY;
+        boundingBox.setBounds(posX - width * 0.5, feetY, posZ - width * 0.5, posX + width * 0.5, feetY + WretchNavigation.FOOT_HEIGHT, posZ + width * 0.5);
         try { super.moveEntity(x, y, z); }
-        finally { boundingBox.setBounds(posX - width * 0.5, posY, posZ - width * 0.5, posX + width * 0.5, posY + height, posZ + width * 0.5); }
-        if(!worldObj.isRemote) navigation.collision(anatomyBlocked, requestedX, requestedZ, posX - oldX, posZ - oldZ);
+        finally {
+            stepHeight = normalStep;
+            // Keep the collision-resolved support plane, including native yOffset/ySize semantics.
+            feetY = boundingBox.minY;
+            boundingBox.setBounds(posX - width * 0.5, feetY, posZ - width * 0.5, posX + width * 0.5, feetY + height, posZ + width * 0.5);
+        }
+        if(!worldObj.isRemote) navigation.collision(blocked, requestedX, requestedY, requestedZ, posX - oldX, posY - oldY, posZ - oldZ);
     }
     @Override protected void updateAITasks() {
         if(!operational) { navigation.halt(); return; }

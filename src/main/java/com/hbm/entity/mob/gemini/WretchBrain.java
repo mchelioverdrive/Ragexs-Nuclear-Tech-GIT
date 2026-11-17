@@ -383,6 +383,7 @@ public final class WretchBrain {
     }
     private boolean breach(double x, double y, double z) {
         if(!destructiveIntent() || clock < noBreachUntil || boss.state() != EntityWretch.IDLE
+                || !boss.navigation.walkingUnavailable()
                 || !GeminiConfig.wretchTerrainDestruction || GeminiConfig.wretchBlocksPerStrike == 0
                 || !boss.worldObj.getGameRules().getGameRuleBooleanValue("mobGriefing")) return false;
         noBreachUntil = clock + 20;
