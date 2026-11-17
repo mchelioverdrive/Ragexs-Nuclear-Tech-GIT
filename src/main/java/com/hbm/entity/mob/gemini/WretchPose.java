@@ -68,6 +68,11 @@ public final class WretchPose {
         double recoil = boss.hurtTime > 0 ? Math.sin((boss.hurtTime - partial) * 0.55) * 0.15 : 0;
         set(body, Math.sin(age * 0.021) * 0.07 + recoil, 12.8 - (1 - awake) * 5.2 - death * 7.5 + breath * 0.06, -0.2);
         standingLean = lean; standingY = body.yCoord; standingX = body.xCoord;
+        double vault = boss.isVaulting() ? boss.vaultTime(partial) : 0;
+        double support = Math.sin(Math.PI * vault);
+        lean += support * 0.22;
+        body.yCoord -= support * 0.35;
+        body.zCoord += support * 0.45;
         float time = boss.stateTime(partial);
         double blend = ease(time / (boss.state() == EntityWretch.RECOVER ? 14D : 7D));
         double bend = bend(boss.previousState(), boss.previousStateTime()) * (1 - blend) + bend(boss.state(), time) * blend;
@@ -112,6 +117,12 @@ public final class WretchPose {
             double angle = Math.toRadians(facing(partial));
             set(limb[2], wx * Math.cos(angle) + wz * Math.sin(angle), oldGround[leg] + (ground[leg] - oldGround[leg]) * partial + 0.28
                     + oldLift[leg] + (lift[leg] - oldLift[leg]) * partial, -wx * Math.sin(angle) + wz * Math.cos(angle));
+            if(boss.isVaulting()) {
+                // Leading knee clears first; the trailing foot follows as the hips advance.
+                double phase = MathHelper.clamp_double((vault - (leg == 0 ? 0 : 0.25)) / 0.75, 0, 1);
+                double lift = Math.sin(Math.PI * phase);
+                set(limb[2], side * 1.15, 0.28 + lift * Math.min(3, boss.vaultHeight() * 0.65 + 0.5), 1.7 * lift);
+            }
             solve(limb, 5.6, 5.3, side * 0.18, 1);
         }
         for(int i = 0; i < 4; i++) for(int j = 0; j < 3; j++) toWorld(joints[i][j], world[i][j], partial);
@@ -136,6 +147,23 @@ public final class WretchPose {
                 -boss.aimX() * Math.sin(yaw) + boss.aimZ() * Math.cos(yaw)), -1.75, 1.75);
     }
     private static double bendAngle(double height) { return 0.82 * ease((17 - height) / 15D); }
+    /** Translation-only estimate of the existing grab shoulder/arm geometry at a candidate position.
+     * Includes a small approach term inside arm range, where a solid wall may still block the hand. */
+    double pursuitError(double x, double y, double z, double tx, double ty, double tz) {
+        double dx = tx - x, dz = tz - z, dy = ty - y;
+        double yaw = Math.toRadians(facing(1)), ax = dx * Math.cos(yaw) + dz * Math.sin(yaw), az = -dx * Math.sin(yaw) + dz * Math.cos(yaw);
+        double twist = MathHelper.clamp_double(Math.atan2(-ax, az), -1.75, 1.75), angle = standingLean + bendAngle(dy);
+        double best = Double.POSITIVE_INFINITY;
+        for(int arm = 0; arm < 2; arm++) {
+            double side = arm == 0 ? -1.45 : 1.7, h = arm == 0 ? 4.4 : 3.8;
+            double forward = (h + 3) * Math.sin(angle) + 0.2 * Math.cos(angle);
+            double sx = standingX + side * Math.cos(twist) - forward * Math.sin(twist);
+            double sy = standingY + (h + 3) * Math.cos(angle) - 3 * Math.cos(standingLean) - 0.2 * Math.sin(angle) - 0.45;
+            double sz = -0.2 + side * Math.sin(twist) + forward * Math.cos(twist) - 3 * Math.sin(standingLean);
+            best = Math.min(best, Math.max(0, Math.sqrt((ax - sx) * (ax - sx) + (dy - sy) * (dy - sy) + (az - sz) * (az - sz)) - 18.899));
+        }
+        return best + Math.sqrt(dx * dx + dy * dy + dz * dz) * 0.25;
+    }
     private double bend(int state, double time) {
         if(state == EntityWretch.GRAB || state == EntityWretch.BREACH) return ease(time / 24D);
         if(state == EntityWretch.HOLD || state == EntityWretch.THROW) return 1;
@@ -221,6 +249,13 @@ public final class WretchPose {
             }
         }
         if(state == EntityWretch.RECOVER) { y = 0.6; z = 1.5; }
+        if(state == EntityWretch.IDLE && boss.isVaulting()) {
+            double p = boss.vaultTime(cachedPartial), support = Math.sin(Math.PI * p);
+            // Both palms brace forward during ascent, then release as the trailing leg clears.
+            x += (side * 1.5 - x) * support;
+            y += (Math.max(1.0, boss.vaultHeight() * (1 - ease(p * 2))) - y) * support;
+            z += (3.4 - z) * support;
+        }
         set(out, x, y, z);
     }
     private double curl(int state, double time) {

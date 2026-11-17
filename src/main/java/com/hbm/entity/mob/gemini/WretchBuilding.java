@@ -31,6 +31,7 @@ final class WretchBuilding {
     private final boolean[] swept = new boolean[2];
     private final Map<Long, Denial> denied = new HashMap<Long, Denial>();
     private Vec3 breachPoint;
+    private AxisAlignedBB[] breachCorridor;
     private String lastBlock = "none", rejection = "none";
     private static final class Denial {
         Block block; int meta, until; String reason;
@@ -160,7 +161,10 @@ final class WretchBuilding {
         if(denied.size() >= 128) denied.clear();
         denied.put(key(x, y, z), denial);
     }
-    void beginBreach(Vec3 point) { breachPoint = point; }
+    void beginBreach(Vec3 point) {
+        breachPoint = point;
+        breachCorridor = boss.brain.escalating() ? boss.navigation.corridor(point.xCoord - boss.posX, point.zCoord - boss.posZ) : null;
+    }
     void finishBreach() {
         if(removed == 0 && breachPoint != null) {
             int x = MathHelper.floor_double(breachPoint.xCoord), y = MathHelper.floor_double(breachPoint.yCoord), z = MathHelper.floor_double(breachPoint.zCoord);
@@ -168,6 +172,7 @@ final class WretchBuilding {
             if(denial == null || denial.until <= boss.ticksExisted) rejected(x, y, z, "strike made no removable limb contact");
         }
         breachPoint = null;
+        breachCorridor = null;
     }
     private boolean intersects(int x, int y, int z, AxisAlignedBB[] boxes) {
         if(!boss.worldObj.blockExists(x, y, z)) return false;
@@ -229,7 +234,10 @@ final class WretchBuilding {
         return WretchBrain.lineLoaded(boss.worldObj, from, to) ? boss.worldObj.func_147447_a(
                 Vec3.createVectorHelper(from.xCoord, from.yCoord, from.zCoord), to, false, true, false) : null;
     }
-    void resetStrike() { examined.clear(); removed = 0; swept[0] = swept[1] = false; contactArm = -1; }
+    void resetStrike() {
+        examined.clear(); removed = 0; swept[0] = swept[1] = false; contactArm = -1;
+        if(boss.state() != EntityWretch.BREACH) { breachPoint = null; breachCorridor = null; }
+    }
     void strike(int arm) {
         if(removed >= GeminiConfig.wretchBlocksPerStrike || !boss.brain.destructiveIntent()) return;
         tickBudget();
@@ -251,6 +259,9 @@ final class WretchBuilding {
     }
     boolean contacts(int x, int y, int z) {
         if(contactArm < 0) return false;
+        if(breachCorridor != null && breachPoint != null
+                && !(x == MathHelper.floor_double(breachPoint.xCoord) && y == MathHelper.floor_double(breachPoint.yCoord) && z == MathHelper.floor_double(breachPoint.zCoord))
+                && !intersects(x, y, z, breachCorridor)) return false;
         Vec3 hand = WretchPose.point(boss, contactArm, 2, 1), tip = boss.pose(1).fingerTip(contactArm);
         AxisAlignedBB block = AxisAlignedBB.getBoundingBox(x, y, z, x + 1, y + 1, z + 1);
         return GardenerPose.touches(hand, tip, block, 0.35) || GardenerPose.touches(hand, hand, block, 0.65)

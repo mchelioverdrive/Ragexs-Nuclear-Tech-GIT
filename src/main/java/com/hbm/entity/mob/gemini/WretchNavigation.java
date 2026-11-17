@@ -25,6 +25,13 @@ final class WretchNavigation {
     private final long[] avoided = new long[16];
     private final int[] avoidUntil = new int[16];
     private int avoidCursor;
+    private int routeVersion, vaultTick, vaultDuration, vaultForward, vaultEnd, nextVault, nextAlternate;
+    private double vaultX, vaultZ, vaultLandingX, vaultLandingY, vaultLandingZ, vaultRise;
+    private boolean vaulting;
+    private final long[] failedVaults = new long[12];
+    private final int[] failedVaultUntil = new int[12];
+    private int failedVaultCursor;
+    private long vaultKey;
     private static final class Node implements Comparable<Node> {
         final int x, z; final double y;
         double g, h; Node parent; boolean closed;
@@ -34,7 +41,7 @@ final class WretchNavigation {
     WretchNavigation(EntityWretch boss) { this.boss = boss; }
     void goal(double x, double y, double z, double speed) {
         if(!Double.isFinite(x) || !Double.isFinite(y) || !Double.isFinite(z) || !boss.inTerritory(x, z, boss.territoryRadius())) { halt(); return; }
-        if(!moving || square(goalX - x, goalZ - z) > 9) {
+        if(!moving || square(goalX - x, goalZ - z) > 9 || Math.abs(goalY - y) > 1.25) {
             noRoute = false;
             path.clear(); cursor = 0; nextPlan = Math.min(nextPlan, boss.ticksExisted + 5);
             if(!moving) {
@@ -50,8 +57,19 @@ final class WretchNavigation {
         moving = false; path.clear(); cursor = 0; vx = vz = 0;
         boss.motionX = boss.motionZ = 0; boss.moveForward = boss.moveStrafing = 0;
     }
-    boolean arrived(double distance) { return moving && square(goalX - boss.posX, goalZ - boss.posZ) <= distance * distance; }
+    boolean arrived(double distance) { return moving && square(goalX - boss.posX, goalZ - boss.posZ) <= distance * distance && Math.abs(goalY - boss.posY) <= 1.25; }
     boolean isMoving() { return moving; }
+    int routeVersion() { return routeVersion; }
+    double remainingPath() {
+        if(cursor >= path.size() || noRoute) return Double.POSITIVE_INFINITY;
+        double x = boss.posX, y = boss.posY, z = boss.posZ, remaining = 0;
+        for(int i = cursor; i < path.size(); i++) {
+            Node n = path.get(i);
+            remaining += Math.sqrt(square(n.x + 0.5 - x, n.z + 0.5 - z) + (n.y - y) * (n.y - y));
+            x = n.x + 0.5; y = n.y; z = n.z + 0.5;
+        }
+        return remaining;
+    }
     void obstructionRemoved() {
         noRoute = false;
         path.clear(); cursor = 0; nextPlan = boss.ticksExisted + 1;
@@ -92,6 +110,7 @@ final class WretchNavigation {
     double obstacleZ() { return boss.posZ + Math.cos(Math.toRadians(boss.rotationYaw)) * 2.3; }
     void tick() {
         boss.moveForward = boss.moveStrafing = 0;
+        if(vaulting) { tickVault(); return; }
         if(!moving || arrived(0.8)) { halt(); return; }
         // Sample resumed movement after anchored attacks too. Halts/goals must not erase
         // the displacement history: breach/recovery transitions used to restart it indefinitely.
@@ -164,6 +183,7 @@ final class WretchNavigation {
         return false;
     }
     private void plan() {
+        routeVersion++;
         nextPlan = boss.ticksExisted + 20 + Math.min(20, failures * 4);
         path.clear(); cursor = 0;
         int sx = MathHelper.floor_double(boss.posX), sz = MathHelper.floor_double(boss.posZ);
@@ -187,13 +207,13 @@ final class WretchNavigation {
             if(path.isEmpty() || px != previousX || pz != previousZ) path.add(new Node(MathHelper.floor_double(px), py, MathHelper.floor_double(pz)));
             directY = py;
         }
-        if(direct) { noRoute = false; blockedBy = "none"; return; }
+        if(direct && (range > 14 || Math.abs(directY - goalY) <= 1.25)) { noRoute = false; blockedBy = "none"; return; }
         String directBlock = routeBlock;
         path.clear();
         PriorityQueue<Node> open = new PriorityQueue<Node>();
         Map<Long, Node> nodes = new HashMap<Long, Node>();
         Node start = new Node(sx, boss.boundingBox.minY, sz), best = start;
-        start.h = Math.sqrt(square(tx - sx - 0.5, tz - sz - 0.5));
+        start.h = routeError(tx - sx - 0.5, goalY - start.y, tz - sz - 0.5);
         open.add(start); nodes.put(key(sx, boss.posY, sz), start);
         int expanded = 0;
         while(!open.isEmpty() && expanded++ < 112 && nodes.size() < 256) {
@@ -218,7 +238,7 @@ final class WretchNavigation {
                 double cost = current.g + Math.sqrt(ox * ox + oz * oz) + Math.abs(current.y - node.y) * 2;
                 if(cost >= node.g) continue;
                 open.remove(node); node.g = cost; node.parent = current;
-                node.h = Math.sqrt(square(tx - x - 0.5, tz - z - 0.5)); open.add(node);
+                node.h = routeError(tx - x - 0.5, goalY - y, tz - z - 0.5); open.add(node);
             }
         }
         if(best == start || best.h > start.h - 0.5) {
@@ -229,6 +249,135 @@ final class WretchNavigation {
         for(Node n = best; n.parent != null; n = n.parent) path.add(n);
         Collections.reverse(path);
         noRoute = false; blockedBy = "none";
+    }
+    private static double routeError(double x, double y, double z) {
+        return Math.sqrt(square(x, z) + y * y);
+    }
+    /** A short flank uses the existing surface search, including native steps and exclusions. */
+    boolean alternate(double x, double y, double z) {
+        if(boss.ticksExisted < nextAlternate) return false;
+        nextAlternate = boss.ticksExisted + 40;
+        failCurrent();
+        double angle = Math.atan2(z - boss.posZ, x - boss.posX);
+        int first = (boss.getEntityId() + failures) % 2 == 0 ? 1 : -1;
+        for(int i = 0; i < 2; i++) {
+            double a = angle + first * (i == 0 ? 1 : -1) * Math.PI / 2;
+            double px = boss.posX + Math.cos(a) * 6, pz = boss.posZ + Math.sin(a) * 6;
+            double py = surface(px, boss.posY, pz);
+            if(!Double.isFinite(py) || !canStand(px, py, pz) || !boss.inTerritory(px, pz, boss.territoryRadius() - 2)) continue;
+            goal(px, py, pz, com.hbm.config.GeminiConfig.wretchHuntSpeed);
+            plan();
+            if(!noRoute && !path.isEmpty() && remainingPath() >= 2) return true;
+            break; // At most one expensive surface search per alternate-route decision.
+        }
+        goal(x, y, z, com.hbm.config.GeminiConfig.wretchHuntSpeed);
+        return false;
+    }
+    boolean vaulting() { return vaulting; }
+    void cancelVault() {
+        vaulting = false; boss.syncVault(0, 0, 0); boss.motionX = boss.motionZ = 0;
+        // Never cancel gravity or restore an airborne position.
+    }
+    /** Bounded ballistic climb/vault. One impulse; vanilla gravity owns every later Y step. */
+    boolean tryVault(double tx, double ty, double tz, double maxRise) {
+        if(vaulting || !boss.onGround || boss.ticksExisted < nextVault || boss.state() != EntityWretch.IDLE) return false;
+        nextVault = boss.ticksExisted + 10;
+        double dx = tx - boss.posX, dz = tz - boss.posZ, length = Math.sqrt(square(dx, dz));
+        if(length < 0.5) { dx = -Math.sin(Math.toRadians(boss.rotationYaw)); dz = Math.cos(Math.toRadians(boss.rotationYaw)); length = 1; }
+        dx /= length; dz /= length;
+        float facing = (float) Math.toDegrees(Math.atan2(-dx, dz));
+        // Align through ordinary navigation first; collision proxies and pose share this yaw.
+        float turn = MathHelper.wrapAngleTo180_float(facing - boss.rotationYaw);
+        boss.rotationYaw += MathHelper.clamp_float(turn, -16, 16);
+        if(Math.abs(MathHelper.wrapAngleTo180_float(facing - boss.rotationYaw)) > 30) return false;
+        for(int candidate = 0; candidate < 3; candidate++) {
+            double distance = 2.5 + candidate * 2, lx = boss.posX + dx * distance, lz = boss.posZ + dz * distance;
+            if(!boss.inTerritory(lx, lz, boss.territoryRadius() - 2)) continue;
+            double ly = surface(lx, boss.posY + maxRise - boss.stepHeight, lz);
+            if(!Double.isFinite(ly) || ly < boss.posY - MAX_DROP || ly > boss.posY + maxRise + EPSILON || !landingSpace(lx, ly, lz)) continue;
+            long pair = key(MathHelper.floor_double(boss.posX), boss.posY, MathHelper.floor_double(boss.posZ))
+                    ^ Long.rotateLeft(key(MathHelper.floor_double(lx), ly, MathHelper.floor_double(lz)), 23);
+            boolean avoided = false;
+            for(int i = 0; i < failedVaults.length; i++) if(failedVaults[i] == pair && failedVaultUntil[i] > boss.ticksExisted) avoided = true;
+            if(avoided) continue;
+            AxisAlignedBB sweep = feet(boss.posX, boss.posY + EPSILON, boss.posZ).addCoord(dx * distance, maxRise, dz * distance);
+            if(!GardenerNests.loaded(boss.worldObj, sweep.expand(1, 21, 1))) continue;
+            double crest = Math.max(boss.posY, ly);
+            for(Object entry : boss.worldObj.getCollidingBoundingBoxes(boss, sweep)) crest = Math.max(crest, ((AxisAlignedBB) entry).maxY);
+            double rise = crest - boss.posY;
+            if(rise <= boss.stepHeight || rise > maxRise + EPSILON) continue;
+            boolean found = false;
+            for(double launch = 0.48; launch <= 1.081; launch += 0.08) {
+                double sy = boss.posY, vy = launch; int start = -1, end = -1, land = -1;
+                for(int t = 0; t < 48; t++) {
+                    sy += vy; vy = (vy - 0.08) * 0.98;
+                    if(start < 0 && sy >= crest + 0.08) start = t;
+                    if(start >= 0 && end < 0 && vy < 0 && sy < crest + 0.12) end = t - 1;
+                    if(vy < 0 && sy <= ly) { land = t + 1; break; }
+                }
+                if(start < 0 || end <= start + 1 || land < 0 || distance / (end - start) > 0.48) continue;
+                double sx = boss.posX, sz = boss.posZ; sy = boss.posY; vy = launch;
+                double vx = dx * distance / (end - start), vz = dz * distance / (end - start);
+                boolean clear = true;
+                for(int t = 0; t < land; t++) {
+                    double mx = t >= start && t < end ? vx : 0, mz = t >= start && t < end ? vz : 0;
+                    if(!vaultSegment(sx, sy, sz, mx, vy, mz, t == land - 1)) { clear = false; break; }
+                    sx += mx; sz += mz; sy += vy; vy = (vy - 0.08) * 0.98;
+                }
+                if(!clear) continue;
+                halt(); vaulting = true; vaultTick = 0; vaultDuration = land; vaultForward = start; vaultEnd = end;
+                vaultX = vx; vaultZ = vz; vaultLandingX = lx; vaultLandingY = ly; vaultLandingZ = lz;
+                vaultRise = rise; vaultKey = pair;
+                boss.clearPresentation(); boss.motionY = launch; boss.velocityChanged = true;
+                boss.syncVault(1, vaultDuration, vaultRise); found = true; break;
+            }
+            if(found) return true;
+            failedVaults[failedVaultCursor] = pair; failedVaultUntil[failedVaultCursor] = boss.ticksExisted + 200;
+            failedVaultCursor = (failedVaultCursor + 1) % failedVaults.length;
+        }
+        return false;
+    }
+    private boolean landingSpace(double x, double y, double z) {
+        if(!canStand(x, y, z)) return false;
+        double angle = Math.toRadians(boss.rotationYaw);
+        for(int leg = 0; leg < 2; leg++) {
+            double side = leg == 0 ? -1.15 : 1.15, lx = x + side * Math.cos(angle), lz = z + side * Math.sin(angle);
+            AxisAlignedBB sole = AxisAlignedBB.getBoundingBox(lx - 0.28, y - 0.12, lz - 0.28, lx + 0.28, y + EPSILON, lz + 0.28);
+            if(boss.worldObj.getCollidingBoundingBoxes(boss, sole).isEmpty()) return false;
+        }
+        return true;
+    }
+    private boolean vaultSegment(double x, double y, double z, double dx, double dy, double dz, boolean landing) {
+        AxisAlignedBB swept = feet(x, y, z).addCoord(dx, dy, dz).expand(1, 21, 1);
+        if(!GardenerNests.loaded(boss.worldObj, swept)) return false;
+        Motion move = nativeMovement(x, y, z, dx, dy, dz, 0, false);
+        return Math.abs(move.x - dx) < EPSILON && Math.abs(move.z - dz) < EPSILON
+                && (Math.abs(move.y - dy) < EPSILON || landing && dy < 0)
+                && anatomyMovement(x, y, z, move) == null && !boss.worldObj.isAnyLiquid(feet(x + dx, y + move.y, z + dz));
+    }
+    private void tickVault() {
+        if(vaultTick > 0 && boss.onGround || vaultTick > vaultDuration + 10) {
+            boolean success = square(boss.posX - vaultLandingX, boss.posZ - vaultLandingZ) < 1
+                    && Math.abs(boss.posY - vaultLandingY) < 0.6;
+            if(!success) {
+                failedVaults[failedVaultCursor] = vaultKey; failedVaultUntil[failedVaultCursor] = boss.ticksExisted + 240;
+                failedVaultCursor = (failedVaultCursor + 1) % failedVaults.length;
+            }
+            cancelVault(); nextVault = boss.ticksExisted + 40; obstructionRemoved();
+            if(success) boss.brain.traversalProgress();
+            return;
+        }
+        double dx = vaultTick >= vaultForward && vaultTick < vaultEnd ? vaultX : 0;
+        double dz = vaultTick >= vaultForward && vaultTick < vaultEnd ? vaultZ : 0;
+        // Revalidate against changed blocks/chunks. A rejected flight falls naturally;
+        // its takeoff/landing pair is not immediately retried.
+        if(!vaultSegment(boss.posX, boss.posY, boss.posZ, dx, boss.motionY, dz, boss.motionY < 0)) {
+            failedVaults[failedVaultCursor] = vaultKey; failedVaultUntil[failedVaultCursor] = boss.ticksExisted + 240;
+            failedVaultCursor = (failedVaultCursor + 1) % failedVaults.length;
+            cancelVault(); nextVault = boss.ticksExisted + 40; obstructionRemoved(); return;
+        }
+        boss.motionX = dx; boss.motionZ = dz;
+        boss.syncVault(Math.min(++vaultTick, vaultDuration), vaultDuration, vaultRise);
     }
     boolean canStand(double x, double y, double z) {
         return y >= 1 && y + WretchPose.HEIGHT < 256 && anatomyClear(x, y, z)

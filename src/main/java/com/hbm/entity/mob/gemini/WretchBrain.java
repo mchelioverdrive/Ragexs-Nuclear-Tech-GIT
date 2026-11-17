@@ -32,18 +32,22 @@ public final class WretchBrain {
     private float attention;
     private long lastCue;
     private UUID focus;
+    private UUID pursuitFocus;
     private boolean running, restored, goalSet, observed;
     private static final class Memory {
         UUID id;
         double x, y, z, vx, vz, lookX, lookZ;
-        int sight = -100000, heard = -100000;
+        int sight = -100000, heard = -100000, entityId = -1;
+        int failedPursuit, sampleTicks, routeVersion, solution, nextSolution;
+        double progressX, progressY, progressZ, remaining;
+        boolean sampled, escalating;
     }
     WretchBrain(EntityWretch boss) { this.boss = boss; building = new WretchBuilding(boss); }
     int state() { return state; }
     boolean operational() { return running; }
     void pause() {
         if(!running) return;
-        running = false; boss.navigation.halt(); boss.cancelCombat(); boss.setAttackTarget(null); boss.syncBehavior(DORMANT, 0);
+        running = false; resetPursuit(); boss.navigation.cancelVault(); boss.navigation.halt(); boss.cancelCombat(); boss.setAttackTarget(null); boss.syncBehavior(DORMANT, 0);
     }
     void tick() {
         if(!running) {
@@ -61,6 +65,7 @@ public final class WretchBrain {
         int interval = state == DORMANT ? 20 : 10;
         if(clock % interval == 0) { disturbances(); perceive(); prune(); }
         Memory target = selected();
+        if(pursuit(target)) return;
         if(target != null) boss.getLookHelper().setLookPosition(target.x, target.y + 1.3, target.z, 12, 8);
         else if(cueRemaining > 0) boss.getLookHelper().setLookPosition(cueX, cueY + 1, cueZ, 8, 6);
         if(state == DORMANT) {
@@ -109,7 +114,7 @@ public final class WretchBrain {
             if(!goalSet || boss.navigation.arrived(2) || boss.navigation.failures >= 3 || stateTicks > 180) {
                 Vec3 point = tactical(target, 19, 31, false);
                 if(point != null) move(point.xCoord, point.yCoord, point.zCoord, GeminiConfig.wretchStalkSpeed);
-                else transition(WATCHING);
+                else move(target.x, target.y, target.z, GeminiConfig.wretchStalkSpeed);
                 stateTicks = 0;
             }
             if(!observed && aggression > 35 && clock >= nextDecision && boss.getRNG().nextInt(5) == 0) { nextDecision = clock + 180; transition(AMBUSHING); }
@@ -176,7 +181,10 @@ public final class WretchBrain {
                 Vec3 point = building.approach(clock);
                 if(point == null) point = nearby(x, target == null ? cueY : target.y, z, stateTicks < 80 ? 3 : 10);
                 if(point != null) move(point.xCoord, point.yCoord, point.zCoord, 0.085);
-                else if(!breach(x, target == null ? cueY : target.y, z)) transition(RETURNING);
+                else if(!breach(x, target == null ? cueY : target.y, z)) {
+                    if(target != null) pursue(target);
+                    else transition(RETURNING);
+                }
             }
             break;
         case RETURNING:
@@ -194,6 +202,89 @@ public final class WretchBrain {
             break;
         default: transition(RETURNING);
         }
+    }
+    /** Target-owned clock: encounter transitions and failed route replacements cannot restart it. */
+    private boolean pursuit(Memory m) {
+        if(m == null || state == DORMANT || state == AWAKENING || state == RETURNING || state == WANDERING
+                || clock - Math.max(m.sight, m.heard) > GeminiConfig.wretchSearchSeconds * 20) {
+            resetPursuit(); return false;
+        }
+        if(!m.id.equals(pursuitFocus)) { resetPursuit(); pursuitFocus = m.id; }
+        net.minecraft.entity.Entity remembered = boss.worldObj.getEntityByID(m.entityId);
+        if(remembered instanceof EntityLivingBase && !boss.validPrey((EntityLivingBase) remembered)) { resetPursuit(); return false; }
+        if(boss.navigation.vaulting()) return true;
+        EntityLivingBase live = boss.getAttackTarget();
+        if(live != null && m.id.equals(live.getUniqueID()) && boss.combatPosition()) {
+            clearPursuit(m);
+            if((state == HUNTING || state == CHARGING) && boss.state() == EntityWretch.IDLE && boss.tryCombat()) return true;
+            return false;
+        }
+        // Watching, planted ambushes and attack/recovery frames deliberately do not walk.
+        boolean active = boss.state() == EntityWretch.IDLE && (m.escalating || state == STALKING || state == APPROACHING
+                || state == HUNTING || state == CHARGING || state == SEARCHING || state == AMBUSHING && boss.navigation.isMoving());
+        if(!active) { samplePursuit(m); return false; }
+        if(!m.sampled) samplePursuit(m);
+        if(!boss.navigation.vaulting()) {
+            m.failedPursuit++;
+            if(++m.sampleTicks >= 20) {
+                double dx = boss.posX - m.progressX, dy = boss.posY - m.progressY, dz = boss.posZ - m.progressZ;
+                // Compare both positions against the SAME current prey position, so prey motion
+                // cannot masquerade as our progress. A valid detour may instead advance its path.
+                double gain = boss.pose(1).pursuitError(m.progressX, m.progressY, m.progressZ, m.x, m.y + 0.9, m.z)
+                        - boss.pose(1).pursuitError(boss.posX, boss.posY, boss.posZ, m.x, m.y + 0.9, m.z);
+                boolean routeGain = m.routeVersion == boss.navigation.routeVersion()
+                        && m.remaining - boss.navigation.remainingPath() >= 0.5;
+                if(boss.onGround && dx * dx + dy * dy + dz * dz >= 0.25 && (gain >= 0.12 || routeGain)) clearPursuit(m);
+                samplePursuit(m);
+            }
+        }
+        if(!m.escalating && m.failedPursuit >= 90) {
+            m.escalating = true; m.solution = 0; m.nextSolution = clock;
+            aggression = Math.max(60, aggression); transition(HUNTING);
+        }
+        if(!m.escalating) return false;
+        if(boss.navigation.vaulting()) return true;
+        if(boss.state() != EntityWretch.IDLE) return false;
+        if(state != HUNTING) transition(HUNTING, true);
+        if(boss.tryCombat()) return true;
+        if(clock < m.nextSolution) return true;
+        // Each solution receives a bounded opportunity. Failed takeoffs/routes retain
+        // their own exclusions, even when this local sequence retries after its cooldown.
+        switch(m.solution++) {
+        case 0:
+            pursue(m); m.nextSolution = clock + 12; break;
+        case 1:
+            if(boss.navigation.tryVault(m.x, m.y, m.z, 3)) { m.nextSolution = clock + 10; break; }
+            m.nextSolution = clock + 10; break;
+        case 2:
+            if(boss.navigation.tryVault(m.x, m.y, m.z, 5)) { m.nextSolution = clock + 10; break; }
+            m.nextSolution = clock + 1; break;
+        case 3:
+            m.nextSolution = clock + (boss.navigation.alternate(m.x, m.y, m.z) ? 60 : 1); break;
+        default:
+            // Breaches keep target memory and escalation through the existing recovery.
+            if(breach(m.x, m.y, m.z)) m.nextSolution = clock + 20;
+            else { m.solution = 0; m.nextSolution = clock + 60; pursue(m); }
+            break;
+        }
+        return true;
+    }
+    private void samplePursuit(Memory m) {
+        m.sampled = true; m.sampleTicks = 0;
+        m.progressX = boss.posX; m.progressY = boss.posY; m.progressZ = boss.posZ;
+        m.routeVersion = boss.navigation.routeVersion(); m.remaining = boss.navigation.remainingPath();
+    }
+    private void clearPursuit(Memory m) {
+        m.failedPursuit = 0; m.escalating = false; m.solution = 0; m.nextSolution = 0; m.sampled = false;
+    }
+    private void resetPursuit() {
+        if(pursuitFocus != null) for(Memory m : memories) if(m.id.equals(pursuitFocus)) clearPursuit(m);
+        pursuitFocus = null;
+    }
+    boolean escalating() { Memory m = selected(); return m != null && m.escalating; }
+    void traversalProgress() {
+        Memory m = selected();
+        if(m != null) { clearPursuit(m); samplePursuit(m); }
     }
     private void combat(Memory target) {
         int attack = boss.state();
@@ -256,6 +347,7 @@ public final class WretchBrain {
             if(!boss.validPlayer(p) || !boss.sight(p, GeminiConfig.wretchDetectionRange)) continue;
             visibleCount++;
             Memory m = memory(p.getUniqueID());
+            m.entityId = p.getEntityId();
             int elapsed = Math.max(1, clock - m.sight);
             m.vx = elapsed < 100 ? MathHelper.clamp_double((p.posX - m.x) / elapsed, -0.4, 0.4) : 0;
             m.vz = elapsed < 100 ? MathHelper.clamp_double((p.posZ - m.z) / elapsed, -0.4, 0.4) : 0;
@@ -284,6 +376,7 @@ public final class WretchBrain {
             }
             if(best != null) {
                 preyId = best.getEntityId(); bestMemory = memory(best.getUniqueID());
+                bestMemory.entityId = best.getEntityId();
                 bestMemory.x = best.posX; bestMemory.y = best.boundingBox.minY; bestMemory.z = best.posZ; bestMemory.sight = clock;
                 bestMemory.lookX = best.getLookVec().xCoord; bestMemory.lookZ = best.getLookVec().zCoord;
             } else preyId = -1;
@@ -383,7 +476,7 @@ public final class WretchBrain {
     }
     private boolean breach(double x, double y, double z) {
         if(!destructiveIntent() || clock < noBreachUntil || boss.state() != EntityWretch.IDLE
-                || !boss.navigation.walkingUnavailable()
+                || (selected() != null ? !escalating() : !boss.navigation.walkingUnavailable())
                 || !GeminiConfig.wretchTerrainDestruction || GeminiConfig.wretchBlocksPerStrike == 0
                 || !boss.worldObj.getGameRules().getGameRuleBooleanValue("mobGriefing")) return false;
         noBreachUntil = clock + 20;
@@ -438,7 +531,7 @@ public final class WretchBrain {
         tag.setTag("Targets", list); building.write(tag, clock); root.setTag("WretchBrain", tag);
     }
     void read(NBTTagCompound root) {
-        clock = 0; memories.clear(); focus = null; running = false; restored = true;
+        clock = 0; memories.clear(); focus = null; pursuitFocus = null; running = false; restored = true;
         if(!root.hasKey("WretchBrain")) { state = DORMANT; return; }
         NBTTagCompound tag = root.getCompoundTag("WretchBrain");
         state = MathHelper.clamp_int(tag.getInteger("State"), DORMANT, RETURNING);

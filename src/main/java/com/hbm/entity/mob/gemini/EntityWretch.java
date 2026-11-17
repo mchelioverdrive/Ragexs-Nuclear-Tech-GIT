@@ -61,6 +61,7 @@ public final class EntityWretch extends EntityCreature implements IMob, IBossDis
     }
     @Override protected void entityInit() {
         super.entityInit();
+        dataWatcher.addObject(16, 0); // EntityCreature leaves this slot free; packed traversal timeline.
         dataWatcher.addObject(17, 0); dataWatcher.addObject(18, 0); dataWatcher.addObject(19, (byte) WretchBrain.DORMANT);
         dataWatcher.addObject(20, (byte) IDLE); dataWatcher.addObject(21, 0);
         dataWatcher.addObject(22, (byte) 0); dataWatcher.addObject(23, -1);
@@ -160,6 +161,17 @@ public final class EntityWretch extends EntityCreature implements IMob, IBossDis
     public float aimY() { return dataWatcher.getWatchableObjectFloat(25); }
     public float aimZ() { return dataWatcher.getWatchableObjectFloat(26); }
     public int attackArm() { return dataWatcher.getWatchableObjectByte(27); }
+    void syncVault(int elapsed, int duration, double rise) {
+        dataWatcher.updateObject(16, elapsed == 0 ? 0 : Math.min(63, elapsed) | Math.min(63, duration) << 6
+                | Math.min(255, (int) Math.round(rise * 16)) << 12);
+        skeleton.invalidate();
+    }
+    public double vaultTime(float partial) {
+        int packed = dataWatcher.getWatchableObjectInt(16), elapsed = packed & 63;
+        return elapsed == 0 ? 0 : MathHelper.clamp_double((elapsed - 1 + partial) / Math.max(1D, (packed >> 6 & 63) - 1D), 0, 1);
+    }
+    public boolean isVaulting() { return (dataWatcher.getWatchableObjectInt(16) & 63) != 0; }
+    public double vaultHeight() { return (dataWatcher.getWatchableObjectInt(16) >> 12 & 255) / 16D; }
     public int phase() { return dataWatcher.getWatchableObjectByte(28) & 3; }
     private boolean active() {
         return isEntityAlive() && (GeminiSpawning.manualAdmission(this)
@@ -280,7 +292,7 @@ public final class EntityWretch extends EntityCreature implements IMob, IBossDis
         return clearRay(shoulder, elbow, false) && clearRay(elbow, hand, false) && clearRay(hand, contact, false);
     }
     boolean tryCombat() {
-        if(state() != IDLE || cooldown != 0 || awakeAmount(0) < 1) return false;
+        if(state() != IDLE || navigation.vaulting() || cooldown != 0 || awakeAmount(0) < 1) return false;
         EntityLivingBase target = getAttackTarget();
         Vec3 point = target != null && validPrey(target) && sight(target, GeminiConfig.wretchDetectionRange)
                 ? preyPoint(target) : brain.attackPoint();
