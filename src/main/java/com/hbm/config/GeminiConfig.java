@@ -192,13 +192,13 @@ public final class GeminiConfig {
 		values.gardenerMaxLoaded = config.getInt("maxLoaded", gardener, 2, 0, 16,
 				"Loaded natural Gardener admission cap. Completed nests wait at the cap without consuming retries; manual spawn eggs bypass the cap and saved bosses are retained.");
 		values.gardenerNestChance = config.getInt("nestChance", gardener, 8, 1, 10000,
-				"Legacy pacing input when nestIntervalSeconds is absent (8 maps to 120 seconds). Loaded-area scheduling replaces the old discovery roll; no chunk loading or offline catch-up.");
+				"Legacy pacing input when nestIntervalSeconds is absent (8 maps to 120 seconds). Loaded-area scheduling replaces the old discovery roll; only a bounded minimum-footprint fallback may request chunks. No offline catch-up.");
 		values.gardenerNestLimit = config.getInt("nestLimit", gardener, 32, 0, 64,
 				"World lifetime nest limit, including abandoned partial nests and defeated bosses. Zero disables new nests; saved jobs can finish. Nests stay at least 64 blocks apart.");
 		values.gardenerNestMinDistance = config.getInt("nestMinDistance", gardener, 64, 48, 512,
-				"Minimum nest-center distance from an active survival area. A nearby established home is preferred; living survival/adventure players provide a fallback.");
+				"Preferred minimum nest-center distance from an active area. Living Creative/Survival/Adventure players anchor generation; a nearby established home is preferred. If no footprint fits, closer loaded terrain is used.");
 		values.gardenerNestMaxDistance = config.getInt("nestMaxDistance", gardener, 160, 48, 512,
-				"Maximum nest-center distance from a survival anchor. Raised to the minimum if smaller. Only loaded terrain is searched.");
+				"Maximum nest-center distance from a living player/home anchor. Raised to the minimum if smaller. Prefer loaded terrain; if none fits, request one nearby minimum footprint (at most 16 chunks).");
 		values.gardenerNestMaxDistance = Math.max(values.gardenerNestMinDistance, values.gardenerNestMaxDistance);
 		values.gardenerNestsPerArea = config.getInt("nestsPerArea", gardener, 3, 0, 8,
 				"Lifetime nests per survival area within nestMaxDistance plus 32 blocks. Existing homes remain fixed; active players away from home can seed other areas.");
@@ -207,14 +207,14 @@ public final class GeminiConfig {
                 "Active seconds between successful automatic nests. First eligible attempt within 20 seconds; failures retry after 60 seconds. Saves retain countdowns; phase changes shorten them to 20 seconds; reload clamps to the new interval/retry delay.");
         values.wretchCampIntervalSeconds = config.getInt("campIntervalSeconds", wretch,
                 Math.max(60, Math.min(86400, values.wretchCampChance * 300 / 256)), 60, 86400,
-                "Active seconds between successful automatic camps in loaded terrain near survival players in phase 4. First attempt within 20 seconds; failed searches retry after 60 seconds. No biome or new-chunk requirement.");
+                "Active seconds between successful automatic camps near living players of any game mode in phase 4. First attempt within 20 seconds; failed searches retry after 60 seconds. No biome or new-chunk requirement.");
         values.wretchCampLimit = config.getInt("campLimit", wretch, 256, 0, 256,
                 "Lifetime registered camp limit per dimension. Zero pauses new automatic camps; existing camps/residents are retained.");
         values.wretchCampMinDistance = config.getInt("campMinDistance", wretch, 80, 64, 512,
-                "Minimum camp-center distance from an active survival/adventure player, in blocks. Complete settlement and neighboring chunks must already be loaded.");
+                "Preferred minimum camp-center distance from a living Creative/Survival/Adventure player, in blocks. If no loaded footprint fits, closer loaded terrain is used.");
         values.wretchCampMaxDistance = Math.max(values.wretchCampMinDistance,
                 config.getInt("campMaxDistance", wretch, 160, 64, 512,
-                        "Maximum camp-center distance from an active survival/adventure player; raised to the minimum if smaller. No chunks are requested."));
+                        "Maximum camp-center distance from a living player; raised to the minimum if smaller. Prefer loaded terrain; if none fits, request one nearby 80-block footprint (at most 49 chunks)."));
         values.wretchCampSpacing = config.getInt("campSpacing", wretch, 256, 208, 1024,
                 "Minimum center spacing between camps in blocks, including legacy queued settlements. The minimum prevents overlap of the largest layouts.");
 		values.gardenerSupportLimit = config.getInt("supportLimit", gardener, 4, 0, 16,

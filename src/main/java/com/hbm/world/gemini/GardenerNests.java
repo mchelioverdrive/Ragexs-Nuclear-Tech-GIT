@@ -75,31 +75,33 @@ public final class GardenerNests extends WorldSavedData {
         return new GeminiInvasionManager.StructureInfo("underground_gardener", nest.x, nest.y, nest.z, world.provider.dimensionId, status);
     }
     private static String generationGate(World world) {
-        if(!(world instanceof WorldServer) || world.isRemote || world.provider.dimensionId != 0) return "Overworld server only";
-        if(!active(world)) return "requires enabled invasion/Gardener, phase 3+ and non-Peaceful difficulty";
+        String global = GeminiInvasionManager.structureGate(world, 3);
+        if(global != null) return global;
+        if(!GeminiConfig.gardenerEnabled) return "gardener.enabled is false";
+        if(world.difficultySetting == EnumDifficulty.PEACEFUL) return "difficulty is Peaceful";
         if(!world.getGameRules().getGameRuleBooleanValue("mobGriefing")) return "mobGriefing is false";
         if(get(world).nests.size() >= GeminiConfig.gardenerNestLimit) return "nest limit reached";
         if(GeminiConfig.gardenerNestsPerArea == 0) return "nests per survival area is zero";
-        if(GeminiStructureSchedule.players(world).isEmpty()) return "no living survival/adventure players";
+        if(GeminiStructureSchedule.players(world).isEmpty()) return "no living players in this world";
         return null;
     }
     public static String eligibility(World world) {
         String gate = generationGate(world);
-        return gate == null ? "eligible in loaded terrain around survival areas" : gate;
+        return gate == null ? "eligible around living players of any game mode" : gate;
     }
     public static String diagnostics(World world) {
         if(!(world instanceof WorldServer) || world.isRemote) return "server only";
         return "Automatic nests enabled=" + (GeminiConfig.enabled && GeminiConfig.gardenerEnabled
                 && GeminiConfig.gardenerNestLimit > 0 && GeminiConfig.gardenerNestsPerArea > 0)
-                + "; " + get(world).schedule.status() + "; " + GeminiStructureSchedule.availability(world,
-                        GeminiConfig.gardenerNestMinDistance, GeminiConfig.gardenerNestMaxDistance, 23);
+                + "; gate=" + eligibility(world) + "; " + get(world).schedule.status(world);
     }
     static void reschedule(WorldServer world) { GardenerNests data = get(world); data.schedule.reschedule(data); }
     static void schedule(WorldServer world) {
-        if(generationGate(world) != null) return;
         GardenerNests data = get(world);
-        if(!data.schedule.due(data, GeminiConfig.gardenerNestIntervalSeconds)) return;
+        data.schedule.tick(world);
         try {
+            if(generationGate(world) != null) return;
+            if(!data.schedule.due(data, GeminiConfig.gardenerNestIntervalSeconds)) return;
             String reason = data.generateNearPlayers(world);
             if(reason != null) data.schedule.failed(data, world, "nest", reason);
         } catch(RuntimeException failure) {
@@ -514,6 +516,8 @@ public final class GardenerNests extends WorldSavedData {
     private String generateNearPlayers(WorldServer world) {
         List<EntityPlayer> players = GeminiStructureSchedule.players(world);
         Map<String, Integer> rejected = new LinkedHashMap<String, Integer>();
+        Map<Long, GeminiStructureSchedule.Candidates> searches = new java.util.HashMap<Long, GeminiStructureSchedule.Candidates>();
+        Set<Long> exhausted = new java.util.HashSet<Long>();
         int start = world.rand.nextInt(players.size()), plans = 0;
         for(int attempt = 0; attempt < GeminiStructureSchedule.ATTEMPTS && plans < 2; attempt++) {
             EntityPlayer player = players.get((start + attempt) % players.size());
@@ -525,28 +529,52 @@ public final class GardenerNests extends WorldSavedData {
             if(areaNests(homeX, homeZ) >= GeminiConfig.gardenerNestsPerArea) {
                 countRejection(rejected, "survival area nest limit"); continue;
             }
-            ChunkCoordinates point = GeminiStructureSchedule.candidate(world, homeX, homeZ,
-                    GeminiConfig.gardenerNestMinDistance, GeminiConfig.gardenerNestMaxDistance);
+            long key = ((long) homeX << 32) | (homeZ & 0xFFFFFFFFL);
+            if(exhausted.contains(key)) continue;
+            GeminiStructureSchedule.Candidates search = searches.get(key);
+            if(search == null) {
+                search = new GeminiStructureSchedule.Candidates(world, homeX, homeZ,
+                        GeminiConfig.gardenerNestMinDistance, GeminiConfig.gardenerNestMaxDistance, 23);
+                searches.put(key, search);
+            }
+            ChunkCoordinates point = schedule.candidate(search);
+            boolean fallback = point == null;
+            if(point == null) {
+                point = schedule.fallback(world, search);
+                if(point == null) {
+                    exhausted.add(key);
+                    countRejection(rejected, "no unused loaded nest footprint (bounded fallback unavailable)"); continue;
+                }
+            }
+            schedule.examined();
             int x = point.posX, z = point.posZ;
-            if(tooClose(x, z)) { countRejection(rejected, "nest spacing (64 blocks)"); continue; }
+            if(tooClose(x, z)) { schedule.spacing(); countRejection(rejected, "nest spacing (64 blocks)"); continue; }
+            if(fallback) {
+                schedule.loadFallback(world, point, search.half);
+                searches.put(key, new GeminiStructureSchedule.Candidates(world, homeX, homeZ,
+                        search.min, search.max, search.half));
+            }
             if(!GeminiStructureSchedule.footprint(world, x, z, 23)) {
-                countRejection(rejected, "complete chamber/access footprint not loaded or outside world bounds"); continue;
+                schedule.unloaded(); countRejection(rejected, "complete chamber/access footprint not loaded or outside world bounds"); continue;
             }
             int surface = surface(world, x, z);
             if(surface < 17) { countRejection(rejected, "insufficient terrain depth for an underground chamber"); continue; }
             int y = Math.max(1, Math.min(42, surface - 17 - world.rand.nextInt(12)));
             Nest nest = new Nest(x, y, z);
             nest.homeX = homeX; nest.homeZ = homeZ; nest.hasHome = true;
-            plans++;
+            plans++; schedule.plan();
             String reason = place(world, plan(world, nest), true, StructurePlacementMode.NATURAL);
-            if(reason != null) { countRejection(rejected, reason); continue; }
+            if(reason != null) {
+                if(reason.startsWith("unloaded")) schedule.unloaded();
+                countRejection(rejected, reason); continue;
+            }
             // Only complete verified structures enter the authoritative registry.
             nest.built = true; nest.phase = 2;
             nests.add(nest);
             schedule.success(this, world, "nest", x, y, z, GeminiConfig.gardenerNestIntervalSeconds);
             return null;
         }
-        return "bounded loaded-area search: " + rejected;
+        return schedule.failure(rejected);
     }
     private boolean tooClose(int x, int z) {
         for(Nest nest : nests) {

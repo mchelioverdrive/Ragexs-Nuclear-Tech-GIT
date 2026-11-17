@@ -152,6 +152,17 @@ public final class GeminiInvasionManager {
 		return data == null ? 0 : data.getPhase();
 	}
 
+    /** Exact shared scheduler gates; also used by status while callbacks are paused. */
+    static String structureGate(World world, int requiredPhase) {
+        if(!(world instanceof WorldServer) || world.isRemote || world.provider.dimensionId != 0) return "Overworld server only";
+        if(!GeminiConfig.enabled) return "Gemini invasion enabled is false";
+        if(!hasMarsVisited(world)) return "Mars milestone is locked";
+        if(getPhase(world) < requiredPhase) return "requires invasion phase " + requiredPhase + "+ (current " + getPhase(world) + ")";
+        if(world.playerEntities.isEmpty()) return "no players in the Overworld";
+        return null;
+    }
+    public static String structurePlayers(World world) { return GeminiStructureSchedule.playerStatus(world); }
+
 	public static int encounterPercent(World world) {
 		int phase = getPhase(world);
 		return phase < 1 ? 0 : GeminiConfig.phaseEncounterPercent[Math.min(phase, 4) - 1];
@@ -228,8 +239,8 @@ public final class GeminiInvasionManager {
 		if(data.getPhase() < 1) { WoodcrawlerSpawning.diagnostic(overworld, "phase", "Incorrect invasion phase"); return; }
 		data.advancePhase(overworld);
 		// Independent saved structure opportunities must run before encounter-countdown returns.
-		GardenerNests.schedule(overworld);
-		WretchCamps.schedule(overworld);
+		try { GardenerNests.schedule(overworld); }
+		finally { WretchCamps.schedule(overworld); }
 		int remaining = data.getEventSecondsRemaining();
 		if(remaining == 0) {
 			scheduleNext(overworld, data);

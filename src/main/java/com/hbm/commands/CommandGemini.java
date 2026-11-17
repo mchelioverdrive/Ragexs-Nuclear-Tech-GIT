@@ -173,9 +173,11 @@ public final class CommandGemini extends CommandBase {
                 + "; encounter countdown=" + GeminiInvasionManager.getEventSecondsRemaining(world) + " seconds.");
         reply(sender, "Nests unlocked=" + (phase >= 3) + "; generation: " + GardenerNests.eligibility(world) + ".");
         reply(sender, "Camps unlocked=" + (phase >= 4) + "; generation: " + WretchCamps.eligibility(world) + ".");
+        reply(sender, GeminiInvasionManager.structurePlayers(world));
         reply(sender, GardenerNests.diagnostics(world));
         reply(sender, WretchCamps.diagnostics(world));
-        reply(sender, "Known generated nests=" + GardenerNests.known(world).size() + "; camp records=" + WretchCamps.known(world).size()
+        reply(sender, "Successfully registered nests=" + GardenerNests.known(world).size() + "; successfully registered camps=" + WretchCamps.completedCount(world)
+                + "; total camp records=" + WretchCamps.known(world).size()
                 + " in sender dimension " + world.provider.dimensionId + ". Invasion world=Overworld (0), shared saved progression.");
     }
 

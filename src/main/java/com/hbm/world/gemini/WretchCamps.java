@@ -62,33 +62,41 @@ public final class WretchCamps extends WorldSavedData {
         if(data != null) for(Camp camp : data.camps) result.add(info(camp, world.provider.dimensionId));
         return result;
     }
+    public static int completedCount(World world) {
+        if(!(world instanceof WorldServer) || world.isRemote) return 0;
+        int count = 0;
+        for(Camp camp : get(world).camps) if(camp.state > 0) count++;
+        return count;
+    }
     private static String generationGate(World world) {
-        if(!(world instanceof WorldServer) || world.isRemote || world.provider.dimensionId != 0) return "Overworld server only";
-        if(!active(world)) return "requires enabled invasion/Wretch, phase 4 and non-Peaceful difficulty";
+        String global = GeminiInvasionManager.structureGate(world, 4);
+        if(global != null) return global;
+        if(!GeminiConfig.wretchEnabled) return "wretch.enabled is false";
+        if(world.difficultySetting == EnumDifficulty.PEACEFUL) return "difficulty is Peaceful";
         if(!world.getGameRules().getGameRuleBooleanValue("doMobSpawning")) return "doMobSpawning is false";
         if(!world.getGameRules().getGameRuleBooleanValue("mobGriefing")) return "mobGriefing is false";
         if(GeminiConfig.wretchCampChance == 0) return "camp chance disabled";
         if(get(world).camps.size() >= GeminiConfig.wretchCampLimit) return "camp limit reached";
-        if(GeminiStructureSchedule.players(world).isEmpty()) return "no living survival/adventure players";
+        if(GeminiStructureSchedule.players(world).isEmpty()) return "no living players in this world";
         return null;
     }
     public static String eligibility(World world) {
         String gate = generationGate(world);
-        return gate == null ? "eligible in loaded terrain around survival players" : gate;
+        return gate == null ? "eligible around living players of any game mode" : gate;
     }
     public static String diagnostics(World world) {
         if(!(world instanceof WorldServer) || world.isRemote) return "server only";
         return "Automatic camps enabled=" + (GeminiConfig.enabled && GeminiConfig.wretchEnabled
                 && GeminiConfig.wretchCampChance > 0 && GeminiConfig.wretchCampLimit > 0)
-                + "; " + get(world).schedule.status() + "; " + GeminiStructureSchedule.availability(world,
-                        GeminiConfig.wretchCampMinDistance, GeminiConfig.wretchCampMaxDistance, 42);
+                + "; gate=" + eligibility(world) + "; " + get(world).schedule.status(world);
     }
     static void reschedule(WorldServer world) { WretchCamps data = get(world); data.schedule.reschedule(data); }
     static void schedule(WorldServer world) {
-        if(generationGate(world) != null) return;
         WretchCamps data = get(world);
-        if(!data.schedule.due(data, GeminiConfig.wretchCampIntervalSeconds)) return;
+        data.schedule.tick(world);
         try {
+            if(generationGate(world) != null) return;
+            if(!data.schedule.due(data, GeminiConfig.wretchCampIntervalSeconds)) return;
             String reason = data.generateNearPlayers(world);
             if(reason != null) data.schedule.failed(data, world, "camp", reason);
         } catch(RuntimeException failure) {
@@ -211,41 +219,58 @@ public final class WretchCamps extends WorldSavedData {
     private String generateNearPlayers(WorldServer world) {
         List<EntityPlayer> players = GeminiStructureSchedule.players(world);
         Map<String, Integer> rejected = new java.util.LinkedHashMap<String, Integer>();
+        Map<Long, GeminiStructureSchedule.Candidates> searches = new java.util.HashMap<Long, GeminiStructureSchedule.Candidates>();
+        Set<Long> exhausted = new java.util.HashSet<Long>();
         int start = world.rand.nextInt(players.size()), plans = 0;
         for(int attempt = 0; attempt < GeminiStructureSchedule.ATTEMPTS && plans < 2; attempt++) {
             EntityPlayer player = players.get((start + attempt) % players.size());
-            net.minecraft.util.ChunkCoordinates point = GeminiStructureSchedule.candidate(world,
-                    MathHelper.floor_double(player.posX), MathHelper.floor_double(player.posZ),
-                    GeminiConfig.wretchCampMinDistance, GeminiConfig.wretchCampMaxDistance);
-            // Upgrade old population-selected jobs through this same bounded scheduler. An
-            // unavailable selection is released so it cannot reserve an unusable area forever.
-            if(!pending.isEmpty()) {
-                Camp legacy = pending.remove(0); markDirty();
-                double dx = legacy.x - player.posX, dz = legacy.z - player.posZ;
-                double distance = dx * dx + dz * dz;
-                if(distance >= (double) GeminiConfig.wretchCampMinDistance * GeminiConfig.wretchCampMinDistance
-                        && distance <= (double) GeminiConfig.wretchCampMaxDistance * GeminiConfig.wretchCampMaxDistance)
-                    point = new net.minecraft.util.ChunkCoordinates(legacy.x, 0, legacy.z);
+            int homeX = MathHelper.floor_double(player.posX), homeZ = MathHelper.floor_double(player.posZ);
+            // Release obsolete population selections rather than reserving unavailable
+            // sites or replacing verified loaded candidates with legacy random origins.
+            if(!pending.isEmpty()) { pending.clear(); markDirty(); }
+            long key = ((long) homeX << 32) | (homeZ & 0xFFFFFFFFL);
+            if(exhausted.contains(key)) continue;
+            GeminiStructureSchedule.Candidates search = searches.get(key);
+            if(search == null) {
+                search = new GeminiStructureSchedule.Candidates(world, homeX, homeZ,
+                        GeminiConfig.wretchCampMinDistance, GeminiConfig.wretchCampMaxDistance, 42);
+                searches.put(key, search);
             }
+            net.minecraft.util.ChunkCoordinates point = schedule.candidate(search);
+            boolean fallback = point == null;
+            if(point == null) {
+                point = schedule.fallback(world, search);
+                if(point == null) {
+                    exhausted.add(key);
+                    GardenerNests.countRejection(rejected, "no unused loaded camp footprint (bounded fallback unavailable)"); continue;
+                }
+            }
+            schedule.examined();
             int x = point.posX, z = point.posZ;
-            if(!spaced(x, z)) { GardenerNests.countRejection(rejected, "camp spacing"); continue; }
+            if(!spaced(x, z)) { schedule.spacing(); GardenerNests.countRejection(rejected, "camp spacing"); continue; }
+            if(fallback) {
+                schedule.loadFallback(world, point, search.half);
+                searches.put(key, new GeminiStructureSchedule.Candidates(world, homeX, homeZ,
+                        search.min, search.max, search.half));
+            }
             if(!GeminiStructureSchedule.footprint(world, x, z, 42)) {
-                GardenerNests.countRejection(rejected, "complete minimum settlement footprint not loaded or outside world bounds"); continue;
+                schedule.unloaded(); GardenerNests.countRejection(rejected, "complete minimum settlement footprint not loaded or outside world bounds"); continue;
             }
             int surface = ground(world, x, z);
             if(surface < 1) { GardenerNests.countRejection(rejected, "no surface terrain"); continue; }
             Camp camp = WretchCampSettlement.create(world, x, MathHelper.clamp_int(surface, 1, world.getActualHeight() - 20), z);
-            if(!GardenerNests.loadedVolume(world, WretchCampSettlement.bounds(camp, 2, world.getActualHeight())))
+            if(!GeminiStructureSchedule.footprint(world, x, z, camp.size / 2 + 2))
                 camp.size = 80; // Still village-sized; fit the loaded area without requesting chunks.
-            plans++;
+            plans++; schedule.plan();
             String reason = place(world, camp, StructurePlacementMode.NATURAL, WretchCampSettlement.plan(world, camp));
             if(reason == null) {
                 schedule.success(this, world, "camp", camp.x, camp.y - 1, camp.z, GeminiConfig.wretchCampIntervalSeconds);
                 return null;
             }
+            if(reason.startsWith("unloaded")) schedule.unloaded();
             GardenerNests.countRejection(rejected, reason);
         }
-        return "bounded loaded-area search: " + rejected;
+        return schedule.failure(rejected);
     }
     private String place(WorldServer world, Camp camp, StructurePlacementMode mode, GardenerNests.PlacementPlan preparation) {
         String reason = GardenerNests.place(world, preparation, false, mode);
