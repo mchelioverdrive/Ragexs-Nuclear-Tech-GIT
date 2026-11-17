@@ -67,7 +67,7 @@ public final class CommandGemini extends CommandBase {
         return new ChunkCoordinates(MathHelper.floor_double(x), MathHelper.floor_double(y), MathHelper.floor_double(z));
     }
     private static void generated(ICommandSender sender, StructureInfo result, boolean exact, boolean camp) {
-        reply(sender, "Generated " + result + ".");
+        reply(sender, (camp ? "Generated " : "Nest job: ") + result + ".");
         if(exact) reply(sender, "Exact origin retained (coordinates rounded down to blocks); "
                 + (camp ? "origin is the camp foundation elevation." : "origin is the nest floor's air level, with organic floor at Y-1."));
     }
@@ -119,7 +119,7 @@ public final class CommandGemini extends CommandBase {
                 if(end != 2 && end != 5) throw new WrongUsageException("/gemini nest spawn [x y z] [force]");
                 EntityPlayerMP player = player(sender);
                 ChunkCoordinates requested = end == 2 ? null : origin(sender, player, args, 2);
-                generated(sender, GardenerNests.debugSpawn(player, requested), requested != null, false); return;
+                generated(sender, GardenerNests.debugSpawn(player, requested, end != args.length), requested != null, false); return;
             }
             if(args.length == 2 && "locate".equals(args[1])) {
                 locate(sender, GardenerNests.known(world), "nest"); return;

@@ -42,6 +42,7 @@ final class GardenerBurrowing {
     double patrolX() { return hasHuntingGround && surface() ? huntingX : mob.nestX; }
     double patrolZ() { return hasHuntingGround && surface() ? huntingZ : mob.nestZ; }
     void enable() { enabled = true; }
+    void resetHome() { clear(); tunnel.clear(); if(state != UNDERGROUND || Math.abs(mob.posY - mob.nestY) > 4) { state = RETURNING; retreat = true; } }
     void huntingGround(double x, double z) { huntingX = x; huntingZ = z; hasHuntingGround = true; }
 
     /** Returns true while the commute owns movement. Captured prey always finishes on the existing controller. */
@@ -156,7 +157,8 @@ final class GardenerBurrowing {
             if(landing(entrance)) { plan(entrance); headingToEntrance = true; return; }
         }
         Node home = new Node(x, y, z, null, 0, 0);
-        if(failures < 6 && landing(home) && coveredHome(home)) { plan(home); return; }
+        if((mob.hasSharedNest() || failures < 6) && landing(home) && coveredHome(home)) { plan(home); return; }
+        if(mob.hasSharedNest()) { failed(); return; } // Shared residents retain their own reserved home, even while occupied.
         // The old room may have been destroyed or protected. Establish a loaded, natural replacement nearby.
         // Reuse the same assigned home on subsequent mornings; no world-generation job or second boss is created.
         for(int budget = 0; budget < 4; budget++) {

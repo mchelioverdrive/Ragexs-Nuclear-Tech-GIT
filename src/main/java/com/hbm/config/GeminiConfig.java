@@ -12,7 +12,7 @@ public final class GeminiConfig {
 	public static int phase2DelayDays = 3, phase3DelayDays = 5, phase4DelayDays = 7;
 	public static final int[] phaseEncounterPercent = {25, 50, 75, 100};
 	public static int maxLoadedCreatures = 32;
-	public static int gardenerMaxLoaded = 2, wretchMaxLoaded = 1;
+	public static int gardenerMaxLoaded = 3, wretchMaxLoaded = 1;
 	/** Legacy API aliases for the phase-1 interval. */
 	public static int minEventIntervalSeconds = 45;
 	public static int maxEventIntervalSeconds = 90;
@@ -43,6 +43,7 @@ public final class GeminiConfig {
 	public static int mockeryMaxActive = 16;
 	public static int mockeryOffshootLimit = 2;
 	public static boolean gardenerEnabled = true;
+	public static int gardenerResidents = 3;
 	public static int gardenerNestChance = 8;
 	public static int gardenerNestLimit = 32;
 	public static int gardenerNestMinDistance = 64, gardenerNestMaxDistance = 160, gardenerNestsPerArea = 3;
@@ -189,16 +190,27 @@ public final class GeminiConfig {
 		values.wretchVoiceSeconds = config.getInt("ambientVoiceSeconds", wretch, 45, 0, 600, "Minimum seconds between rare distorted human-like ambient vocalizations, randomized up to three times this interval. Zero disables ambient voices, not action sounds. No claim about individual victims' agency.");
 		values.gardenerEnabled = config.getBoolean("enabled", gardener, true,
 				"Enable natural underground Gardeners and excavated nests in phases 3 and 4. Disabled saved natural bosses remain dormant; manual spawn eggs bypass this setting.");
-		values.gardenerMaxLoaded = config.getInt("maxLoaded", gardener, 2, 0, 16,
-				"Loaded natural Gardener admission cap. Completed nests wait at the cap without consuming retries; manual spawn eggs bypass the cap and saved bosses are retained.");
+		values.gardenerResidents = config.getInt("residentsPerNest", gardener, 3, 2, 3,
+                "One-shot resident capacity of newly created or explicitly upgraded nests (2-3). Saved slots retain their identities and count.");
+        values.gardenerMaxLoaded = config.getInt("maxLoaded", gardener, 3, 0, 16,
+				"Loaded natural Gardener admission cap. Default 3 admits a full nest; lower custom caps leave remaining slots pending. Global Gemini cap also applies; saved bosses are retained.");
+        int residentDefaultsVersion = config.getInt("residentDefaultsVersion", gardener, 0, 0, 1,
+                "Internal migration: the previous default loaded Gardener cap of 2 becomes 3 once. Other custom caps remain unchanged.");
+        if(residentDefaultsVersion == 0) {
+            if(values.gardenerMaxLoaded == 2) {
+                values.gardenerMaxLoaded = 3;
+                config.get(gardener, "maxLoaded", 3).set(3);
+            }
+            config.get(gardener, "residentDefaultsVersion", 0).set(1);
+        }
 		values.gardenerNestChance = config.getInt("nestChance", gardener, 8, 1, 10000,
-				"Legacy pacing input when nestIntervalSeconds is absent (8 maps to 120 seconds). Loaded-area scheduling replaces the old discovery roll; only a bounded minimum-footprint fallback may request chunks. No offline catch-up.");
+				"Legacy pacing input when nestIntervalSeconds is absent (8 maps to 120 seconds). Loaded-area scheduling replaces the old discovery roll; saved construction requests at most one missing chunk per tick. No offline catch-up.");
 		values.gardenerNestLimit = config.getInt("nestLimit", gardener, 32, 0, 64,
-				"World lifetime nest limit, including abandoned partial nests and defeated bosses. Zero disables new nests; saved jobs can finish. Nests stay at least 64 blocks apart.");
+				"World lifetime nest limit, including abandoned partial nests and defeated bosses. Zero disables new nests; saved jobs can finish. Expanded nest footprints may not overlap.");
 		values.gardenerNestMinDistance = config.getInt("nestMinDistance", gardener, 64, 48, 512,
 				"Preferred minimum nest-center distance from an active area. Living Creative/Survival/Adventure players anchor generation; a nearby established home is preferred. If no footprint fits, closer loaded terrain is used.");
 		values.gardenerNestMaxDistance = config.getInt("nestMaxDistance", gardener, 160, 48, 512,
-				"Maximum nest-center distance from a living player/home anchor. Raised to the minimum if smaller. Prefer loaded terrain; if none fits, request one nearby minimum footprint (at most 16 chunks).");
+				"Maximum nest-center distance from a living player/home anchor. Raised to the minimum if smaller. Prefer loaded terrain; if none fits, stage the enlarged footprint with at most one missing chunk request per tick.");
 		values.gardenerNestMaxDistance = Math.max(values.gardenerNestMinDistance, values.gardenerNestMaxDistance);
 		values.gardenerNestsPerArea = config.getInt("nestsPerArea", gardener, 3, 0, 8,
 				"Lifetime nests per survival area within nestMaxDistance plus 32 blocks. Existing homes remain fixed; active players away from home can seed other areas.");
@@ -269,6 +281,7 @@ public final class GeminiConfig {
         phase4DelayDays = values.phase4DelayDays;
         System.arraycopy(values.phaseEncounterPercent, 0, phaseEncounterPercent, 0, phaseEncounterPercent.length);
         maxLoadedCreatures = values.maxLoadedCreatures;
+        gardenerResidents = values.gardenerResidents;
         gardenerMaxLoaded = values.gardenerMaxLoaded;
         wretchMaxLoaded = values.wretchMaxLoaded;
         minEventIntervalSeconds = values.minEventIntervalSeconds;
@@ -360,7 +373,7 @@ public final class GeminiConfig {
         public int phase2DelayDays = 3, phase3DelayDays = 5, phase4DelayDays = 7;
         public final int[] phaseEncounterPercent = {25, 50, 75, 100};
         public int maxLoadedCreatures = 32;
-        public int gardenerMaxLoaded = 2, wretchMaxLoaded = 1;
+        public int gardenerMaxLoaded = 3, wretchMaxLoaded = 1;
         public int minEventIntervalSeconds = 45;
         public int maxEventIntervalSeconds = 90;
         public final int[] woodcrawlerInvasionMinIntervalSeconds = {45, 30, 20, 15};
@@ -390,6 +403,7 @@ public final class GeminiConfig {
         public int mockeryMaxActive = 16;
         public int mockeryOffshootLimit = 2;
         public boolean gardenerEnabled = true;
+        public int gardenerResidents = 3;
         public int gardenerNestChance = 8;
         public int gardenerNestLimit = 32;
         public int gardenerNestMinDistance = 64, gardenerNestMaxDistance = 160, gardenerNestsPerArea = 3;

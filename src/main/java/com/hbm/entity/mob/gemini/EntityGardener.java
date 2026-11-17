@@ -44,6 +44,9 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
     private boolean placingSurface;
     private String cocoonAdmissionFailure;
     protected double nestX, nestY, nestZ;
+    private boolean sharedNest;
+    private double sharedX, sharedZ;
+    private double patrolX, patrolZ;
     private final GardenerBurrowing burrowing = new GardenerBurrowing(this);
     private double travelX, travelY, travelZ;
     private float previousCrawl, crawl;
@@ -104,7 +107,16 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
         return dx * dx + dy * dy + dz * dz;
     }
     protected double attackReach() { return 17D; }
-    protected double territoryRadius() { return burrowing.surface() ? GeminiConfig.gardenerNestMaxDistance + 32D : 22D; }
+    protected double territoryRadius() { return burrowing.surface() ? GeminiConfig.gardenerNestMaxDistance + 32D : sharedNest ? 90D : 22D; }
+    boolean hasSharedNest() { return sharedNest && !isOcean(); }
+    public void assignNest(double x, double y, double z, double homeX, double homeZ, boolean shared, boolean relocate) {
+        if(isOcean()) return;
+        boolean changed = nestX != homeX || nestY != y || nestZ != homeZ;
+        sharedNest = shared; sharedX = x; sharedZ = z;
+        nestX = homeX; nestY = y; nestZ = homeZ; anchored = true;
+        if(changed && !relocate) burrowing.resetHome();
+        if(relocate) { setPosition(homeX, y, homeZ); lastTickPosX = posX; lastTickPosY = posY; lastTickPosZ = posZ; }
+    }
     protected boolean environmentActive() {
         return GeminiSpawning.manualAdmission(this) || GeminiSpawning.structureDebugAdmission(this) || burrowing.enabled() && GardenerNests.active(worldObj)
                 || nestY >= 8 && nestY <= 44 && GardenerNests.active(worldObj)
@@ -226,17 +238,29 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
     public AxisAlignedBB visualBounds() {
         return boundingBox.expand(isOcean() ? 32 : 18, isOcean() ? 32 : 2, isOcean() ? 32 : 18);
     }
-    public boolean hasSpawnSpace() {
+    public boolean hasSpawnSpace() { return spawnRejection() == null; }
+    public String spawnRejection() {
         boolean manual = GeminiSpawning.isManual(this);
-        if(!GardenerNests.loaded(worldObj, manual ? boundingBox : visualBounds()) || !worldObj.checkNoEntityCollision(boundingBox)
-                || !worldObj.getCollidingBoundingBoxes(this, boundingBox).isEmpty() || worldObj.isAnyLiquid(boundingBox)) return false;
-        // Eggs need a safe body placement, not a fully excavated natural nest.
-        if(manual) return true;
-        for(int arm = 0; arm < GardenerPose.ARMS; arm++) if(!clearLimb(arm)) return false;
-        return true;
+        if(!GardenerNests.loaded(worldObj, manual ? boundingBox : visualBounds())) return "unloaded body/visual bounds";
+        if(!worldObj.checkNoEntityCollision(boundingBox)) return "entity occupies resident body";
+        if(!worldObj.getCollidingBoundingBoxes(this, boundingBox).isEmpty()) return "body collision";
+        if(worldObj.isAnyLiquid(boundingBox)) return "liquid in resident body";
+        if(manual) return null;
+        if(!isOcean()) {
+            AxisAlignedBB envelope = AxisAlignedBB.getBoundingBox(posX - 15, posY + 0.05D, posZ - 15, posX + 15, posY + 11, posZ + 15);
+            if(!worldObj.func_147461_a(envelope).isEmpty() || worldObj.isAnyLiquid(envelope)) return "full extended model/limb terrain clearance";
+            for(Object entry : worldObj.getEntitiesWithinAABBExcludingEntity(this, envelope)) {
+                Entity other = (Entity) entry;
+                if(other instanceof EntityLivingBase && other.isEntityAlive()) return "living entity occupies resident limb envelope";
+            }
+        }
+        for(int arm = 0; arm < GardenerPose.ARMS; arm++) if(!clearLimb(arm)) return "limb " + arm + " obstructed";
+        return null;
     }
     protected boolean inTerritory(Entity target) {
         double dx = target.posX - nestX, dz = target.posZ - nestZ;
+        if(hasSharedNest() && !burrowing.surface()) return GardenerNests.inHabitat(target.posX - sharedX, target.posZ - sharedZ, 0)
+                && target.posY >= nestY - 2 && target.posY <= nestY + 24;
         return dx * dx + dz * dz <= territoryRadius() * territoryRadius()
                 && Math.abs(target.posY - (burrowing.surface() ? posY : nestY)) < (isOcean() ? 32D : 8D);
     }
@@ -387,6 +411,7 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
         previousCrawl = crawl;
         crawl += (dataWatcher.getWatchableObjectFloat(29) - crawl) * 0.25F;
         if(worldObj.isRemote) return;
+        if(!isOcean() && (ticksExisted == 1 || ticksExisted % 100 == 0)) GardenerNests.bindResident(this);
         tickSurfaceBiomass();
         if(!anchored) anchor(posX, posY, posZ);
         if(!isOcean() && !GeminiSpawning.isManual(this) && nestY >= 8
@@ -552,7 +577,7 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
         return Math.max(victim.height * 0.5D, GardenerPose.RADIUS + 0.06D);
     }
     private void adaptLimbs() {
-        if(isOcean() || !GeminiSpawning.isManual(this)) return;
+        if(isOcean() || !GeminiSpawning.isManual(this) && !hasSharedNest()) return;
         int extensions = dataWatcher.getWatchableObjectInt(30);
         for(int arm = 0; arm < GardenerPose.ARMS; arm++) {
             if(armState(arm) != IDLE || armDisabled(arm)) continue;
@@ -1206,6 +1231,15 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
         if(ticksExisted % 10 == 1) {
             travelX = travelY = travelZ = 0;
             double gx = isOcean() ? nestX : burrowing.patrolX(), gy = nestY, gz = isOcean() ? nestZ : burrowing.patrolZ();
+            if(hasSharedNest() && !burrowing.surface()) {
+                if(ticksExisted % 600 < 10 || patrolX == 0 && patrolZ == 0 || getDistanceSq(patrolX, nestY, patrolZ) < 4D) {
+                    double angle = (ticksExisted / 600 + getUniqueID().hashCode()) * 2.399963D;
+                    double px = sharedX + Math.cos(angle) * 26, pz = sharedZ + Math.sin(angle) * 26;
+                    if(GardenerNests.inHabitat(px - sharedX, pz - sharedZ, 18)) { patrolX = px; patrolZ = pz; }
+                    else { patrolX = nestX; patrolZ = nestZ; }
+                }
+                gx = patrolX; gz = patrolZ;
+            }
             if(target != null) {
                 gx = target.posX; gz = target.posZ;
                 // Ocean prey is reached by the hanging limbs; retain the safe seabed-relative body altitude.
@@ -1220,7 +1254,7 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
             double speed = getEntityAttribute(SharedMonsterAttributes.movementSpeed).getAttributeValue();
             if(distance > stop || isOcean() && Math.abs(gy - posY) > 0.5D) {
                 double angle = Math.atan2(dz, dx);
-                for(int attempt = 0; attempt < 5; attempt++) {
+                for(int attempt = 0; attempt < (hasSharedNest() ? 9 : 5); attempt++) {
                     double turn = attempt == 0 ? 0 : (attempt % 2 == 0 ? -1 : 1) * ((attempt + 1) / 2) * 0.65D;
                     double vx = distance > stop ? Math.cos(angle + turn) * speed : 0;
                     double vz = distance > stop ? Math.sin(angle + turn) * speed : 0;
@@ -1243,6 +1277,21 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
     protected void moveGardener(double x, double y, double z) { super.moveEntity(x, y, z); }
     protected boolean canTravel(double x, double y, double z) {
         AxisAlignedBB next = boundingBox.getOffsetBoundingBox(x, y, z);
+        if(hasSharedNest() && !burrowing.surface()) {
+            if(!GardenerNests.inHabitat(posX + x - sharedX, posZ + z - sharedZ, 18)) return false;
+            // Keep the entire moving model above growth and below the lowest ceiling.
+            AxisAlignedBB model = AxisAlignedBB.getBoundingBox(posX + x - 15, next.minY + 0.05D, posZ + z - 15,
+                    posX + x + 15, next.minY + 11, posZ + z + 15);
+            if(!GardenerNests.loaded(worldObj, model) || !worldObj.func_147461_a(model).isEmpty() || worldObj.isAnyLiquid(model)) return false;
+            AxisAlignedBB neighbors = next.expand(31, 8, 31);
+            for(Object entry : worldObj.getEntitiesWithinAABB(EntityGardener.class, neighbors)) {
+                EntityGardener other = (EntityGardener) entry;
+                if(other == this || !other.isEntityAlive() || other.isOcean() || Math.abs(other.posY - posY) > 10) continue;
+                double before = (posX - other.posX) * (posX - other.posX) + (posZ - other.posZ) * (posZ - other.posZ);
+                double after = (posX + x - other.posX) * (posX + x - other.posX) + (posZ + z - other.posZ) * (posZ + z - other.posZ);
+                if(after < 32D * 32D && after < before) return false; // Can always separate; no overlap deadlock.
+            }
+        }
         if(!GardenerNests.loaded(worldObj, next.expand(GeminiSpawning.isManual(this) ? 1 : 19, 2,
                 GeminiSpawning.isManual(this) ? 1 : 19)) || !burrowing.surface() && Math.abs(next.minY - nestY) > 4D
                 || worldObj.isAnyLiquid(next)) return false;
@@ -1343,6 +1392,7 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
     @Override public void writeEntityToNBT(NBTTagCompound nbt) {
         super.writeEntityToNBT(nbt);
         if(!isOcean()) burrowing.write(nbt);
+        if(!isOcean()) { nbt.setBoolean("SharedNest", sharedNest); nbt.setDouble("SharedNestX", sharedX); nbt.setDouble("SharedNestZ", sharedZ); }
         nbt.setBoolean("NestAnchored", anchored); nbt.setDouble("NestX", nestX); nbt.setDouble("NestY", nestY); nbt.setDouble("NestZ", nestZ);
         nbt.setInteger("Summons", summons); nbt.setInteger("SummonTicks", summonTicks); nbt.setInteger("Cooldown", cooldown);
         nbt.setInteger("GardenerFormVersion", 2);
@@ -1355,6 +1405,7 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
     @Override public void readEntityFromNBT(NBTTagCompound nbt) {
         super.readEntityFromNBT(nbt); fromSave = true;
         if(!isOcean()) burrowing.read(nbt);
+        if(!isOcean()) { sharedNest = nbt.getBoolean("SharedNest"); sharedX = nbt.getDouble("SharedNestX"); sharedZ = nbt.getDouble("SharedNestZ"); }
         if(nbt.getInteger("GardenerFormVersion") < 2 && !isOcean()
                 && getEntityAttribute(SharedMonsterAttributes.movementSpeed).getBaseValue() == 0D)
             getEntityAttribute(SharedMonsterAttributes.movementSpeed).setBaseValue(0.08D);

@@ -61,6 +61,24 @@ public final class GeminiPopulation {
         return mob == null || mob.isDead || mob.worldObj != world ? null : mob;
     }
 
+    static String gardenerAdmissionReason(World world) {
+        if(GeminiConfig.gardenerMaxLoaded <= 0) return "Gardener admission disabled (maxLoaded=0)";
+        if(GeminiConfig.maxLoadedCreatures <= 0) return "global Gemini admission disabled (maxLoadedCreatures=0)";
+        int total = 0, gardeners = 0;
+        Map<UUID, EntityLiving> members = WORLDS.get(world);
+        if(members != null) for(EntityLiving mob : members.values()) if(!mob.isDead && mob.worldObj == world) {
+            total++; if(mob.getClass() == EntityGardener.class) gardeners++;
+        }
+        if(total >= GeminiConfig.maxLoadedCreatures) return "global Gemini population limit (" + total + "/" + GeminiConfig.maxLoadedCreatures + ")";
+        if(gardeners >= GeminiConfig.gardenerMaxLoaded) return "Underground Gardener population limit (" + gardeners + "/" + GeminiConfig.gardenerMaxLoaded + ")";
+        return null;
+    }
+
+    static void forgetFailedSpawn(EntityLiving mob) {
+        Map<UUID, EntityLiving> members = WORLDS.get(mob.worldObj);
+        if(members != null && members.get(mob.getUniqueID()) == mob && !mob.addedToChunk) members.remove(mob.getUniqueID());
+    }
+
     public static boolean canAdmit(World world, Class<? extends EntityLiving> type, EntityLiving candidate, int limit) {
         return canAdmit(world, type, candidate, limit, HATCHING.get(candidate));
     }
@@ -128,6 +146,11 @@ public final class GeminiPopulation {
     public void naturalSpawn(LivingSpawnEvent.SpecialSpawn event) {
         if(!event.world.isRemote && event.entityLiving instanceof IGeminiCreature)
             GeminiSpawning.markNatural(event.entityLiving);
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void residentDeath(net.minecraftforge.event.entity.living.LivingDeathEvent event) {
+        if(event.entityLiving instanceof EntityGardener) GardenerNests.defeated((EntityGardener) event.entityLiving);
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST, receiveCanceled = true)
