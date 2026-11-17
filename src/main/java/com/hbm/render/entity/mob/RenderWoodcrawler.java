@@ -24,6 +24,15 @@ public final class RenderWoodcrawler extends RenderLiving {
 	protected void preRenderCallback(EntityLivingBase entity, float partial) {
 		EntityWoodcrawler mob = (EntityWoodcrawler) entity;
 		shadowSize = 0.4F * (1 - mob.burrowProgress(partial));
+		// Rotate the complete existing model, including all articulated appendages,
+		// around the center of the unchanged folded collision envelope.
+		float roll = mob.getSurfaceRoll(partial);
+		if(roll != 0) {
+			GL11.glTranslatef(0, -EntityWoodcrawler.CRAWLING_HEIGHT / 2F, 0);
+			GL11.glRotatef(roll, 0, 0, 1);
+			GL11.glTranslatef(0, EntityWoodcrawler.CRAWLING_HEIGHT / 2F, 0);
+			shadowSize = 0;
+		}
 	}
 
 	@Override

@@ -184,7 +184,7 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 				+ (target.posZ - target.prevPosZ) * (knownZ - mob.posZ) > Math.sqrt(distance) * 0.04D;
 		if(ready || distance < 16 || visible && noticedBy(target) || escaping || retaliationTicks > 0) pursuing = true;
 		// Preserve grab/feeding ownership above, then close attacks, flight, direct leaps and sieges.
-		if(pursuing && !mob.isLeapAirborne() && !mob.isSurfaceTraversal() && mob.canStrike(target)) {
+		if(pursuing && !mob.isLeapAirborne() && mob.canStrike(target)) {
 			if(leap.active()) leap.reset();
 			mob.setHuntState(EntityWoodcrawler.CHASE);
 			mob.beginStrike(target);
@@ -198,17 +198,8 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 		}
 		if(mob.isSurfaceTraversal()) {
 			mob.setMovementGoal(knownX, knownY, knownZ);
-			if(directDelay == 0) {
-				directDelay = 40;
-				PathEntity ground = findLoadedPath(knownX, knownY, knownZ);
-				if(reaches(ground, knownX, knownY, knownZ) && !pathHasClosedDoor(ground)) {
-					mob.returnToGround();
-					if(!mob.isSurfaceTraversal()) {
-						mob.getNavigator().setPath(ground, 2.5D); pathDelay = 30; doorwayTicks = 40;
-						return;
-					}
-				}
-			}
+			// The cached surface route owns all of its transitions, including ground
+			// approach and roof exit. A native path found mid-climb must not reverse it.
 			mob.getNavigator().clearPathEntity();
 			return; // Memory still expires and the physical traversal receives the current remembered goal.
 		}
@@ -308,8 +299,12 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 	}
 	public boolean hasActiveHunt() { return mob.getAttackTarget() != null && (memoryTicks > 0 || searchTicks > 0); }
 	public boolean isEnteringDoorway() { return doorwayTicks > 0; }
-	public boolean allowsClimbing() { return hasActiveHunt() && pathFailures >= 2 && entranceCursor >= 17 * 17 * 3
-			&& !hasEntrance && !breakingDoor && !breach.active(); }
+	public boolean allowsClimbing() {
+		if(!hasActiveHunt() || doorwayTicks > 0 || breakingDoor || breach.active()) return false;
+		PathEntity walking = mob.getNavigator().getPath();
+		return (Math.abs(knownY - mob.posY) > 1.25D || pathFailures >= 2)
+				&& (!reaches(walking, knownX, knownY, knownZ) || stalledTicks >= 40 || pathHasClosedDoor(walking));
+	}
 	public Vec3 getSiegeEntry() {
 		if(breakingDoor) return Vec3.createVectorHelper(doorX + 0.5D, doorY, doorZ + 0.5D);
 		Vec3 dig = breach.claim();
@@ -494,16 +489,6 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 		goalZ = z;
 		hasGoal = true;
 		mob.setMovementGoal(x, y, z);
-		Vec3 approach = allowsClimbing() ? mob.getClimbWaypoint(x, y, z) : null;
-		if(approach != null) { x = approach.xCoord; y = approach.yCoord; z = approach.zCoord; mob.setCrouching(true); }
-		if(approach != null && mob.getDistanceSq(x, y, z) < 6.25D) {
-			// Native paths stop short of deep ladder shafts and fence cells.
-			// Let collision-resolved attachment guide the final approach to the obstacle.
-			mob.getNavigator().clearPathEntity();
-			mob.getMoveHelper().setMoveTo(x, y, z, speed);
-			pathFailures = 0;
-			return;
-		}
 		mob.getNavigator().setSpeed(speed);
 		if(pathDelay > 0) return;
 		pathDelay = 20 + mob.getRNG().nextInt(10) + Math.min(40, pathFailures * 5);
@@ -804,7 +789,8 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 	}
 
 	private void updateClimbing() {
-		if(hasGoal) mob.setMovementGoal(goalX, goalY, goalZ);
+		if(allowsClimbing() && Math.abs(knownY - mob.posY) > 1.25D) mob.setMovementGoal(knownX, knownY, knownZ);
+		else if(hasGoal) mob.setMovementGoal(goalX, goalY, goalZ);
 	}
 
 	private static double square(double value) { return value * value; }

@@ -60,6 +60,7 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 	public float travelPhase, prevTravelPhase;
 	public float climbBlend, prevClimbBlend, crouchBlend, prevCrouchBlend, stalkBlend, prevStalkBlend;
 	public float leapBlend, prevLeapBlend;
+	public float surfaceRoll, prevSurfaceRoll;
 	private boolean daytimeBurrow;
 	private int darkTicks, shelterTicks, disturbanceTicks, environmentDelay, flameTicks, uvTicks;
 	private int cachedLight, mimicDelay = 160;
@@ -156,7 +157,12 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 	public boolean hasCapturedVillager() { return capturedVillager != null; }
 	public boolean isCarrying() { return dataWatcher.getWatchableObjectByte(22) != 0; }
 	public boolean wasLoadedFromNBT() { return loadedFromNBT; }
-	public boolean isCrouching() { return dataWatcher.getWatchableObjectByte(23) != 0; }
+	public boolean isCrouching() { return (dataWatcher.getWatchableObjectByte(23) & 1) != 0; }
+	public int getSurfaceFace() { return (dataWatcher.getWatchableObjectByte(23) >> 1) & 7; }
+	void setSurfaceFace(int face) {
+		dataWatcher.updateObject(23, Byte.valueOf((byte) ((dataWatcher.getWatchableObjectByte(23) & 1) | face << 1)));
+	}
+	public float getSurfaceRoll(float partial) { return prevSurfaceRoll + (surfaceRoll - prevSurfaceRoll) * partial; }
 
 	public void setCrouching(boolean crouch) {
 		if(crouch == isCrouching()) return;
@@ -164,7 +170,7 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 		if(!crouch && !worldObj.getCollidingBoundingBoxes(this,
 				AxisAlignedBB.getBoundingBox(posX - BODY_WIDTH / 2D, boundingBox.minY + 0.001D, posZ - BODY_WIDTH / 2D,
 						posX + BODY_WIDTH / 2D, boundingBox.minY + STANDING_HEIGHT, posZ + BODY_WIDTH / 2D)).isEmpty()) return;
-		dataWatcher.updateObject(23, Byte.valueOf((byte) (crouch ? 1 : 0)));
+		dataWatcher.updateObject(23, Byte.valueOf((byte) ((dataWatcher.getWatchableObjectByte(23) & ~1) | (crouch ? 1 : 0))));
 		resizeBody(crouch ? CRAWLING_WIDTH : BODY_WIDTH, crouch ? CRAWLING_HEIGHT : STANDING_HEIGHT);
 	}
 	private void resizeBody(float bodyWidth, float bodyHeight) {
@@ -297,9 +303,15 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 		double x = lastTickPosX + (posX - lastTickPosX) * partial;
 		double y = lastTickPosY + (posY - lastTickPosY) * partial;
 		double z = lastTickPosZ + (posZ - lastTickPosZ) * partial;
-		return Vec3.createVectorHelper(x + Math.cos(yaw) * side * 0.125D - Math.sin(yaw) * 0.125D,
-				y + (24 - getBodyModelY(partial) - 7 * getBodyVerticalScale(partial)) / 16D,
-				z + Math.sin(yaw) * side * 0.125D + Math.cos(yaw) * 0.125D);
+		double localX = side * 0.125D;
+		double localY = (24 - getBodyModelY(partial) - 7 * getBodyVerticalScale(partial)) / 16D - CRAWLING_HEIGHT / 2D;
+		// RenderLiving flips model Y before the body roll.
+		double roll = -getSurfaceRoll(partial) * Math.PI / 180;
+		double socketX = localX * Math.cos(roll) - localY * Math.sin(roll);
+		double socketY = localX * Math.sin(roll) + localY * Math.cos(roll);
+		return Vec3.createVectorHelper(x + Math.cos(yaw) * socketX - Math.sin(yaw) * 0.125D,
+				y + CRAWLING_HEIGHT / 2D + socketY,
+				z + Math.sin(yaw) * socketX + Math.cos(yaw) * 0.125D);
 	}
 	/** The same articulated centerline is used for drawing and server obstruction checks. */
 	public Vec3 getTendrilPoint(EntityLivingBase target, int side, int joint, float partial) {
@@ -360,7 +372,7 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 
 	public void beginStrike(EntityLivingBase target) {
 		if(worldObj.isRemote || !GeminiSpawning.canAct(this, 1) || getHuntState() != CHASE
-				|| isSurfaceTraversal() || isLeaping() && !isLeapAirborne()
+				|| isLeaping() && !isLeapAirborne()
 				|| getHealth() <= 0 || isCaptureBusy() || hasCapturedVillager() || isGrabbing() || isProbing() || strikeCooldown > 0 || !canStrike(target)) return;
 		strikeTarget = target;
 		captureState(CaptureState.GRABBING);
@@ -899,9 +911,11 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 		prevCrouchBlend = crouchBlend;
 		prevStalkBlend = stalkBlend;
 		prevLeapBlend = leapBlend;
+		prevSurfaceRoll = surfaceRoll;
+		surfaceRoll += MathHelper.clamp_float((getSurfaceFace() == 1 ? 180F : 0F) - surfaceRoll, -18F, 18F);
 		float leapPose = isLeapAirborne() ? -0.35F : ((dataWatcher.getWatchableObjectByte(21) >> 1) & 15) / 10F;
 		leapBlend += (leapPose - leapBlend) * 0.45F;
-		climbBlend += ((isOnLadder() ? 1F : 0F) - climbBlend) * 0.2F;
+		climbBlend += ((isOnLadder() && getSurfaceFace() != 1 ? 1F : 0F) - climbBlend) * 0.2F;
 		crouchBlend += ((isCrouching() ? 1F : 0F) - crouchBlend) * 0.25F;
 		stalkBlend += ((getHuntState() == STALK ? 1F : 0F) - stalkBlend) * 0.15F;
 		prevBurrowDepth = burrowDepth;

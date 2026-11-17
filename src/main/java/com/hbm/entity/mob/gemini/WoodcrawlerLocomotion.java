@@ -75,7 +75,7 @@ final class WoodcrawlerLocomotion {
             }
         }
         if(keepCrawling()) mob.setCrouching(true);
-        if(folded != mob.isCrouching()) mob.getNavigator().clearPathEntity();
+        if(folded != mob.isCrouching() && !surface.active()) mob.getNavigator().clearPathEntity();
     }
 
     void tick() {
@@ -83,7 +83,7 @@ final class WoodcrawlerLocomotion {
         if(retryTicks > 0) retryTicks--;
         if(digDelay > 0) digDelay--;
         // Native ground navigation owns the opened passage; frame collisions must not start a roof climb.
-        if(mob.isEnteringDoorway()) { mob.setClimbing(false); return; }
+        if(mob.isEnteringDoorway() && !surface.active()) { mob.setClimbing(false); return; }
         boolean allowed = !mob.isBurrowing() && !mob.isGrabbing() && !mob.isProbing() && !mob.isCaptureBusy()
                 && (mob.getHuntState() != EntityWoodcrawler.BANG || digging != null);
         if(surface.tick(recovering() ? escapeX : goalX, recovering() ? escapeY : goalY,
