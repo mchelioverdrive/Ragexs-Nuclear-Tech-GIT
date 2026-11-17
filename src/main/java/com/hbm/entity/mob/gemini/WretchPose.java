@@ -21,7 +21,7 @@ public final class WretchPose {
     private final Vec3 previous = vector(), target = vector();
     private final Vec3 anchor = vector(), remain = vector();
     public final Vec3 body = vector();
-    public float lean, headYaw, headPitch, curl, breath, stride;
+    public float lean, torsoYaw, headYaw, headPitch, curl, breath, stride;
     public double age;
     private int cachedTick = Integer.MIN_VALUE;
     private float cachedPartial = -1;
@@ -37,6 +37,8 @@ public final class WretchPose {
     private int groundTick = Integer.MIN_VALUE;
     private final Vec3 sliceA = vector(), sliceB = vector();
     private final int[] stepDuration = {16, 16};
+    private final Vec3[] reach = {vector(), vector(), vector()};
+    private double standingLean, standingY, standingX;
 
     public WretchPose(EntityWretch boss) {
         this.boss = boss;
@@ -58,13 +60,23 @@ public final class WretchPose {
         age = boss.worldObj.getTotalWorldTime() + partial;
         double awake = boss.awakeAmount(partial), death = ease((boss.deathTime + (boss.deathTime > 0 ? partial : 0)) / 20D);
         stride = Math.min(1F, boss.prevLimbSwingAmount + (boss.limbSwingAmount - boss.prevLimbSwingAmount) * partial);
-        if(!boss.isAwake() || boss.state() != EntityWretch.IDLE && boss.state() != EntityWretch.SWIPE && boss.state() != EntityWretch.GRAB || death > 0) stride = 0;
+        if(!boss.isAwake() || boss.state() != EntityWretch.IDLE && boss.state() != EntityWretch.SWIPE || death > 0) stride = 0;
         breath = (float) Math.sin(age * (boss.isAwake() ? 0.045 : 0.023));
         double change = ease(boss.behaviorTime(partial) / 8D);
         double charge = (boss.previousBehavior() == WretchBrain.CHARGING ? 1 - change : 0) + (boss.behavior() == WretchBrain.CHARGING ? change : 0);
         lean = (float) (0.10 + Math.sin(age * 0.019) * 0.015 + stride * 0.08 + charge * 0.11 + death * 0.48);
         double recoil = boss.hurtTime > 0 ? Math.sin((boss.hurtTime - partial) * 0.55) * 0.15 : 0;
         set(body, Math.sin(age * 0.021) * 0.07 + recoil, 12.8 - (1 - awake) * 5.2 - death * 7.5 + breath * 0.06, -0.2);
+        standingLean = lean; standingY = body.yCoord; standingX = body.xCoord;
+        float time = boss.stateTime(partial);
+        double blend = ease(time / (boss.state() == EntityWretch.RECOVER ? 14D : 7D));
+        double bend = bend(boss.previousState(), boss.previousStateTime()) * (1 - blend) + bend(boss.state(), time) * blend;
+        torsoYaw = (float) (aimYaw() * bend);
+        lean += bendAngle(boss.aimY()) * bend;
+        // Rotate about the hips, with a small supporting squat. Feet retain their planted anchors.
+        body.yCoord += 3 * (Math.cos(lean) - Math.cos(standingLean)) - 0.45 * bend;
+        body.xCoord += -Math.sin(torsoYaw) * 3 * Math.sin(lean);
+        body.zCoord += Math.cos(torsoYaw) * 3 * Math.sin(lean) - 3 * Math.sin(standingLean);
         headYaw = MathHelper.clamp_float(MathHelper.wrapAngleTo180_float(boss.prevRotationYawHead
                 + MathHelper.wrapAngleTo180_float(boss.rotationYawHead - boss.prevRotationYawHead) * partial
                 - facing(partial)), -42, 42) * (float) Math.PI / 180F;
@@ -73,8 +85,6 @@ public final class WretchPose {
         bodyPoint(head[0], 0.12, 5.9, 1.05);
         double hy = head[0].yCoord;
         set(head[1], head[0].xCoord - Math.sin(headYaw) * Math.cos(headPitch) * 2.9, hy - Math.sin(headPitch) * 2.9, head[0].zCoord + Math.cos(headYaw) * Math.cos(headPitch) * 2.9);
-        float time = boss.stateTime(partial);
-        double blend = ease(time / (boss.state() == EntityWretch.RECOVER ? 14D : 7D));
         curl = (float) (curl(boss.previousState(), boss.previousStateTime()) * (1 - blend) + curl(boss.state(), time) * blend);
         for(int arm = 0; arm < 2; arm++) {
             double side = arm == 0 ? -1 : 1;
@@ -116,7 +126,52 @@ public final class WretchPose {
 
     /** All torso attachments use this same transform, including the rendered flesh hierarchy. */
     public void bodyPoint(Vec3 out, double x, double y, double z) {
-        set(out, body.xCoord + x, body.yCoord + y * Math.cos(lean) - z * Math.sin(lean), body.zCoord + y * Math.sin(lean) + z * Math.cos(lean));
+        double forward = y * Math.sin(lean) + z * Math.cos(lean);
+        set(out, body.xCoord + x * Math.cos(torsoYaw) - forward * Math.sin(torsoYaw),
+                body.yCoord + y * Math.cos(lean) - z * Math.sin(lean), body.zCoord + x * Math.sin(torsoYaw) + forward * Math.cos(torsoYaw));
+    }
+    private double aimYaw() {
+        double yaw = Math.toRadians(facing(cachedPartial));
+        return MathHelper.clamp_double(Math.atan2(-(boss.aimX() * Math.cos(yaw) + boss.aimZ() * Math.sin(yaw)),
+                -boss.aimX() * Math.sin(yaw) + boss.aimZ() * Math.cos(yaw)), -1.75, 1.75);
+    }
+    private static double bendAngle(double height) { return 0.82 * ease((17 - height) / 15D); }
+    private double bend(int state, double time) {
+        if(state == EntityWretch.GRAB || state == EntityWretch.BREACH) return ease(time / 24D);
+        if(state == EntityWretch.HOLD || state == EntityWretch.THROW) return 1;
+        if(state == EntityWretch.PULL) return 1 - ease(time / 60D);
+        return 0;
+    }
+    /** Predict the same fully bent shoulder and fixed-length IK used at grab contact. */
+    boolean reachable(int arm, double x, double y, double z, boolean clear) {
+        if(!Double.isFinite(x + y + z)) return false;
+        update(1);
+        double yaw = Math.toRadians(facing(1)), dx = x - boss.posX, dz = z - boss.posZ;
+        double ax = dx * Math.cos(yaw) + dz * Math.sin(yaw), az = -dx * Math.sin(yaw) + dz * Math.cos(yaw);
+        double twist = MathHelper.clamp_double(Math.atan2(-ax, az), -1.75, 1.75), angle = standingLean + bendAngle(y - boss.posY);
+        double side = arm == 0 ? -1.45 : 1.7, height = arm == 0 ? 4.4 : 3.8;
+        double forward = (height + 3) * Math.sin(angle) + 0.2 * Math.cos(angle);
+        set(reach[0], standingX + side * Math.cos(twist) - forward * Math.sin(twist),
+                standingY + (height + 3) * Math.cos(angle) - 3 * Math.cos(standingLean) - 0.2 * Math.sin(angle) - 0.45,
+                -0.2 + side * Math.sin(twist) + forward * Math.cos(twist) - 3 * Math.sin(standingLean));
+        set(reach[2], ax, y - boss.posY, az);
+        if(reach[0].distanceTo(reach[2]) > 18.899) return false;
+        if(!clear) return true;
+        solve(reach, 9.3, 9.6, arm == 0 ? -1 : 1, -0.65);
+        for(Vec3 joint : reach) toWorld(joint, joint, 1);
+        return boss.clearRay(reach[0], reach[1], false) && boss.clearRay(reach[1], reach[2], false);
+    }
+    MovingObjectPosition reachObstruction(double x, double y, double z) {
+        for(int arm = 0; arm < 2; arm++) {
+            if(!reachable(arm, x, y, z, false) || reachable(arm, x, y, z, true)) continue;
+            for(int bone = 0; bone < 2; bone++) {
+                if(!WretchBrain.lineLoaded(boss.worldObj, reach[bone], reach[bone + 1])) continue;
+                Vec3 from = reach[bone];
+                MovingObjectPosition hit = boss.worldObj.func_147447_a(Vec3.createVectorHelper(from.xCoord, from.yCoord, from.zCoord), reach[bone + 1], false, true, false);
+                if(hit != null) return hit;
+            }
+        }
+        return null;
     }
     private float facing(float partial) { return boss.prevRotationYaw + MathHelper.wrapAngleTo180_float(boss.rotationYaw - boss.prevRotationYaw) * partial; }
     private void toWorld(Vec3 p, Vec3 out, float partial) {
@@ -201,7 +256,8 @@ public final class WretchPose {
                 footX[leg] = oldFootX[leg] = wx; footZ[leg] = oldFootZ[leg] = wz; stepStart[leg] = boss.ticksExisted - 20;
             }
             int elapsed = boss.ticksExisted - stepStart[leg];
-            if(elapsed >= stepDuration[leg] && boss.ticksExisted - stepStart[1 - leg] >= stepDuration[1 - leg] && dx * dx + dz * dz > 0.7) {
+            if(boss.state() == EntityWretch.GRAB) { elapsed = stepDuration[leg]; stepStart[leg] = boss.ticksExisted - elapsed; }
+            if(boss.state() != EntityWretch.GRAB && elapsed >= stepDuration[leg] && boss.ticksExisted - stepStart[1 - leg] >= stepDuration[1 - leg] && dx * dx + dz * dz > 0.7) {
                 stepStart[leg] = boss.ticksExisted; elapsed = 0; startX[leg] = footX[leg]; startZ[leg] = footZ[leg];
                 double speed = Math.sqrt(boss.motionX * boss.motionX + boss.motionZ * boss.motionZ);
                 stepDuration[leg] = MathHelper.clamp_int((int) (1.8 / Math.max(0.04, speed)), 5, 16);

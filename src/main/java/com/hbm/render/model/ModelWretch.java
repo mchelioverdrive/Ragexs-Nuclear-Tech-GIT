@@ -131,6 +131,7 @@ public final class ModelWretch extends ModelBase {
         WretchPose p = boss.pose(partial);
         GL11.glPushMatrix();
         GL11.glTranslated(p.body.xCoord, p.body.yCoord, p.body.zCoord);
+        GL11.glRotatef(-p.torsoYaw * 57.29578F, 0, 1, 0);
         GL11.glRotatef(p.lean * 57.29578F, 1, 0, 0);
         GL11.glPushMatrix(); GL11.glScalef(1 + p.breath * 0.008F, 1, 1 + p.breath * 0.013F);
         color(0.56F, 0.22F, 0.19F, boss); flesh.render(UNIT);

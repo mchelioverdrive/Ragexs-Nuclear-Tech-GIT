@@ -2,6 +2,11 @@ package com.hbm.entity.mob.gemini;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
 import com.hbm.config.GeminiConfig;
 import com.hbm.world.gemini.WretchCamps;
 import net.minecraft.block.Block;
@@ -24,6 +29,12 @@ final class WretchBuilding {
     private int removed, changeTick, changedThisTick, contactArm = -1;
     private final Vec3[] oldHand = {Vec3.createVectorHelper(0, 0, 0), Vec3.createVectorHelper(0, 0, 0)};
     private final boolean[] swept = new boolean[2];
+    private final Map<Long, Denial> denied = new HashMap<Long, Denial>();
+    private Vec3 breachPoint;
+    private String lastBlock = "none", rejection = "none";
+    private static final class Denial {
+        Block block; int meta, until; String reason;
+    }
     WretchBuilding(EntityWretch boss) { this.boss = boss; }
     boolean known(int clock) { return expires > clock; }
     static boolean constructed(Block b) {
@@ -105,15 +116,112 @@ final class WretchBuilding {
         boss.present(featureMode, feature); nextGesture = clock + 140 + boss.getRNG().nextInt(260); return true;
     }
     Vec3 obstruction(double x, double y, double z) {
-        if(feature != null && boss.canReach(feature.xCoord, feature.yCoord, feature.zCoord)) return feature;
+        Vec3 movement = boss.navigation.obstruction();
+        if(movement != null) return movement;
+        MovingObjectPosition armBlock = boss.pose(1).reachObstruction(x, y + 0.9, z);
+        if(armBlock != null && useful(armBlock.blockX, armBlock.blockY, armBlock.blockZ)) return blockCenter(armBlock);
         for(int i = 0; i < 4; i++) {
             double h = MathHelper.clamp_double(y - boss.posY + i * 1.5, 1.1, 12);
             Vec3 from = Vec3.createVectorHelper(boss.posX, boss.posY + h, boss.posZ);
             double dx = x - boss.posX, dz = z - boss.posZ, length = Math.max(1, Math.sqrt(dx * dx + dz * dz));
             MovingObjectPosition hit = ray(from, from.addVector(dx / length * Math.min(9, length), 0, dz / length * Math.min(9, length)));
-            if(hit != null && boss.canReach(hit.hitVec.xCoord, hit.hitVec.yCoord, hit.hitVec.zCoord)) return outside(hit);
+            if(hit != null && useful(hit.blockX, hit.blockY, hit.blockZ)
+                    && boss.canReach(hit.blockX + 0.5, hit.blockY + 0.5, hit.blockZ + 0.5)) return blockCenter(hit);
         }
         return null;
+    }
+    private Vec3 blockCenter(MovingObjectPosition hit) {
+        return Vec3.createVectorHelper(hit.blockX + 0.5, hit.blockY + 0.5, hit.blockZ + 0.5);
+    }
+    private static long key(int x, int y, int z) {
+        return ((long) (x & 0x3FFFFFF) << 38) | ((long) (z & 0x3FFFFFF) << 12) | (y & 0xFFF);
+    }
+    private boolean useful(int x, int y, int z) {
+        if(y < 1 || y > 254 || !boss.worldObj.blockExists(x, y, z)) return false;
+        Block block = boss.worldObj.getBlock(x, y, z);
+        if(block == net.minecraft.init.Blocks.air) return false;
+        lastBlock = Block.blockRegistry.getNameForObject(block) + " at " + x + "," + y + "," + z;
+        Denial denial = denied.get(key(x, y, z));
+        if(denial != null && denial.until > boss.ticksExisted && denial.block == block
+                && denial.meta == boss.worldObj.getBlockMetadata(x, y, z)) { rejection = denial.reason; return false; }
+        String reason = WretchCamps.contactRejection(boss, x, y, z);
+        if(reason != null) { rejected(x, y, z, reason); return false; }
+        return true;
+    }
+    String lastObstruction() { return lastBlock; }
+    String lastRejection() { return rejection; }
+    void rejected(int x, int y, int z, String reason) {
+        rejection = reason;
+        if(!boss.worldObj.blockExists(x, y, z)) return;
+        Denial denial = new Denial(); denial.block = boss.worldObj.getBlock(x, y, z);
+        lastBlock = Block.blockRegistry.getNameForObject(denial.block) + " at " + x + "," + y + "," + z;
+        denial.reason = reason;
+        denial.meta = boss.worldObj.getBlockMetadata(x, y, z); denial.until = boss.ticksExisted + 200;
+        if(denied.size() >= 128) denied.clear();
+        denied.put(key(x, y, z), denial);
+    }
+    void beginBreach(Vec3 point) { breachPoint = point; }
+    void finishBreach() {
+        if(removed == 0 && breachPoint != null) {
+            int x = MathHelper.floor_double(breachPoint.xCoord), y = MathHelper.floor_double(breachPoint.yCoord), z = MathHelper.floor_double(breachPoint.zCoord);
+            Denial denial = denied.get(key(x, y, z));
+            if(denial == null || denial.until <= boss.ticksExisted) rejected(x, y, z, "strike made no removable limb contact");
+        }
+        breachPoint = null;
+    }
+    private boolean intersects(int x, int y, int z, AxisAlignedBB[] boxes) {
+        if(!boss.worldObj.blockExists(x, y, z)) return false;
+        Block block = boss.worldObj.getBlock(x, y, z);
+        ArrayList<AxisAlignedBB> collisions = new ArrayList<AxisAlignedBB>(4);
+        for(AxisAlignedBB box : boxes) {
+            block.addCollisionBoxesToList(boss.worldObj, x, y, z, box, collisions, boss);
+            if(!collisions.isEmpty()) return true;
+        }
+        return false;
+    }
+    private ArrayList<int[]> movementBlocks(AxisAlignedBB[] boxes) {
+        ArrayList<int[]> blocks = new ArrayList<int[]>();
+        Set<Long> seen = new HashSet<Long>();
+        int tested = 0;
+        for(AxisAlignedBB box : boxes) {
+            // Fence/wall collision shapes inspect their neighbouring cells too.
+            if(!com.hbm.world.gemini.GardenerNests.loaded(boss.worldObj, box.expand(1, 0, 1))) return blocks;
+            for(int x = MathHelper.floor_double(box.minX); x <= MathHelper.floor_double(box.maxX); x++)
+                for(int z = MathHelper.floor_double(box.minZ); z <= MathHelper.floor_double(box.maxZ); z++)
+                    for(int y = Math.max(1, MathHelper.floor_double(box.minY) - 1); y <= Math.min(254, MathHelper.floor_double(box.maxY)); y++) {
+                        if(++tested > 1024) return blocks;
+                        if(!seen.add(key(x, y, z)) || !intersects(x, y, z, boxes)) continue;
+                        Block block = boss.worldObj.getBlock(x, y, z);
+                        // Keep ordinary support. Only foliage under the native feet is a recovery
+                        // obstruction; gravity owns the descent after its animated removal.
+                        if(y + 1 <= boss.posY + 0.001 && !block.isLeaves(boss.worldObj, x, y, z)) continue;
+                        if(!useful(x, y, z)) continue;
+                        blocks.add(new int[] {x, y, z});
+                    }
+        }
+        Collections.sort(blocks, new Comparator<int[]>() {
+            @Override public int compare(int[] a, int[] b) {
+                return Double.compare(priority(a), priority(b));
+            }
+            private double priority(int[] p) {
+                double dx = p[0] + 0.5 - boss.posX, dz = p[2] + 0.5 - boss.posZ;
+                return dx * dx + dz * dz + Math.max(0, p[1] - boss.posY) * 0.02;
+            }
+        });
+        return blocks;
+    }
+    Vec3 movementObstruction(AxisAlignedBB[] boxes) {
+        for(int[] p : movementBlocks(boxes)) {
+            Vec3 point = Vec3.createVectorHelper(p[0] + 0.5, p[1] + 0.5, p[2] + 0.5);
+            if(boss.canReach(point.xCoord, point.yCoord, point.zCoord)) {
+                lastBlock = Block.blockRegistry.getNameForObject(boss.worldObj.getBlock(p[0], p[1], p[2])) + " at " + p[0] + "," + p[1] + "," + p[2];
+                return point;
+            }
+        }
+        return null;
+    }
+    private void tickBudget() {
+        if(changeTick != boss.ticksExisted) { changeTick = boss.ticksExisted; changedThisTick = 0; }
     }
     private MovingObjectPosition ray(Vec3 from, Vec3 to) {
         // Vanilla 1.7.10 ray traversal mutates its start vector. Every enclosure ray
@@ -124,7 +232,7 @@ final class WretchBuilding {
     void resetStrike() { examined.clear(); removed = 0; swept[0] = swept[1] = false; contactArm = -1; }
     void strike(int arm) {
         if(removed >= GeminiConfig.wretchBlocksPerStrike || !boss.brain.destructiveIntent()) return;
-        if(changeTick != boss.ticksExisted) { changeTick = boss.ticksExisted; changedThisTick = 0; }
+        tickBudget();
         Vec3 hand = WretchPose.point(boss, arm, 2, 1), tip = boss.pose(1).fingerTip(arm);
         AxisAlignedBB area = GardenerPose.bounds(hand, tip, 0.65);
         int tested = 0; contactArm = arm;
@@ -133,7 +241,9 @@ final class WretchBuilding {
                 for(int z = MathHelper.floor_double(area.minZ); z <= MathHelper.floor_double(area.maxZ); z++) {
                     if(++tested > 48 || examined.size() >= 256 || changedThisTick >= GeminiConfig.wretchBlocksPerTick || removed >= GeminiConfig.wretchBlocksPerStrike) break;
                     long key = ((long) (x & 0x3FFFFFF) << 38) | ((long) (z & 0x3FFFFFF) << 12) | (y & 0xFFF);
-                    if(!examined.add(key) || !contacts(x, y, z)) continue;
+                    // A candidate outside the hand at frame 26 may be the actual contact at 28.
+                    // Do not consume its one examination until the animated limb touches it.
+                    if(!contacts(x, y, z) || !examined.add(key) || !useful(x, y, z)) continue;
                     if(WretchCamps.breakContact(boss, x, y, z)) { changedThisTick++; removed++; }
                 }
         oldHand[arm].xCoord = hand.xCoord; oldHand[arm].yCoord = hand.yCoord; oldHand[arm].zCoord = hand.zCoord;

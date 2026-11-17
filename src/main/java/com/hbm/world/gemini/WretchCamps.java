@@ -397,39 +397,58 @@ public final class WretchCamps extends WorldSavedData {
         if(!boss.worldObj.blockExists(x, y, z) || !natural(boss.worldObj.getBlock(x, y, z))) return false;
         return breakContact(boss, x, y, z);
     }
-    public static boolean breakContact(EntityWretch boss, int x, int y, int z) {
+    /** Side-effect-free policy check shared by obstruction selection and actual contact. */
+    public static String contactRejection(EntityWretch boss, int x, int y, int z) {
         World world = boss.worldObj;
         if(!(world instanceof WorldServer) || !boss.isOperational() || !GeminiConfig.wretchTerrainDestruction
-                || !world.getGameRules().getGameRuleBooleanValue("mobGriefing") || !boss.inTerritory(x, z, boss.territoryRadius())
-                || y < 1 || y > 254 || !world.blockExists(x, y, z) || !boss.mayBreakContact(x, y, z)) return false;
+                || GeminiConfig.wretchBlocksPerStrike == 0) return "terrain destruction disabled/inactive";
+        if(!world.getGameRules().getGameRuleBooleanValue("mobGriefing")) return "mobGriefing=false";
+        if(!boss.inTerritory(x, z, boss.territoryRadius())) return "outside territory";
+        if(y < 1 || y > 254 || !world.blockExists(x, y, z)) return "unloaded/world boundary";
         WretchCamps data = get(world);
         Block block = world.getBlock(x, y, z); int meta = world.getBlockMetadata(x, y, z);
         float hardness = block.getBlockHardness(world, x, y, z);
         if(block == Blocks.air || block == Blocks.tnt || block.getMaterial().isLiquid() || hardness < 0 || hardness > 5
-                || block.hasTileEntity(meta) || world.getTileEntity(x, y, z) != null || !block.canEntityDestroy(world, x, y, z, boss)) return false;
+                || block.hasTileEntity(meta) || world.getTileEntity(x, y, z) != null || !block.canEntityDestroy(world, x, y, z, boss)) return "unsafe/unbreakable block or tile";
         if(!GeminiConfig.wretchPlayerStructureDamage) {
             if(data.placementOverflow || data.placed(x, z)
-                    || !data.generatedChunks.contains(column(x >> 4, z >> 4))) return false;
+                    || !data.generatedChunks.contains(column(x >> 4, z >> 4))) return "player placement/unknown chunk provenance";
             Camp camp = data.find(boss.getUniqueID());
-            if(camp != null && camp.protectedColumns.contains(column(x, z))) return false;
+            if(camp != null && camp.protectedColumns.contains(column(x, z))) return "protected camp column";
             boolean generated = GeminiConfig.wretchGeneratedStructureDamage && data.generatedBuilding(world, x, y, z);
-            if(!natural(block) && !generated) return false;
+            if(!natural(block) && !generated) return "protected construction";
             if(!generated) {
                 // Conservative legacy construction guard, including natural-material supports beside walls.
                 for(int dx = -2; dx <= 2; dx++) for(int dz = -2; dz <= 2; dz++) {
-                    if(!world.blockExists(x + dx, y, z + dz)) return false;
+                    if(!world.blockExists(x + dx, y, z + dz)) return "unloaded protection boundary";
                     Block nearby = world.getBlock(x + dx, y, z + dz);
-                    if(!natural(nearby) && nearby.getMaterial().blocksMovement()) return false;
+                    if(!natural(nearby) && nearby.getMaterial().blocksMovement()) return "adjacent protected construction";
                 }
             }
         }
+        return null;
+    }
+    private static boolean rejectContact(EntityWretch boss, int x, int y, int z, String reason) {
+        boss.contactRejected(x, y, z, reason); return false;
+    }
+    public static boolean breakContact(EntityWretch boss, int x, int y, int z) {
+        World world = boss.worldObj;
+        String rejection = contactRejection(boss, x, y, z);
+        if(rejection != null) return rejectContact(boss, x, y, z, rejection);
+        if(!boss.mayBreakContact(x, y, z)) return rejectContact(boss, x, y, z, "no animated contact/destructive intent");
+        Block block = world.getBlock(x, y, z); int meta = world.getBlockMetadata(x, y, z);
         EntityPlayer actor = FakePlayerFactory.getMinecraft((WorldServer) world);
-        if(!world.canMineBlock(actor, x, y, z) || MinecraftForge.EVENT_BUS.post(new BlockEvent.BreakEvent(x, y, z, world, block, meta, actor))) return false;
+        if(!world.canMineBlock(actor, x, y, z)) return rejectContact(boss, x, y, z, "mining permission");
+        if(MinecraftForge.EVENT_BUS.post(new BlockEvent.BreakEvent(x, y, z, world, block, meta, actor))) return rejectContact(boss, x, y, z, "Forge break veto");
         if(!boss.isOperational() || !GeminiConfig.wretchTerrainDestruction || !world.getGameRules().getGameRuleBooleanValue("mobGriefing")
                 || !boss.mayBreakContact(x, y, z) || world.getBlock(x, y, z) != block || world.getBlockMetadata(x, y, z) != meta
-                || world.getTileEntity(x, y, z) != null) return false;
-        if(world.setBlock(x, y, z, Blocks.air, 0, 3)) { boss.contactBroken(); return true; }
-        return false;
+                || world.getTileEntity(x, y, z) != null || contactRejection(boss, x, y, z) != null)
+            return rejectContact(boss, x, y, z, "state changed during break event");
+        if(world.setBlock(x, y, z, Blocks.air, 0, 3)) {
+            world.playAuxSFX(2001, x, y, z, Block.getIdFromBlock(block) | meta << 12);
+            boss.contactBroken(); return true;
+        }
+        return rejectContact(boss, x, y, z, "world rejected removal");
     }
     private boolean placed(int x, int z) {
         BitSet set = placedColumns.get(column(x >> 4, z >> 4));

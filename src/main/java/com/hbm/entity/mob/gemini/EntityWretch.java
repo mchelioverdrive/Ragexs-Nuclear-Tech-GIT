@@ -169,20 +169,21 @@ public final class EntityWretch extends EntityCreature implements IMob, IBossDis
     private void stop() { navigation.halt(); }
     @Override public void moveEntity(double x, double y, double z) {
         if(navigation == null) { super.moveEntity(x, y, z); return; }
+        double requestedX = x, requestedZ = z, oldX = posX, oldZ = posZ;
+        boolean anatomyBlocked = false;
         if(!worldObj.isRemote && (!operational || !isAwake())) x = z = 0;
         AxisAlignedBB swept = boundingBox.addCoord(x, y, z).expand(1, 0, 1);
         if(!GardenerNests.loaded(worldObj, swept)) { motionX = motionZ = 0; return; }
-        if(y != 0 && navigation.anatomyClear(posX, posY, posZ) && !navigation.anatomyClear(posX, posY + y, posZ)) y = 0;
-        AxisAlignedBB step = AxisAlignedBB.getBoundingBox(posX + x - width * 0.5, posY + 0.02, posZ + z - width * 0.5,
-                posX + x + width * 0.5, posY + 0.8, posZ + z + width * 0.5);
-        if((x != 0 || z != 0) && !navigation.anatomyClear(posX + x, posY + y, posZ + z)
-                && !(onGround && !worldObj.getCollidingBoundingBoxes(this, step).isEmpty()
-                && navigation.anatomyClear(posX + x, posY + 1, posZ + z))) x = z = 0;
+        double clippedY = navigation.verticalMovement(y);
+        if(clippedY != y) motionY = 0;
+        y = clippedY;
+        if((x != 0 || z != 0) && !navigation.movementClear(posX + x, posY + y, posZ + z)) { x = z = 0; anatomyBlocked = true; }
         // Native feet collision supplies real stepping, support and gravity. The raised torso and leg
         // columns are separately swept above; empty space beneath the torso is not a solid collider.
         boundingBox.setBounds(posX - width * 0.5, posY, posZ - width * 0.5, posX + width * 0.5, posY + 0.8, posZ + width * 0.5);
         try { super.moveEntity(x, y, z); }
         finally { boundingBox.setBounds(posX - width * 0.5, posY, posZ - width * 0.5, posX + width * 0.5, posY + height, posZ + width * 0.5); }
+        if(!worldObj.isRemote) navigation.collision(anatomyBlocked, requestedX, requestedZ, posX - oldX, posZ - oldZ);
     }
     @Override protected void updateAITasks() {
         if(!operational) { navigation.halt(); return; }
@@ -223,7 +224,7 @@ public final class EntityWretch extends EntityCreature implements IMob, IBossDis
         if(entity == null || !entity.isEntityAlive() || entity.worldObj != worldObj || getDistanceSqToEntity(entity) > range * range) return false;
         return clearRay(headPoint(1), Vec3.createVectorHelper(entity.posX, entity.boundingBox.minY + entity.getEyeHeight(), entity.posZ), true);
     }
-    private boolean clearRay(Vec3 from, Vec3 to, boolean glass) {
+    boolean clearRay(Vec3 from, Vec3 to, boolean glass) {
         if(!WretchBrain.lineLoaded(worldObj, from, to)) return false;
         // The ray walker mutates its origin; shared pose joints must remain immutable here.
         for(int pass = 0; pass < (glass ? 5 : 1); pass++) {
@@ -245,42 +246,59 @@ public final class EntityWretch extends EntityCreature implements IMob, IBossDis
     }
     private boolean visible(EntityLivingBase target, double range) { return sight(target, range); }
     boolean canReach(double x, double y, double z) {
-        double dx = x - posX, dz = z - posZ;
-        if(dx * dx + dz * dz > 12 * 12 || y < posY - 1 || y > posY + 18) return false;
-        Vec3 shoulder = WretchPose.point(this, attackArm(), 0, 1);
-        double ax = shoulder.xCoord - x, ay = shoulder.yCoord - y, az = shoulder.zCoord - z;
-        return ax * ax + ay * ay + az * az < 18.6 * 18.6;
+        return skeleton.reachable(0, x, y, z, false) || skeleton.reachable(1, x, y, z, false);
+    }
+    boolean combatPosition() {
+        EntityLivingBase target = getAttackTarget();
+        if(target == null || !validPrey(target)) return false;
+        Vec3 point = preyPoint(target);
+        return skeleton.reachable(0, point.xCoord, point.yCoord, point.zCoord, true)
+                || skeleton.reachable(1, point.xCoord, point.yCoord, point.zCoord, true);
+    }
+    private Vec3 preyPoint(EntityLivingBase target) {
+        AxisAlignedBB box = target.boundingBox;
+        return Vec3.createVectorHelper((box.minX + box.maxX) * 0.5, (box.minY + box.maxY) * 0.5, (box.minZ + box.maxZ) * 0.5);
     }
     boolean attackClear(int arm, EntityLivingBase victim) {
         Vec3 shoulder = WretchPose.point(this, arm, 0, 1), elbow = WretchPose.point(this, arm, 1, 1), hand = WretchPose.point(this, arm, 2, 1);
-        Vec3 contact = Vec3.createVectorHelper(victim.posX, victim.boundingBox.minY + victim.height * 0.5, victim.posZ);
+        Vec3 contact = preyPoint(victim);
         return clearRay(shoulder, elbow, false) && clearRay(elbow, hand, false) && clearRay(hand, contact, false);
     }
     boolean tryCombat() {
         if(state() != IDLE || cooldown != 0 || awakeAmount(0) < 1) return false;
         EntityLivingBase target = getAttackTarget();
         Vec3 point = target != null && validPrey(target) && sight(target, GeminiConfig.wretchDetectionRange)
-                ? Vec3.createVectorHelper(target.posX, target.boundingBox.minY + target.height * 0.5, target.posZ) : brain.attackPoint();
+                ? preyPoint(target) : brain.attackPoint();
         if(point == null || !canReach(point.xCoord, point.yCoord, point.zCoord)) return false;
-        aimPoint(point.xCoord, point.yCoord, point.zCoord); dataWatcher.updateObject(27, (byte) rand.nextInt(2));
+        int arm = rand.nextInt(2);
+        if(!skeleton.reachable(arm, point.xCoord, point.yCoord, point.zCoord, true)) arm = 1 - arm;
+        if(!skeleton.reachable(arm, point.xCoord, point.yCoord, point.zCoord, true)) return false;
+        aimPoint(point.xCoord, point.yCoord, point.zCoord); dataWatcher.updateObject(27, (byte) arm);
         int next = point.yCoord - posY < 2.5 && rand.nextInt(phase() >= 1 ? 3 : 5) == 0 ? SLAM : SWIPE;
         if(target != null && capture.eligible(target) && target.getEntityData().getLong("WretchEscapeUntil") <= worldObj.getTotalWorldTime()
                 && rand.nextInt(lastAttack == GRAB ? 3 : 4) != 0) next = GRAB;
+        // Swipes retain their ten-block sweep. Distant/elevated prey need the aimed reach.
+        if(next == SWIPE && (Math.hypot(point.xCoord - posX, point.zCoord - posZ) > 10 || point.yCoord > posY + 12)
+                && target != null && capture.eligible(target)
+                && target.getEntityData().getLong("WretchEscapeUntil") <= worldObj.getTotalWorldTime()) next = GRAB;
         if(next == SLAM && lastAttack == SLAM) next = SWIPE;
-        lastAttack = next; clearPresentation(); begin(next); voice("stretch", 1.5F); return true;
+        lastAttack = next; clearPresentation(); begin(next); if(next == GRAB) stop(); voice("stretch", 1.5F); return true;
     }
     void structuralAttack(Vec3 point) {
-        clearPresentation(); dataWatcher.updateObject(27, (byte) rand.nextInt(2));
-        aimPoint(point.xCoord, point.yCoord, point.zCoord); begin(BREACH); stop(); voice("stretch", 1.5F);
+        clearPresentation(); int arm = rand.nextInt(2);
+        if(!skeleton.reachable(arm, point.xCoord, point.yCoord, point.zCoord, false)) arm = 1 - arm;
+        dataWatcher.updateObject(27, (byte) arm);
+        aimPoint(point.xCoord, point.yCoord, point.zCoord); begin(BREACH); brain.building.beginBreach(point); stop(); voice("stretch", 1.5F);
     }
     void cancelCombat() { release(); meal = null; if(state() != IDLE) begin(IDLE); navigation.halt(); setAttackTarget(null); }
     public boolean mayBreakContact(int x, int y, int z) { return brain.destructiveIntent() && brain.building.contacts(x, y, z); }
-    public void contactBroken() { brain.structuralProgress(); }
+    public void contactBroken() { brain.structuralProgress(); navigation.obstructionRemoved(); }
+    public void contactRejected(int x, int y, int z, String reason) { brain.building.rejected(x, y, z, reason); }
     public boolean hasSpawnClearance() { return navigation.canStand(posX, posY, posZ); }
     private void aimPoint(double x, double y, double z) {
         dataWatcher.updateObject(24, (float) (x - posX)); dataWatcher.updateObject(25, (float) (y - posY)); dataWatcher.updateObject(26, (float) (z - posZ)); skeleton.invalidate();
     }
-    private void aim(EntityLivingBase target) { aimPoint(target.posX, target.boundingBox.minY + target.height * 0.5, target.posZ); }
+    private void aim(EntityLivingBase target) { Vec3 point = preyPoint(target); aimPoint(point.xCoord, point.yCoord, point.zCoord); }
     void begin(int next) {
         dataWatcher.updateObject(30, (byte) state()); dataWatcher.updateObject(31, (int) stateTime(0));
         dataWatcher.updateObject(20, (byte) next); dataWatcher.updateObject(21, (int) worldObj.getTotalWorldTime());
@@ -325,6 +343,7 @@ public final class EntityWretch extends EntityCreature implements IMob, IBossDis
     private void tickAttack() {
         attackTicks++;
         int state = state();
+        if(state == GRAB && attackTicks <= 24 && validPrey(getAttackTarget()) && sight(getAttackTarget(), GeminiConfig.wretchDetectionRange)) aim(getAttackTarget());
         if(state == SWIPE && attackTicks <= 20 && validPrey(getAttackTarget()) && sight(getAttackTarget(), GeminiConfig.wretchDetectionRange)) aim(getAttackTarget());
         if(state == RECOVER) {
             if(attackTicks >= (phase() == 2 ? 16 : 24)) { begin(IDLE); cooldown = phase() == 2 ? 18 : 25; }
@@ -359,14 +378,17 @@ public final class EntityWretch extends EntityCreature implements IMob, IBossDis
             strike(true); if(state() == HOLD) return;
         }
         if(state == SLAM && attackTicks == 34) slam();
-        if(attackTicks >= (state == SLAM || state == BREACH ? 44 : 38)) recovery();
+        if(attackTicks >= (state == SLAM || state == BREACH ? 44 : 38)) {
+            if(state == BREACH) brain.building.finishBreach();
+            recovery();
+        }
     }
     private void strike(boolean grab) {
         int arm = attackArm();
         Vec3 a = WretchPose.point(this, arm, 1, 1), b = WretchPose.point(this, arm, 2, 1);
         Vec3 fingers = pose(1).fingerTip(arm);
         AxisAlignedBB area = GardenerPose.bounds(a, b, WretchPose.ARM_RADIUS);
-        AxisAlignedBB handArea = GardenerPose.bounds(b, fingers, 0.3D);
+        AxisAlignedBB handArea = GardenerPose.bounds(b, fingers, 0.55D);
         area.setBounds(Math.min(area.minX, handArea.minX), Math.min(area.minY, handArea.minY), Math.min(area.minZ, handArea.minZ),
                 Math.max(area.maxX, handArea.maxX), Math.max(area.maxY, handArea.maxY), Math.max(area.maxZ, handArea.maxZ));
         int examined = 0;
@@ -375,13 +397,14 @@ public final class EntityWretch extends EntityCreature implements IMob, IBossDis
             EntityLivingBase victim = (EntityLivingBase) entry;
             if(!validPrey(victim) || struck.contains(victim.getUniqueID()) || !attackClear(arm, victim)
                     || !(GardenerPose.touches(a, b, victim.boundingBox, WretchPose.ARM_RADIUS)
-                    || GardenerPose.touches(b, fingers, victim.boundingBox, 0.3D))) continue;
-            struck.add(victim.getUniqueID());
+                    || GardenerPose.touches(b, fingers, victim.boundingBox, 0.3D)
+                    || grab && GardenerPose.touches(b, b, victim.boundingBox, 0.55D))) continue;
             if(grab) {
                 // A forearm sweep can wound; only the articulated palm/fingers can capture.
                 if((GardenerPose.touches(b, fingers, victim.boundingBox, 0.3D) || GardenerPose.touches(b, b, victim.boundingBox, 0.55D)) && capture.take(victim)) return;
                 continue;
             }
+            struck.add(victim.getUniqueID());
             if(victim.attackEntityFrom(DamageSource.causeMobDamage(this), phase() == 2 ? 17F : 13F)) knock(victim, 0.95D, 0.3D);
         }
     }

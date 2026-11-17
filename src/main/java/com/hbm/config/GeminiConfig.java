@@ -163,7 +163,7 @@ public final class GeminiConfig {
 		values.wretchCampChance = config.getInt("campChance", wretch, 256, 0, 100000,
 				"Legacy pacing input when campIntervalSeconds is absent (256 maps to 300 seconds). Zero still disables automatic camps. Loaded-area scheduling replaces the old new-chunk roll.");
 		values.wretchTerrainDestruction = config.getBoolean("terrainDestruction", wretch, true,
-				"Allow contact-limited, provoked Wretch strikes inside its saved territory. Respects mobGriefing, Forge protection events, tiles and construction permissions, including manual Wretches.");
+				"Allow provoked animated hand strikes against combat and movement obstructions, including canopy support, inside the saved territory. Respects mobGriefing, Forge protection events, tiles and construction permissions, including manual Wretches.");
 		values.wretchDetectionRange = config.getInt("detectionRange", wretch, 96, 32, 160, "Visual detection radius in blocks. Sight requires a loaded, unobstructed ray; this is not a path-search radius.");
 		values.wretchHearingRange = config.getInt("hearingRange", wretch, 128, 32, 192, "Maximum disturbance hearing radius. Ordinary movement has a much shorter audible range than explosions.");
 		values.wretchTerritoryRadius = config.getInt("territoryRadius", wretch, 128, 48, 256, "Patrol/pursuit radius around the saved camp or egg origin. No chunk tickets or forced loading.");

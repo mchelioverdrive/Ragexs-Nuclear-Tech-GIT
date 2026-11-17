@@ -27,7 +27,7 @@ public final class WretchBrain {
     private int visitedCount, visitedCursor, scanCursor;
     private int preyId = -1;
     private int state = DORMANT, clock, stateTicks, budget, quiet, stalking, nextCharge, nextDecision;
-    private int cueRemaining, cueKind, reasonRemaining, aggression, failedBreaches, noBreachUntil;
+    private int cueRemaining, cueKind, reasonRemaining, aggression, noBreachUntil;
     private double cueX, cueY, cueZ, goalX, goalY, goalZ;
     private float attention;
     private long lastCue;
@@ -136,12 +136,13 @@ public final class WretchBrain {
             if(target != null && fresh(target, 20) && aggression >= 75) transition(HUNTING);
             break;
         case HUNTING:
-            if(target == null || !fresh(target, 30)) { transition(SEARCHING); break; }
+            if(target == null || !fresh(target, 200)) { transition(SEARCHING); break; }
             if(boss.tryCombat()) break;
-            move(target.x + target.vx * 10, target.y, target.z + target.vz * 10, GeminiConfig.wretchHuntSpeed);
+            if(boss.combatPosition()) { boss.navigation.halt(); break; }
+            pursue(target);
             double distance = horizontal(target.x - boss.posX, target.z - boss.posZ);
             if(clock >= nextCharge && distance > 8 && distance < 38 && boss.getRNG().nextInt(30) == 0) transition(CHARGING);
-            else if(boss.navigation.failures >= 2 && !breach(target.x, target.y, target.z) && stateTicks > 160) transition(AMBUSHING);
+            else if(boss.navigation.failures >= 2 || boss.canReach(target.x, target.y + 0.9, target.z)) breach(target.x, target.y, target.z);
             break;
         case CHARGING:
             if(!goalSet && target != null) {
@@ -149,7 +150,7 @@ public final class WretchBrain {
                 move(target.x + target.vx * 12 + dx / len * 4, target.y, target.z + target.vz * 12 + dz / len * 4, GeminiConfig.wretchChargeSpeed);
             }
             boss.tryCombat(); // A swipe can continue moving; slams and captures anchor their own frames.
-            if(boss.navigation.failures >= 2) { if(target == null || !breach(target.x, target.y, target.z)) transition(AMBUSHING); }
+            if(boss.navigation.failures >= 2) { if(target == null || !breach(target.x, target.y, target.z)) transition(target != null ? HUNTING : SEARCHING); }
             else if(stateTicks >= budget || boss.navigation.arrived(1.5)) transition(target != null && fresh(target, 20) ? HUNTING : SEARCHING);
             break;
         case AMBUSHING:
@@ -199,16 +200,17 @@ public final class WretchBrain {
         int visibleState = attack == EntityWretch.GRAB || attack == EntityWretch.HOLD || attack == EntityWretch.THROW || attack == EntityWretch.PULL ? GRABBING
                 : attack == EntityWretch.ASSIMILATE ? ASSIMILATING : attack == EntityWretch.FEED ? RECOVERING : attack == EntityWretch.RECOVER ? RECOVERING
                 : attack == EntityWretch.BREACH ? BREACHING : HUNTING;
-        if(state != visibleState) transition(visibleState, attack == EntityWretch.SWIPE || attack == EntityWretch.GRAB && boss.combatTicks() < 20);
+        if(state != visibleState) transition(visibleState, attack == EntityWretch.SWIPE || attack == EntityWretch.BREACH);
         if(target != null && attack == EntityWretch.SWIPE && boss.combatTicks() < 32)
             move(target.x, target.y, target.z, GeminiConfig.wretchHuntSpeed * 0.4);
-        else if(target != null && attack == EntityWretch.GRAB && boss.combatTicks() < 20)
-            move(target.x, target.y, target.z, GeminiConfig.wretchStalkSpeed);
+        // Breaches keep their aimed contact planted; pursuit resumes after recovery.
         else boss.navigation.halt();
     }
     private void transition(int next) { transition(next, false); }
     private void transition(int next, boolean keepMoving) {
-        state = next; stateTicks = 0; goalSet = false; if(!keepMoving) boss.navigation.halt(); boss.navigation.failures = 0;
+        state = next; stateTicks = 0; goalSet = false; if(!keepMoving) boss.navigation.halt();
+        if(next == DORMANT || next == RETURNING || next == WANDERING) boss.navigation.failures = 0;
+        if(next == HUNTING || next == CHARGING) aggression = Math.max(55, aggression);
         nextDecision = clock + 20;
         budget = next == WATCHING ? between(90, 240) : next == CHARGING ? between(32, 52) : next == AMBUSHING ? between(220, 420)
                 : between(GeminiConfig.wretchStalkMinSeconds * 20, GeminiConfig.wretchStalkMaxSeconds * 20);
@@ -362,14 +364,34 @@ public final class WretchBrain {
         }
         goalX = x; goalY = y; goalZ = z; goalSet = true; boss.navigation.goal(x, y, z, speed);
     }
+    private void pursue(Memory target) {
+        double distance = horizontal(target.x - boss.posX, target.z - boss.posZ);
+        // A roof or unreachable height needs a ground-side approach, not a destination under prey.
+        if(distance < 6 && target.y > boss.posY + 3) {
+            if(goalSet && !boss.navigation.arrived(1.5) && boss.navigation.failures < 3) return;
+            double angle = Math.atan2(boss.posZ - target.z, boss.posX - target.x);
+            for(int i = 0; i < 8; i++) {
+                double a = angle + (i % 2 == 0 ? 1 : -1) * ((i + 1) / 2) * Math.PI / 4;
+                double x = target.x + Math.cos(a) * 9, z = target.z + Math.sin(a) * 9;
+                double y = boss.navigation.surface(x, boss.posY, z);
+                if(Double.isFinite(y) && boss.inTerritory(x, z, boss.territoryRadius() - 2) && boss.navigation.canStand(x, y, z)) {
+                    move(x, y, z, GeminiConfig.wretchHuntSpeed); return;
+                }
+            }
+        }
+        move(target.x + target.vx * 10, target.y, target.z + target.vz * 10, GeminiConfig.wretchHuntSpeed);
+    }
     private boolean breach(double x, double y, double z) {
-        if(!destructiveIntent() || clock < noBreachUntil || boss.state() != EntityWretch.IDLE) return false;
+        if(!destructiveIntent() || clock < noBreachUntil || boss.state() != EntityWretch.IDLE
+                || !GeminiConfig.wretchTerrainDestruction || GeminiConfig.wretchBlocksPerStrike == 0
+                || !boss.worldObj.getGameRules().getGameRuleBooleanValue("mobGriefing")) return false;
+        noBreachUntil = clock + 20;
         Vec3 point = building.obstruction(x, y, z);
         if(point == null) return false;
-        if(++failedBreaches > 3) { noBreachUntil = clock + 600; failedBreaches = 0; return false; }
         boss.structuralAttack(point); return true;
     }
-    void structuralProgress() { failedBreaches = 0; }
+    void structuralProgress() { noBreachUntil = 0; }
+    void movementProgress() { noBreachUntil = 0; }
     Vec3 attackPoint() {
         Memory m = selected();
         return m != null && fresh(m, 200) && aggression >= 60 ? Vec3.createVectorHelper(m.x, m.y + 0.9, m.z) : null;
