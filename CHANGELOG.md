@@ -868,3 +868,9 @@
 2026-11-17 23:08 — Keep Fake Player pleas local to nearby real players
 
 - Deliver pleas only to living real players within 16 blocks in the same dimension instead of broadcasting server-wide. Exclude Forge FakePlayer instances, so automated players cannot trigger or receive the chat. Retain copied usernames, random phrases and the saved 8–20-second delay; no nearby real players means no chat delivery.
+
+2026-11-17 23:18 — Give Fake Players typing pauses and deliberate movement imitation
+
+- Stop self-directed movement and attacks while a player mimic types for 6–12 ticks before a local plea, then wait four ticks before resuming its retained path. Begin only with a nearby living real player and recheck recipients at delivery; retain random chat cooldowns, copied usernames and the 16-block range. Keep native momentum, friction, gravity and knockback rather than freezing the entity in place.
+- Synchronize typing through existing entity metadata and save its remaining ticks, so reloading before or after delivery resumes safely without replaying a sent plea. Interrupt typing on damage/reveal or death and retain the existing revival and permanent-burning behavior.
+- Copy visible player arm swings once per swing and jumps once per observed grounded-to-airborne takeoff, using actual height changes instead of stale server motion fields and repeated random attempts. Preserve sneak-versus-retreat movement, close-range reveal, sustained hostile sprinting, skin/name appearance and all existing twitching and villager behavior.

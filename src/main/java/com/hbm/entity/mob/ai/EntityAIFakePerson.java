@@ -15,6 +15,10 @@ public final class EntityAIFakePerson extends EntityAIBase {
 	private EntityLivingBase movementObserved;
 	private double previousObservedX, previousObservedZ;
 	private int retreatTicks;
+	private EntityPlayer imitatedPlayer;
+	private double previousPlayerY;
+	private int previousSwingProgress;
+	private boolean playerWasSwinging, playerWasGrounded;
 	private int pathDelay, stareTicks, burstTicks, burstCooldown, unseenTicks;
 	private long nextScan;
 
@@ -63,11 +67,13 @@ public final class EntityAIFakePerson extends EntityAIBase {
 		observed = null;
 		movementObserved = null;
 		retreatTicks = 0;
+		imitatedPlayer = null;
 		nextScan = mob.worldObj.getTotalWorldTime() + 60;
 	}
 
 	@Override
 	public void updateTask() {
+		if(mob.isTyping()) return;
 		mob.setSneaking(false);
 		EntityLivingBase attacker = mob.getAttackTarget();
 		if(mob.canHunt(attacker) && attacker != observed) {
@@ -77,10 +83,18 @@ public final class EntityAIFakePerson extends EntityAIBase {
 		boolean visible = mob.canEntityBeSeen(observed);
 		if(visible && mob.isPlayerMimic() && observed instanceof EntityPlayer) {
 			EntityPlayer player = (EntityPlayer) observed;
-			if(player.isSwingInProgress && mob.getRNG().nextInt(5) == 0) mob.swingItem();
-			if(!mob.getNavigator().noPath() && mob.onGround && !player.onGround
-					&& player.motionY > 0.2D && mob.getRNG().nextInt(8) == 0) mob.getJumpHelper().setJumping();
-		}
+			boolean samePlayer = imitatedPlayer == player;
+			if(player.isSwingInProgress && (!samePlayer || !playerWasSwinging || player.swingProgressInt < previousSwingProgress))
+				mob.swingItem();
+			// Copy a single takeoff, using actual position changes rather than packet-stale motionY.
+			if(samePlayer && playerWasGrounded && !player.onGround && player.posY - previousPlayerY > 0.1D
+					&& !mob.getNavigator().noPath() && mob.onGround) mob.getJumpHelper().setJumping();
+			imitatedPlayer = player;
+			previousPlayerY = player.posY;
+			previousSwingProgress = player.swingProgressInt;
+			playerWasSwinging = player.isSwingInProgress;
+			playerWasGrounded = player.onGround;
+		} else imitatedPlayer = null;
 		unseenTicks = visible ? 0 : unseenTicks + 1;
 		if(pathDelay > 0) pathDelay--;
 		if(burstCooldown > 0) burstCooldown--;

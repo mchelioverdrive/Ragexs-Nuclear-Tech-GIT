@@ -30,11 +30,13 @@ import net.minecraftforge.common.util.FakePlayer;
 /** A monster wearing a victim's appearance; the mimic profile never becomes its entity UUID. */
 public final class EntityFakePerson extends EntityMob implements IDeepRootCarrier {
 
-	private static final int DISGUISED = 1, HOSTILE = 2, RECOVERING = 4;
+	private static final int DISGUISED = 1, HOSTILE = 2, RECOVERING = 4, TYPING = 8;
+	private static final int CHAT_RESUME_TICKS = 4, MAX_TYPING_TICKS = 16;
 	private static final String[] PLEAS = { "help!", "please!", "somebody!" };
 	private static final double PLEA_RANGE_SQ = 16D * 16D;
 	private int recoveryTicks, attackCooldown;
 	private int pleaTicks = -1;
+	private int typingTicks;
 	private boolean bodyBurned;
 	private GameProfile mimicProfile;
 	private String profileKey;
@@ -126,6 +128,7 @@ public final class EntityFakePerson extends EntityMob implements IDeepRootCarrie
 	public String mimicAppearanceKey() { mimicProfile(); return profileKey; }
 	public boolean isHostile() { return flag(HOSTILE); }
 	public boolean isRecovering() { return flag(RECOVERING); }
+	public boolean isTyping() { return flag(TYPING); }
 	public int getProfession() { return dataWatcher.getWatchableObjectInt(21); }
 	@Override public boolean isChild() { return dataWatcher.getWatchableObjectByte(22) != 0; }
 	@Override public boolean isAIEnabled() { return true; }
@@ -157,6 +160,7 @@ public final class EntityFakePerson extends EntityMob implements IDeepRootCarrie
 
 	public void expose(EntityLivingBase target) {
 		if(worldObj.isRemote || !GeminiSpawning.canAct(this, 1) || getHealth() <= 0) return;
+		cancelTyping();
 		boolean disguised = isDisguised();
 		flag(DISGUISED, false);
 		flag(HOSTILE, true);
@@ -203,7 +207,7 @@ public final class EntityFakePerson extends EntityMob implements IDeepRootCarrie
 	@Override
 	public boolean attackEntityAsMob(Entity target) {
 		if(worldObj.isRemote || !GeminiSpawning.canAct(this, 1) || !isHostile()
-				|| isRecovering() || getHealth() <= 0 || attackCooldown > 0 || !(target instanceof EntityLivingBase)
+				|| isRecovering() || isTyping() || getHealth() <= 0 || attackCooldown > 0 || !(target instanceof EntityLivingBase)
 				|| !canHunt((EntityLivingBase) target) || !canEntityBeSeen(target)) return false;
 		double reach = width + target.width + 0.6D;
 		if(getDistanceSqToEntity(target) > reach * reach || target.boundingBox.maxY <= boundingBox.minY
@@ -218,6 +222,7 @@ public final class EntityFakePerson extends EntityMob implements IDeepRootCarrie
 
 	@Override
 	public void onDeath(DamageSource source) {
+		cancelTyping();
 		if(!worldObj.isRemote && (source.isFireDamage() || isBurning())) bodyBurned = true;
 		if(!worldObj.isRemote && !bodyBurned && GeminiSpawning.canAct(this, 1)
 				&& source != DamageSource.outOfWorld) {
@@ -239,7 +244,44 @@ public final class EntityFakePerson extends EntityMob implements IDeepRootCarrie
 	}
 
 	@Override
-	protected boolean isMovementBlocked() { return isRecovering() || super.isMovementBlocked(); }
+	protected boolean isMovementBlocked() { return isRecovering() || isTyping() || super.isMovementBlocked(); }
+
+	private boolean canHearPlea(EntityPlayer player) {
+		return !(player instanceof FakePlayer) && player.isEntityAlive() && getDistanceSqToEntity(player) <= PLEA_RANGE_SQ;
+	}
+
+	private void cancelTyping() {
+		if(typingTicks > CHAT_RESUME_TICKS) pleaTicks = 160 + rand.nextInt(241);
+		typingTicks = 0;
+		flag(TYPING, false);
+	}
+
+	private void updatePlayerChat() {
+		if(typingTicks > 0) {
+			if(--typingTicks == CHAT_RESUME_TICKS) {
+				String plea = PLEAS[rand.nextInt(PLEAS.length)];
+				for(Object entry : worldObj.playerEntities) {
+					EntityPlayer player = (EntityPlayer) entry;
+					if(canHearPlea(player))
+						player.addChatMessage(new ChatComponentTranslation("chat.type.text", mimicName(), plea));
+				}
+				pleaTicks = 160 + rand.nextInt(241);
+			}
+			flag(TYPING, typingTicks > 0);
+			return;
+		}
+		if(pleaTicks < 0) pleaTicks = 160 + rand.nextInt(241);
+		if(--pleaTicks > 0) return;
+		for(Object entry : worldObj.playerEntities) {
+			if(canHearPlea((EntityPlayer) entry)) {
+				typingTicks = 10 + rand.nextInt(7); // 6-12 typing ticks, then four ticks before moving again.
+				flag(TYPING, true);
+				if(isSprinting()) setSprinting(false);
+				return;
+			}
+		}
+		pleaTicks = 160 + rand.nextInt(241);
+	}
 
 	@Override
 	public void onUpdate() {
@@ -260,6 +302,8 @@ public final class EntityFakePerson extends EntityMob implements IDeepRootCarrie
 				return;
 			}
 			if(attackCooldown > 0) attackCooldown--;
+			// Block native walking/jump input before AI runs, retaining paths, gravity and momentum.
+			if(isPlayerMimic() && !isRecovering()) updatePlayerChat();
 			if(isRecovering() && getHealth() > 0) {
 				getNavigator().clearPathEntity();
 				motionX = motionZ = 0;
@@ -282,17 +326,6 @@ public final class EntityFakePerson extends EntityMob implements IDeepRootCarrie
 			if(isPlayerMimic() && !isRecovering() && getHealth() > 0) {
 				// Only the disguised sneaking approach uses the exhausted, lowered gaze.
 				if(isDisguised() && isSneaking()) rotationPitch = Math.max(35F, rotationPitch);
-				if(pleaTicks < 0) pleaTicks = 160 + rand.nextInt(241);
-				if(--pleaTicks <= 0) {
-					String plea = PLEAS[rand.nextInt(PLEAS.length)];
-					for(Object entry : worldObj.playerEntities) {
-						EntityPlayer player = (EntityPlayer) entry;
-						if(!(player instanceof FakePlayer) && player.isEntityAlive()
-								&& getDistanceSqToEntity(player) <= PLEA_RANGE_SQ)
-							player.addChatMessage(new ChatComponentTranslation("chat.type.text", mimicName(), plea));
-					}
-					pleaTicks = 160 + rand.nextInt(241);
-				}
 			}
 		}
 	}
@@ -316,6 +349,7 @@ public final class EntityFakePerson extends EntityMob implements IDeepRootCarrie
 		nbt.setBoolean("BodyBurned", bodyBurned);
 		nbt.setInteger("RecoveryTicks", recoveryTicks);
 		if(pleaTicks >= 0) nbt.setInteger("PleaTicks", pleaTicks);
+		if(typingTicks > 0) nbt.setInteger("TypingTicks", typingTicks);
 		nbt.setInteger("Profession", getProfession());
 		nbt.setBoolean("ChildDisguise", isChild());
 		if(isPlayerMimic()) {
@@ -341,6 +375,9 @@ public final class EntityFakePerson extends EntityMob implements IDeepRootCarrie
 			NBTTagCompound identity = nbt.getCompoundTag("PlayerMimic");
 			mimicIdentity(identity.getString("UUID"), identity.getString("Name"), identity.getString("Textures"), identity.getString("Signature"));
 		}
+		typingTicks = isPlayerMimic() && !isRecovering() && getHealth() > 0
+				? Math.max(0, Math.min(MAX_TYPING_TICKS, nbt.getInteger("TypingTicks"))) : 0;
+		flag(TYPING, typingTicks > 0);
 		updateDisguiseSize();
 	}
 }
