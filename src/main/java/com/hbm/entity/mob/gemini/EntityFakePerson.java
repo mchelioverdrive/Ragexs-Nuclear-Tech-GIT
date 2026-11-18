@@ -20,18 +20,19 @@ import net.minecraft.entity.ai.EntityAIWatchClosest;
 import net.minecraft.entity.monster.EntityMob;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.ChatComponentTranslation;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.EnumDifficulty;
 import net.minecraft.world.World;
+import net.minecraftforge.common.util.FakePlayer;
 
 /** A monster wearing a victim's appearance; the mimic profile never becomes its entity UUID. */
 public final class EntityFakePerson extends EntityMob implements IDeepRootCarrier {
 
 	private static final int DISGUISED = 1, HOSTILE = 2, RECOVERING = 4;
 	private static final String[] PLEAS = { "help!", "please!", "somebody!" };
+	private static final double PLEA_RANGE_SQ = 16D * 16D;
 	private int recoveryTicks, attackCooldown;
 	private int pleaTicks = -1;
 	private boolean bodyBurned;
@@ -283,8 +284,13 @@ public final class EntityFakePerson extends EntityMob implements IDeepRootCarrie
 				if(isDisguised() && isSneaking()) rotationPitch = Math.max(35F, rotationPitch);
 				if(pleaTicks < 0) pleaTicks = 160 + rand.nextInt(241);
 				if(--pleaTicks <= 0) {
-					MinecraftServer.getServer().getConfigurationManager().sendChatMsg(
-							new ChatComponentTranslation("chat.type.text", mimicName(), PLEAS[rand.nextInt(PLEAS.length)]));
+					String plea = PLEAS[rand.nextInt(PLEAS.length)];
+					for(Object entry : worldObj.playerEntities) {
+						EntityPlayer player = (EntityPlayer) entry;
+						if(!(player instanceof FakePlayer) && player.isEntityAlive()
+								&& getDistanceSqToEntity(player) <= PLEA_RANGE_SQ)
+							player.addChatMessage(new ChatComponentTranslation("chat.type.text", mimicName(), plea));
+					}
 					pleaTicks = 160 + rand.nextInt(241);
 				}
 			}

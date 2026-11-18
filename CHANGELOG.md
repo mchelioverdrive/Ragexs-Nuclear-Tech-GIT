@@ -864,3 +864,7 @@
 
 - Sneak toward visible players who are stationary or not moving away; switch immediately to normal walking when their horizontal movement carries them away from the mimic. Sample actual server positions and bridge brief movement-packet gaps to avoid crouch flicker. Apply a slower sneaking pace to the current path as well as newly calculated paths.
 - Remove random stationary hesitation from player-mimic approach so crouching continues to advance toward the victim. Preserve close-range reveal, sustained hostile sprinting, attack animations and villager-mimic behavior; clear movement samples when the target changes or visibility is lost.
+
+2026-11-17 23:08 — Keep Fake Player pleas local to nearby real players
+
+- Deliver pleas only to living real players within 16 blocks in the same dimension instead of broadcasting server-wide. Exclude Forge FakePlayer instances, so automated players cannot trigger or receive the chat. Retain copied usernames, random phrases and the saved 8–20-second delay; no nearby real players means no chat delivery.
