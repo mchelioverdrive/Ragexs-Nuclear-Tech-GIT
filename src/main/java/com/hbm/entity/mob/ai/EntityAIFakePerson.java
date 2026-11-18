@@ -55,18 +55,27 @@ public final class EntityAIFakePerson extends EntityAIBase {
 	public void resetTask() {
 		mob.setAttackTarget(null);
 		mob.getNavigator().clearPathEntity();
+		mob.setSneaking(false);
+		if(mob.isSprinting()) mob.setSprinting(false);
 		observed = null;
 		nextScan = mob.worldObj.getTotalWorldTime() + 60;
 	}
 
 	@Override
 	public void updateTask() {
+		mob.setSneaking(false);
 		EntityLivingBase attacker = mob.getAttackTarget();
 		if(mob.canHunt(attacker) && attacker != observed) {
 			observed = attacker;
 			pathDelay = unseenTicks = 0;
 		}
 		boolean visible = mob.canEntityBeSeen(observed);
+		if(visible && mob.isPlayerMimic() && observed instanceof EntityPlayer) {
+			EntityPlayer player = (EntityPlayer) observed;
+			if(player.isSwingInProgress && mob.getRNG().nextInt(5) == 0) mob.swingItem();
+			if(!mob.getNavigator().noPath() && mob.onGround && !player.onGround
+					&& player.motionY > 0.2D && mob.getRNG().nextInt(8) == 0) mob.getJumpHelper().setJumping();
+		}
 		unseenTicks = visible ? 0 : unseenTicks + 1;
 		if(pathDelay > 0) pathDelay--;
 		if(burstCooldown > 0) burstCooldown--;
@@ -75,20 +84,24 @@ public final class EntityAIFakePerson extends EntityAIBase {
 		if(!mob.isHostile() && visible && distance < 2.5D * 2.5D) mob.expose(observed);
 		if(mob.isHostile()) {
 			mob.setAttackTarget(observed);
-			mob.getNavigator().setSpeed(burstTicks > 0 ? 1.3D : 0.75D);
+			// Native player sprinting supplies the 1.3 attribute multiplier throughout
+			// pursuit. Villager mimics retain their original short bursts.
+			if(mob.isPlayerMimic() && !mob.isSprinting()) mob.setSprinting(true);
+			mob.getNavigator().setSpeed(mob.isPlayerMimic() ? 1D : burstTicks > 0 ? 1.3D : 0.75D);
 			// Never track a hidden target's updated position through walls.
 			if(!visible) return;
 			mob.getLookHelper().setLookPositionWithEntity(observed, 40F, 30F);
-			if(burstCooldown == 0 && distance < 100D) {
+			if(!mob.isPlayerMimic() && burstCooldown == 0 && distance < 100D) {
 				burstTicks = 12;
 				burstCooldown = 65 + mob.getRNG().nextInt(25);
 				pathDelay = 0;
 			}
+			double speed = mob.isPlayerMimic() ? 1D : burstTicks > 0 ? 1.3D : 0.75D;
 			if(pathDelay == 0) {
 				pathDelay = 10;
-				mob.getNavigator().tryMoveToEntityLiving(observed, burstTicks > 0 ? 1.3D : 0.75D);
+				mob.getNavigator().tryMoveToEntityLiving(observed, speed);
 			}
-			mob.getNavigator().setSpeed(burstTicks > 0 ? 1.3D : 0.75D);
+			mob.getNavigator().setSpeed(speed);
 			mob.attackEntityAsMob(observed);
 			return;
 		}
@@ -97,9 +110,18 @@ public final class EntityAIFakePerson extends EntityAIBase {
 		if(stareTicks > 0) {
 			stareTicks--;
 			mob.getNavigator().clearPathEntity();
+			mob.setSneaking(mob.isPlayerMimic());
 			return;
 		}
 		if(mob.getRNG().nextInt(180) == 0) { stareTicks = 40 + mob.getRNG().nextInt(60); return; }
+		if(mob.isPlayerMimic()) {
+			// Walk all the way up to the victim so proximity can trigger the reveal.
+			if(pathDelay == 0) {
+				pathDelay = 20;
+				mob.getNavigator().tryMoveToEntityLiving(observed, 0.6D);
+			}
+			return;
+		}
 		if(distance <= 64D) { mob.getNavigator().clearPathEntity(); return; }
 		if(pathDelay == 0) {
 			pathDelay = 20;

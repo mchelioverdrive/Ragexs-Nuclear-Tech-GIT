@@ -848,3 +848,14 @@
 2026-11-17 21:30 — Prevent captive punches from suppressing Woodcrawler feeding
 
 - Keep the repeated bite timer and feeding proboscis active when the restrained victim hits the Woodcrawler, including exposed proboscis hits. Captive attacks still deal normal damage; rescuer damage, UV interruption, struggle escape and death cleanup retain their existing behavior.
+
+2026-11-17 21:45 — Revive Fake People until their bodies are burned
+
+- Make both villager and player Fake People recover after every non-fire defeat, retaining the existing three-second fallen-body pose and partial-health revival. Fire damage or ignition consumes a recovering body permanently, including during hurt resistance; retain void removal and existing activity gates. Persist recovery and burned-body state while ignoring the obsolete one-use recovery limit in older saves.
+- Give player mimics repeated username-attributed pleas chosen from `help!`, `please!`, and `somebody!`, separated by random 8–20-second active intervals saved across reloads. Suppress pleas while fallen and replace all player-mimic villager noises with silence or native player hurt/death sounds.
+- Slow player mimics, synchronize sneaking, lower their gaze and retain native player walking/swing poses with shorter steps and a slight tremor. Imitate visible players' swings and occasional jumps while preserving copied skins, usernames, separate entity identities and existing stalking/reveal behavior. Villager appearance, sounds and movement remain unchanged.
+
+2026-11-17 22:08 — Restore Fake Player approach and sprint attacks
+
+- Restore normal movement speed for new and saved player mimics. Walk directly toward visible victims at the original walking pace, reveal within the existing close-range threshold and sustain native sprinting during hostile pursuit at the original burst's effective speed. Retain villager mimics' stalking distance and short sprint bursts.
+- Limit the crouched, lowered-head pose to brief disguised hesitation; ordinary walking and hostile pursuit stay upright. Restore the original revealed player attack-arm pose and full walking/running stride. Preserve revival, permanent body burning, delayed pleas, player sounds, skins, usernames and movement imitation.

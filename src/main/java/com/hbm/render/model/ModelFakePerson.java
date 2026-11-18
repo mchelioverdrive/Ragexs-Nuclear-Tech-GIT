@@ -55,11 +55,17 @@ public final class ModelFakePerson extends ModelBase {
 		EntityFakePerson mob = (EntityFakePerson) entity;
 		if(mob.isPlayerMimic()) {
 			player.onGround = onGround; player.isRiding = isRiding; player.isChild = false;
+			boolean weakPose = mob.isDisguised() && mob.isSneaking() && !mob.isRecovering();
+			player.isSneak = weakPose;
 			// Forge 1.7.10's native skin pipeline/model supports classic 64x32 player geometry.
-			player.setRotationAngles(swing, amount, age, yaw, pitch, scale, entity);
+			player.setRotationAngles(swing, weakPose ? amount * 0.65F : amount, age, yaw,
+					weakPose ? Math.max(pitch, 35F + MathHelper.sin(age * 0.08F) * 5F) : pitch, scale, entity);
 			float twitch = twitch(age, entity.getEntityId());
 			player.bipedHead.rotateAngleZ = twitch * (mob.isDisguised() ? 0.07F : 0.18F);
 			player.bipedHeadwear.rotateAngleZ = player.bipedHead.rotateAngleZ;
+			// Keep native walking and arm-swing poses, with a slight exhausted tremor.
+			player.bipedRightArm.rotateAngleZ += twitch * 0.06F;
+			player.bipedLeftArm.rotateAngleZ -= twitch * 0.06F;
 			if(!mob.isDisguised()) {
 				player.bipedRightArm.rotateAngleX = -1.4F - MathHelper.cos(swing * 0.8F) * amount * 0.5F;
 				player.bipedLeftArm.rotateAngleX = -1.15F + MathHelper.cos(swing * 0.8F) * amount * 0.5F;

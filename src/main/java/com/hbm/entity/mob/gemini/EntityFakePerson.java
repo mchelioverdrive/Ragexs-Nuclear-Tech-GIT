@@ -20,6 +20,8 @@ import net.minecraft.entity.ai.EntityAIWatchClosest;
 import net.minecraft.entity.monster.EntityMob;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.ChatComponentTranslation;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.EnumDifficulty;
@@ -28,8 +30,11 @@ import net.minecraft.world.World;
 /** A monster wearing a victim's appearance; the mimic profile never becomes its entity UUID. */
 public final class EntityFakePerson extends EntityMob implements IDeepRootCarrier {
 
-	private static final int DISGUISED = 1, HOSTILE = 2, RECOVERING = 4, RECOVERY_USED = 8;
+	private static final int DISGUISED = 1, HOSTILE = 2, RECOVERING = 4;
+	private static final String[] PLEAS = { "help!", "please!", "somebody!" };
 	private int recoveryTicks, attackCooldown;
+	private int pleaTicks = -1;
+	private boolean bodyBurned;
 	private GameProfile mimicProfile;
 	private String profileKey;
 	private String cachedUUID, cachedName, cachedTexture, cachedSignature;
@@ -100,6 +105,8 @@ public final class EntityFakePerson extends EntityMob implements IDeepRootCarrie
 		dataWatcher.updateObject(26, signature.length() <= 8192 ? signature : "");
 		dataWatcher.updateObject(22, (byte) 0);
 		setCustomNameTag(name); setAlwaysRenderNameTag(true);
+		// Also restore mimics saved with the previous permanently weakened speed.
+		getEntityAttribute(SharedMonsterAttributes.movementSpeed).setBaseValue(0.5D);
 	}
 	/** Cached immutable-by-convention appearance profile. No server skin lookup or player registration. */
 	public GameProfile mimicProfile() {
@@ -152,9 +159,10 @@ public final class EntityFakePerson extends EntityMob implements IDeepRootCarrie
 		boolean disguised = isDisguised();
 		flag(DISGUISED, false);
 		flag(HOSTILE, true);
+		setSneaking(false);
 		setAttackTarget(target);
 		if(disguised) com.hbm.world.gemini.GeminiPopulation.alert(this, target);
-		if(disguised) playSound("mob.villager.no", 1F, 0.55F);
+		if(disguised && !isPlayerMimic()) playSound("mob.villager.no", 1F, 0.55F);
 	}
 
 	@Override
@@ -170,9 +178,20 @@ public final class EntityFakePerson extends EntityMob implements IDeepRootCarrie
 
 	@Override
 	public boolean attackEntityFrom(DamageSource source, float damage) {
-		if(worldObj.isRemote || source.getEntity() instanceof IGeminiCreature || !GeminiSpawning.canAct(this, 1)) return false;
+		if(worldObj.isRemote) return false;
+		if(isRecovering() && getHealth() > 0) {
+			// A fallen body cannot be killed again to restart its timer. Fire consumes it
+			// immediately, including during hurt resistance or suspended invasion activity.
+			if(damage > 0 && source.isFireDamage()) {
+				setHealth(0F);
+				onDeath(source);
+				return true;
+			}
+			if(source != DamageSource.outOfWorld) return false;
+		}
+		if(source.getEntity() instanceof IGeminiCreature || !GeminiSpawning.canAct(this, 1)) return false;
 		boolean hit = super.attackEntityFrom(source, damage);
-		if(hit && getHealth() > 0) {
+		if(hit && getHealth() > 0 && !isRecovering()) {
 			Entity attacker = source.getEntity();
 			expose(attacker instanceof EntityLivingBase && canHunt((EntityLivingBase) attacker)
 					? (EntityLivingBase) attacker : null);
@@ -198,12 +217,14 @@ public final class EntityFakePerson extends EntityMob implements IDeepRootCarrie
 
 	@Override
 	public void onDeath(DamageSource source) {
-		if(!worldObj.isRemote && !flag(RECOVERY_USED) && GeminiSpawning.canAct(this, 1)
-				&& !source.isFireDamage() && !isBurning() && source != DamageSource.outOfWorld && rand.nextInt(4) == 0) {
-			flag(RECOVERY_USED, true);
+		if(!worldObj.isRemote && (source.isFireDamage() || isBurning())) bodyBurned = true;
+		if(!worldObj.isRemote && !bodyBurned && GeminiSpawning.canAct(this, 1)
+				&& source != DamageSource.outOfWorld) {
 			flag(DISGUISED, false);
 			flag(HOSTILE, true);
 			flag(RECOVERING, true);
+			setSneaking(false);
+			setSprinting(false);
 			recoveryTicks = 60;
 			setHealth(1F);
 			setAttackTarget(null);
@@ -222,6 +243,15 @@ public final class EntityFakePerson extends EntityMob implements IDeepRootCarrie
 	@Override
 	public void onUpdate() {
 		if(!worldObj.isRemote) {
+			// Check before advancing recovery: ignition on the last tick must still win.
+			if(isRecovering() && getHealth() > 0 && isBurning()) {
+				setHealth(0F);
+				onDeath(DamageSource.onFire);
+			}
+			if(getHealth() <= 0) {
+				super.onUpdate(); // Let permanently dead bodies finish vanilla removal.
+				return;
+			}
 			if(!GeminiSpawning.canAct(this, 1) || worldObj.difficultySetting == EnumDifficulty.PEACEFUL) {
 				setAttackTarget(null);
 				getNavigator().clearPathEntity();
@@ -232,23 +262,41 @@ public final class EntityFakePerson extends EntityMob implements IDeepRootCarrie
 			if(isRecovering() && getHealth() > 0) {
 				getNavigator().clearPathEntity();
 				motionX = motionZ = 0;
-				if(--recoveryTicks <= 0) {
-					flag(RECOVERING, false);
-					setHealth(getMaxHealth() * 0.45F);
-					playSound("mob.villager.death", 1F, 0.5F);
-				}
 			}
 		}
 		updateDisguiseSize();
 		super.onUpdate();
+		if(!worldObj.isRemote) {
+			// Native fire/lava contact runs in super.onUpdate, before a body can revive.
+			if(isRecovering() && getHealth() > 0) {
+				if(isBurning()) {
+					setHealth(0F);
+					onDeath(DamageSource.onFire);
+				} else if(--recoveryTicks <= 0) {
+					flag(RECOVERING, false);
+					setHealth(getMaxHealth() * 0.45F);
+					if(!isPlayerMimic()) playSound("mob.villager.death", 1F, 0.5F);
+				}
+			}
+			if(isPlayerMimic() && !isRecovering() && getHealth() > 0) {
+				// Only the brief disguised hesitation uses the exhausted, lowered gaze.
+				if(isDisguised() && isSneaking()) rotationPitch = Math.max(35F, rotationPitch);
+				if(pleaTicks < 0) pleaTicks = 160 + rand.nextInt(241);
+				if(--pleaTicks <= 0) {
+					MinecraftServer.getServer().getConfigurationManager().sendChatMsg(
+							new ChatComponentTranslation("chat.type.text", mimicName(), PLEAS[rand.nextInt(PLEAS.length)]));
+					pleaTicks = 160 + rand.nextInt(241);
+				}
+			}
+		}
 	}
 
 	@Override public boolean getCanSpawnHere() { return FakePersonSpawning.canSpawn(worldObj, this) && super.getCanSpawnHere(); }
 	@Override public int getMaxSpawnedInChunk() { return 1; }
 	@Override public float getBlockPathWeight(int x, int y, int z) { return 0F; }
-	@Override protected String getLivingSound() { return isRecovering() ? null : "mob.villager.idle"; }
-	@Override protected String getHurtSound() { return "mob.villager.hit"; }
-	@Override protected String getDeathSound() { return "mob.villager.death"; }
+	@Override protected String getLivingSound() { return isPlayerMimic() || isRecovering() ? null : "mob.villager.idle"; }
+	@Override protected String getHurtSound() { return isPlayerMimic() ? "game.player.hurt" : "mob.villager.hit"; }
+	@Override protected String getDeathSound() { return isPlayerMimic() ? "game.player.die" : "mob.villager.death"; }
 	@Override protected float getSoundPitch() { return rand.nextInt(4) == 0 || !isDisguised() ? 0.5F + rand.nextFloat() * 0.15F : super.getSoundPitch(); }
 	@Override public int getTalkInterval() { return 240; }
 	@Override public float getEyeHeight() { return height * 0.9F; }
@@ -259,8 +307,9 @@ public final class EntityFakePerson extends EntityMob implements IDeepRootCarrie
 		super.writeEntityToNBT(nbt);
 		nbt.setBoolean("Disguised", isDisguised());
 		nbt.setBoolean("Hostile", isHostile());
-		nbt.setBoolean("RecoveryUsed", flag(RECOVERY_USED));
+		nbt.setBoolean("BodyBurned", bodyBurned);
 		nbt.setInteger("RecoveryTicks", recoveryTicks);
+		if(pleaTicks >= 0) nbt.setInteger("PleaTicks", pleaTicks);
 		nbt.setInteger("Profession", getProfession());
 		nbt.setBoolean("ChildDisguise", isChild());
 		if(isPlayerMimic()) {
@@ -274,10 +323,11 @@ public final class EntityFakePerson extends EntityMob implements IDeepRootCarrie
 	@Override
 	public void readEntityFromNBT(NBTTagCompound nbt) {
 		super.readEntityFromNBT(nbt);
-		recoveryTicks = Math.max(0, Math.min(60, nbt.getInteger("RecoveryTicks")));
+		bodyBurned = nbt.getBoolean("BodyBurned");
+		recoveryTicks = bodyBurned ? 0 : Math.max(0, Math.min(60, nbt.getInteger("RecoveryTicks")));
+		pleaTicks = nbt.hasKey("PleaTicks", 3) ? Math.max(1, Math.min(400, nbt.getInteger("PleaTicks"))) : -1;
 		flag(HOSTILE, nbt.getBoolean("Hostile") || recoveryTicks > 0);
 		flag(DISGUISED, (!nbt.hasKey("Disguised") || nbt.getBoolean("Disguised")) && !isHostile());
-		flag(RECOVERY_USED, nbt.getBoolean("RecoveryUsed") || recoveryTicks > 0);
 		flag(RECOVERING, recoveryTicks > 0 && getHealth() > 0);
 		dataWatcher.updateObject(21, Integer.valueOf(nbt.getInteger("Profession")));
 		dataWatcher.updateObject(22, Byte.valueOf((byte) (nbt.getBoolean("ChildDisguise") ? 1 : 0)));
