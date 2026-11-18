@@ -73,7 +73,8 @@ final class WretchCampSettlement {
     private static boolean fits(Camp camp, Piece piece) {
         int half = camp.size / 2;
         if(piece.x - piece.radiusX() < -half || piece.x + piece.radiusX() >= half
-                || piece.z - piece.radiusZ() < -half || piece.z + piece.radiusZ() >= half) return false;
+                || piece.z - piece.radiusZ() < -half || piece.z + piece.radiusZ() >= half
+                || !inside(camp, piece.doorX(), piece.doorZ())) return false;
         for(Piece other : camp.pieces) {
             if(piece.overlaps(other) || coreContains(other, piece.doorX(), piece.doorZ(), piece.kind <= ORGANIC ? 2 : 1)
                     || coreContains(piece, other.doorX(), other.doorZ(), other.kind <= ORGANIC ? 2 : 1)) return false;
@@ -87,9 +88,9 @@ final class WretchCampSettlement {
         camp.pieces.add(new Piece(kind, x, camp.y, z, facing(x, z)));
     }
 
-    private static boolean arrange(Camp camp) {
+    private static boolean arrange(Camp camp, int layoutAttempt) {
         if(!camp.pieces.isEmpty()) return true;
-        Random random = new Random(camp.seed);
+        Random random = new Random(camp.seed + layoutAttempt * 104729L);
         int half = camp.size / 2;
         camp.pieces.add(new Piece(CENTER, 0, camp.y, 0, 0));
         // These four small lookouts define the envelope, without clearing its intervening land.
@@ -195,24 +196,34 @@ final class WretchCampSettlement {
     }
 
     static GardenerNests.PlacementPlan plan(WorldServer world, Camp camp) {
-        GardenerNests.PlacementPlan plan = new GardenerNests.PlacementPlan(camp.x, camp.y, camp.z);
+        GardenerNests.PlacementPlan plan = new GardenerNests.PlacementPlan();
         plan.regions.add(bounds(camp, 0, world.getActualHeight()));
         plan.readBounds = bounds(camp, 2, world.getActualHeight());
         if(camp.y < 1 || camp.y + 20 > world.getActualHeight()) plan.reason = "unsafe camp foundation/resident world height";
         else plan.reason = plan.checkBounds(world);
         if(plan.reason != null) return plan;
-        if(!arrange(camp)) { plan.reason = "could not pack the complete camp component layout"; return plan; }
         Terrain terrain = new Terrain(world, camp);
         if(!camp.graded) {
-            for(Piece piece : camp.pieces) if(piece.kind != CENTER) {
-                List<Integer> heights = new ArrayList<Integer>();
-                heights.add(terrain.height(piece.x, piece.z));
-                for(int dx : new int[] {-3, 3}) for(int dz : new int[] {-3, 3}) heights.add(terrain.height(piece.x + dx, piece.z + dz));
-                Collections.sort(heights);
-                int difference = Math.min(16, Math.max(1, Math.max(Math.abs(piece.x), Math.abs(piece.z)) - 12));
-                piece.y = MathHelper.clamp_int(heights.get(2), Math.max(1, camp.y - difference), Math.min(world.getActualHeight() - 20, camp.y + difference));
+            boolean connected = false;
+            boolean savedLayout = !camp.pieces.isEmpty();
+            // Only unbuilt layouts may be rearranged. Saved graded layouts and resident
+            // slots are authoritative and must never be rerolled during recovery.
+            for(int attempt = 0; attempt < (savedLayout ? 1 : 3) && !connected; attempt++) {
+                if(!arrange(camp, attempt)) continue;
+                for(Piece piece : camp.pieces) if(piece.kind != CENTER) {
+                    List<Integer> heights = new ArrayList<Integer>();
+                    heights.add(terrain.height(piece.x, piece.z));
+                    for(int dx : new int[] {-3, 3}) for(int dz : new int[] {-3, 3}) heights.add(terrain.height(piece.x + dx, piece.z + dz));
+                    Collections.sort(heights);
+                    int difference = Math.min(16, Math.max(1, Math.max(Math.abs(piece.x), Math.abs(piece.z)) - 12));
+                    piece.y = MathHelper.clamp_int(heights.get(2), Math.max(1, camp.y - difference), Math.min(world.getActualHeight() - 20, camp.y + difference));
+                }
+                // Comfortable roads first; tight plots can use a narrower, still unobstructed
+                // centerline. Neither search is allowed through a building's physical core.
+                connected = roads(camp, terrain, true) || roads(camp, terrain, false);
+                if(!connected && !savedLayout) { camp.pieces.clear(); camp.roads.clear(); }
             }
-            if(!roads(camp, terrain)) { plan.reason = "could not connect all camp entrances within the settlement bounds"; return plan; }
+            if(!connected) { plan.reason = "could not connect all camp entrances within the settlement bounds after three bounded layouts"; return plan; }
             camp.graded = true;
         }
         // Prepare independent pads. The unoccupied land between them is deliberately untouched.
@@ -275,8 +286,8 @@ final class WretchCampSettlement {
         int localZ = piece.rotation == 0 ? dz : piece.rotation == 1 ? -dx : piece.rotation == 2 ? -dz : dx;
         return Math.abs(localX) <= 1 && localZ >= piece.halfZ() - 1 && localZ <= piece.halfZ() + 3;
     }
-    private static boolean reservedApron(Camp camp, int x, int z) {
-        for(Piece piece : camp.pieces) if(inApron(piece, x, z)) return true;
+    private static boolean reservedApron(Camp camp, Piece owner, int x, int z) {
+        for(Piece piece : camp.pieces) if(piece != owner && inApron(piece, x, z)) return true;
         return false;
     }
     private static void apron(Map<Long, Road> network, Piece piece) {
@@ -289,7 +300,7 @@ final class WretchCampSettlement {
         final int x, z, steps, cost; final Node parent;
         Node(int x, int z, int steps, int cost, Node parent) { this.x = x; this.z = z; this.steps = steps; this.cost = cost; this.parent = parent; }
     }
-    private static boolean roads(Camp camp, Terrain terrain) {
+    private static boolean roads(Camp camp, Terrain terrain, boolean wide) {
         camp.roads.clear();
         Map<Long, Road> network = new HashMap<Long, Road>();
         apron(network, camp.pieces.get(0));
@@ -324,7 +335,8 @@ final class WretchCampSettlement {
                 for(int side = 0; side < 4; side++) {
                     int x = node.x + (side == 0 ? 1 : side == 1 ? -1 : 0), z = node.z + (side == 2 ? 1 : side == 3 ? -1 : 0);
                     if(!inside(camp, x, z) || !network.containsKey(key(x, z))
-                            && (blocked(camp, x, z, piece.kind <= ORGANIC ? 2 : 1) || reservedApron(camp, x, z))) continue;
+                            && (blocked(camp, x, z, wide ? (piece.kind <= ORGANIC ? 2 : 1) : 0)
+                            || reservedApron(camp, piece, x, z))) continue;
                     int roughness = Math.min(12, Math.abs(terrain.height(x, z) - terrain.height(node.x, node.z)) * 2);
                     int cost = node.cost + 10 + roughness + (int) ((x * 73428767L ^ z * 912931L ^ camp.seed) & 3);
                     Node previous = best.get(key(x, z));
@@ -342,7 +354,7 @@ final class WretchCampSettlement {
                 remaining--;
                 int low = Math.max(y - 1, piece.y - remaining), high = Math.min(y + 1, piece.y + remaining);
                 y = MathHelper.clamp_int(terrain.height(node.x, node.z), low, high);
-                network.put(key(node.x, node.z), new Road(node.x, y, node.z, piece.kind <= ORGANIC ? 3 : 2));
+                network.put(key(node.x, node.z), new Road(node.x, y, node.z, wide ? (piece.kind <= ORGANIC ? 3 : 2) : 1));
             }
             apron(network, piece);
         }

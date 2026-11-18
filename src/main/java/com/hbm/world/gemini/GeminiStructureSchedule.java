@@ -26,6 +26,7 @@ final class GeminiStructureSchedule {
     private long lastTick = Long.MIN_VALUE;
     private int calls, examined, unloaded, spacing, plans, loadedChunks;
     private boolean fallbackUsed;
+    private ChunkCoordinates fallbackPoint;
     private String lastSuccess = "none", searchMode = "not searched";
 
     void tick(WorldServer world) { lastTick = world.getTotalWorldTime(); if(calls < Integer.MAX_VALUE) calls++; }
@@ -33,6 +34,8 @@ final class GeminiStructureSchedule {
     void spacing() { spacing++; }
     void plan() { plans++; }
     void unloaded() { unloaded++; }
+    void loading(WorldSavedData owner) { seconds = 1; owner.markDirty(); }
+    void discardFallback() { fallbackPoint = null; }
 
     String failure(Map<String, Integer> reasons) {
         String common = "no candidate locations";
@@ -108,6 +111,7 @@ final class GeminiStructureSchedule {
         spacing = Math.max(0, tag.getInteger("Spacing")); plans = Math.max(0, tag.getInteger("Plans"));
         loadedChunks = Math.max(0, tag.getInteger("LoadedChunks"));
         if(tag.hasKey("SearchMode")) searchMode = tag.getString("SearchMode");
+        if(tag.hasKey("FallbackX")) fallbackPoint = new ChunkCoordinates(tag.getInteger("FallbackX"), 0, tag.getInteger("FallbackZ"));
     }
 
     void write(NBTTagCompound root) {
@@ -119,6 +123,7 @@ final class GeminiStructureSchedule {
         tag.setInteger("Examined", examined); tag.setInteger("Unloaded", unloaded);
         tag.setInteger("Spacing", spacing); tag.setInteger("Plans", plans);
         tag.setInteger("LoadedChunks", loadedChunks); tag.setString("SearchMode", searchMode);
+        if(fallbackPoint != null) { tag.setInteger("FallbackX", fallbackPoint.posX); tag.setInteger("FallbackZ", fallbackPoint.posZ); }
         root.setTag("AutomaticGeneration", tag);
     }
 
@@ -173,6 +178,12 @@ final class GeminiStructureSchedule {
     }
 
     ChunkCoordinates candidate(Candidates candidates) {
+        if(fallbackPoint != null) {
+            long dx = (long) fallbackPoint.posX - candidates.x, dz = (long) fallbackPoint.posZ - candidates.z;
+            if(dx * dx + dz * dz > (long) candidates.max * candidates.max
+                    || !safeBounds(fallbackPoint.posX, fallbackPoint.posZ, candidates.half)) fallbackPoint = null;
+        }
+        if(fallbackPoint != null) return null;
         if(!candidates.preferred.isEmpty()) return candidates.preferred.remove(candidates.preferred.size() - 1);
         if(!candidates.closer.isEmpty()) {
             searchMode = "closer loaded footprint (configured annulus unavailable/exhausted)";
@@ -183,6 +194,7 @@ final class GeminiStructureSchedule {
 
     /** One nearby minimum footprint per opportunity, with no persistent chunk tickets. */
     ChunkCoordinates fallback(WorldServer world, Candidates candidates) {
+        if(fallbackPoint != null && !fallbackUsed) { fallbackUsed = true; return fallbackPoint; }
         if(fallbackUsed || candidates.loadedAvailable) return null;
         fallbackUsed = true;
         int radius = Math.min(candidates.max, Math.min(candidates.min, candidates.half + 24));
@@ -191,19 +203,22 @@ final class GeminiStructureSchedule {
                 -29999984 + candidates.half, 29999983 - candidates.half);
         int z = MathHelper.clamp_int(candidates.z + (int) Math.round(Math.sin(angle) * radius),
                 -29999984 + candidates.half, 29999983 - candidates.half);
-        return new ChunkCoordinates(x, 0, z);
+        return fallbackPoint = new ChunkCoordinates(x, 0, z);
     }
 
-    void loadFallback(WorldServer world, ChunkCoordinates point, int half) {
+    boolean loadFallback(WorldServer world, ChunkCoordinates point, int half) {
         searchMode = "bounded nearby footprint loading (no loaded footprint available)";
-        // At most 7x7 chunks for the 80-block camp, 4x4 for a nest. Requests
-        // run on the server thread after spacing checks, immediately before preflight.
+        // Keep the same saved origin while loading, at most one missing chunk per
+        // opportunity. Never generate a 7x7 footprint synchronously in one tick.
         for(int cx = (point.posX - half) >> 4; cx <= (point.posX + half) >> 4; cx++)
             for(int cz = (point.posZ - half) >> 4; cz <= (point.posZ + half) >> 4; cz++)
                 if(!world.getChunkProvider().chunkExists(cx, cz)) {
                     loadedChunks++;
                     world.getChunkFromChunkCoords(cx, cz);
+                    return false;
                 }
+        fallbackPoint = null;
+        return true;
     }
 
     private static boolean safeBounds(int x, int z, int half) {

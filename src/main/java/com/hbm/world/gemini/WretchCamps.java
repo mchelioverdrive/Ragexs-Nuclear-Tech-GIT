@@ -45,27 +45,35 @@ public final class WretchCamps extends WorldSavedData {
     private final Set<Long> generatedChunks = new HashSet<Long>();
     private final List<AxisAlignedBB> villageBuildings = new ArrayList<AxisAlignedBB>();
     private boolean placementOverflow;
+    private int nextJob;
     private long villageRefresh = Long.MIN_VALUE;
     public WretchCamps(String name) { super(name); }
 
     public static final String TYPE = "wretch";
     private static GeminiInvasionManager.StructureInfo info(Camp camp, int dimension) {
-        String[] states = {"abandoned construction", "waiting for Wretch", "Wretch spawned", "defeated", "blocked spawn"};
+        String[] states = {"residents not admitted", "waiting for Wretch", "Wretch spawned", "defeated", "blocked spawn"};
         return new GeminiInvasionManager.StructureInfo(TYPE, camp.x, camp.y - 1, camp.z, dimension,
-                states[camp.state] + "; " + description(camp) + "; " + population(camp));
+                "construction=" + (camp.failed ? "failed" : camp.job != null ? camp.recovering ? "recovering"
+                : camp.cursor == 0 && camp.pass == 0 ? "queued" : "constructing" : camp.state > 0 ? "completed" : "failed")
+                + "; pass=" + camp.pass + "; cursor=" + camp.cursor + "; reason=" + camp.reason
+                + "; " + states[camp.state] + "; " + description(camp) + "; " + population(camp));
     }
     public static List<GeminiInvasionManager.StructureInfo> known(World world) {
         List<GeminiInvasionManager.StructureInfo> result = new ArrayList<GeminiInvasionManager.StructureInfo>();
         if(!(world instanceof WorldServer) || world.isRemote) return result;
         String name = NAME + (world.provider.dimensionId == 0 ? "" : "_" + world.provider.dimensionId);
         WretchCamps data = (WretchCamps) world.mapStorage.loadData(WretchCamps.class, name);
-        if(data != null) for(Camp camp : data.camps) result.add(info(camp, world.provider.dimensionId));
+        if(data != null) {
+            for(Camp camp : data.camps) result.add(info(camp, world.provider.dimensionId));
+            for(Camp camp : data.pending) result.add(new GeminiInvasionManager.StructureInfo(TYPE, camp.x, camp.y - 1, camp.z,
+                    world.provider.dimensionId, "construction=queued; reason=legacy reservation without a saved block plan; " + description(camp)));
+        }
         return result;
     }
     public static int completedCount(World world) {
         if(!(world instanceof WorldServer) || world.isRemote) return 0;
         int count = 0;
-        for(Camp camp : get(world).camps) if(camp.state > 0) count++;
+        for(Camp camp : get(world).camps) if(camp.state > 0 && camp.job == null && !camp.failed) count++;
         return count;
     }
     private static String generationGate(World world) {
@@ -76,7 +84,12 @@ public final class WretchCamps extends WorldSavedData {
         if(!world.getGameRules().getGameRuleBooleanValue("doMobSpawning")) return "doMobSpawning is false";
         if(!world.getGameRules().getGameRuleBooleanValue("mobGriefing")) return "mobGriefing is false";
         if(GeminiConfig.wretchCampChance == 0) return "camp chance disabled";
-        if(get(world).camps.size() >= GeminiConfig.wretchCampLimit) return "camp limit reached";
+        int reserved = 0;
+        for(Camp camp : get(world).camps) {
+            if(camp.job != null && !camp.failed) return "camp construction already reserved";
+            if(camp.state > 0 || camp.job != null && !camp.failed) reserved++;
+        }
+        if(reserved >= GeminiConfig.wretchCampLimit) return "camp limit reached";
         if(GeminiStructureSchedule.players(world).isEmpty()) return "no living players in this world";
         return null;
     }
@@ -88,7 +101,8 @@ public final class WretchCamps extends WorldSavedData {
         if(!(world instanceof WorldServer) || world.isRemote) return "server only";
         return "Automatic camps enabled=" + (GeminiConfig.enabled && GeminiConfig.wretchEnabled
                 && GeminiConfig.wretchCampChance > 0 && GeminiConfig.wretchCampLimit > 0)
-                + "; gate=" + eligibility(world) + "; " + get(world).schedule.status(world);
+                + "; gate=" + eligibility(world) + "; " + get(world).schedule.status(world)
+                + "; registered=" + completedCount(world) + "; pending/failed=" + (known(world).size() - completedCount(world));
     }
     static void reschedule(WorldServer world) { WretchCamps data = get(world); data.schedule.reschedule(data); }
     static void schedule(WorldServer world) {
@@ -113,7 +127,7 @@ public final class WretchCamps extends WorldSavedData {
         WorldServer world = (WorldServer) player.worldObj;
         WretchCamps data = get(world);
         GardenerNests.PlacementPlan best = null;
-        Camp selected = null, previous = null;
+        Camp selected = null;
         Map<String, Integer> rejected = new java.util.LinkedHashMap<String, Integer>();
         for(int attempt = 0; attempt < (requested == null ? 8 : 1); attempt++) {
             double angle = attempt * 2.399963229728653D;
@@ -128,35 +142,28 @@ public final class WretchCamps extends WorldSavedData {
             }
             int y = requested == null ? MathHelper.clamp_int(ground(world, x, z), 1, world.getActualHeight() - 20) : requested.posY + 1;
             Camp saved = data.at(x, y, z);
+            if(saved != null && saved.job != null) {
+                saved.debug = saved.recovering = true; saved.failed = false; saved.idle = 0;
+                data.markDirty(); saved.journalReady = GardenerNests.checkpoint(world, data);
+                if(!saved.journalReady) { saved.failed = true; saved.reason = "could not save construction journal; terrain work paused"; }
+                return info(saved, world.provider.dimensionId);
+            }
             Camp camp = saved != null && saved.layout == WretchCampSettlement.VERSION ? saved : WretchCampSettlement.create(world, x, y, z);
             if(saved != null && saved != camp) { camp.boss = saved.boss; camp.state = saved.state; camp.retries = saved.retries; camp.protectedColumns.addAll(saved.protectedColumns); }
             GardenerNests.PlacementPlan plan = WretchCampSettlement.plan(world, camp);
             if(plan.reason != null) GardenerNests.countRejection(rejected, plan.reason);
-            else { best = plan; selected = camp; previous = saved; break; }
+            else { best = plan; selected = camp; break; }
         }
         if(best == null) throw GardenerNests.searchFailure(world, "camp", requested != null, rejected);
+        selected.debug = true;
         String reason = data.place(world, selected, StructurePlacementMode.FORCED_DEBUG, best);
         if(reason != null) throw GeminiInvasionManager.rejected(world, "camp", "Camp placement failed: " + reason);
-        if(previous != null && previous != selected) data.camps.remove(previous);
-        final Camp completed = selected;
-        for(java.util.Iterator<Camp> it = data.pending.iterator(); it.hasNext();) {
-            Camp queued = it.next();
-            if(queued.x == completed.x && queued.z == completed.z) it.remove();
-        }
-        selected.debug = true; data.markDirty();
-        try {
-            if(selected.state == 1 && world.getGameRules().getGameRuleBooleanValue("doMobSpawning")) data.spawn(world, selected);
-            if(world.getGameRules().getGameRuleBooleanValue("doMobSpawning")) data.populate(world, selected, 4);
-        } catch(RuntimeException failure) {
-            com.hbm.main.MainRegistry.logger.error("Debug camp resident initialization failed; saved slots retained", failure);
-        }
-        return new GeminiInvasionManager.StructureInfo(TYPE, selected.x, selected.y - 1, selected.z, world.provider.dimensionId,
-                "mode=forced debug; " + description(selected) + "; replaced blocks=" + best.replaced
-                + "; registered=" + (previous == null ? "new" : "existing") + "; " + population(selected));
+        return info(selected, world.provider.dimensionId);
     }
 
     private Camp at(int x, int y, int z) {
         for(Camp camp : camps) if(camp.x == x && camp.y == y && camp.z == z) return camp;
+        for(Camp camp : pending) if(camp.x == x && camp.y == y && camp.z == z) return camp;
         return null;
     }
     private static String description(Camp camp) {
@@ -225,9 +232,6 @@ public final class WretchCamps extends WorldSavedData {
         for(int attempt = 0; attempt < GeminiStructureSchedule.ATTEMPTS && plans < 2; attempt++) {
             EntityPlayer player = players.get((start + attempt) % players.size());
             int homeX = MathHelper.floor_double(player.posX), homeZ = MathHelper.floor_double(player.posZ);
-            // Release obsolete population selections rather than reserving unavailable
-            // sites or replacing verified loaded candidates with legacy random origins.
-            if(!pending.isEmpty()) { pending.clear(); markDirty(); }
             long key = ((long) homeX << 32) | (homeZ & 0xFFFFFFFFL);
             if(exhausted.contains(key)) continue;
             GeminiStructureSchedule.Candidates search = searches.get(key);
@@ -247,9 +251,9 @@ public final class WretchCamps extends WorldSavedData {
             }
             schedule.examined();
             int x = point.posX, z = point.posZ;
-            if(!spaced(x, z)) { schedule.spacing(); GardenerNests.countRejection(rejected, "camp spacing"); continue; }
+            if(!spaced(x, z)) { if(fallback) schedule.discardFallback(); schedule.spacing(); GardenerNests.countRejection(rejected, "camp spacing"); continue; }
             if(fallback) {
-                schedule.loadFallback(world, point, search.half);
+                if(!schedule.loadFallback(world, point, search.half)) { schedule.loading(this); return null; }
                 searches.put(key, new GeminiStructureSchedule.Candidates(world, homeX, homeZ,
                         search.min, search.max, search.half));
             }
@@ -264,7 +268,6 @@ public final class WretchCamps extends WorldSavedData {
             plans++; schedule.plan();
             String reason = place(world, camp, StructurePlacementMode.NATURAL, WretchCampSettlement.plan(world, camp));
             if(reason == null) {
-                schedule.success(this, world, "camp", camp.x, camp.y - 1, camp.z, GeminiConfig.wretchCampIntervalSeconds);
                 return null;
             }
             if(reason.startsWith("unloaded")) schedule.unloaded();
@@ -273,8 +276,23 @@ public final class WretchCamps extends WorldSavedData {
         return schedule.failure(rejected);
     }
     private String place(WorldServer world, Camp camp, StructurePlacementMode mode, GardenerNests.PlacementPlan preparation) {
-        String reason = GardenerNests.place(world, preparation, false, mode);
-        if(reason != null) return reason;
+        if(preparation.reason != null) return preparation.reason;
+        String bounds = preparation.checkBounds(world);
+        if(bounds != null) return bounds;
+        if(mode == StructurePlacementMode.NATURAL && !active(world)) return "natural generation gate changed";
+        // The exact graded edits, identity and cursor exist before the first world write.
+        // Recovery replays this plan, never resamples already modified terrain.
+        camp.job = preparation.cells(); camp.cursor = camp.pass = camp.idle = 0;
+        camp.unreadJob = null;
+        camp.failed = camp.recovering = false; camp.reason = "queued";
+        for(java.util.Iterator<Camp> it = camps.iterator(); it.hasNext();) {
+            Camp old = it.next();
+            if(old != camp && old.x == camp.x && old.y == camp.y && old.z == camp.z) it.remove();
+        }
+        for(java.util.Iterator<Camp> it = pending.iterator(); it.hasNext();) {
+            Camp old = it.next();
+            if(old.x == camp.x && old.y == camp.y && old.z == camp.z) it.remove();
+        }
         if(!camps.contains(camp)) camps.add(camp);
         // Record generated columns once, using the existing compact provenance masks. Do not
         // issue a player-placement callback or repeatedly walk every camp for every edited block.
@@ -284,15 +302,103 @@ public final class WretchCamps extends WorldSavedData {
             camp.bottom = Math.min(camp.bottom, cell.y); camp.top = Math.max(camp.top, cell.y + 1);
         }
         for(long key : columns) recordColumn((int) (key >> 32), (int) key);
-        if(camp.state == 0 || camp.state == 4) { camp.state = 1; camp.retries = 0; }
         markDirty();
-        GeminiInvasionManager.debug(world, "camp-register", "Completed " + description(camp) + " at " + camp.x + ", " + (camp.y - 1) + ", " + camp.z
-                + "; replaced blocks=" + preparation.replaced + ".");
+        camp.journalReady = GardenerNests.checkpoint(world, this);
+        if(!camp.journalReady) {
+            camp.failed = true; camp.reason = "could not save construction journal; terrain work paused";
+            return camp.reason;
+        }
         return null;
     }
+    static boolean constructionIntersects(World world, AxisAlignedBB box) {
+        for(Camp camp : get(world).camps) if(camp.job != null
+                && WretchCampSettlement.bounds(camp, 1, world.getActualHeight()).intersectsWith(box)) return true;
+        return false;
+    }
+    private void build(WorldServer world, Camp camp) {
+        if(!camp.journalReady) {
+            camp.journalReady = GardenerNests.checkpoint(world, this);
+            if(!camp.journalReady) { camp.failed = true; camp.reason = "could not save construction journal; terrain work paused"; return; }
+        }
+        int cursor = camp.cursor, pass = camp.pass;
+        GardenerNests.beginPlacement();
+        try {
+            int edits = 0;
+            for(int scans = 0; scans < 1024 && edits < 128; scans++) {
+                if(camp.cursor >= camp.job.size()) {
+                    camp.cursor = 0;
+                    if(++camp.pass < 3) { camp.reason = "construction pass " + camp.pass + "/2"; return; }
+                    List<GardenerNests.Placement> finished = camp.job;
+                    int previousState = camp.state, previousRetries = camp.retries;
+                    camp.job = null; camp.failed = camp.recovering = false; camp.reason = "none";
+                    if(camp.state == 0 || camp.state == 4) { camp.state = 1; camp.retries = 0; }
+                    if(!GardenerNests.checkpoint(world, this)) {
+                        camp.job = finished; camp.pass = 2; camp.cursor = finished.size();
+                        camp.state = previousState; camp.retries = previousRetries;
+                        camp.failed = camp.recovering = true; camp.reason = "could not save completion record; retrying"; return;
+                    }
+                    markDirty();
+                    if(!camp.debug) schedule.success(this, world, "camp", camp.x, camp.y - 1, camp.z, GeminiConfig.wretchCampIntervalSeconds);
+                    GeminiInvasionManager.debug(world, "camp-register", "Verified and registered " + description(camp)
+                            + " at " + camp.x + ", " + (camp.y - 1) + ", " + camp.z + ".");
+                    return;
+                }
+                GardenerNests.Placement cell = camp.job.get(camp.cursor);
+                if(!GardenerNests.prepareChunk(world, cell.x, cell.z)) { camp.reason = "loading construction chunk"; return; }
+                if(camp.pass == 1) {
+                    world.notifyBlocksOfNeighborChange(cell.x, cell.y, cell.z, cell.block);
+                    edits++;
+                } else if(world.getBlock(cell.x, cell.y, cell.z) != cell.block || world.getBlockMetadata(cell.x, cell.y, cell.z) != cell.meta) {
+                    if(cell.block.getMaterial().blocksMovement()) {
+                        String obstruction = GardenerNests.clearConstructionCell(world, cell.x, cell.y, cell.z,
+                                WretchCampSettlement.bounds(camp, 0, world.getActualHeight()));
+                        if(obstruction != null) { camp.reason = obstruction; return; }
+                    }
+                    if(world.getTileEntity(cell.x, cell.y, cell.z) != null) world.removeTileEntity(cell.x, cell.y, cell.z);
+                    if(!world.setBlock(cell.x, cell.y, cell.z, cell.block, cell.meta, 2)) {
+                        camp.reason = "block insertion rejected at " + cell.x + "," + cell.y + "," + cell.z; return;
+                    }
+                    edits++;
+                    if(camp.pass == 2) {
+                        world.notifyBlocksOfNeighborChange(cell.x, cell.y, cell.z, cell.block);
+                        if(world.getBlock(cell.x, cell.y, cell.z) != cell.block || world.getBlockMetadata(cell.x, cell.y, cell.z) != cell.meta) {
+                            camp.reason = "block callback changed " + cell.x + "," + cell.y + "," + cell.z; return;
+                        }
+                    }
+                }
+                camp.cursor++;
+            }
+        } catch(RuntimeException failure) {
+            if(!camp.reason.startsWith("block/chunk callback exception"))
+                com.hbm.main.MainRegistry.logger.error("Wretch camp construction paused; saved plan retained", failure);
+            camp.reason = "block/chunk callback exception (see server log)";
+        } finally {
+            GardenerNests.endPlacement();
+            if(camp.job != null) {
+                if(cursor != camp.cursor || pass != camp.pass) { camp.idle = 0; camp.failed = false; }
+                else if(++camp.idle >= 1200) { camp.failed = true; camp.recovering = true; }
+                if(camp.idle > 0) GeminiInvasionManager.debug(world, "camp-build-" + camp.x + ":" + camp.z,
+                        "Camp construction " + (camp.failed ? "stalled; retrying with backoff" : "waiting")
+                        + " at " + camp.x + "," + camp.y + "," + camp.z + "; pass=" + camp.pass
+                        + "; cursor=" + camp.cursor + "; reason=" + camp.reason);
+            }
+            markDirty();
+        }
+    }
     private void tick(WorldServer world) {
+        for(int count = 0; count < camps.size(); count++) {
+            if(nextJob >= camps.size()) nextJob = 0;
+            Camp camp = camps.get(nextJob++);
+            if(camp.job == null || !(camp.debug || active(world)
+                && world.getGameRules().getGameRuleBooleanValue("mobGriefing")
+                && world.getGameRules().getGameRuleBooleanValue("doMobSpawning"))) continue;
+            if(camp.failed && world.getTotalWorldTime() % 200 != 0) continue;
+            build(world, camp); break; // One shared, bounded camp job per server tick.
+        }
+        if(world.getTotalWorldTime() % 20 != 0) return;
         int work = 0;
         for(Camp camp : camps) {
+            if(camp.job != null || camp.state == 0 || !world.getGameRules().getGameRuleBooleanValue("doMobSpawning")) continue;
             if(!active(world) && !camp.debug || world.getClosestPlayer(camp.x, camp.y, camp.z, camp.size / 2D + 64D) == null) continue;
             if(camp.state == 1 && GardenerNests.loadedVolume(world, AxisAlignedBB.getBoundingBox(camp.x - 10, 0, camp.z - 10,
                     camp.x + 11, world.getActualHeight(), camp.z + 11))) {
@@ -528,9 +634,7 @@ public final class WretchCamps extends WorldSavedData {
         }
         @SubscribeEvent public void tick(TickEvent.WorldTickEvent event) {
             if(event.phase == TickEvent.Phase.END && event.world instanceof WorldServer && !event.world.isRemote
-                    && GeminiConfig.enabled && GeminiConfig.wretchEnabled
-                    && event.world.difficultySetting != EnumDifficulty.PEACEFUL && event.world.getTotalWorldTime() % 20 == 0
-                    && !event.world.playerEntities.isEmpty() && event.world.getGameRules().getGameRuleBooleanValue("doMobSpawning"))
+                    && !event.world.playerEntities.isEmpty())
                 get(event.world).tick((WorldServer) event.world);
         }
         @SubscribeEvent(priority = EventPriority.LOWEST) public void join(EntityJoinWorldEvent event) {
@@ -587,6 +691,12 @@ public final class WretchCamps extends WorldSavedData {
         UUID boss = UUID.randomUUID();
         int state, retries; // abandoned construction, waiting, spawned, defeated, blocked spawn; never respawn spawned camps
         boolean debug;
+        List<GardenerNests.Placement> job;
+        NBTTagCompound unreadJob;
+        int cursor, pass, idle;
+        boolean failed, recovering;
+        boolean journalReady;
+        String reason = "legacy construction without a saved block plan";
         int layout, size = 13, major = 1, minor;
         int bottom, top;
         long seed;
@@ -612,7 +722,7 @@ public final class WretchCamps extends WorldSavedData {
         for(Camp camp : readCamps(nbt.getTagList("Camps", 10))) camps.add(camp);
         pending.clear();
         for(Camp camp : readCamps(nbt.getTagList("PendingCamps", 10)))
-            if(camp.layout == WretchCampSettlement.VERSION && pending.size() < LIMIT) pending.add(camp);
+            if(camp.layout == WretchCampSettlement.VERSION && pending.size() < LIMIT && at(camp.x, camp.y, camp.z) == null) pending.add(camp);
     }
     private static List<Camp> readCamps(NBTTagList list) {
         List<Camp> result = new ArrayList<Camp>();
@@ -625,6 +735,7 @@ public final class WretchCamps extends WorldSavedData {
                     || Math.abs((long) camp.z) > 29999984) continue;
             try { camp.boss = UUID.fromString(tag.getString("Boss")); } catch(IllegalArgumentException ignored) { continue; }
             camp.state = MathHelper.clamp_int(tag.getInteger("State"), 0, 4);
+            if(camp.state > 0) camp.reason = "none";
             camp.retries = MathHelper.clamp_int(tag.getInteger("Retries"), 0, 20);
             int protection = tag.getInteger("ProtectionVersion");
             for(int packed : tag.getIntArray("Protected")) {
@@ -662,6 +773,10 @@ public final class WretchCamps extends WorldSavedData {
                 readRoads(camp, tag.getIntArray("Boundary"), camp.boundary);
                 if(!valid || camp.graded && (camp.pieces.size() != camp.major + camp.minor || camp.roads.isEmpty())) continue;
             } else if(camp.layout != 0) continue;
+            camp.failed = tag.getBoolean("ConstructionFailed");
+            camp.idle = MathHelper.clamp_int(tag.getInteger("ConstructionIdle"), 0, 1200);
+            if(tag.hasKey("ConstructionReason")) camp.reason = tag.getString("ConstructionReason");
+            if(tag.hasKey("Construction")) readJob(camp, tag.getCompoundTag("Construction"));
             result.add(camp);
         }
         return result;
@@ -671,7 +786,7 @@ public final class WretchCamps extends WorldSavedData {
             int value = packed[i], x = (value & 255) - 128, z = (value >> 8 & 255) - 128;
             int y = value >> 16 & 255, width = value >>> 24;
             if(x >= -camp.size / 2 && x < camp.size / 2 && z >= -camp.size / 2 && z < camp.size / 2
-                    && y >= 1 && y <= 236 && width >= 2 && width <= 4) output.add(new WretchCampSettlement.Road(x, y, z, width));
+                    && y >= 1 && y <= 236 && width >= 1 && width <= 4) output.add(new WretchCampSettlement.Road(x, y, z, width));
         }
     }
     private static int[] writeRoads(List<WretchCampSettlement.Road> roads) {
@@ -687,6 +802,10 @@ public final class WretchCamps extends WorldSavedData {
         tag.setInteger("X", camp.x); tag.setInteger("Y", camp.y); tag.setInteger("Z", camp.z);
         tag.setString("Boss", camp.boss.toString()); tag.setInteger("State", camp.state); tag.setInteger("Retries", camp.retries);
         tag.setBoolean("Debug", camp.debug);
+        tag.setBoolean("ConstructionFailed", camp.failed); tag.setInteger("ConstructionIdle", camp.idle);
+        tag.setString("ConstructionReason", camp.reason);
+        if(camp.job != null) tag.setTag("Construction", writeJob(camp));
+        else if(camp.unreadJob != null) tag.setTag("Construction", camp.unreadJob);
         tag.setInteger("Bottom", camp.bottom); tag.setInteger("Top", camp.top);
         tag.setInteger("ProtectionVersion", 2);
         int[] columns = new int[camp.protectedColumns.size()]; int index = 0;
@@ -705,6 +824,49 @@ public final class WretchCamps extends WorldSavedData {
             tag.setTag("Pieces", pieces); tag.setIntArray("Roads", writeRoads(camp.roads)); tag.setIntArray("Boundary", writeRoads(camp.boundary));
         }
         return tag;
+    }
+    private static NBTTagCompound writeJob(Camp camp) {
+        NBTTagCompound tag = new NBTTagCompound();
+        NBTTagList palette = new NBTTagList();
+        Map<String, Integer> indices = new HashMap<String, Integer>();
+        int[] positions = new int[camp.job.size()], states = new int[positions.length];
+        for(int i = 0; i < positions.length; i++) {
+            GardenerNests.Placement cell = camp.job.get(i);
+            String name = Block.blockRegistry.getNameForObject(cell.block), key = name + ":" + cell.meta;
+            Integer index = indices.get(key);
+            if(index == null) {
+                index = indices.size(); indices.put(key, index);
+                NBTTagCompound entry = new NBTTagCompound(); entry.setString("Block", name); entry.setInteger("Meta", cell.meta);
+                palette.appendTag(entry);
+            }
+            positions[i] = ((cell.x - camp.x + 128) << 16) | ((cell.z - camp.z + 128) << 8) | cell.y;
+            states[i] = index;
+        }
+        tag.setTag("Palette", palette); tag.setIntArray("Positions", positions); tag.setIntArray("States", states);
+        tag.setInteger("Cursor", camp.cursor); tag.setInteger("Pass", camp.pass);
+        return tag;
+    }
+    private static void readJob(Camp camp, NBTTagCompound tag) {
+        NBTTagList palette = tag.getTagList("Palette", 10);
+        int[] positions = tag.getIntArray("Positions"), states = tag.getIntArray("States");
+        List<GardenerNests.Placement> cells = new ArrayList<GardenerNests.Placement>();
+        boolean valid = positions.length > 0 && positions.length == states.length && positions.length <= camp.size * camp.size * 256;
+        for(int i = 0; i < positions.length && valid; i++) {
+            int x = (positions[i] >>> 16 & 255) - 128, z = (positions[i] >>> 8 & 255) - 128, y = positions[i] & 255;
+            if(states[i] < 0 || states[i] >= palette.tagCount() || x < -camp.size / 2 || x >= camp.size / 2 || z < -camp.size / 2 || z >= camp.size / 2) { valid = false; break; }
+            NBTTagCompound entry = palette.getCompoundTagAt(states[i]);
+            Block block = Block.getBlockFromName(entry.getString("Block"));
+            if(block == null) { valid = false; break; }
+            cells.add(new GardenerNests.Placement(camp.x + x, y, camp.z + z, block, entry.getInteger("Meta") & 15));
+        }
+        if(!valid) {
+            camp.unreadJob = (NBTTagCompound) tag.copy(); camp.failed = true;
+            camp.reason = "saved block plan invalid or contains an unavailable block; retained without terrain changes"; return;
+        }
+        camp.job = cells; camp.pass = MathHelper.clamp_int(tag.getInteger("Pass"), 0, 2);
+        camp.journalReady = true;
+        camp.cursor = camp.pass == 2 ? 0 : MathHelper.clamp_int(tag.getInteger("Cursor"), 0, cells.size());
+        camp.recovering = true;
     }
     @Override public void writeToNBT(NBTTagCompound nbt) {
         schedule.write(nbt);

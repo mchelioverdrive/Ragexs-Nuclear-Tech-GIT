@@ -67,7 +67,7 @@ public final class CommandGemini extends CommandBase {
         return new ChunkCoordinates(MathHelper.floor_double(x), MathHelper.floor_double(y), MathHelper.floor_double(z));
     }
     private static void generated(ICommandSender sender, StructureInfo result, boolean exact, boolean camp) {
-        reply(sender, (camp ? "Generated " : "Nest job: ") + result + ".");
+        reply(sender, (camp ? "Camp job: " : "Nest job: ") + result + ".");
         if(exact) reply(sender, "Exact origin retained (coordinates rounded down to blocks); "
                 + (camp ? "origin is the camp foundation elevation." : "origin is the nest floor's air level, with organic floor at Y-1."));
     }
@@ -176,7 +176,10 @@ public final class CommandGemini extends CommandBase {
         reply(sender, GeminiInvasionManager.structurePlayers(world));
         reply(sender, GardenerNests.diagnostics(world));
         reply(sender, WretchCamps.diagnostics(world));
-        reply(sender, "Successfully registered nests=" + GardenerNests.known(world).size() + "; successfully registered camps=" + WretchCamps.completedCount(world)
+        reply(sender, "Successfully registered nests=" + GardenerNests.completedCount(world)
+                + "; pending/unfinished nests=" + (GardenerNests.known(world).size() - GardenerNests.completedCount(world))
+                + "; total nest records=" + GardenerNests.known(world).size() + "; successfully registered camps=" + WretchCamps.completedCount(world)
+                + "; pending/unfinished camps=" + (WretchCamps.known(world).size() - WretchCamps.completedCount(world))
                 + "; total camp records=" + WretchCamps.known(world).size()
                 + " in sender dimension " + world.provider.dimensionId + ". Invasion world=Overworld (0), shared saved progression.");
     }
