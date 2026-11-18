@@ -12,6 +12,9 @@ public final class EntityAIFakePerson extends EntityAIBase {
 
 	private final EntityFakePerson mob;
 	private EntityLivingBase observed;
+	private EntityLivingBase movementObserved;
+	private double previousObservedX, previousObservedZ;
+	private int retreatTicks;
 	private int pathDelay, stareTicks, burstTicks, burstCooldown, unseenTicks;
 	private long nextScan;
 
@@ -58,6 +61,8 @@ public final class EntityAIFakePerson extends EntityAIBase {
 		mob.setSneaking(false);
 		if(mob.isSprinting()) mob.setSprinting(false);
 		observed = null;
+		movementObserved = null;
+		retreatTicks = 0;
 		nextScan = mob.worldObj.getTotalWorldTime() + 60;
 	}
 
@@ -105,23 +110,30 @@ public final class EntityAIFakePerson extends EntityAIBase {
 			mob.attackEntityAsMob(observed);
 			return;
 		}
-		if(!visible) { mob.getNavigator().clearPathEntity(); return; }
+		if(!visible) {
+			mob.getNavigator().clearPathEntity();
+			movementObserved = null;
+			retreatTicks = 0;
+			return;
+		}
 		mob.getLookHelper().setLookPositionWithEntity(observed, 8F, 8F);
+		if(mob.isPlayerMimic()) {
+			mob.setSneaking(observed instanceof EntityPlayer && !isPlayerMovingAway());
+			double speed = mob.isSneaking() ? 0.18D : 0.6D;
+			if(pathDelay == 0) {
+				pathDelay = 20;
+				mob.getNavigator().tryMoveToEntityLiving(observed, speed);
+			}
+			// Change pace immediately even while reusing the current path.
+			mob.getNavigator().setSpeed(speed);
+			return;
+		}
 		if(stareTicks > 0) {
 			stareTicks--;
 			mob.getNavigator().clearPathEntity();
-			mob.setSneaking(mob.isPlayerMimic());
 			return;
 		}
 		if(mob.getRNG().nextInt(180) == 0) { stareTicks = 40 + mob.getRNG().nextInt(60); return; }
-		if(mob.isPlayerMimic()) {
-			// Walk all the way up to the victim so proximity can trigger the reveal.
-			if(pathDelay == 0) {
-				pathDelay = 20;
-				mob.getNavigator().tryMoveToEntityLiving(observed, 0.6D);
-			}
-			return;
-		}
 		if(distance <= 64D) { mob.getNavigator().clearPathEntity(); return; }
 		if(pathDelay == 0) {
 			pathDelay = 20;
@@ -130,5 +142,23 @@ public final class EntityAIFakePerson extends EntityAIBase {
 			mob.getNavigator().tryMoveToXYZ(observed.posX + dx / length * 8D, observed.posY,
 					observed.posZ + dz / length * 8D, 0.6D);
 		}
+	}
+
+	private boolean isPlayerMovingAway() {
+		if(movementObserved != observed) {
+			movementObserved = observed;
+			retreatTicks = 0;
+		} else {
+			// Sample actual server positions: player motion fields need not reflect walking packets.
+			double dx = observed.posX - previousObservedX, dz = observed.posZ - previousObservedZ;
+			double awayX = observed.posX - mob.posX, awayZ = observed.posZ - mob.posZ;
+			double distance = Math.sqrt(awayX * awayX + awayZ * awayZ);
+			if(distance > 0 && dx * awayX + dz * awayZ > 0.02D * distance) retreatTicks = 5;
+			else if(retreatTicks > 0) retreatTicks--;
+		}
+		previousObservedX = observed.posX;
+		previousObservedZ = observed.posZ;
+		// Bridge brief gaps between movement packets without flickering the crouch pose.
+		return retreatTicks > 0;
 	}
 }

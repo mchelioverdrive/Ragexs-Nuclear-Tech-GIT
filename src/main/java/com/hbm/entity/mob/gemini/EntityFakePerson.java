@@ -279,7 +279,7 @@ public final class EntityFakePerson extends EntityMob implements IDeepRootCarrie
 				}
 			}
 			if(isPlayerMimic() && !isRecovering() && getHealth() > 0) {
-				// Only the brief disguised hesitation uses the exhausted, lowered gaze.
+				// Only the disguised sneaking approach uses the exhausted, lowered gaze.
 				if(isDisguised() && isSneaking()) rotationPitch = Math.max(35F, rotationPitch);
 				if(pleaTicks < 0) pleaTicks = 160 + rand.nextInt(241);
 				if(--pleaTicks <= 0) {

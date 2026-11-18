@@ -859,3 +859,8 @@
 
 - Restore normal movement speed for new and saved player mimics. Walk directly toward visible victims at the original walking pace, reveal within the existing close-range threshold and sustain native sprinting during hostile pursuit at the original burst's effective speed. Retain villager mimics' stalking distance and short sprint bursts.
 - Limit the crouched, lowered-head pose to brief disguised hesitation; ordinary walking and hostile pursuit stay upright. Restore the original revealed player attack-arm pose and full walking/running stride. Preserve revival, permanent body burning, delayed pleas, player sounds, skins, usernames and movement imitation.
+
+2026-11-17 22:56 — Match disguised Fake Player approach to player retreat
+
+- Sneak toward visible players who are stationary or not moving away; switch immediately to normal walking when their horizontal movement carries them away from the mimic. Sample actual server positions and bridge brief movement-packet gaps to avoid crouch flicker. Apply a slower sneaking pace to the current path as well as newly calculated paths.
+- Remove random stationary hesitation from player-mimic approach so crouching continues to advance toward the victim. Preserve close-range reveal, sustained hostile sprinting, attack animations and villager-mimic behavior; clear movement samples when the target changes or visibility is lost.
