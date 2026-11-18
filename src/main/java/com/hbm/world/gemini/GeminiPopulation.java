@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
+import java.util.Set;
+import java.util.HashSet;
 import com.hbm.config.GeminiConfig;
 import com.hbm.entity.mob.gemini.*;
 import cpw.mods.fml.common.eventhandler.EventPriority;
@@ -62,16 +64,27 @@ public final class GeminiPopulation {
     }
 
     static String gardenerAdmissionReason(World world) {
+        if(!GardenerNests.censusReady(world)) return "saved Underground Gardener census in progress";
         if(GeminiConfig.gardenerMaxLoaded <= 0) return "Gardener admission disabled (maxLoaded=0)";
         if(GeminiConfig.maxLoadedCreatures <= 0) return "global Gemini admission disabled (maxLoadedCreatures=0)";
-        int total = 0, gardeners = 0;
+        int total = 0, gardeners = gardenerCount(world, null);
         Map<UUID, EntityLiving> members = WORLDS.get(world);
         if(members != null) for(EntityLiving mob : members.values()) if(!mob.isDead && mob.worldObj == world) {
-            total++; if(mob.getClass() == EntityGardener.class) gardeners++;
+            total++;
         }
         if(total >= GeminiConfig.maxLoadedCreatures) return "global Gemini population limit (" + total + "/" + GeminiConfig.maxLoadedCreatures + ")";
         if(gardeners >= GeminiConfig.gardenerMaxLoaded) return "Underground Gardener population limit (" + gardeners + "/" + GeminiConfig.gardenerMaxLoaded + ")";
         return null;
+    }
+
+    /** Union saved identities and synchronous join reservations; never double-count a loaded survivor. */
+    static int gardenerCount(World world, EntityLiving candidate) {
+        Set<UUID> ids = new HashSet<UUID>(GardenerNests.living(world));
+        Map<UUID, EntityLiving> members = WORLDS.get(world);
+        if(members != null) for(EntityLiving mob : members.values())
+            if(mob instanceof EntityGardener && !(mob instanceof EntityOceanGardener) && mob.isEntityAlive()) ids.add(mob.getUniqueID());
+        if(candidate != null) ids.remove(candidate.getUniqueID());
+        return ids.size();
     }
 
     static void forgetFailedSpawn(EntityLiving mob) {
@@ -87,6 +100,9 @@ public final class GeminiPopulation {
         return canAdmit(world, type, null, limit, source);
     }
     private static boolean canAdmit(World world, Class<? extends EntityLiving> type, EntityLiving candidate, int limit, Entity source) {
+        // Underground eggs also respect the absolute ceiling. Ocean Gardeners retain their own rules.
+        if(type == EntityGardener.class && (world.isRemote || !GardenerNests.censusReady(world)
+                || gardenerCount(world, candidate) >= Math.min(16, limit))) return false;
         if(GeminiSpawning.manualAdmission(candidate)) return true;
         if(world.isRemote || limit <= 0 || GeminiConfig.maxLoadedCreatures <= 0) return false;
         int total = 0, same = 0;
@@ -148,11 +164,6 @@ public final class GeminiPopulation {
             GeminiSpawning.markNatural(event.entityLiving);
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public void residentDeath(net.minecraftforge.event.entity.living.LivingDeathEvent event) {
-        if(event.entityLiving instanceof EntityGardener) GardenerNests.defeated((EntityGardener) event.entityLiving);
-    }
-
     @SubscribeEvent(priority = EventPriority.LOWEST, receiveCanceled = true)
     public void feedingDeath(net.minecraftforge.event.entity.living.LivingDeathEvent event) {
         if(!event.entityLiving.worldObj.isRemote && event.source.getEntity() instanceof EntityGardener)
@@ -199,7 +210,9 @@ public final class GeminiPopulation {
     }
 
     @SubscribeEvent public void tick(TickEvent.WorldTickEvent event) {
-        if(event.phase != TickEvent.Phase.END || event.world.isRemote || event.world.getTotalWorldTime() % 20 != 0) return;
+        if(event.phase != TickEvent.Phase.END || event.world.isRemote) return;
+        if(event.world instanceof net.minecraft.world.WorldServer) GardenerNests.census((net.minecraft.world.WorldServer) event.world);
+        if(event.world.getTotalWorldTime() % 20 != 0) return;
         Map<UUID, Entity> cocoons = COCOONS.get(event.world);
         if(cocoons != null) for(Iterator<Entity> it = cocoons.values().iterator(); it.hasNext();) {
             Entity cocoon = it.next();

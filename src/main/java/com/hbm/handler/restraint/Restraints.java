@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.WeakHashMap;
 import com.hbm.config.RestraintConfig;
+import com.hbm.entity.mob.gemini.EntityFakePerson;
 import com.hbm.items.ModItems;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.RestraintPacket;
@@ -127,7 +128,7 @@ public final class Restraints {
         EntityLivingBase e = event.entityLiving;
         if(e.worldObj.isRemote || !e.isEntityAlive()) return;
         RestraintState s = RestraintState.get(e);
-        if(!s.active()) return;
+        if(!s.active() && s.escort == null) return;
         if(!RestraintConfig.enabled || e instanceof EntityPlayer && !RestraintConfig.players) {
             if(s.cuffs) e.entityDropItem(new ItemStack(ModItems.handcuffs), 0);
             if(s.jacket) e.entityDropItem(new ItemStack(ModItems.straight_jacket), 0);
@@ -177,8 +178,16 @@ public final class Restraints {
         if(sync) changed(e);
     }
 
+    private static boolean fakePersonBody(EntityLivingBase e) {
+        return e instanceof EntityFakePerson && ((EntityFakePerson) e).isRecovering();
+    }
+
+    private static boolean dragTarget(EntityLivingBase e, RestraintState s) {
+        return s.bound() || fakePersonBody(e);
+    }
+
     private static EntityPlayer escort(EntityLivingBase e, RestraintState s) {
-        EntityPlayer leader = s.escort == null || s.device || !s.bound() || e.ridingEntity != null || e.riddenByEntity != null
+        EntityPlayer leader = s.escort == null || s.device || !dragTarget(e, s) || e.ridingEntity != null || e.riddenByEntity != null
                 ? null : e.worldObj.func_152378_a(s.escort);
         return leader != null && leader != e && leader.worldObj == e.worldObj && leader.isEntityAlive()
                 && e.worldObj.playerEntities.contains(leader) && !blocked(leader)
@@ -202,7 +211,10 @@ public final class Restraints {
                 e.motionX = e.motionY = e.motionZ = 0; e.fallDistance = 0;
             } else {
                 EntityPlayer leader = escort(e, s);
-                if(leader == null) { it.remove(); continue; }
+                if(leader == null) {
+                    if(s.escort != null) { s.escort = null; changed(e); }
+                    it.remove(); continue;
+                }
                 double dx = leader.posX - e.posX, dz = leader.posZ - e.posZ;
                 double distance = Math.sqrt(dx * dx + dz * dz);
                 if(distance > 1.6) {
@@ -269,14 +281,18 @@ public final class Restraints {
         ItemStack held = player.getHeldItem();
         boolean tool = held != null && (held.getItem() == ModItems.handcuffs || held.getItem() == ModItems.straight_jacket
                 || held.getItem() == ModItems.tranquilizer_syringe || held.getItem() == Items.lead);
-        if(!s.bound() && (held != null && held.getItem() == Items.lead || !compatible(e))) return;
-        if(!tool && !s.bound()) return;
+        boolean draggable = dragTarget(e, s);
+        // Fallen child disguises can be dragged without widening live restraint/sedation eligibility.
+        boolean bodyDrag = fakePersonBody(e) && !player.isSneaking() && (held == null || held.getItem() == Items.lead)
+                && RestraintConfig.enabled && !RestraintConfig.excluded.contains(EntityList.getEntityString(e));
+        if(!draggable && (held != null && held.getItem() == Items.lead || !compatible(e))) return;
+        if(!tool && !draggable) return;
         event.setCanceled(true);
-        if(player.worldObj.isRemote || player.getDistanceSqToEntity(e) > 36 || !compatible(e)) return;
+        if(player.worldObj.isRemote || player.getDistanceSqToEntity(e) > 36 || !compatible(e) && !bodyDrag) return;
         if(s.occupied()) { message(player, "restraint.in_device"); return; }
         EntityPlayer owner = escort(e, s);
         if(owner != null && owner != player) { message(player, "restraint.escort_busy"); return; }
-        if((held == null || held.getItem() == Items.lead) && !player.isSneaking() && s.bound()) {
+        if((held == null || held.getItem() == Items.lead) && !player.isSneaking() && draggable) {
             s.escort = owner == player ? null : player.getUniqueID();
             s.anchored = false; changed(e); message(player, s.escort == null ? "restraint.escort_stop" : "restraint.escort");
             return;

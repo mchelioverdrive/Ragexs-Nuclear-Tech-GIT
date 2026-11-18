@@ -53,6 +53,7 @@ public final class ModelFakePerson extends ModelBase {
 	@Override
 	public void render(Entity entity, float swing, float amount, float age, float yaw, float pitch, float scale) {
 		EntityFakePerson mob = (EntityFakePerson) entity;
+		if(mob.isRecovering()) amount = 0F; // Dragged bodies keep their fallen pose instead of walking sideways.
 		if(mob.isPlayerMimic()) {
 			player.onGround = onGround; player.isRiding = isRiding; player.isChild = false;
 			boolean weakPose = mob.isDisguised() && mob.isSneaking() && !mob.isRecovering();

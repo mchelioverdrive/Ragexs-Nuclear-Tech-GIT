@@ -26,6 +26,8 @@ final class GardenerBurrowing {
     private boolean enabled, retreat, searching, hasHuntingGround, headingToEntrance, cachedTravel;
     private int state, retry, failures, column, exitCandidate, visited, step, originX, originY, originZ, recoveryProbe;
     private double huntingX, huntingZ;
+    private boolean pitTravel;
+    private int pitStage;
     private Node destination;
     private final List<Node> route = new ArrayList<Node>();
     private final List<Node> tunnel = new ArrayList<Node>();
@@ -50,8 +52,10 @@ final class GardenerBurrowing {
         if(!enabled) return false;
         long time = (world.getWorldTime() % 24000L + 24000L) % 24000L;
         boolean night = !world.provider.hasNoSky && time >= 13000 && time < 23000;
-        if(!night && state != UNDERGROUND) retreat = true;
+        if(!night && state != UNDERGROUND && !mob.pursuingPrey()) retreat = true;
         if(mob.captureState() || mob.state() != EntityGardener.IDLE) return false;
+        GardenerNests.Access access = GardenerNests.access(mob);
+        if(access != null) return pitTick(access, night);
         if(state == UNDERGROUND && night) start(EMERGING);
         else if((state == SURFACE || state == EMERGING) && retreat) start(RETURNING);
         if(state == UNDERGROUND || state == SURFACE) return false;
@@ -70,6 +74,7 @@ final class GardenerBurrowing {
     }
     private void start(int next) {
         clear(); state = next; retry = 0;
+        pitStage = 0;
         if(next == EMERGING) {
             retreat = false; failures = 0;
             if(knownTunnel() && mob.getDistanceSq(tunnel.get(0).x + 0.5D, tunnel.get(0).y, tunnel.get(0).z + 0.5D) < 0.01D) {
@@ -80,6 +85,64 @@ final class GardenerBurrowing {
                 }
             }
         }
+    }
+    /** Registered residents use the constructed pit, never a second excavated commute. */
+    private boolean pitTick(GardenerNests.Access access, boolean night) {
+        if(!access.ready) return true;
+        if(!pitTravel) { clear(); tunnel.clear(); pitTravel = true; pitStage = 0; }
+        if(state == UNDERGROUND && night) start(EMERGING);
+        else if((state == SURFACE || state == EMERGING) && retreat) start(RETURNING);
+        if(state == UNDERGROUND || state == SURFACE) return false;
+        // Reconstruct an interrupted vertical stage from position, including a dawn reversal/reload.
+        boolean inPit = mob.posX >= access.x + 48 && mob.posX <= access.x + 63
+                && Math.abs(mob.posZ - access.z) <= 7;
+        if(pitStage == 0) {
+            if(state == RETURNING && mob.posY < access.y + 2) { clear(); pitStage = 3; }
+            else if(state == EMERGING && mob.posY >= access.top - 0.1) { clear(); pitStage = 2; }
+            else if(inPit && mob.posY > access.y + 1) { clear(); pitStage = state == RETURNING ? 2 : 1; }
+        }
+        if(retry > 0) { retry--; return true; }
+        double x = access.x + 51.5D, z = access.z - 3.5D;
+        if(state == EMERGING) {
+            if(pitStage == 0) pitWalk(x, access.y, z);
+            else if(pitStage == 1) pitClimb(x, access.top + 0.1D, z);
+            else if(pitStage == 2) pitClimb(access.x + 43.5D, access.top + 0.1D, z);
+            else {
+                // Clear the rim before crossing, then settle onto the dismount with native collision.
+                mob.moveGardener(0, -0.2D, 0); state = SURFACE; failures = 0; clear();
+            }
+        } else {
+            if(pitStage == 0) pitWalk(access.x + 43.5D, access.top, z);
+            else if(pitStage == 1) pitClimb(x, access.top + 0.1D, z);
+            else if(pitStage == 2) pitClimb(x, access.y, z);
+            else if(pitStage == 3) pitWalk(mob.nestX, mob.nestY, mob.nestZ);
+            else { state = UNDERGROUND; retreat = false; failures = 0; clear(); }
+        }
+        return true;
+    }
+    private void pitWalk(double x, double y, double z) {
+        if(destination == null) plan(new Node(MathHelper.floor_double(x), MathHelper.floor_double(y), MathHelper.floor_double(z), null, 0, 0));
+        else if(searching) search(); else travel();
+    }
+    private void pitClimb(double x, double y, double z) {
+        double dx = x - mob.posX, dy = y - mob.posY, dz = z - mob.posZ;
+        double length = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if(length < 0.02) { pitStage++; return; }
+        AxisAlignedBB wall = mob.boundingBox.getOffsetBoundingBox(0, -0.5, -0.7);
+        if(!GardenerNests.loaded(world, wall.expand(1, 1, 1))) { retry = 20; return; }
+        // Maintain real wall/foot contact through the rim and dismount; no ladder, flight or teleport.
+        if(world.func_147461_a(wall).isEmpty() && !supported(mob.boundingBox)) { retry = 20; return; }
+        pitMove(dx, dy, dz, Math.min(0.08, length));
+    }
+    private void pitMove(double dx, double dy, double dz, double speed) {
+        double length = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        double mx = dx / length * speed, my = dy / length * speed, mz = dz / length * speed;
+        AxisAlignedBB sweep = mob.boundingBox.addCoord(mx, my, mz).contract(0.002, 0.002, 0.002);
+        if(!GardenerNests.loaded(world, sweep.expand(1, 1, 1)) || world.isAnyLiquid(sweep)
+                || !world.getCollidingBoundingBoxes(mob, sweep).isEmpty()) { failed(); return; }
+        double beforeX = mob.posX, beforeY = mob.posY, beforeZ = mob.posZ;
+        mob.moveGardener(mx, my, mz); mob.fallDistance = 0;
+        if(mob.getDistanceSq(beforeX, beforeY, beforeZ) < speed * speed * 0.25) failed();
     }
     private void failed() {
         if(cachedTravel) tunnel.clear(); // Changed terrain or a protection veto invalidates this corridor, not the home.
@@ -195,6 +258,8 @@ final class GardenerBurrowing {
     }
     private int volumeCost(AxisAlignedBB box) {
         if(box.minY < 6 || box.maxY >= world.getHeight() - 1 || !GardenerNests.loaded(world, box.expand(1, 1, 1))) return -1;
+        if(pitTravel) return !world.isAnyLiquid(box) && world.getCollidingBoundingBoxes(mob, box).isEmpty()
+                && !world.func_147461_a(box.getOffsetBoundingBox(0, -1, 0)).isEmpty() ? 1 : -1;
         int solids = 0;
         for(int x = MathHelper.floor_double(box.minX); x <= MathHelper.floor_double(box.maxX); x++)
             for(int z = MathHelper.floor_double(box.minZ); z <= MathHelper.floor_double(box.maxZ); z++) {
@@ -234,7 +299,7 @@ final class GardenerBurrowing {
         return value;
     }
     private void search() {
-        // Four expanded nodes (24 full-body probes) per tick. Both graph and priority queue are finite.
+        // Four expanded nodes per tick (24 burrowing or 48 walking probes). Graph and queue are finite.
         for(int budget = 0; budget < 4 && !open.isEmpty() && visited < NODE_LIMIT; budget++) {
             Node current = open.poll();
             if(nodes.get(current.key()) != current) continue;
@@ -243,9 +308,12 @@ final class GardenerBurrowing {
                 for(Node n = current; n.parent != null; n = n.parent) route.add(n);
                 Collections.reverse(route); searching = false; nodes.clear(); open.clear(); costs.clear(); return;
             }
-            for(int side = 0; side < 6; side++) {
-                int x = current.x + (side == 0 ? 1 : side == 1 ? -1 : 0), y = current.y + (side == 2 ? 1 : side == 3 ? -1 : 0);
-                int z = current.z + (side == 4 ? 1 : side == 5 ? -1 : 0), cost = cost(x, y, z);
+            for(int side = 0; side < (pitTravel ? 12 : 6); side++) {
+                int direction = pitTravel ? side % 4 : side;
+                int x = current.x + (direction == 0 ? 1 : direction == 1 ? -1 : 0);
+                int z = current.z + (direction == (pitTravel ? 2 : 4) ? 1 : direction == (pitTravel ? 3 : 5) ? -1 : 0);
+                int y = current.y + (pitTravel ? side / 4 - 1 : side == 2 ? 1 : side == 3 ? -1 : 0);
+                int cost = cost(x, y, z);
                 if(cost < 0) continue;
                 Node old = nodes.get(key(x, y, z));
                 int total = current.cost + cost;
@@ -258,6 +326,7 @@ final class GardenerBurrowing {
     }
     private void travel() {
         if(step >= route.size()) {
+            if(pitTravel) { pitStage++; clear(); return; }
             if(!landing(destination)) { failed(); return; }
             if(headingToEntrance && knownTunnel()) {
                 clear(); destination = tunnel.get(0); cachedTravel = true;
@@ -281,6 +350,7 @@ final class GardenerBurrowing {
         double dx = next.x + 0.5D - mob.posX, dy = next.y - mob.posY, dz = next.z + 0.5D - mob.posZ;
         double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
         if(distance < 0.015D) { step++; return; }
+        if(pitTravel) { pitMove(dx, dy, dz, Math.min(0.08D, distance)); return; }
         double speed = Math.min(0.08D, distance), mx = dx / distance * speed, my = dy / distance * speed, mz = dz / distance * speed;
         AxisAlignedBB swept = mob.boundingBox.addCoord(mx, my, mz).contract(0.002D, 0.002D, 0.002D);
         if(volumeCost(swept) < 0) { deny(next); return; }

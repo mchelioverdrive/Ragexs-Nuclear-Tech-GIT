@@ -109,6 +109,7 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
     protected double attackReach() { return 17D; }
     protected double territoryRadius() { return burrowing.surface() ? GeminiConfig.gardenerNestMaxDistance + 32D : sharedNest ? 90D : 22D; }
     boolean hasSharedNest() { return sharedNest && !isOcean(); }
+    boolean pursuingPrey() { return prey(preyTarget) && freeCapture() != null; }
     public void assignNest(double x, double y, double z, double homeX, double homeZ, boolean shared, boolean relocate) {
         if(isOcean()) return;
         boolean changed = nestX != homeX || nestY != y || nestZ != homeZ;
@@ -412,6 +413,7 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
         previousCrawl = crawl;
         crawl += (dataWatcher.getWatchableObjectFloat(29) - crawl) * 0.25F;
         if(worldObj.isRemote) return;
+        if(addedToChunk) GardenerNests.remember(this);
         if(!isOcean() && (ticksExisted == 1 || ticksExisted % 100 == 0)) GardenerNests.bindResident(this);
         tickSurfaceBiomass();
         if(!anchored) anchor(posX, posY, posZ);
@@ -1388,10 +1390,19 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
         }
     }
     private void removeParts() { for(int i = 0; i < parts.length; i++) if(parts[i] != null) { parts[i].setDead(); parts[i] = null; } }
-    @Override public void onDeath(DamageSource source) { if(!worldObj.isRemote) { release("Gardener deactivation: death"); removeParts(); } super.onDeath(source); }
-    @Override public void setDead() { if(!worldObj.isRemote) { release("Gardener deactivation: removed"); removeParts(); } super.setDead(); }
+    @Override public void onDeath(DamageSource source) {
+        if(!worldObj.isRemote) { release("Gardener deactivation: death"); removeParts(); }
+        super.onDeath(source);
+        // Forge's cancelable death event runs inside super. Release the identity only after acceptance.
+        if(!worldObj.isRemote && dead && getHealth() <= 0) GardenerNests.defeated(this);
+    }
+    @Override public void setDead() {
+        if(!worldObj.isRemote) { release("Gardener deactivation: removed"); removeParts(); GardenerNests.defeated(this); }
+        super.setDead();
+    }
     @Override public void writeEntityToNBT(NBTTagCompound nbt) {
         super.writeEntityToNBT(nbt);
+        GardenerNests.remember(this);
         if(!isOcean()) burrowing.write(nbt);
         if(!isOcean()) { nbt.setBoolean("SharedNest", sharedNest); nbt.setDouble("SharedNestX", sharedX); nbt.setDouble("SharedNestZ", sharedZ); }
         nbt.setBoolean("NestAnchored", anchored); nbt.setDouble("NestX", nestX); nbt.setDouble("NestY", nestY); nbt.setDouble("NestZ", nestZ);

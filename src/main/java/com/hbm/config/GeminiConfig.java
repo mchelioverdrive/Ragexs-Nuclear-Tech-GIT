@@ -12,7 +12,7 @@ public final class GeminiConfig {
 	public static int phase2DelayDays = 3, phase3DelayDays = 5, phase4DelayDays = 7;
 	public static final int[] phaseEncounterPercent = {25, 50, 75, 100};
 	public static int maxLoadedCreatures = 32;
-	public static int gardenerMaxLoaded = 3, wretchMaxLoaded = 1;
+	public static int gardenerMaxLoaded = 16, wretchMaxLoaded = 1;
 	/** Legacy API aliases for the phase-1 interval. */
 	public static int minEventIntervalSeconds = 45;
 	public static int maxEventIntervalSeconds = 90;
@@ -45,6 +45,7 @@ public final class GeminiConfig {
 	public static int mockeryOffshootLimit = 2;
 	public static boolean gardenerEnabled = true;
 	public static int gardenerResidents = 3;
+    public static int gardenerReplenishSeconds = 300;
 	public static int gardenerNestChance = 8;
 	public static int gardenerNestLimit = 32;
 	public static int gardenerNestMinDistance = 64, gardenerNestMaxDistance = 160, gardenerNestsPerArea = 3;
@@ -194,18 +195,21 @@ public final class GeminiConfig {
 		values.gardenerEnabled = config.getBoolean("enabled", gardener, true,
 				"Enable natural underground Gardeners and excavated nests in phases 3 and 4. Disabled saved natural bosses remain dormant; manual spawn eggs bypass this setting.");
 		values.gardenerResidents = config.getInt("residentsPerNest", gardener, 3, 2, 3,
-                "One-shot resident capacity of newly created or explicitly upgraded nests (2-3). Saved slots retain their identities and count.");
-        values.gardenerMaxLoaded = config.getInt("maxLoaded", gardener, 3, 0, 16,
-				"Loaded natural Gardener admission cap. Default 3 admits a full nest; lower custom caps leave remaining slots pending. Global Gemini cap also applies; saved bosses are retained.");
-        int residentDefaultsVersion = config.getInt("residentDefaultsVersion", gardener, 0, 0, 1,
-                "Internal migration: the previous default loaded Gardener cap of 2 becomes 3 once. Other custom caps remain unchanged.");
-        if(residentDefaultsVersion == 0) {
-            if(values.gardenerMaxLoaded == 2) {
-                values.gardenerMaxLoaded = 3;
-                config.get(gardener, "maxLoaded", 3).set(3);
+                "Living resident target per nest (2-3). Completed nests replenish periodically with new identities; unloaded survivors retain their slots.");
+        values.gardenerMaxLoaded = config.getInt("maxLoaded", gardener, 16, 0, 16,
+                "Underground Gardener admission cap, including unloaded living identities. Saved bosses are retained; maximum 16. Legacy key name retained.");
+        int residentDefaultsVersion = config.getInt("residentDefaultsVersion", gardener, 0, 0, 2,
+                "Internal migration: previous default Gardener caps of 2 or 3 become 16 once. Other custom caps remain unchanged.");
+        if(residentDefaultsVersion < 2) {
+            if(values.gardenerMaxLoaded == 2 || values.gardenerMaxLoaded == 3) {
+                values.gardenerMaxLoaded = 16;
+                config.get(gardener, "maxLoaded", 16).set(16);
             }
-            config.get(gardener, "residentDefaultsVersion", 0).set(1);
+            config.get(gardener, "residentDefaultsVersion", 0).set(2);
         }
+        values.gardenerReplenishSeconds = config.getInt("replenishSeconds", gardener, 300, 10, 86400,
+                "Active seconds between single resident admissions in completed nests, and minimum delay after a resident dies. No catch-up after unloading or shutdown.");
+
 		values.gardenerNestChance = config.getInt("nestChance", gardener, 8, 1, 10000,
 				"Legacy pacing input when nestIntervalSeconds is absent (8 maps to 120 seconds). Loaded-area scheduling replaces the old discovery roll; saved construction requests at most one missing chunk per tick. No offline catch-up.");
 		values.gardenerNestLimit = config.getInt("nestLimit", gardener, 32, 0, 64,
@@ -285,6 +289,7 @@ public final class GeminiConfig {
         System.arraycopy(values.phaseEncounterPercent, 0, phaseEncounterPercent, 0, phaseEncounterPercent.length);
         maxLoadedCreatures = values.maxLoadedCreatures;
         gardenerResidents = values.gardenerResidents;
+        gardenerReplenishSeconds = values.gardenerReplenishSeconds;
         gardenerMaxLoaded = values.gardenerMaxLoaded;
         wretchMaxLoaded = values.wretchMaxLoaded;
         minEventIntervalSeconds = values.minEventIntervalSeconds;
@@ -377,7 +382,7 @@ public final class GeminiConfig {
         public int phase2DelayDays = 3, phase3DelayDays = 5, phase4DelayDays = 7;
         public final int[] phaseEncounterPercent = {25, 50, 75, 100};
         public int maxLoadedCreatures = 32;
-        public int gardenerMaxLoaded = 3, wretchMaxLoaded = 1;
+        public int gardenerMaxLoaded = 16, wretchMaxLoaded = 1;
         public int minEventIntervalSeconds = 45;
         public int maxEventIntervalSeconds = 90;
         public final int[] woodcrawlerInvasionMinIntervalSeconds = {45, 30, 20, 15};
@@ -409,6 +414,7 @@ public final class GeminiConfig {
         public int mockeryOffshootLimit = 2;
         public boolean gardenerEnabled = true;
         public int gardenerResidents = 3;
+        public int gardenerReplenishSeconds = 300;
         public int gardenerNestChance = 8;
         public int gardenerNestLimit = 32;
         public int gardenerNestMinDistance = 64, gardenerNestMaxDistance = 160, gardenerNestsPerArea = 3;

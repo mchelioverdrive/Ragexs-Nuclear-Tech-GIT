@@ -283,6 +283,11 @@ public final class EntityFakePerson extends EntityMob implements IDeepRootCarrie
 		pleaTicks = 160 + rand.nextInt(241);
 	}
 
+	private boolean canReviveNow() {
+		long time = (worldObj.getWorldTime() % 24000L + 24000L) % 24000L;
+		return !worldObj.provider.hasNoSky && time >= 13000L && time < 23000L;
+	}
+
 	@Override
 	public void onUpdate() {
 		if(!worldObj.isRemote) {
@@ -317,10 +322,13 @@ public final class EntityFakePerson extends EntityMob implements IDeepRootCarrie
 				if(isBurning()) {
 					setHealth(0F);
 					onDeath(DamageSource.onFire);
-				} else if(--recoveryTicks <= 0) {
-					flag(RECOVERING, false);
-					setHealth(getMaxHealth() * 0.45F);
-					if(!isPlayerMimic()) playSound("mob.villager.death", 1F, 0.5F);
+				} else {
+					if(recoveryTicks > 0) recoveryTicks--;
+					if(recoveryTicks == 0 && canReviveNow()) {
+						flag(RECOVERING, false);
+						setHealth(getMaxHealth() * 0.45F);
+						if(!isPlayerMimic()) playSound("mob.villager.death", 1F, 0.5F);
+					}
 				}
 			}
 			if(isPlayerMimic() && !isRecovering() && getHealth() > 0) {
@@ -347,6 +355,7 @@ public final class EntityFakePerson extends EntityMob implements IDeepRootCarrie
 		nbt.setBoolean("Disguised", isDisguised());
 		nbt.setBoolean("Hostile", isHostile());
 		nbt.setBoolean("BodyBurned", bodyBurned);
+		nbt.setBoolean("Recovering", isRecovering());
 		nbt.setInteger("RecoveryTicks", recoveryTicks);
 		if(pleaTicks >= 0) nbt.setInteger("PleaTicks", pleaTicks);
 		if(typingTicks > 0) nbt.setInteger("TypingTicks", typingTicks);
@@ -366,9 +375,10 @@ public final class EntityFakePerson extends EntityMob implements IDeepRootCarrie
 		bodyBurned = nbt.getBoolean("BodyBurned");
 		recoveryTicks = bodyBurned ? 0 : Math.max(0, Math.min(60, nbt.getInteger("RecoveryTicks")));
 		pleaTicks = nbt.hasKey("PleaTicks", 3) ? Math.max(1, Math.min(400, nbt.getInteger("PleaTicks"))) : -1;
-		flag(HOSTILE, nbt.getBoolean("Hostile") || recoveryTicks > 0);
+		boolean recovering = !bodyBurned && (nbt.getBoolean("Recovering") || recoveryTicks > 0) && getHealth() > 0;
+		flag(HOSTILE, nbt.getBoolean("Hostile") || recovering);
 		flag(DISGUISED, (!nbt.hasKey("Disguised") || nbt.getBoolean("Disguised")) && !isHostile());
-		flag(RECOVERING, recoveryTicks > 0 && getHealth() > 0);
+		flag(RECOVERING, recovering);
 		dataWatcher.updateObject(21, Integer.valueOf(nbt.getInteger("Profession")));
 		dataWatcher.updateObject(22, Byte.valueOf((byte) (nbt.getBoolean("ChildDisguise") ? 1 : 0)));
 		if(nbt.hasKey("PlayerMimic", 10)) {
