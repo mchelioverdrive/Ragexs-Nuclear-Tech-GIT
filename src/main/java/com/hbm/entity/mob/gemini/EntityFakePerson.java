@@ -1,6 +1,8 @@
 package com.hbm.entity.mob.gemini;
 
 import java.util.UUID;
+import com.mojang.authlib.GameProfile;
+import com.mojang.authlib.properties.Property;
 
 import com.hbm.entity.mob.ai.EntityAIFakePerson;
 import com.hbm.world.gemini.FakePersonSpawning;
@@ -23,11 +25,14 @@ import net.minecraft.util.Vec3;
 import net.minecraft.world.EnumDifficulty;
 import net.minecraft.world.World;
 
-/** A monster wearing a villager's appearance; never an IMerchant, INpc or EntityVillager. */
+/** A monster wearing a victim's appearance; the mimic profile never becomes its entity UUID. */
 public final class EntityFakePerson extends EntityMob implements IDeepRootCarrier {
 
 	private static final int DISGUISED = 1, HOSTILE = 2, RECOVERING = 4, RECOVERY_USED = 8;
 	private int recoveryTicks, attackCooldown;
+	private GameProfile mimicProfile;
+	private String profileKey;
+	private String cachedUUID, cachedName, cachedTexture, cachedSignature;
 
 	public EntityFakePerson(World world) {
 		super(world);
@@ -54,6 +59,10 @@ public final class EntityFakePerson extends EntityMob implements IDeepRootCarrie
 		dataWatcher.addObject(20, Byte.valueOf((byte) DISGUISED));
 		dataWatcher.addObject(21, Integer.valueOf(0));
 		dataWatcher.addObject(22, Byte.valueOf((byte) 0));
+		dataWatcher.addObject(23, ""); // Victim UUID, separate from this mob's identity.
+		dataWatcher.addObject(24, ""); // Persistent username.
+		dataWatcher.addObject(25, ""); // Authlib texture property, including model metadata.
+		dataWatcher.addObject(26, ""); // Optional signed texture property.
 	}
 
 	@Override
@@ -72,6 +81,41 @@ public final class EntityFakePerson extends EntityMob implements IDeepRootCarrie
 		dataWatcher.updateObject(20, Byte.valueOf((byte) (value ? flags | flag : flags & ~flag)));
 	}
 	public boolean isDisguised() { return flag(DISGUISED); }
+	public boolean isPlayerMimic() { return !dataWatcher.getWatchableObjectString(23).isEmpty(); }
+	public String mimicName() { return dataWatcher.getWatchableObjectString(24); }
+	public void imitatePlayer(EntityPlayer player) {
+		GameProfile profile = player.getGameProfile();
+		String texture = "", signature = "";
+		for(Property property : profile.getProperties().get("textures")) {
+			texture = property.getValue(); signature = property.hasSignature() ? property.getSignature() : ""; break;
+		}
+		mimicIdentity(player.getUniqueID().toString(), player.getCommandSenderName(), texture, signature);
+		func_110163_bv();
+	}
+	private void mimicIdentity(String uuid, String name, String texture, String signature) {
+		try { UUID.fromString(uuid); } catch(IllegalArgumentException invalid) { return; }
+		if(!name.matches("[A-Za-z0-9_]{1,16}")) return;
+		dataWatcher.updateObject(23, uuid); dataWatcher.updateObject(24, name);
+		dataWatcher.updateObject(25, texture.length() <= 8192 ? texture : "");
+		dataWatcher.updateObject(26, signature.length() <= 8192 ? signature : "");
+		dataWatcher.updateObject(22, (byte) 0);
+		setCustomNameTag(name); setAlwaysRenderNameTag(true);
+	}
+	/** Cached immutable-by-convention appearance profile. No server skin lookup or player registration. */
+	public GameProfile mimicProfile() {
+		if(!isPlayerMimic()) return null;
+		String uuid = dataWatcher.getWatchableObjectString(23), name = mimicName();
+		String texture = dataWatcher.getWatchableObjectString(25), signature = dataWatcher.getWatchableObjectString(26);
+		if(!uuid.equals(cachedUUID) || !name.equals(cachedName) || !texture.equals(cachedTexture) || !signature.equals(cachedSignature)) {
+			cachedUUID = uuid; cachedName = name; cachedTexture = texture; cachedSignature = signature;
+			profileKey = uuid + ":" + name + ":" + texture + ":" + signature;
+			mimicProfile = new GameProfile(UUID.fromString(uuid), name);
+			if(!texture.isEmpty()) mimicProfile.getProperties().put("textures", signature.isEmpty()
+					? new Property("textures", texture) : new Property("textures", texture, signature));
+		}
+		return mimicProfile;
+	}
+	public String mimicAppearanceKey() { mimicProfile(); return profileKey; }
 	public boolean isHostile() { return flag(HOSTILE); }
 	public boolean isRecovering() { return flag(RECOVERING); }
 	public int getProfession() { return dataWatcher.getWatchableObjectInt(21); }
@@ -219,6 +263,12 @@ public final class EntityFakePerson extends EntityMob implements IDeepRootCarrie
 		nbt.setInteger("RecoveryTicks", recoveryTicks);
 		nbt.setInteger("Profession", getProfession());
 		nbt.setBoolean("ChildDisguise", isChild());
+		if(isPlayerMimic()) {
+			NBTTagCompound identity = new NBTTagCompound();
+			identity.setString("UUID", dataWatcher.getWatchableObjectString(23)); identity.setString("Name", mimicName());
+			identity.setString("Textures", dataWatcher.getWatchableObjectString(25));
+			identity.setString("Signature", dataWatcher.getWatchableObjectString(26)); nbt.setTag("PlayerMimic", identity);
+		}
 	}
 
 	@Override
@@ -231,6 +281,10 @@ public final class EntityFakePerson extends EntityMob implements IDeepRootCarrie
 		flag(RECOVERING, recoveryTicks > 0 && getHealth() > 0);
 		dataWatcher.updateObject(21, Integer.valueOf(nbt.getInteger("Profession")));
 		dataWatcher.updateObject(22, Byte.valueOf((byte) (nbt.getBoolean("ChildDisguise") ? 1 : 0)));
+		if(nbt.hasKey("PlayerMimic", 10)) {
+			NBTTagCompound identity = nbt.getCompoundTag("PlayerMimic");
+			mimicIdentity(identity.getString("UUID"), identity.getString("Name"), identity.getString("Textures"), identity.getString("Signature"));
+		}
 		updateDisguiseSize();
 	}
 }

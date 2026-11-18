@@ -12,6 +12,7 @@ import net.minecraft.util.MathHelper;
 
 /** Native villager geometry in disguise, separated arms and a torn, elongated face on reveal. */
 public final class ModelFakePerson extends ModelBase {
+	private final net.minecraft.client.model.ModelBiped player = new net.minecraft.client.model.ModelBiped();
 
 	private final ModelVillager disguise = new ModelVillager(0F) {
 		@Override
@@ -52,6 +53,22 @@ public final class ModelFakePerson extends ModelBase {
 	@Override
 	public void render(Entity entity, float swing, float amount, float age, float yaw, float pitch, float scale) {
 		EntityFakePerson mob = (EntityFakePerson) entity;
+		if(mob.isPlayerMimic()) {
+			player.onGround = onGround; player.isRiding = isRiding; player.isChild = false;
+			// Forge 1.7.10's native skin pipeline/model supports classic 64x32 player geometry.
+			player.setRotationAngles(swing, amount, age, yaw, pitch, scale, entity);
+			float twitch = twitch(age, entity.getEntityId());
+			player.bipedHead.rotateAngleZ = twitch * (mob.isDisguised() ? 0.07F : 0.18F);
+			player.bipedHeadwear.rotateAngleZ = player.bipedHead.rotateAngleZ;
+			if(!mob.isDisguised()) {
+				player.bipedRightArm.rotateAngleX = -1.4F - MathHelper.cos(swing * 0.8F) * amount * 0.5F;
+				player.bipedLeftArm.rotateAngleX = -1.15F + MathHelper.cos(swing * 0.8F) * amount * 0.5F;
+			}
+			player.bipedHead.render(scale); player.bipedHeadwear.render(scale); player.bipedBody.render(scale);
+			player.bipedRightArm.render(scale); player.bipedLeftArm.render(scale);
+			player.bipedRightLeg.render(scale); player.bipedLeftLeg.render(scale);
+			return;
+		}
 		if(mob.isDisguised()) {
 			disguise.render(entity, swing, amount, age, yaw, pitch, scale);
 			return;

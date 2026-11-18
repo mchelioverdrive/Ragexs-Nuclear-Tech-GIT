@@ -64,6 +64,7 @@ public final class WretchBrain {
         if(live != null && !boss.validPrey(live)) boss.setAttackTarget(null);
         int interval = state == DORMANT ? 20 : 10;
         if(clock % interval == 0) { disturbances(); perceive(); prune(); }
+        if(boss.state() == EntityWretch.STOMP) return; // A planted step keeps its pursuit route and memory.
         Memory target = selected();
         if(pursuit(target)) return;
         if(target != null) boss.getLookHelper().setLookPosition(target.x, target.y + 1.3, target.z, 12, 8);
@@ -494,6 +495,11 @@ public final class WretchBrain {
         Memory m = selected();
         return running && state != DORMANT && state != AWAKENING && aggression >= 55
                 && (m != null && (fresh(m, 400) || fresh(m, 900) && clock - m.heard < 200) || reasonRemaining > 0 && cueRemaining > 0);
+    }
+    boolean vegetationIntent() {
+        Memory m = selected();
+        return running && boss.isAwake() && state != DORMANT && state != AWAKENING && state != RETURNING
+                && state != WANDERING && (m != null && fresh(m, 400) || reasonRemaining > 0 && cueRemaining > 0);
     }
     void injured(net.minecraft.entity.Entity source) {
         quiet = 0; attention = GeminiConfig.wretchWakeThreshold + 1; aggression = 90; reasonRemaining = 600;

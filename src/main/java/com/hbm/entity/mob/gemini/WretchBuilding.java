@@ -27,6 +27,9 @@ final class WretchBuilding {
     private int featureMode;
     private final Set<Long> examined = new HashSet<Long>();
     private int removed, changeTick, changedThisTick, contactArm = -1;
+    private int contactFoot = -1;
+    private boolean stompSound;
+    private Vec3 stompBlock;
     private final Vec3[] oldHand = {Vec3.createVectorHelper(0, 0, 0), Vec3.createVectorHelper(0, 0, 0)};
     private final boolean[] swept = new boolean[2];
     private final Map<Long, Denial> denied = new HashMap<Long, Denial>();
@@ -149,6 +152,87 @@ final class WretchBuilding {
         if(reason != null) { rejected(x, y, z, reason); return false; }
         return true;
     }
+    private boolean vegetation(int x, int y, int z) {
+        if(y < 1 || y > 254 || !boss.worldObj.blockExists(x, y, z)) return false;
+        Block block = boss.worldObj.getBlock(x, y, z);
+        return block.isWood(boss.worldObj, x, y, z) || block.isLeaves(boss.worldObj, x, y, z)
+                || block.getMaterial() == Material.plants || block.getMaterial() == Material.vine;
+    }
+    boolean stompable(int x, int y, int z) {
+        return boss.brain.vegetationIntent() && y + 1 <= boss.posY + 10 && vegetation(x, y, z) && useful(x, y, z);
+    }
+    /** Only the short movement corridor is examined; a tree is never recursively traversed. */
+    boolean tryStomp(AxisAlignedBB[] corridor) {
+        if(boss.state() != EntityWretch.IDLE || !boss.onGround || boss.navigation.vaulting() || !boss.brain.vegetationIntent()) return false;
+        int attempts = 0;
+        Set<Long> columns = new HashSet<Long>();
+        for(int[] p : movementBlocks(corridor)) {
+            int x = p[0], y = p[1], z = p[2];
+            if(!stompable(x, y, z) || Math.hypot(x + 0.5 - boss.posX, z + 0.5 - boss.posZ) > 3.8) continue;
+            if(!columns.add(key(x, 0, z))) continue;
+            if(++attempts > 8) break;
+            // Land on the top of this obstructing column. Larger trunks take successive steps.
+            while(y + 1 < boss.posY + 10 && vegetation(x, y + 1, z)) y++;
+            if(!stompable(x, y, z)) continue;
+            Vec3 point = Vec3.createVectorHelper(x + 0.5, y + 1.30, z + 0.5);
+            int leg = WretchPose.point(boss, 2, 2, 1).squareDistanceTo(point)
+                    <= WretchPose.point(boss, 3, 2, 1).squareDistanceTo(point) ? 0 : 1;
+            Vec3 foot = WretchPose.point(boss, leg + 2, 2, 1);
+            Vec3 raised = Vec3.createVectorHelper(foot.xCoord, point.yCoord + 1.6, foot.zCoord);
+            Vec3 over = Vec3.createVectorHelper(point.xCoord, point.yCoord + 1.6, point.zCoord);
+            AxisAlignedBB lift = GardenerPose.bounds(foot.addVector(0, 0.45, 0), raised, 0.38);
+            AxisAlignedBB advance = GardenerPose.bounds(raised, over, 0.65);
+            if(!com.hbm.world.gemini.GardenerNests.loaded(boss.worldObj, lift)
+                    || !com.hbm.world.gemini.GardenerNests.loaded(boss.worldObj, advance)
+                    || !leafSwing(lift) || !leafSwing(advance)) continue;
+            boss.stomp(point, leg); stompSound = false; stompBlock = Vec3.createVectorHelper(x, y, z); return true;
+        }
+        return false;
+    }
+    void finishStomp() {
+        if(removed == 0 && stompBlock != null) rejected((int) stompBlock.xCoord, (int) stompBlock.yCoord,
+                (int) stompBlock.zCoord, "stomp made no removable foot contact");
+        stompBlock = null;
+    }
+    private boolean leafSwing(AxisAlignedBB area) {
+        int tested = 0;
+        AxisAlignedBB[] boxes = {area};
+        for(int x = MathHelper.floor_double(area.minX); x <= MathHelper.floor_double(area.maxX); x++)
+            for(int y = MathHelper.floor_double(area.minY); y <= MathHelper.floor_double(area.maxY); y++)
+                for(int z = MathHelper.floor_double(area.minZ); z <= MathHelper.floor_double(area.maxZ); z++) {
+                    if(++tested > 256 || !boss.worldObj.blockExists(x, y, z)) return false;
+                    if(!intersects(x, y, z, boxes)) continue;
+                    Block block = boss.worldObj.getBlock(x, y, z);
+                    if(!block.isLeaves(boss.worldObj, x, y, z) || !stompable(x, y, z)) return false;
+                }
+        return true;
+    }
+    /** Clear foliage touched on the lift as well as logs beneath the descending sole. */
+    boolean stomp(int leg, boolean descending) {
+        tickBudget(); contactFoot = leg;
+        AxisAlignedBB area = boss.pose(1).bounds(WretchPose.HAND_END + 2 + leg);
+        try {
+            int tested = 0;
+            for(int x = MathHelper.floor_double(area.minX); x <= MathHelper.floor_double(area.maxX); x++)
+                for(int y = MathHelper.floor_double(area.minY); y <= MathHelper.floor_double(area.maxY); y++)
+                    for(int z = MathHelper.floor_double(area.minZ); z <= MathHelper.floor_double(area.maxZ); z++) {
+                        if(++tested > 48 || changedThisTick >= GeminiConfig.wretchBlocksPerTick || removed >= GeminiConfig.wretchBlocksPerStrike) break;
+                        if(!descending && !boss.worldObj.getBlock(x, y, z).isLeaves(boss.worldObj, x, y, z)) continue;
+                        if(!vegetation(x, y, z) || !contacts(x, y, z) || !useful(x, y, z) || !examined.add(key(x, y, z))) continue;
+                        if(WretchCamps.breakContact(boss, x, y, z)) {
+                            removed++; changedThisTick++;
+                            if(!stompSound) {
+                                stompSound = true;
+                                boss.worldObj.playSoundEffect((area.minX + area.maxX) * 0.5, area.minY, (area.minZ + area.maxZ) * 0.5,
+                                        "hbm:entity.wretch.impact", 3F, 0.9F);
+                            }
+                        }
+                    }
+            AxisAlignedBB clearance = area.contract(0.001, 0.001, 0.001);
+            clearance.minY = Math.max(clearance.minY, boss.boundingBox.minY + 0.001);
+            return clearance.minY >= clearance.maxY || boss.worldObj.func_147461_a(clearance).isEmpty();
+        } finally { contactFoot = -1; }
+    }
     String lastObstruction() { return lastBlock; }
     String lastRejection() { return rejection; }
     void rejected(int x, int y, int z, String reason) {
@@ -235,7 +319,7 @@ final class WretchBuilding {
                 Vec3.createVectorHelper(from.xCoord, from.yCoord, from.zCoord), to, false, true, false) : null;
     }
     void resetStrike() {
-        examined.clear(); removed = 0; swept[0] = swept[1] = false; contactArm = -1;
+        examined.clear(); removed = 0; swept[0] = swept[1] = false; contactArm = contactFoot = -1;
         if(boss.state() != EntityWretch.BREACH) { breachPoint = null; breachCorridor = null; }
     }
     void strike(int arm) {
@@ -258,6 +342,8 @@ final class WretchBuilding {
         swept[arm] = true; contactArm = -1;
     }
     boolean contacts(int x, int y, int z) {
+        if(contactFoot >= 0) return vegetation(x, y, z) && boss.pose(1).touches(WretchPose.HAND_END + 2 + contactFoot,
+                AxisAlignedBB.getBoundingBox(x, y, z, x + 1, y + 1, z + 1));
         if(contactArm < 0) return false;
         if(breachCorridor != null && breachPoint != null
                 && !(x == MathHelper.floor_double(breachPoint.xCoord) && y == MathHelper.floor_double(breachPoint.yCoord) && z == MathHelper.floor_double(breachPoint.zCoord))

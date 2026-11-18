@@ -144,8 +144,11 @@ public final class WoodcrawlerCaptures {
         }
         restrain(event.player, false);
     }
-    @SubscribeEvent public void death(net.minecraftforge.event.entity.living.LivingDeathEvent event) {
-        if(!event.entity.worldObj.isRemote && !event.isCanceled()) release(event.entityLiving);
+    @SubscribeEvent(priority = cpw.mods.fml.common.eventhandler.EventPriority.LOWEST)
+    public void death(net.minecraftforge.event.entity.living.LivingDeathEvent event) {
+        if(event.entity.worldObj.isRemote || event.isCanceled()) return;
+        WoodcrawlerCapture capture = owner(event.entityLiving);
+        if(capture != null) capture.death(event);
     }
     @SubscribeEvent public void unload(net.minecraftforge.event.world.WorldEvent.Unload event) {
         Set<EntityWoodcrawler> set = ACTIVE.remove(event.world);

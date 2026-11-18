@@ -11,6 +11,7 @@ import net.minecraft.init.Blocks;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.IEntityLivingData;
 import com.hbm.world.gemini.GeminiSpawning;
+import com.hbm.world.gemini.GardenerNests;
 import net.minecraft.entity.EntityList;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.EnumCreatureAttribute;
@@ -43,7 +44,7 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 	private NBTTagCompound capturedVillager;
 	private int captiveTicks;
 	public enum CaptureState { IDLE, HUNTING, STALKING, GRABBING, PLACING_CONVERSION_NEST,
-		CONVERTING_VICTIM, RECOVERING, RETURN_TO_HUNT, RESTRAINING, TRANSPORTING, DELIVERING, DEFENDING }
+		CONVERTING_VICTIM, RECOVERING, RETURN_TO_HUNT, RESTRAINING, TRANSPORTING, DELIVERING, DEFENDING, FEEDING }
 	private CaptureState captureState = CaptureState.IDLE;
 	private int captureStateTicks;
 	private final EntityAIWoodcrawler controller;
@@ -130,7 +131,7 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 	public int getHuntState() { return dataWatcher.getWatchableObjectByte(20); }
 	public void setHuntState(int state) {
 		dataWatcher.updateObject(20, Byte.valueOf((byte) state));
-		if(!isCaptureBusy() && !isGrabbing()) captureState = state == WANDER ? CaptureState.IDLE
+		if(!capture.active() && !isCaptureBusy() && !isGrabbing()) captureState = state == WANDER ? CaptureState.IDLE
 				: state == STALK ? CaptureState.STALKING : CaptureState.HUNTING;
 	}
 	public CaptureState getCaptureState() { return captureState; }
@@ -589,6 +590,31 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 	public Vec3 getProboscisOrigin(float partial) {
 		return getTendrilOrigin(0, partial);
 	}
+	/** Reuses the probe endpoint/length metadata and multipart rescue hitboxes. */
+	boolean feedingVisual(EntityLivingBase victim, int phase) {
+		Vec3 origin = getProboscisOrigin(1);
+		Vec3 end = Vec3.createVectorHelper(victim.posX, victim.boundingBox.minY + victim.height * 0.5, victim.posZ);
+		if(!GardenerNests.loaded(worldObj, GardenerPose.bounds(origin, end, 0.1)) || origin.distanceTo(end) > 6
+				|| worldObj.func_147447_a(Vec3.createVectorHelper(origin.xCoord, origin.yCoord, origin.zCoord), end, false, true, false) != null) return false;
+		defensiveProbe = false;
+		dataWatcher.updateObject(29, (float) (end.xCoord - posX));
+		dataWatcher.updateObject(30, (float) (end.yCoord - posY));
+		dataWatcher.updateObject(27, (float) (end.zCoord - posZ));
+		float extension = MathHelper.clamp_float(phase <= 14 ? phase / 14F : (24 - phase) / 10F, 0, 1);
+		dataWatcher.updateObject(28, (float) origin.distanceTo(end) * extension);
+		dataWatcher.updateObject(31, (byte) 4);
+		getLookHelper().setLookPositionWithEntity(victim, 20, 20);
+		updateProboscisParts();
+		return phase != 14 || victim.boundingBox.isVecInside(getProboscisEnd(1));
+	}
+	void stopFeedingVisual() {
+		if(dataWatcher.getWatchableObjectByte(31) == 4) {
+			dataWatcher.updateObject(31, (byte) 0); dataWatcher.updateObject(28, 0F);
+		}
+	}
+	private boolean resistsCaptiveHit(DamageSource source) {
+		return capture.feeding() && capture.victim() != null && source.getEntity() == capture.victim() && !harmfulUltraviolet();
+	}
 	public Vec3 getProboscisEnd(float partial) {
 		Vec3 origin = getProboscisOrigin(partial);
 		double dx = posX + dataWatcher.getWatchableObjectFloat(29) - origin.xCoord;
@@ -679,6 +705,10 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 	}
 	private void tickProbe() {
 		if(!isProbing()) return;
+		if(dataWatcher.getWatchableObjectByte(31) == 4) {
+			if(capture.feeding()) updateProboscisParts(); else stopFeedingVisual();
+			return;
+		}
 		updateProboscisParts();
 		getNavigator().clearPathEntity();
 		int state = dataWatcher.getWatchableObjectByte(31);
@@ -779,7 +809,7 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 		if(hit != null) to = hit.hitVec;
 		if(!GardenerPose.rayTouches(a, b, from, to, 0.12D)) return false;
 		attackEntityFrom(source, damage * 0.5F);
-		if(!defensiveProbe || harmfulUltraviolet() || defenseDamage >= 10) retractProbe();
+		if((!defensiveProbe || harmfulUltraviolet() || defenseDamage >= 10) && !resistsCaptiveHit(source)) retractProbe();
 		return true;
 	}
 
@@ -1110,7 +1140,7 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 		boolean defended = defensiveProbe && isProbing() && dataWatcher.getWatchableObjectByte(31) != 3;
 		if(defended && source.getEntity() == strikeTarget) motionX = motionY = motionZ = 0;
 		if(defended && source.getEntity() != strikeTarget) defenseDamage += damage;
-		if(!defended || harmfulUltraviolet() || defenseDamage >= 10) {
+		if((!defended || harmfulUltraviolet() || defenseDamage >= 10) && !resistsCaptiveHit(source)) {
 			if(isProbing()) retractProbe(); else endGrab();
 		}
 		if(source.getEntity() instanceof EntityLivingBase && (!defended || harmfulUltraviolet() || defenseDamage >= 10))

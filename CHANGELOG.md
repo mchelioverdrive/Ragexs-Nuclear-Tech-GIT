@@ -838,3 +838,13 @@
 - Guard captured-player movement packets, synchronize grips, bound movement-input struggle and release on rescue damage, sustained UV, death, disconnect, dimension changes or invalid ownership. Preserve existing restraint equipment and other mobs' capture ownership.
 - Mimic actual nearby ambient/footstep sources with bounded scans and cooldowns. Treat torches/artificial light as visible threats and fire/lava as heat; retain dedicated UV effects. Add a craftable NBT-synchronized visible/UV flashlight with directed obstruction-checked exposure and a rendered beam, using the existing handheld asset.
 - Add an obstruction-checked, visibly aimed defensive proboscis thrust after repeated close melee/critical hits. Resolve one physical contact for substantial damage and capture, resist interruption by the attacker and retain UV/rescuer counterplay. Preserve models, spawn rules, conversion limits and existing traversal/probing systems.
+
+2026-11-17 21:01 — Add Wretch tree stomps and Woodcrawler player assimilation
+
+- Let pursuit routes consider permitted vegetation while retaining real physical collision until animated foot contact. Lift, advance, stomp and withdraw the existing skeletal foot, clear only contacted foliage/logs under shared destruction budgets and protections, and replan after removal. Keep native low steps, gravity, uneven terrain, alternate routes and structural breaches.
+- Feed on securely restrained players locally or after existing nest transport, using synchronized proboscis thrusts and one normal damage attempt per cycle. Retain struggle, rescue, UV, damage interruption and lifecycle cleanup; bound feeding and restore saved holds without replaying a thrust.
+- Confirm the captor-caused feeding death after normal cancelable death handling before attempting one nearby Fake Person spawn under existing admission rules. Persist and synchronize the copied player UUID, username and texture property separately from the mob identity; render the username and native cached player skin with a safe fallback. Preserve player death/drops/respawn, existing Fake Person AI and villager conversion. Native 1.7.10 uses the classic player model; slim-model metadata is retained but cannot be rendered by the native pipeline.
+
+2026-11-17 21:30 — Prevent captive punches from suppressing Woodcrawler feeding
+
+- Keep the repeated bite timer and feeding proboscis active when the restrained victim hits the Woodcrawler, including exposed proboscis hits. Captive attacks still deal normal damage; rescuer damage, UV interruption, struggle escape and death cleanup retain their existing behavior.

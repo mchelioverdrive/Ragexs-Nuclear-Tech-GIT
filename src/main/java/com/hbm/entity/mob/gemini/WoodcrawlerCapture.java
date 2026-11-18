@@ -14,6 +14,9 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.ChatComponentTranslation;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.Vec3;
+import net.minecraft.util.DamageSource;
+import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import com.hbm.world.gemini.FakePersonSpawning;
 
 /** The live victim remains its own saved entity. UUIDs are links, never entity snapshots. */
 public final class WoodcrawlerCapture {
@@ -23,17 +26,23 @@ public final class WoodcrawlerCapture {
     private GardenerNests.Delivery destination;
     private int age, missing, search, blocked, struggle, input, previousInput, inputDelay;
     private float interrupts;
+    private boolean feeding, biting;
+    private int feedingAge, feedingCycle, feedingDelay;
+    private DamageSource biteSource;
+    private LivingDeathEvent biteDeath;
     private double anchorX, anchorY, anchorZ;
 
     WoodcrawlerCapture(EntityWoodcrawler mob) { this.mob = mob; }
     public boolean active() { return victim != null || restore != null; }
     public boolean owns(EntityLivingBase e) { return victim == e; }
     public EntityLivingBase victim() { return victim; }
+    public boolean feeding() { return feeding; }
     public boolean take(EntityLivingBase prey) {
         if(active() || !mob.isPrey(prey) || !WoodcrawlerCaptures.available(prey)
                 || prey.width > 1.1F || prey.height > 2.5F || prey.isEntityInvulnerable()) return false;
         if(prey instanceof EntityPlayerMP && !WoodcrawlerCaptures.prepare((EntityPlayerMP) prey)) return false;
         victim = prey; age = blocked = struggle = input = previousInput = inputDelay = search = 0; interrupts = 0;
+        feeding = false; feedingAge = feedingCycle = feedingDelay = 0;
         mob.setCrouching(true);
         anchorX = prey.posX; anchorY = prey.posY; anchorZ = prey.posZ;
         tag(); mob.captureVisual(prey); WoodcrawlerCaptures.track(mob);
@@ -77,6 +86,8 @@ public final class WoodcrawlerCapture {
             if(age % 20 == 0) struggle = Math.max(0, struggle - 1);
             if(struggle >= 100) { release(); return; }
         }
+        if(feeding && victim instanceof EntityPlayer) { feed(); return; }
+        feeding = false;
         if(--search <= 0) {
             search = 80;
             if(destination != null && !GardenerNests.claimDelivery(mob, victim, destination)) destination = null;
@@ -86,18 +97,21 @@ public final class WoodcrawlerCapture {
             }
         }
         if(age > 2400 || blocked > 80) { localDelivery(); return; }
-        if(destination == null && age >= (victim instanceof EntityPlayer ? 600 : 100)) { localDelivery(); return; }
+        if(destination == null && age >= (victim instanceof EntityPlayer ? 40 : 100)) { localDelivery(); return; }
         if(destination != null && destination.inChamber(mob) && victim.getDistanceSq(destination.x, destination.y, destination.z) < 4) {
             localDelivery(); return;
         }
         mob.capturePhase(destination == null ? EntityWoodcrawler.CaptureState.RESTRAINING : EntityWoodcrawler.CaptureState.TRANSPORTING);
     }
-    public Vec3 goal() { return destination == null ? null : destination.waypoint(mob); }
+    public Vec3 goal() { return feeding || destination == null ? null : destination.waypoint(mob); }
     public void input(int mask) { input = mask & 15; }
     public boolean damage(Entity source, float amount) {
         if(!active()) return false;
         // A captive cannot repeatedly interrupt its own secure hold; rescuers and other damage can.
-        if(source != victim) interrupts += amount;
+        if(source != victim) {
+            if(feeding) { feedingDelay = 40; feedingCycle = 0; mob.stopFeedingVisual(); }
+            interrupts += amount;
+        }
         if(interrupts >= 10) { release(); return true; }
         return false;
     }
@@ -156,7 +170,11 @@ public final class WoodcrawlerCapture {
         WoodcrawlerCaptures.anchor(victim, anchorX, anchorY, anchorZ);
     }
     private void localDelivery() {
-        if(victim instanceof EntityVillager) {
+        if(victim instanceof EntityPlayer) {
+            feeding = true; feedingAge = feedingCycle = 0;
+            mob.capturePhase(EntityWoodcrawler.CaptureState.FEEDING);
+            return;
+        } else if(victim instanceof EntityVillager) {
             NBTTagCompound snapshot = new NBTTagCompound();
             if(victim.writeToNBTOptional(snapshot)) {
                 // The cocoon receives the real villager; never save a second copy of transport ownership.
@@ -167,13 +185,44 @@ public final class WoodcrawlerCapture {
                 if(cocoon != null) { EntityVillager delivered = (EntityVillager) victim; release(); cocoon.bindVictim(delivered); return; }
             }
         } else if(!(victim instanceof EntityPlayer) && destination != null && destination.inChamber(mob)) {
-            // Existing infection owns non-villager assimilation. Players never enter irreversible NPC conversion.
+            // Existing infection owns non-player, non-villager assimilation.
             GeminiInfections.exposeContact(victim, "woodcrawler-delivery:" + mob.getUniqueID(), "woodcrawler");
         }
         release();
     }
+    private void feed() {
+        mob.capturePhase(EntityWoodcrawler.CaptureState.FEEDING);
+        // Invulnerability, healing and protection hooks must not produce an endless hold.
+        if(++feedingAge > 600 || WoodcrawlerCaptures.owner(victim) != this) { release(); return; }
+        if(feedingDelay > 0) { feedingDelay--; return; }
+        int phase = ++feedingCycle % 40;
+        if(!mob.feedingVisual(victim, phase)) {
+            mob.stopFeedingVisual();
+            if(++blocked > 40) release();
+            return;
+        }
+        blocked = 0;
+        if(phase != 14) return; // Exactly one wound at full visible extension per cycle.
+        EntityPlayer eaten = (EntityPlayer) victim;
+        biting = true; biteDeath = null; biteSource = DamageSource.causeMobDamage(mob);
+        try {
+            boolean hit = eaten.attackEntityFrom(biteSource, 4F);
+            // Evaluate the event only after all listeners and normal death/drop handling finish.
+            if(hit && biteDeath != null && !biteDeath.isCanceled() && !eaten.isEntityAlive())
+                FakePersonSpawning.convertPlayer(mob, eaten);
+        } finally {
+            biting = false; biteDeath = null; biteSource = null;
+            if(!eaten.isEntityAlive()) release();
+        }
+    }
+    public void death(LivingDeathEvent event) {
+        if(event.entityLiving != victim) return;
+        if(biting && event.source == biteSource && event.source.getEntity() == mob) biteDeath = event;
+        else release();
+    }
     public void release() {
         EntityLivingBase old = victim; victim = null; restore = null;
+        feeding = false; feedingAge = feedingCycle = feedingDelay = 0; mob.stopFeedingVisual();
         if(destination != null) GardenerNests.releaseDelivery(mob, destination);
         destination = null;
         if(old != null) {
@@ -203,6 +252,7 @@ public final class WoodcrawlerCapture {
         if(id == null) return;
         n.setString("WoodcrawlerLiveVictim", id.toString()); n.setInteger("WoodcrawlerTransportAge", age);
         n.setInteger("WoodcrawlerStruggle", struggle);
+        n.setBoolean("WoodcrawlerFeeding", feeding); n.setInteger("WoodcrawlerFeedingAge", feedingAge);
         if(destination != null) n.setTag("WoodcrawlerDelivery", destination.write());
     }
     public void read(NBTTagCompound n) {
@@ -210,6 +260,8 @@ public final class WoodcrawlerCapture {
         catch(IllegalArgumentException ignored) { restore = null; }
         age = MathHelper.clamp_int(n.getInteger("WoodcrawlerTransportAge"), 0, 2400);
         struggle = MathHelper.clamp_int(n.getInteger("WoodcrawlerStruggle"), 0, 99);
+        feeding = restore != null && n.getBoolean("WoodcrawlerFeeding");
+        feedingAge = MathHelper.clamp_int(n.getInteger("WoodcrawlerFeedingAge"), 0, 600);
         if(n.hasKey("WoodcrawlerDelivery", 10)) destination = GardenerNests.Delivery.read(n.getCompoundTag("WoodcrawlerDelivery"));
     }
 }

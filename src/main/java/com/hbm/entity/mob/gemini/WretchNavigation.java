@@ -22,6 +22,9 @@ final class WretchNavigation {
     private String routeBlock = "no ground support";
     private double requestedX, requestedY, requestedZ, actualX, actualY, actualZ, destinationY;
     private boolean moving, noRoute;
+    private boolean planning;
+    private int nextStomp;
+    private final Map<Long, Boolean> vegetationPlan = new HashMap<Long, Boolean>();
     private final long[] avoided = new long[16];
     private final int[] avoidUntil = new int[16];
     private int avoidCursor;
@@ -110,8 +113,15 @@ final class WretchNavigation {
     double obstacleZ() { return boss.posZ + Math.cos(Math.toRadians(boss.rotationYaw)) * 2.3; }
     void tick() {
         boss.moveForward = boss.moveStrafing = 0;
+        if(boss.state() == EntityWretch.STOMP) { vx = vz = 0; boss.motionX = boss.motionZ = 0; return; }
         if(vaulting) { tickVault(); return; }
         if(!moving || arrived(0.8)) { halt(); return; }
+        if(boss.ticksExisted >= nextStomp && boss.state() == EntityWretch.IDLE) {
+            nextStomp = boss.ticksExisted + 6;
+            double dx = steerX, dz = steerZ;
+            if(square(dx, dz) < 0.001) { dx = goalX - boss.posX; dz = goalZ - boss.posZ; }
+            if(boss.brain.building.tryStomp(corridor(dx, dz))) { vx = vz = 0; return; }
+        }
         // Sample resumed movement after anchored attacks too. Halts/goals must not erase
         // the displacement history: breach/recovery transitions used to restart it indefinitely.
         if((boss.state() == EntityWretch.IDLE || boss.state() == EntityWretch.SWIPE) && boss.ticksExisted >= progressTick) {
@@ -183,6 +193,11 @@ final class WretchNavigation {
         return false;
     }
     private void plan() {
+        planning = true; vegetationPlan.clear();
+        try { planSurface(); }
+        finally { planning = false; vegetationPlan.clear(); }
+    }
+    private void planSurface() {
         routeVersion++;
         nextPlan = boss.ticksExisted + 20 + Math.min(20, failures * 4);
         path.clear(); cursor = 0;
@@ -418,7 +433,7 @@ final class WretchNavigation {
         for(int i = 0; i < boxes.length; i++) {
             AxisAlignedBB swept = boxes[i].addCoord(dx, dy, dz);
             if(!GardenerNests.loaded(boss.worldObj, swept.expand(1, 0, 1))) return "unloaded terrain";
-            if(boss.worldObj.isAnyLiquid(swept) || !boss.worldObj.getCollidingBoundingBoxes(boss, swept).isEmpty())
+            if(boss.worldObj.isAnyLiquid(swept) || !collisions(swept).isEmpty())
                 return i == 0 ? "torso collision" : "leg collision";
         }
         return null;
@@ -440,7 +455,7 @@ final class WretchNavigation {
     }
     private double verticalMovement(double x, double y, double z, double dy) {
         for(AxisAlignedBB box : upperBoxes(x, y, z))
-            for(Object entry : boss.worldObj.getCollidingBoundingBoxes(boss, box.addCoord(0, dy, 0)))
+            for(Object entry : collisions(box.addCoord(0, dy, 0)))
                 dy = ((AxisAlignedBB) entry).calculateYOffset(box, dy);
         return dy;
     }
@@ -478,12 +493,12 @@ final class WretchNavigation {
     /** Read-only preview of Forge 1.7.10 Entity.moveEntity's native foot resolution. */
     private Motion nativeMovement(double x, double y, double z, double dx, double dy, double dz, double step, boolean grounded) {
         AxisAlignedBB origin = feet(x, y, z), box = origin.copy();
-        java.util.List<?> collisions = boss.worldObj.getCollidingBoundingBoxes(boss, box.addCoord(dx, dy, dz));
+        java.util.List<?> collisions = collisions(box.addCoord(dx, dy, dz));
         Motion normal = resolve(box, collisions, dx, dy, dz);
         if(step <= 0 || !(grounded || dy < 0 && normal.y != dy)
                 || Math.abs(normal.x - dx) < EPSILON && Math.abs(normal.z - dz) < EPSILON) return normal;
         box = origin.copy();
-        collisions = boss.worldObj.getCollidingBoundingBoxes(boss, box.addCoord(dx, step, dz));
+        collisions = collisions(box.addCoord(dx, step, dz));
         Motion raised = resolve(box, collisions, dx, step, dz);
         raised.rise = raised.y;
         double down = -step;
@@ -503,7 +518,36 @@ final class WretchNavigation {
     }
     private boolean clear(AxisAlignedBB box) {
         if(!GardenerNests.loaded(boss.worldObj, box.expand(1, 0, 1)) || boss.worldObj.isAnyLiquid(box)) return false;
-        return boss.worldObj.getCollidingBoundingBoxes(boss, box).isEmpty();
+        return collisions(box).isEmpty();
+    }
+    private boolean plannedVegetation(int x, int y, int z) {
+        if(!planning) return false;
+        long key = ((long) (x & 0x3FFFFFF) << 38) | ((long) (z & 0x3FFFFFF) << 12) | (y & 0xFFF);
+        Boolean allowed = vegetationPlan.get(key);
+        if(allowed == null) {
+            if(vegetationPlan.size() >= 2048) return false;
+            allowed = boss.brain.building.stompable(x, y, z); vegetationPlan.put(key, allowed);
+        }
+        return allowed;
+    }
+    /** Prospective routes can require a stomp. Physical movement always sees every solid shape. */
+    private java.util.List<?> collisions(AxisAlignedBB box) {
+        java.util.List<?> physical = boss.worldObj.getCollidingBoundingBoxes(boss, box);
+        if(!planning || physical.isEmpty()) return physical;
+        ArrayList<AxisAlignedBB> retained = new ArrayList<AxisAlignedBB>(physical.size());
+        ArrayList<AxisAlignedBB> shapes = new ArrayList<AxisAlignedBB>(2);
+        for(Object entry : physical) {
+            AxisAlignedBB shape = (AxisAlignedBB) entry;
+            int x = MathHelper.floor_double(shape.minX + EPSILON), y = MathHelper.floor_double(shape.minY + EPSILON), z = MathHelper.floor_double(shape.minZ + EPSILON);
+            boolean removable = false;
+            if(plannedVegetation(x, y, z)) {
+                shapes.clear(); boss.worldObj.getBlock(x, y, z).addCollisionBoxesToList(boss.worldObj, x, y, z, box, shapes, boss);
+                for(AxisAlignedBB candidate : shapes) if(candidate.minX == shape.minX && candidate.minY == shape.minY && candidate.minZ == shape.minZ
+                        && candidate.maxX == shape.maxX && candidate.maxY == shape.maxY && candidate.maxZ == shape.maxZ) { removable = true; break; }
+            }
+            if(!removable) retained.add(shape);
+        }
+        return retained;
     }
     double surface(double x, double y, double z) {
         // Support belongs to the entire native footprint, not the centre column. Ask

@@ -33,7 +33,7 @@ import net.minecraft.world.WorldServer;
 
 /** Territory-bound major boss. The server owns every attack, capture, throw and terrain mutation. */
 public final class EntityWretch extends EntityCreature implements IMob, IBossDisplayData, IGeminiCreature, IEntityAdditionalSpawnData {
-    public static final int IDLE = 0, SWIPE = 1, SLAM = 2, GRAB = 3, HOLD = 4, THROW = 5, RECOVER = 6, FEED = 7, BREACH = 8, PULL = 9, ASSIMILATE = 10;
+    public static final int IDLE = 0, SWIPE = 1, SLAM = 2, GRAB = 3, HOLD = 4, THROW = 5, RECOVER = 6, FEED = 7, BREACH = 8, PULL = 9, ASSIMILATE = 10, STOMP = 11;
     private final EntityWretchPart[] parts = new EntityWretchPart[WretchPose.PARTS];
     private final WretchPose skeleton = new WretchPose(this);
     final WretchNavigation navigation = new WretchNavigation(this);
@@ -170,7 +170,8 @@ public final class EntityWretch extends EntityCreature implements IMob, IBossDis
         int packed = dataWatcher.getWatchableObjectInt(16), elapsed = packed & 63;
         return elapsed == 0 ? 0 : MathHelper.clamp_double((elapsed - 1 + partial) / Math.max(1D, (packed >> 6 & 63) - 1D), 0, 1);
     }
-    public boolean isVaulting() { return (dataWatcher.getWatchableObjectInt(16) & 63) != 0; }
+    public boolean isVaulting() { return state() != STOMP && (dataWatcher.getWatchableObjectInt(16) & 63) != 0; }
+    public int stompRetreat() { return state() == STOMP ? dataWatcher.getWatchableObjectInt(16) : 0; }
     public double vaultHeight() { return (dataWatcher.getWatchableObjectInt(16) >> 12 & 255) / 16D; }
     public int phase() { return dataWatcher.getWatchableObjectByte(28) & 3; }
     private boolean active() {
@@ -318,7 +319,15 @@ public final class EntityWretch extends EntityCreature implements IMob, IBossDis
         aimPoint(point.xCoord, point.yCoord, point.zCoord); begin(BREACH); brain.building.beginBreach(point); stop(); voice("stretch", 1.5F);
     }
     void cancelCombat() { release(); meal = null; if(state() != IDLE) begin(IDLE); navigation.halt(); setAttackTarget(null); }
-    public boolean mayBreakContact(int x, int y, int z) { return brain.destructiveIntent() && brain.building.contacts(x, y, z); }
+    void stomp(Vec3 point, int leg) {
+        syncVault(0, 0, 0);
+        clearPresentation(); dataWatcher.updateObject(27, (byte) leg);
+        aimPoint(point.xCoord, point.yCoord, point.zCoord); begin(STOMP);
+        motionX = motionZ = 0;
+    }
+    public boolean mayBreakContact(int x, int y, int z) {
+        return (brain.destructiveIntent() || state() == STOMP && brain.vegetationIntent()) && brain.building.contacts(x, y, z);
+    }
     public void contactBroken() { brain.structuralProgress(); navigation.obstructionRemoved(); }
     public void contactRejected(int x, int y, int z, String reason) { brain.building.rejected(x, y, z, reason); }
     public boolean hasSpawnClearance() { return navigation.canStand(posX, posY, posZ); }
@@ -370,6 +379,19 @@ public final class EntityWretch extends EntityCreature implements IMob, IBossDis
     private void tickAttack() {
         attackTicks++;
         int state = state();
+        if(state == STOMP) {
+            if(attackTicks < 38 && !brain.building.stomp(attackArm(), attackTicks >= 28)) {
+                // The current foot made contact but the quota or protection stopped removal.
+                // Withdraw from this contact point, never animate through the remaining solid.
+                dataWatcher.updateObject(16, (int) stateTime(1));
+                attackTicks = 38; dataWatcher.updateObject(21, (int) worldObj.getTotalWorldTime() - 38);
+                skeleton.invalidate();
+            }
+            if(attackTicks >= 46) {
+                brain.building.finishStomp(); syncVault(0, 0, 0); begin(IDLE); navigation.obstructionRemoved();
+            }
+            return;
+        }
         if(state == GRAB && attackTicks <= 24 && validPrey(getAttackTarget()) && sight(getAttackTarget(), GeminiConfig.wretchDetectionRange)) aim(getAttackTarget());
         if(state == SWIPE && attackTicks <= 20 && validPrey(getAttackTarget()) && sight(getAttackTarget(), GeminiConfig.wretchDetectionRange)) aim(getAttackTarget());
         if(state == RECOVER) {

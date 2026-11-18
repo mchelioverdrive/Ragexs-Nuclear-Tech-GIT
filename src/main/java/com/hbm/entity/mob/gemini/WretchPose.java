@@ -123,6 +123,19 @@ public final class WretchPose {
                 double lift = Math.sin(Math.PI * phase);
                 set(limb[2], side * 1.15, 0.28 + lift * Math.min(3, boss.vaultHeight() * 0.65 + 0.5), 1.7 * lift);
             }
+            if(boss.state() == EntityWretch.STOMP && leg == boss.attackArm()) {
+                double tx = boss.aimX() * Math.cos(angle) + boss.aimZ() * Math.sin(angle);
+                double tz = -boss.aimX() * Math.sin(angle) + boss.aimZ() * Math.cos(angle);
+                double contactTime = boss.stompRetreat() > 0 ? boss.stompRetreat() : Math.min(time, 34);
+                if(time > 38) contactTime *= 1 - ease((time - 38) / 8D);
+                double advance = ease((contactTime - 20) / 8D);
+                double raised = Math.max(limb[2].yCoord, boss.aimY() + 1.6);
+                double sy = limb[2].yCoord + (raised - limb[2].yCoord) * ease(contactTime / 20D);
+                sy += (boss.aimY() - raised) * ease((contactTime - 28) / 6D);
+                set(limb[2], limb[2].xCoord + (tx - limb[2].xCoord) * advance, sy,
+                        limb[2].zCoord + (tz - limb[2].zCoord) * advance);
+                footPitch[leg] = footRoll[leg] = 0;
+            }
             solve(limb, 5.6, 5.3, side * 0.18, 1);
         }
         for(int i = 0; i < 4; i++) for(int j = 0; j < 3; j++) toWorld(joints[i][j], world[i][j], partial);
@@ -291,8 +304,9 @@ public final class WretchPose {
                 footX[leg] = oldFootX[leg] = wx; footZ[leg] = oldFootZ[leg] = wz; stepStart[leg] = boss.ticksExisted - 20;
             }
             int elapsed = boss.ticksExisted - stepStart[leg];
-            if(boss.state() == EntityWretch.GRAB) { elapsed = stepDuration[leg]; stepStart[leg] = boss.ticksExisted - elapsed; }
-            if(boss.state() != EntityWretch.GRAB && elapsed >= stepDuration[leg] && boss.ticksExisted - stepStart[1 - leg] >= stepDuration[1 - leg] && dx * dx + dz * dz > 0.7) {
+            boolean anchored = boss.state() == EntityWretch.GRAB || boss.state() == EntityWretch.STOMP;
+            if(anchored) { elapsed = stepDuration[leg]; stepStart[leg] = boss.ticksExisted - elapsed; }
+            if(!anchored && elapsed >= stepDuration[leg] && boss.ticksExisted - stepStart[1 - leg] >= stepDuration[1 - leg] && dx * dx + dz * dz > 0.7) {
                 stepStart[leg] = boss.ticksExisted; elapsed = 0; startX[leg] = footX[leg]; startZ[leg] = footZ[leg];
                 double speed = Math.sqrt(boss.motionX * boss.motionX + boss.motionZ * boss.motionZ);
                 stepDuration[leg] = MathHelper.clamp_int((int) (1.8 / Math.max(0.04, speed)), 5, 16);
