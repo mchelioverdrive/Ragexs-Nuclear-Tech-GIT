@@ -85,6 +85,20 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 	public void updateTask() {
 		if(world.isRemote) return;
 		leap.cooldown();
+		if(mob.isTransporting()) {
+			if(leap.active() && !mob.isLeapAirborne()) leap.reset();
+			clearDoor(); breach.clear();
+			if(pathDelay > 0) pathDelay--;
+			if(mob.harmfulUltraviolet() || mob.avoidsExposure()) { mob.setHuntState(EntityWoodcrawler.RETREAT); if(shelterDelay > 0) shelterDelay--; seekShelter(); return; }
+			Vec3 delivery = mob.capture().goal();
+			if(delivery == null || mob.isGrabbing() || mob.isProbing() || mob.isBurrowing()) mob.getNavigator().clearPathEntity();
+			else {
+				mob.setCrouching(true);
+				if(mob.ticksExisted % 40 == 0 && mob.tryTransportBurrow(delivery)) return;
+				moveTo(delivery.xCoord, delivery.yCoord, delivery.zCoord, 1.15D);
+			}
+			return;
+		}
 		if(mob.isBurrowing() || mob.isGrabbing() || mob.isProbing()) {
 			mob.getNavigator().clearPathEntity();
 			mob.setClimbing(false);
@@ -117,6 +131,11 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 		if(directDelay > 0) directDelay--;
 		breach.cooldown();
 		if(mob.wantsShelter() || mob.avoidsExposure()) {
+			EntityLivingBase close = mob.getAttackTarget();
+			if(!mob.harmfulUltraviolet() && retaliationTicks > 0 && close != null && mob.getDistanceSqToEntity(close) < 9 && mob.canStrike(close)) {
+				mob.setHuntState(EntityWoodcrawler.CHASE); mob.beginStrike(close);
+				if(mob.isGrabbing()) return;
+			}
 			if(mob.isLeapAirborne()) return; // Finish physical flight before choosing shelter.
 			if(leap.active()) leap.reset();
 			// Strong exposure overrides pursuit; milder light is handled by route weighting.
@@ -297,9 +316,14 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 		double dx = mob.posX - target.posX, dz = mob.posZ - target.posZ;
 		return look != null && look.xCoord * dx + look.zCoord * dz > Math.sqrt(dx * dx + dz * dz) * 0.65D;
 	}
-	public boolean hasActiveHunt() { return mob.getAttackTarget() != null && (memoryTicks > 0 || searchTicks > 0); }
+	public boolean hasActiveHunt() { return mob.isTransporting() || mob.getAttackTarget() != null && (memoryTicks > 0 || searchTicks > 0); }
 	public boolean isEnteringDoorway() { return doorwayTicks > 0; }
 	public boolean allowsClimbing() {
+		if(mob.isTransporting()) {
+			Vec3 goal = mob.capture().goal();
+			return goal != null && (Math.abs(goal.yCoord - mob.posY) > 1.25 || pathFailures >= 2)
+					&& !reaches(mob.getNavigator().getPath(), goal.xCoord, goal.yCoord, goal.zCoord);
+		}
 		if(!hasActiveHunt() || doorwayTicks > 0 || breakingDoor || breach.active()) return false;
 		PathEntity walking = mob.getNavigator().getPath();
 		return (Math.abs(knownY - mob.posY) > 1.25D || pathFailures >= 2)
@@ -531,6 +555,11 @@ public final class EntityAIWoodcrawler extends EntityAIBase {
 			// Reject the inaccessible face, retain the hunt and try another entrance on the next sweep.
 			rejectEntrance();
 		}
+	}
+	public boolean canTransportTo(Vec3 destination) {
+		if(mob.getDistanceSq(destination.xCoord, destination.yCoord, destination.zCoord) < 4) return true;
+		PathEntity path = findLoadedPath(destination.xCoord, destination.yCoord, destination.zCoord);
+		return reaches(path, destination.xCoord, destination.yCoord, destination.zCoord) && !pathHasClosedDoor(path);
 	}
 	boolean reaches(PathEntity path, double x, double y, double z) {
 		PathPoint end = path == null ? null : path.getFinalPathPoint();

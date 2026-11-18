@@ -284,6 +284,7 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
         if(!target.isEntityAlive() || target.worldObj != worldObj || !target.addedToChunk) return "Dead or unloaded prey";
         if(!suitablePrey(target)) return "Unsuitable size or mount";
         if(target.getEntityData().hasKey("MockeryCaptor")) return "Held by Mockery";
+        if(target.getEntityData().getLong("WoodcrawlerCaptorUntil") > worldObj.getTotalWorldTime()) return "Held by Woodcrawler";
         if(target.getEntityData().getLong("WoodcrawlerCocoonUntil") > worldObj.getTotalWorldTime()) return "Woodcrawler cocoon cooldown";
         if(acquiring && captureFor(target) != null) return "Already captured";
         if(heldByOtherGardener(target)) return "Held by another Gardener";

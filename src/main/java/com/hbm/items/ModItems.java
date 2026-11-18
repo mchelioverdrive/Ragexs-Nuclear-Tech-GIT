@@ -67,6 +67,7 @@ import net.minecraftforge.fluids.FluidContainerRegistry;
 import net.minecraftforge.fluids.FluidStack;
 
 public class ModItems {
+	public static Item flashlight;
 	public static Item handcuffs, straight_jacket, tranquilizer_syringe, tranquilizer_dart, injection_terminal;
 	public static Item ketamine;
 	/** Saved item/API identity retained for worlds made before the chemical was named. */
@@ -3026,6 +3027,7 @@ public class ModItems {
 	public static Item memory;
 
 	private static void initializeRestraintItems() {
+		flashlight = new ItemFlashlight().setUnlocalizedName("flashlight").setCreativeTab(MainRegistry.controlTab).setTextureName("hbm:blowtorch");
 		handcuffs = new com.hbm.items.special.ItemRestraint(true).setUnlocalizedName("handcuffs").setCreativeTab(MainRegistry.controlTab).setTextureName("hbm:handcuffs");
 		straight_jacket = new com.hbm.items.special.ItemRestraint(true).setUnlocalizedName("straight_jacket").setCreativeTab(MainRegistry.controlTab).setTextureName("hbm:straight_jacket");
 		tranquilizer_syringe = new com.hbm.items.special.ItemRestraint(false).setUnlocalizedName("tranquilizer_syringe").setCreativeTab(MainRegistry.consumableTab).setTextureName("hbm:tranquilizer_syringe");
@@ -7372,6 +7374,7 @@ public class ModItems {
 	}
 
 	private static void registerRestraintItems() {
+		GameRegistry.registerItem(flashlight, flashlight.getUnlocalizedName());
 		GameRegistry.registerItem(handcuffs, handcuffs.getUnlocalizedName());
 		GameRegistry.registerItem(straight_jacket, straight_jacket.getUnlocalizedName());
 		GameRegistry.registerItem(tranquilizer_syringe, tranquilizer_syringe.getUnlocalizedName());

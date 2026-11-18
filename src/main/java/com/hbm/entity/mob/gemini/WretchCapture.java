@@ -37,6 +37,7 @@ final class WretchCapture {
                 || entity.getEntityData().hasKey("MockeryCaptor") || !boss.inTerritory(entity.posX, entity.posZ, boss.territoryRadius())
                 || boss.worldObj.getEntityByID(entity.getEntityId()) != entity) return false;
         NBTTagCompound tag = entity.getEntityData();
+        if(tag.getLong("WoodcrawlerCaptorUntil") > boss.worldObj.getTotalWorldTime()) return false;
         if(tag.getLong("WretchCaptorUntil") > boss.worldObj.getTotalWorldTime() && !boss.getUniqueID().toString().equals(tag.getString("WretchCaptor"))) return false;
         if(entity instanceof EntityPlayerMP && ((EntityPlayerMP) entity).playerNetServerHandler == null) return false;
         if(entity instanceof EntityPlayer) return boss.validPlayer(entity);

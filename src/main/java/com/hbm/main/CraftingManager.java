@@ -67,6 +67,7 @@ public class CraftingManager {
 		WeaponRecipes.register();
 		ConsumableRecipes.register();
 		RestraintRecipes.register();
+		GameRegistry.addRecipe(new ItemStack(ModItems.flashlight), "IGI", "IRI", " I ", 'I', Items.iron_ingot, 'G', Blocks.glass, 'R', Items.redstone);
 		PowderRecipes.register();
 
 		GameRegistry.addRecipe(new RBMKFuelCraftingHandler());

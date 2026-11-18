@@ -43,7 +43,7 @@ public final class RenderWoodcrawler extends RenderLiving {
 		EntityWoodcrawler mob = (EntityWoodcrawler) entity;
 		if(mob.isProbing() && !mob.isBurrowing() && !mob.isInvisible() && mob.isEntityAlive()) renderProboscis(mob, x, y, z, partial);
 		EntityLivingBase target = mob.getTendrilTarget();
-		if(!mob.isGrabbing() || target == null || mob.isInvisible() || !mob.isEntityAlive()
+		if(!mob.isGrabbing() && !mob.isCarrying() || target == null || mob.isInvisible() || !mob.isEntityAlive()
 				|| mob.isBurrowing() || mob.getDistanceSqToEntity(target) > 36 || !mob.hasClearTendrils(target, partial)) return;
 		double mx = mob.lastTickPosX + (mob.posX - mob.lastTickPosX) * partial;
 		double my = mob.lastTickPosY + (mob.posY - mob.lastTickPosY) * partial;

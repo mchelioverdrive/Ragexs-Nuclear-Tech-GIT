@@ -23,6 +23,7 @@ public final class GeminiConfig {
 	public static int woodcrawlerInvasionMaxSpawnAttempts = 24;
 	public static boolean geminiPreventSleeping = true, woodcrawlerInvasionDiagnostics = false;
 	public static int woodcrawlerDetectionRange = 32;
+	public static int flashlightRange = 20;
 	public static int woodcrawlerStalkSeconds = 6;
 	public static int woodcrawlerMemorySeconds = 20;
 	public static int woodcrawlerLeapMaxHorizontal = 12, woodcrawlerLeapMaxUp = 6, woodcrawlerLeapMaxDown = 16;
@@ -81,6 +82,8 @@ public final class GeminiConfig {
     public static Values parse(Configuration config) {
         Values values = new Values();
         config.setCategoryComment(CATEGORY, "Gemini runtime settings support /rntconfig reload. woodcrawlerSpawnWeight requires restart (biome registration). Saved infection/cocoon durations, encounter countdowns and existing boss health retain their snapshots. geminiOnly initializes missing world gamerules only.");
+		values.flashlightRange = config.getInt("flashlightRange", CATEGORY, 20, 4, 48,
+				"Effective range in blocks of held visible/UV flashlights. Both modes require direct aim and loaded, unobstructed line of sight. Right-click toggles power; sneak-right-click changes mode.");
         values.geminiOnly = config.getBoolean("geminiOnly", CATEGORY, false,
                 "Default for the geminionly gamerule in new worlds, or existing saves missing that rule. /gamerule geminionly changes the saved world value immediately. Reload never overwrites an existing rule; dimensions share vanilla world gamerules.");
         values.geminiStageSpawnSuppression = config.getBoolean("geminiStageSpawnSuppression", CATEGORY, true,
@@ -294,6 +297,7 @@ public final class GeminiConfig {
         geminiPreventSleeping = values.geminiPreventSleeping;
         woodcrawlerInvasionDiagnostics = values.woodcrawlerInvasionDiagnostics;
         woodcrawlerDetectionRange = values.woodcrawlerDetectionRange;
+		flashlightRange = values.flashlightRange;
         woodcrawlerStalkSeconds = values.woodcrawlerStalkSeconds;
         woodcrawlerMemorySeconds = values.woodcrawlerMemorySeconds;
         woodcrawlerLeapMaxHorizontal = values.woodcrawlerLeapMaxHorizontal;
@@ -383,6 +387,7 @@ public final class GeminiConfig {
         public int woodcrawlerInvasionMaxSpawnAttempts = 24;
         public boolean geminiPreventSleeping = true, woodcrawlerInvasionDiagnostics = false;
         public int woodcrawlerDetectionRange = 32;
+		public int flashlightRange = 20;
         public int woodcrawlerStalkSeconds = 6;
         public int woodcrawlerMemorySeconds = 20;
         public int woodcrawlerLeapMaxHorizontal = 12, woodcrawlerLeapMaxUp = 6, woodcrawlerLeapMaxDown = 16;

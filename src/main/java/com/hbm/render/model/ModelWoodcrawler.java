@@ -150,7 +150,7 @@ public final class ModelWoodcrawler extends ModelBase {
 		}
 		for(int i = 0; i < tendrils.length; i++) {
 			// Active hooks are drawn by the renderer from these exact sockets to live prey.
-			tendrils[i].showModel = !mob.isGrabbing() || mob.getTendrilTarget() == null;
+			tendrils[i].showModel = !mob.isGrabbing() && !mob.isCarrying() || mob.getTendrilTarget() == null;
 			tendrils[i].rotateAngleX = -0.14F - crouch * 1.2F + MathHelper.sin(age * 0.04F + i * 2) * 0.09F - depth * 1.2F;
 			tendrils[i].rotateAngleZ = (i == 0 ? 1 : -1) * (0.12F + MathHelper.sin(age * 0.033F) * 0.05F);
 			tips[i].rotateAngleX = -0.2F + MathHelper.sin(age * 0.05F + i) * 0.1F;

@@ -55,6 +55,89 @@ public final class GardenerNests extends WorldSavedData {
     private final List<Nest> nests = new ArrayList<Nest>();
     private final List<Residence> residences = new ArrayList<Residence>();
     private final GeminiStructureSchedule schedule = new GeminiStructureSchedule();
+    private final Map<String, DeliveryClaim> deliveries = new LinkedHashMap<String, DeliveryClaim>();
+
+    /** Registered chamber slots and the existing ladder shaft; never constructs or loads a route. */
+    public static final class Delivery {
+        public final int nestX, y, nestZ, top, slot;
+        public final double x, z;
+        private Delivery(int nx, int y, int nz, int top, int slot) {
+            nestX = nx; this.y = y; nestZ = nz; this.top = top; this.slot = slot;
+            x = nx + (top < 0 ? 4.5D : 30.5D); z = nz + (slot - 1) * 4 + 0.5D;
+        }
+        private String key() { return nestX + ":" + y + ":" + nestZ + ":" + slot; }
+        public boolean inChamber(net.minecraft.entity.Entity e) {
+            return Math.abs(e.boundingBox.minY - y) < 2 && e.posX < nestX + 35 && e.getDistanceSq(x, y, z) < 100;
+        }
+        public boolean atAccess(net.minecraft.entity.Entity e) {
+            return top >= 0 && e.posY >= y && e.posY <= top + 1.1
+                    && Math.abs(e.posX - (nestX + 55.5)) <= 1.25 && Math.abs(e.posZ - (nestZ + 0.5)) < 0.6;
+        }
+        public net.minecraft.util.Vec3 waypoint(com.hbm.entity.mob.gemini.EntityWoodcrawler mob) {
+            if(top >= 0 && mob.posY > y + 2) {
+                boolean shaft = atAccess(mob);
+                return net.minecraft.util.Vec3.createVectorHelper(nestX + (shaft ? 55.5D : 54.5D), shaft ? Math.max(y, mob.posY - 5) : top + 1, nestZ + 0.5D);
+            }
+            return net.minecraft.util.Vec3.createVectorHelper(x, y, z);
+        }
+        public NBTTagCompound write() {
+            NBTTagCompound n = new NBTTagCompound(); n.setInteger("X", nestX); n.setInteger("Y", y); n.setInteger("Z", nestZ);
+            n.setInteger("Top", top); n.setInteger("Slot", slot); return n;
+        }
+        public static Delivery read(NBTTagCompound n) { return new Delivery(n.getInteger("X"), n.getInteger("Y"), n.getInteger("Z"), n.getInteger("Top"), MathHelper.clamp_int(n.getInteger("Slot"), 0, 2)); }
+    }
+    private static final class DeliveryClaim {
+        final UUID owner; final long until;
+        DeliveryClaim(UUID owner, long until) { this.owner = owner; this.until = until; }
+    }
+    private static boolean deliverySpace(com.hbm.entity.mob.gemini.EntityWoodcrawler carrier, net.minecraft.entity.EntityLivingBase victim, Delivery d) {
+        World world = carrier.worldObj;
+        boolean registered = false;
+        for(Nest nest : get(world).nests) if(nest.built && nest.x == d.nestX && nest.y == d.y
+                && nest.z == d.nestZ && nest.top == d.top) { registered = true; break; }
+        if(!registered) return false;
+        // Ladders have a thin solid face in 1.7.10. Test the actual upright captive envelope.
+        double half = Math.max(0.6, victim.width) * 0.5 + 0.001;
+        AxisAlignedBB shaft = AxisAlignedBB.getBoundingBox(d.nestX + 55.5 - half, d.y, d.nestZ + 0.5 - half,
+                d.nestX + 55.5 + half, d.top + 3, d.nestZ + 0.5 + half);
+        AxisAlignedBB corridor = AxisAlignedBB.getBoundingBox(d.x - half, d.y + 0.01, d.nestZ + 0.5 - half,
+                d.nestX + 55.5 + half, d.y + Math.max(1.8, victim.height), d.nestZ + 0.5 + half);
+        AxisAlignedBB slot = AxisAlignedBB.getBoundingBox(d.x - 0.6, d.y + 0.01, d.z - 0.6, d.x + 0.6, d.y + Math.max(1.8, victim.height), d.z + 0.6);
+        if(!loaded(world, slot) || !world.func_147461_a(slot).isEmpty() || world.isAnyLiquid(slot)) return false;
+        if(d.top >= 0 && (!loaded(world, shaft) || !loaded(world, corridor) || !world.func_147461_a(shaft).isEmpty()
+                || !world.func_147461_a(corridor).isEmpty() || world.isAnyLiquid(shaft))) return false;
+        for(Object entry : world.getEntitiesWithinAABBExcludingEntity(carrier, slot.expand(1, 0, 1))) {
+            net.minecraft.entity.Entity entity = (net.minecraft.entity.Entity) entry;
+            if(entity != victim && entity.canBeCollidedWith()) return false;
+        }
+        DeliveryClaim claim = get(world).deliveries.get(d.key());
+        return claim == null || claim.until < world.getTotalWorldTime() || claim.owner.equals(carrier.getUniqueID());
+    }
+    public static List<Delivery> deliveries(final com.hbm.entity.mob.gemini.EntityWoodcrawler carrier, net.minecraft.entity.EntityLivingBase victim) {
+        List<Delivery> result = new ArrayList<Delivery>();
+        for(Nest nest : get(carrier.worldObj).nests) if(nest.built
+                && carrier.getDistanceSq(nest.x + 55.5, Math.max(nest.y, carrier.posY), nest.z + 0.5) <= 96 * 96) {
+            for(int slot = 0; slot < 3; slot++) {
+                Delivery d = new Delivery(nest.x, nest.y, nest.z, nest.top, slot);
+                if(deliverySpace(carrier, victim, d)) result.add(d);
+            }
+        }
+        java.util.Collections.sort(result, new java.util.Comparator<Delivery>() {
+            @Override public int compare(Delivery a, Delivery b) {
+                net.minecraft.util.Vec3 x = a.waypoint(carrier), y = b.waypoint(carrier);
+                return Double.compare(carrier.getDistanceSq(x.xCoord, x.yCoord, x.zCoord), carrier.getDistanceSq(y.xCoord, y.yCoord, y.zCoord));
+            }
+        });
+        return result.size() > 6 ? new ArrayList<Delivery>(result.subList(0, 6)) : result;
+    }
+    public static boolean claimDelivery(com.hbm.entity.mob.gemini.EntityWoodcrawler carrier, net.minecraft.entity.EntityLivingBase victim, Delivery d) {
+        if(!deliverySpace(carrier, victim, d)) return false;
+        get(carrier.worldObj).deliveries.put(d.key(), new DeliveryClaim(carrier.getUniqueID(), carrier.worldObj.getTotalWorldTime() + 120)); return true;
+    }
+    public static void releaseDelivery(com.hbm.entity.mob.gemini.EntityWoodcrawler carrier, Delivery d) {
+        DeliveryClaim claim = get(carrier.worldObj).deliveries.get(d.key());
+        if(claim != null && claim.owner.equals(carrier.getUniqueID())) get(carrier.worldObj).deliveries.remove(d.key());
+    }
 
     public GardenerNests(String name) { super(name); }
     private static String saveName(World world) {

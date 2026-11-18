@@ -94,6 +94,7 @@ public final class EntityNaturesMockery extends EntityMob implements IDeepRootCa
                 && target.addedToChunk && target.ridingEntity == null && target.riddenByEntity == null
                 && !com.hbm.entity.mob.gemini.EntityWretch.isCaptured(target)
                 && target.getEntityData().getLong("WoodcrawlerCocoonUntil") <= worldObj.getTotalWorldTime()
+                && target.getEntityData().getLong("WoodcrawlerCaptorUntil") <= worldObj.getTotalWorldTime()
                 && (!target.getEntityData().hasKey("MockeryCaptor")
                     || getUniqueID().toString().equals(target.getEntityData().getString("MockeryCaptor")))
                 && DiseaseManager.pathogen(DeepRootDisease.ID).supports(target);
