@@ -22,7 +22,8 @@ public final class RenderNaturesMockery extends RenderLiving {
         double my = mob.lastTickPosY + (mob.posY - mob.lastTickPosY) * partial;
         double mz = mob.lastTickPosZ + (mob.posZ - mob.lastTickPosZ) * partial;
         double dx = target.lastTickPosX + (target.posX - target.lastTickPosX) * partial - mx;
-        double dy = target.lastTickPosY + (target.posY - target.lastTickPosY) * partial + target.height * 0.5D - my - 1.15D;
+        double dy = target.lastTickPosY + (target.posY - target.lastTickPosY) * partial
+                + target.boundingBox.minY - target.posY + target.height * 0.5D - my - 1.15D;
         double dz = target.lastTickPosZ + (target.posZ - target.lastTickPosZ) * partial - mz;
         if(dx * dx + dy * dy + dz * dz > 49D) return;
         float extension = mob.prevExtension + (mob.extension - mob.prevExtension) * partial;

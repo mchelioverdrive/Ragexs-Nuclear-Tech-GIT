@@ -21,13 +21,9 @@ public final class MockeryEvents {
             try { owner = GeminiPopulation.find(host.worldObj, java.util.UUID.fromString(tag.getString("MockeryCaptor"))); }
             catch(IllegalArgumentException ignored) { owner = null; }
         }
-        if(owner instanceof EntityNaturesMockery && owner.isEntityAlive() && owner.addedToChunk
-                && host.worldObj.getEntityByID(owner.getEntityId()) == owner
-                && host.worldObj.getChunkProvider().chunkExists(owner.chunkCoordX, owner.chunkCoordZ)
-                && owner.getUniqueID().toString().equals(tag.getString("MockeryCaptor"))
-                && ((EntityNaturesMockery) owner).owns(host) && MockerySpawning.active((EntityNaturesMockery) owner)) {
-            ((EntityNaturesMockery) owner).hold(host);
-        } else {
+        if(owner instanceof EntityNaturesMockery && ((EntityNaturesMockery) owner).owns(host)) return;
+        // Saved host and captor can join in either order. Only a live grip suspends movement.
+        if(owner != null || host.ticksExisted > 100) {
             tag.removeTag("MockeryCaptor"); tag.removeTag("MockeryCaptorId");
             tag.setLong("MockeryEscapeUntil", host.worldObj.getTotalWorldTime() + 400L);
         }

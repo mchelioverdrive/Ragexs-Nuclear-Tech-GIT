@@ -2,11 +2,13 @@ package com.hbm.entity.mob.gemini;
 
 import java.util.UUID;
 import com.hbm.config.GeminiConfig;
+import com.hbm.handler.GeminiCaptures;
 import com.hbm.handler.disease.DeepRootDisease;
 import com.hbm.handler.disease.DiseaseManager;
 import com.hbm.handler.disease.DiseaseHost;
 import com.hbm.handler.disease.Infection;
 import com.hbm.world.gemini.GeminiInfections;
+import com.hbm.world.gemini.GardenerNests;
 import com.hbm.world.gemini.MockeryGrowth;
 import com.hbm.world.gemini.MockerySpawning;
 import net.minecraft.entity.Entity;
@@ -27,7 +29,10 @@ import net.minecraft.world.World;
 /** Rooted predator. One live captive, bounded assimilation, finite colony and sterile buds. */
 public final class EntityNaturesMockery extends EntityMob implements IDeepRootCarrier {
     private static final int ASSIMILATION_TICKS = 220, ASSIMILATION_LIMIT = 4;
+    private static final int LIFT_TICKS = 18;
     private UUID captive;
+    private EntityLivingBase captiveEntity;
+    private int missingTicks, liftTicks, obstructedTicks;
     private int captureTicks, cooldown, growthTicks, spreadTicks, placed, buds, nutrition;
     private boolean sterile, rooted;
     private boolean assimilating;
@@ -78,7 +83,7 @@ public final class EntityNaturesMockery extends EntityMob implements IDeepRootCa
     public boolean owns(EntityLivingBase target) { return captive != null && captive.equals(target.getUniqueID()); }
     public boolean canCompleteAssimilation(EntityLivingBase target) {
         return assimilating && captureTicks >= ASSIMILATION_TICKS && assimilations < ASSIMILATION_LIMIT
-                && isHolding() && owns(target) && reach(target);
+                && liftTicks >= LIFT_TICKS && isHolding() && owns(target) && GeminiCaptures.valid(this, target);
     }
     public boolean withinColony(double x, double y, double z) {
         double dx = x - rootX, dy = y - rootY, dz = z - rootZ;
@@ -92,6 +97,8 @@ public final class EntityNaturesMockery extends EntityMob implements IDeepRootCa
     private boolean prey(EntityLivingBase target) {
         return target != null && target != this && target.worldObj == worldObj && target.isEntityAlive()
                 && target.addedToChunk && target.ridingEntity == null && target.riddenByEntity == null
+                && (owns(target) || GeminiCaptures.available(target))
+                && !target.getEntityData().hasKey("GardenerCaptor")
                 && !com.hbm.entity.mob.gemini.EntityWretch.isCaptured(target)
                 && target.getEntityData().getLong("WoodcrawlerCocoonUntil") <= worldObj.getTotalWorldTime()
                 && target.getEntityData().getLong("WoodcrawlerCaptorUntil") <= worldObj.getTotalWorldTime()
@@ -169,6 +176,7 @@ public final class EntityNaturesMockery extends EntityMob implements IDeepRootCa
         }
         if(closest == null) return;
         captive = closest.getUniqueID();
+        captiveEntity = closest;
         captureTicks = 0;
         assimilating = false;
         closest.getEntityData().setString("MockeryCaptor", getUniqueID().toString());
@@ -177,79 +185,115 @@ public final class EntityNaturesMockery extends EntityMob implements IDeepRootCa
     }
 
     private void tickCapture() {
-        EntityLivingBase target = tendrilTarget();
-        if(target == null || !captive.equals(target.getUniqueID())) {
-            target = null;
+        if(captiveEntity == null) {
+            if(++missingTicks > 100) { release("Saved victim missing"); return; }
+            if(missingTicks % 10 != 1) return;
             int examined = 0;
             for(Object entry : worldObj.getEntitiesWithinAABB(EntityLivingBase.class, boundingBox.expand(5, 3, 5))) {
                 if(++examined > 32) break;
                 EntityLivingBase candidate = (EntityLivingBase) entry;
-                if(captive.equals(candidate.getUniqueID())) { target = candidate; break; }
+                if(captive.equals(candidate.getUniqueID()) && getUniqueID().toString().equals(candidate.getEntityData().getString("MockeryCaptor"))) {
+                    if(!prey(candidate) || (isHolding() ? !bind(candidate) : !reach(candidate))) {
+                        captiveEntity = candidate;
+                        release("Saved grip invalid");
+                        return;
+                    }
+                    captiveEntity = candidate;
+                    candidate.getEntityData().setInteger("MockeryCaptorId", getEntityId());
+                    dataWatcher.updateObject(20, Integer.valueOf(candidate.getEntityId()));
+                    break;
+                }
             }
-            if(target != null) dataWatcher.updateObject(20, Integer.valueOf(target.getEntityId()));
+            if(captiveEntity == null) return;
         }
-        if(!reach(target)) { release(); return; }
-        if(++captureTicks == 20) {
+        EntityLivingBase target = captiveEntity;
+        if(isHolding() ? !prey(target) || !GeminiCaptures.valid(this, target) : !reach(target)) {
+            release("Victim left the tendrils");
+            return;
+        }
+        captureTicks = Math.min(ASSIMILATION_TICKS, captureTicks + 1);
+        if(captureTicks == 20 && !isHolding()) {
             anchorX = target.posX; anchorY = target.posY; anchorZ = target.posZ;
+            if(!bind(target)) { release("Victim could not be attached"); return; }
             dataWatcher.updateObject(22, Byte.valueOf((byte) 1));
             playSound("mob.slime.attack", 0.9F, 0.5F);
+            GeminiInfections.expose(target, "capture:" + getUniqueID(), "natures_mockery");
+            assimilating = !(target instanceof EntityPlayer) && assimilations < ASSIMILATION_LIMIT
+                    && worldObj.getGameRules().getGameRuleBooleanValue("doMobSpawning")
+                    && DiseaseHost.get(target).infections.containsKey(DeepRootDisease.ID) && DeepRootDisease.active(target);
+            GeminiCaptures.diagnostic(this, target, "lift", "Initial attachment", captureTicks, assimilationPoint(target));
         }
         if(isHolding()) {
-            hold(target);
-            if(!owns(target)) return;
-            if(captureTicks == 20) {
-                GeminiInfections.expose(target, "capture:" + getUniqueID(), "natures_mockery");
-                assimilating = !(target instanceof EntityPlayer) && assimilations < ASSIMILATION_LIMIT
-                        && worldObj.getGameRules().getGameRuleBooleanValue("doMobSpawning")
-                        && DiseaseHost.get(target).infections.containsKey(DeepRootDisease.ID) && DeepRootDisease.active(target);
-            }
+            boolean atPoint = drawIn(target);
+            if(captiveEntity != target) return;
             if(assimilating) {
                 Infection infection = DiseaseHost.get(target).infections.get(DeepRootDisease.ID);
                 if(infection == null || !DeepRootDisease.active(target)
-                        || !worldObj.getGameRules().getGameRuleBooleanValue("doMobSpawning")) { release(); return; }
+                        || !worldObj.getGameRules().getGameRuleBooleanValue("doMobSpawning")) { release("Assimilation interrupted"); return; }
                 // Reuse the saved disease stages and tracking packet for the restrained host's visible transformation.
                 int stage = Math.min(DeepRootDisease.Stage.SPROUTS.ordinal(), (captureTicks - 20) / 40);
                 if(DeepRootDisease.stage(infection).ordinal() < stage)
                     DeepRootDisease.selectStage(target, DeepRootDisease.Stage.values()[stage]);
-                if(captureTicks >= ASSIMILATION_TICKS) {
+                if(captureTicks >= ASSIMILATION_TICKS && atPoint) {
                     boolean converted = MockerySpawning.assimilate(target, this);
                     if(converted) { assimilations++; nutrition = Math.min(100, nutrition + 20); }
-                    release();
+                    release(converted ? "Assimilation completed" : "Assimilation rejected");
                     if(converted) cooldown = 600;
                     return;
                 }
             }
         }
-        if(!assimilating && captureTicks >= 100) release(); // Players retain the existing four-second hold and escape window.
+        if(!assimilating && captureTicks >= 100) release("Hold completed"); // Same four-second player hold.
     }
 
-    public void hold(EntityLivingBase target) {
-        if(!isHolding() || !owns(target) || !MockerySpawning.active(this) || !reach(target)) return;
-        NBTTagCompound tag = target.getEntityData();
-        tag.setString("MockeryCaptor", getUniqueID().toString());
-        tag.setInteger("MockeryCaptorId", getEntityId());
-        target.motionX = target.motionY = target.motionZ = 0;
-        if(target instanceof net.minecraft.entity.EntityLiving) ((net.minecraft.entity.EntityLiving) target).getNavigator().clearPathEntity();
-        target.fallDistance = 0;
-        if(target.getDistanceSq(anchorX, anchorY, anchorZ) > 0.0025D) {
-            // Never teleport through a newly placed block or pull a teleported target back across the world.
-            AxisAlignedBB at = target.boundingBox.getOffsetBoundingBox(anchorX - target.posX, anchorY - target.posY, anchorZ - target.posZ);
-            if(target.getDistanceSq(anchorX, anchorY, anchorZ) > 1D || !worldObj.getCollidingBoundingBoxes(target, at).isEmpty()) { release(); return; }
-            target.setPositionAndUpdate(anchorX, anchorY, anchorZ);
+    private boolean bind(EntityLivingBase target) {
+        return GeminiCaptures.attach(this, target, false, this::release);
+    }
+
+    private Vec3 assimilationPoint(EntityLivingBase target) {
+        double angle = Math.atan2(anchorZ - posZ, anchorX - posX);
+        // Leave room beside the trunk for the replacement's own collision box, including at diagonal grips.
+        return Vec3.createVectorHelper(posX + Math.cos(angle) * 1.65D,
+                boundingBox.minY + Math.max(1.2D, target.height * 0.5D + 0.18D),
+                posZ + Math.sin(angle) * 1.65D);
+    }
+
+    private boolean drawIn(EntityLivingBase target) {
+        Vec3 goal = assimilationPoint(target);
+        double lift = GeminiCaptures.liftProgress(liftTicks + 1, LIFT_TICKS);
+        double startY = anchorY - (target.posY - target.boundingBox.minY) + target.height * 0.5D;
+        double x = anchorX + (goal.xCoord - anchorX) * lift;
+        double y = startY + (goal.yCoord - startY) * lift;
+        double z = anchorZ + (goal.zCoord - anchorZ) * lift;
+        AxisAlignedBB swept = target.boundingBox.addCoord(x - target.posX,
+                y - target.boundingBox.minY - target.height * 0.5D, z - target.posZ).contract(0.001, 0.001, 0.001);
+        if(!GardenerNests.loaded(worldObj, swept) || !worldObj.func_147461_a(swept).isEmpty()) {
+            if(++obstructedTicks >= 20) release("Tendril path obstructed");
+            return false;
         }
-        target.velocityChanged = true;
+        obstructedTicks = 0;
+        GeminiCaptures.center(target, x, y, z);
+        if(liftTicks < LIFT_TICKS && ++liftTicks == LIFT_TICKS)
+            GeminiCaptures.diagnostic(this, target, assimilating ? "assimilating" : "holding",
+                    "Reached tendril attachment", captureTicks, goal);
+        return liftTicks >= LIFT_TICKS;
     }
 
-    private void release() {
-        EntityLivingBase target = tendrilTarget();
+    private void release() { release("Captor inactive or removed"); }
+    private void release(String reason) {
+        EntityLivingBase target = captiveEntity;
         if(target != null && captive != null && captive.equals(target.getUniqueID())) {
+            GeminiCaptures.diagnostic(this, target, assimilating ? "assimilating" : "holding", reason, captureTicks, null);
+            GeminiCaptures.release(this, target);
             NBTTagCompound tag = target.getEntityData();
             if(getUniqueID().toString().equals(tag.getString("MockeryCaptor"))) {
                 tag.removeTag("MockeryCaptor"); tag.removeTag("MockeryCaptorId");
             }
             tag.setLong("MockeryEscapeUntil", worldObj.getTotalWorldTime() + 400L);
         }
+        captiveEntity = null;
         captive = null; captureTicks = 0; cooldown = 100; assimilating = false;
+        missingTicks = liftTicks = obstructedTicks = 0;
         dataWatcher.updateObject(20, Integer.valueOf(-1));
         dataWatcher.updateObject(22, Byte.valueOf((byte) 0));
     }
@@ -285,6 +329,7 @@ public final class EntityNaturesMockery extends EntityMob implements IDeepRootCa
         nbt.setInteger("Placed", placed); nbt.setInteger("Buds", buds); nbt.setBoolean("Sterile", sterile);
         nbt.setBoolean("Rooted", rooted); nbt.setDouble("RootX", rootX); nbt.setDouble("RootY", rootY); nbt.setDouble("RootZ", rootZ);
         nbt.setInteger("CaptureTicks", captureTicks); nbt.setInteger("CaptureCooldown", cooldown);
+        nbt.setInteger("CaptureLiftTicks", liftTicks);
         nbt.setBoolean("Assimilating", assimilating); nbt.setInteger("Assimilations", assimilations);
         if(captive != null) nbt.setString("CaptiveUUID", captive.toString());
         nbt.setDouble("AnchorX", anchorX); nbt.setDouble("AnchorY", anchorY); nbt.setDouble("AnchorZ", anchorZ);
@@ -298,6 +343,7 @@ public final class EntityNaturesMockery extends EntityMob implements IDeepRootCa
         placed = clamp(nbt, "Placed", 4096); buds = clamp(nbt, "Buds", 2); sterile = nbt.getBoolean("Sterile");
         rooted = nbt.getBoolean("Rooted"); rootX = nbt.getDouble("RootX"); rootY = nbt.getDouble("RootY"); rootZ = nbt.getDouble("RootZ");
         captureTicks = clamp(nbt, "CaptureTicks", ASSIMILATION_TICKS); cooldown = clamp(nbt, "CaptureCooldown", 600);
+        liftTicks = clamp(nbt, "CaptureLiftTicks", LIFT_TICKS);
         assimilating = nbt.getBoolean("Assimilating"); assimilations = clamp(nbt, "Assimilations", ASSIMILATION_LIMIT);
         try { captive = UUID.fromString(nbt.getString("CaptiveUUID")); } catch(IllegalArgumentException ignored) { captive = null; }
         dataWatcher.updateObject(22, Byte.valueOf((byte) (captive != null && captureTicks >= 20 ? 1 : 0)));

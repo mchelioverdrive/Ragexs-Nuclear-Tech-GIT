@@ -183,13 +183,8 @@ public final class GeminiPopulation {
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
-    public void captiveMovement(net.minecraftforge.event.entity.living.LivingEvent.LivingUpdateEvent event) {
-        // Only owned Gardener prey skips native AI/gravity. Retain the base tick
-        // for damage immunity, potion effects, drowning and death; the parent moves it once.
-        if(EntityGardener.updateCaptiveMovement(event.entityLiving)) {
-            event.entityLiving.onEntityUpdate();
-            event.setCanceled(true);
-        }
+    public void clearOrphanedGrip(net.minecraftforge.event.entity.living.LivingEvent.LivingUpdateEvent event) {
+        EntityGardener.clearOrphanedGrip(event.entityLiving);
     }
 
     @SubscribeEvent
@@ -200,6 +195,8 @@ public final class GeminiPopulation {
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void join(EntityJoinWorldEvent event) {
+        if(!event.world.isRemote && !(event.entity instanceof EntityLivingBase))
+            EntityGardener.clearOrphanedGrip(event.entity);
         if(!event.world.isRemote && (event.entity instanceof EntityGardenerCocoon || event.entity instanceof EntityWoodcrawlerCocoon)) {
             Entity cocoon = event.entity;
             Map<UUID, Entity> cocoons = COCOONS.get(event.world);

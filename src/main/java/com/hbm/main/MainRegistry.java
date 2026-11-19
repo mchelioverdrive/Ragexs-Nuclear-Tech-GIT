@@ -1100,8 +1100,10 @@ public class MainRegistry {
 		FMLCommonHandler.instance().bus().register(geminiPopulation);
 		com.hbm.handler.restraint.Restraints restraintEvents = new com.hbm.handler.restraint.Restraints();
 		com.hbm.handler.WoodcrawlerCaptures woodcrawlerCaptures = new com.hbm.handler.WoodcrawlerCaptures();
+		com.hbm.handler.GeminiCaptures geminiCaptures = new com.hbm.handler.GeminiCaptures();
 		MinecraftForge.EVENT_BUS.register(woodcrawlerCaptures);
-		FMLCommonHandler.instance().bus().register(woodcrawlerCaptures);
+		MinecraftForge.EVENT_BUS.register(geminiCaptures);
+		FMLCommonHandler.instance().bus().register(geminiCaptures);
 		MinecraftForge.EVENT_BUS.register(restraintEvents);
 		FMLCommonHandler.instance().bus().register(restraintEvents);
 		com.hbm.handler.disease.DiseaseEvents diseaseEvents = new com.hbm.handler.disease.DiseaseEvents();

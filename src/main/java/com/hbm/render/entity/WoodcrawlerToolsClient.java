@@ -1,6 +1,7 @@
 package com.hbm.render.entity;
 
 import com.hbm.items.tool.ItemFlashlight;
+import com.hbm.handler.GeminiCaptures;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toserver.WoodcrawlerStrugglePacket;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
@@ -8,6 +9,7 @@ import cpw.mods.fml.common.gameevent.TickEvent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.entity.RenderManager;
+import net.minecraft.entity.item.EntityBoat;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.MovingObjectPosition;
@@ -20,18 +22,16 @@ public final class WoodcrawlerToolsClient {
     @SubscribeEvent public void tick(TickEvent.ClientTickEvent event) {
         Minecraft mc = Minecraft.getMinecraft();
         if(event.phase != TickEvent.Phase.END || mc.thePlayer == null) return;
-        if(!mc.thePlayer.getEntityData().getBoolean("WoodcrawlerRestrained")) { inputClock = 0; return; }
+        // Vanilla's locally ridden boat ignores small tracker deltas while predicting its own travel.
+        if(mc.thePlayer.ridingEntity instanceof EntityBoat && GeminiCaptures.clientHeld(mc.thePlayer.ridingEntity))
+            ((EntityBoat) mc.thePlayer.ridingEntity).setIsBoatEmpty(true);
+        if(GeminiCaptures.clientTick(mc.thePlayer) != GeminiCaptures.STRUGGLE) { inputClock = 0; return; }
         if(++inputClock % 5 == 0) {
             int input = mc.currentScreen != null ? 0 : (mc.gameSettings.keyBindForward.getIsKeyPressed() ? 1 : 0)
                     | (mc.gameSettings.keyBindBack.getIsKeyPressed() ? 2 : 0) | (mc.gameSettings.keyBindLeft.getIsKeyPressed() ? 4 : 0)
                     | (mc.gameSettings.keyBindRight.getIsKeyPressed() ? 8 : 0);
             PacketDispatcher.wrapper.sendToServer(new WoodcrawlerStrugglePacket(input));
         }
-        mc.thePlayer.motionX = mc.thePlayer.motionY = mc.thePlayer.motionZ = 0;
-        mc.thePlayer.setSprinting(false); mc.thePlayer.fallDistance = 0;
-    }
-    @SubscribeEvent public void jump(net.minecraftforge.event.entity.living.LivingEvent.LivingJumpEvent event) {
-        if(event.entity.worldObj.isRemote && event.entity.getEntityData().getBoolean("WoodcrawlerRestrained")) event.entityLiving.motionY = 0;
     }
     @SubscribeEvent public void render(RenderWorldLastEvent event) {
         Minecraft mc = Minecraft.getMinecraft(); if(mc.theWorld == null) return;

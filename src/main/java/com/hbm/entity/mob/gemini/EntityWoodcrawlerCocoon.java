@@ -3,6 +3,8 @@ package com.hbm.entity.mob.gemini;
 import java.util.UUID;
 
 import com.hbm.config.GeminiConfig;
+import com.hbm.handler.GeminiCaptures;
+import com.hbm.world.gemini.GardenerNests;
 import com.hbm.world.gemini.GeminiInvasionManager;
 import com.hbm.world.gemini.GeminiSpawning;
 import com.hbm.world.gemini.GeminiPopulation;
@@ -13,8 +15,10 @@ import net.minecraft.entity.EntityList;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.passive.EntityVillager;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.MathHelper;
+import net.minecraft.util.Vec3;
 import net.minecraft.world.EnumDifficulty;
 import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
@@ -27,18 +31,21 @@ public final class EntityWoodcrawlerCocoon extends Entity implements IGeminiCrea
 	private byte decision;
 	private boolean releasing, manual, resolving;
 	private boolean liveCapture;
-	private int liveId = -1, missingTicks;
+	private EntityVillager original;
+	private int missingTicks, gripTicks;
 
-	void bindVictim(EntityVillager villager) {
-		liveCapture = true; liveId = villager.getEntityId();
+	boolean bindVictim(EntityVillager villager) {
+		if(!GeminiCaptures.attach(this, villager, false, this::detachVictim)) return false;
+		liveCapture = true; original = villager;
+		gripTicks = 0;
 		villager.getEntityData().setString("WoodcrawlerCocoon", getUniqueID().toString());
 		villager.getEntityData().setInteger("WoodcrawlerCocoonId", getEntityId());
 		villager.getEntityData().setLong("WoodcrawlerCocoonUntil", worldObj.getTotalWorldTime() + 40);
+		GeminiCaptures.diagnostic(this, villager, "wrapping", "Cocoon took over the grip", 0, gripPoint(villager));
+		return true;
 	}
 	private EntityVillager liveVictim() {
-		Entity entity = worldObj.getEntityByID(liveId);
-		return entity instanceof EntityVillager && !entity.isDead && entity.worldObj == worldObj && entity.addedToChunk
-				&& getUniqueID().toString().equals(entity.getEntityData().getString("WoodcrawlerCocoon")) ? (EntityVillager) entity : null;
+		return original != null && GeminiCaptures.valid(this, original) ? original : null;
 	}
 	public static boolean isConversionSource(Entity original, Entity replacement) {
 		Entity owner = original.worldObj.getEntityByID(original.getEntityData().getInteger("WoodcrawlerCocoonId"));
@@ -47,11 +54,12 @@ public final class EntityWoodcrawlerCocoon extends Entity implements IGeminiCrea
 	}
 	private boolean tickLiveVictim() {
 		EntityVillager original = liveVictim();
+		if(original == null && this.original != null) { finish(); return false; }
 		if(original == null && ticksExisted % 20 == 1 && victim != null) {
 			UUID id = new UUID(victim.getLong("UUIDMost"), victim.getLong("UUIDLeast"));
 			for(Object entry : worldObj.getEntitiesWithinAABB(EntityVillager.class, boundingBox.expand(4, 3, 4))) {
 				EntityVillager candidate = (EntityVillager) entry;
-				if(!candidate.isDead && id.equals(candidate.getUniqueID())) { bindVictim(candidate); original = candidate; break; }
+				if(id.equals(candidate.getUniqueID()) && bindVictim(candidate)) { original = candidate; break; }
 			}
 		}
 		if(original == null) { if(++missingTicks > 100) finish(); return false; }
@@ -59,10 +67,23 @@ public final class EntityWoodcrawlerCocoon extends Entity implements IGeminiCrea
 		if(!original.isEntityAlive() || getDistanceSqToEntity(original) > 16 || original.ridingEntity != null) { finish(); return false; }
 		if(releasing) { finish(); return false; }
 		original.getEntityData().setLong("WoodcrawlerCocoonUntil", worldObj.getTotalWorldTime() + 40);
-		double dx = posX - original.posX, dz = posZ - original.posZ;
-		original.moveEntity(MathHelper.clamp_double(dx, -0.18D, 0.18D), 0, MathHelper.clamp_double(dz, -0.18D, 0.18D));
-		original.motionX = original.motionZ = 0; original.velocityChanged = true;
+		Vec3 goal = gripPoint(original);
+		double dx = goal.xCoord - original.posX, dy = goal.yCoord - original.boundingBox.minY - original.height * 0.5D;
+		double dz = goal.zCoord - original.posZ;
+		double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+		double t = distance > 0.18D ? 0.18D / distance : 1D;
+		AxisAlignedBB sweep = original.boundingBox.addCoord(dx * t, dy * t, dz * t).contract(0.001D, 0.001D, 0.001D);
+		if(!GardenerNests.loaded(worldObj, sweep) || !worldObj.func_147461_a(sweep).isEmpty()) {
+			if(++gripTicks >= 40) { finish("Cocoon grip path obstructed"); return false; }
+			return false;
+		}
+		gripTicks = 0;
+		GeminiCaptures.position(original, original.posX + dx * t, original.posY + dy * t, original.posZ + dz * t);
 		return true;
+	}
+
+	private Vec3 gripPoint(EntityVillager villager) {
+		return Vec3.createVectorHelper(posX, boundingBox.minY + villager.height * 0.5D + 0.12D, posZ);
 	}
 
 	public EntityWoodcrawlerCocoon(World world) {
@@ -215,13 +236,19 @@ public final class EntityWoodcrawlerCocoon extends Entity implements IGeminiCrea
 		dataWatcher.updateObject(20, Byte.valueOf((byte) 1));
 	}
 
-	private void finish() {
-		EntityVillager original = liveVictim();
+	private void detachVictim(String reason) {
 		if(original != null) {
+			GeminiCaptures.diagnostic(this, original, "cocoon", reason, remainingTicks, null);
+			GeminiCaptures.release(this, original);
 			original.getEntityData().removeTag("WoodcrawlerCocoon"); original.getEntityData().removeTag("WoodcrawlerCocoonId");
 			original.getEntityData().removeTag("WoodcrawlerCocoonUntil");
 		}
-		liveId = -1;
+		original = null;
+	}
+
+	private void finish() { finish("Cocoon processing ended"); }
+	private void finish(String reason) {
+		detachVictim(reason);
 		victim = null;
 		super.setDead();
 	}
@@ -259,7 +286,7 @@ public final class EntityWoodcrawlerCocoon extends Entity implements IGeminiCrea
 		blockedTicks = Math.max(0, Math.min(1201, nbt.getInteger("Blocked")));
 		decision = (byte) Math.max(0, Math.min(2, nbt.getByte("Decision")));
 		manual = nbt.getBoolean("Manual");
-		liveCapture = nbt.getBoolean("LiveCapture"); liveId = -1; missingTicks = 0;
+		liveCapture = nbt.getBoolean("LiveCapture"); original = null; missingTicks = 0;
 		if(nbt.getBoolean("Releasing")) beginRelease();
 	}
 }

@@ -346,7 +346,8 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 		if(joint == 0) return origin;
 		float extension = getGrabExtension(partial);
 		double tx = target.lastTickPosX + (target.posX - target.lastTickPosX) * partial;
-		double ty = target.lastTickPosY + (target.posY - target.lastTickPosY) * partial + target.height * 0.5D;
+		double ty = target.lastTickPosY + (target.posY - target.lastTickPosY) * partial
+				+ target.boundingBox.minY - target.posY + target.height * 0.5D;
 		double tz = target.lastTickPosZ + (target.posZ - target.lastTickPosZ) * partial;
 		double t = joint == 1 ? 0.43D : joint == 2 ? 0.78D : 1;
 		double feetY = lastTickPosY + (posY - lastTickPosY) * partial;
@@ -1048,6 +1049,7 @@ public class EntityWoodcrawler extends EntityMob implements IDeepRootCarrier {
 		}
 		prevTravelPhase = travelPhase;
 		super.onUpdate();
+		if(!worldObj.isRemote && capture.active()) capture.position();
 		// Vanilla caps limbSwingAmount at one, which otherwise makes the faster chase slide.
 		double traveledX = posX - prevPosX, traveledZ = posZ - prevPosZ;
 		if(!isBurrowing()) travelPhase += (float) Math.min(1.5D, Math.sqrt(traveledX * traveledX + traveledZ * traveledZ)) * 2F;

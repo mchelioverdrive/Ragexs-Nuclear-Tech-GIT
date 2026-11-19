@@ -937,3 +937,9 @@
 - Connect supported surface starts to the body-sized path grid, use connected staging routes, and allow longer wall-braced descents and nest approach climbs where the body clears the ledge and limbs can reach the wall.
 - Use the existing registered opening for both directions, with checked rim, shaft and chamber legs, individual surface approaches and a shared passage reservation. Animate the descent with the existing articulated limbs and retain attached prey during approach, waiting and entry.
 - Back off after rejected approaches and report entrance occupancy, path rejection, and measured movement through Gemini debug. Use the saved geometry for completed legacy and recessed pits.
+
+2026-11-19 00:43 — Keep Gemini prey attached through feeding
+
+- Hold captured prey in server-owned grips that suspend native travel and reject conflicting player movement. Keep native tracking for observers and interpolate position updates for captive players. Release the grip on escape, death, or invalid ownership.
+- Carry Underground Gardener prey through the nest commute, then lift it from the carry position into the feeding position. Advance bites on the existing damage cadence even when terrain intersects the grip. Ocean Gardeners use their own elevated feeding position. Ceiling wrapping retains its placement checks and can fall back to local feeding.
+- Preserve Woodcrawler dragging and cocoon delivery, Wretch hand and torso animations, and Nature's Mockery assimilation. Draw held prey into each creature's feeding position and record attachment, interruptions, and completion in Gemini debug.
