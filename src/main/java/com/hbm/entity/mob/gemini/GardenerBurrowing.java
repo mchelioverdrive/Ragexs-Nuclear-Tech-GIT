@@ -131,6 +131,7 @@ final class GardenerBurrowing {
         if(state == UNDERGROUND && night) start(EMERGING);
         else if((state == SURFACE || state == EMERGING) && retreat) start(RETURNING);
         if(state == UNDERGROUND || state == SURFACE) return false;
+        if(access.recessed) return recessedPitTick(access);
         // Reconstruct an interrupted vertical stage from position, including a dawn reversal/reload.
         boolean inPit = mob.posX >= access.x + 48 && mob.posX <= access.x + 63
                 && Math.abs(mob.posZ - access.z) <= 7;
@@ -145,14 +146,15 @@ final class GardenerBurrowing {
             }
         }
         if(retry > 0) { retry--; return true; }
-        double x = access.x + 51.5D, z = access.z - 3.5D;
+        if((state == EMERGING || pitStage > 0) && !access.claim(mob)) return true;
+        double x = access.x + 51.5D, z = access.laneZ;
         if(state == EMERGING) {
             if(pitStage == 0) pitWalk(x, access.y, z);
             else if(pitStage == 1) pitClimb(x, access.top + 0.1D, z);
             else if(pitStage == 2) pitClimb(access.x + 43.5D, access.top + 0.1D, z);
             else {
                 // Clear the rim before crossing, then settle onto the dismount with native collision.
-                mob.moveGardener(0, -0.2D, 0); arrived(SURFACE);
+                mob.moveGardener(0, -0.2D, 0); access.release(mob); arrived(SURFACE);
             }
         } else {
             if(pitStage == 0) {
@@ -171,9 +173,71 @@ final class GardenerBurrowing {
                 } else pitClimb(x, access.y, z);
             }
             else if(pitStage == 3) pitWalk(mob.nestX, mob.nestY, mob.nestZ);
-            else arrived(UNDERGROUND);
+            else { access.release(mob); arrived(UNDERGROUND); }
         }
         return true;
+    }
+
+    private boolean recessedPitTick(GardenerNests.Access access) {
+        double shaftX = access.x + 51.5D, exitX = access.x + 43.5D, z = access.laneZ;
+        double feet = mob.boundingBox.minY;
+        if(pitStage == 0) {
+            boolean aligned = Math.abs(mob.posZ - z) < 0.2D;
+            boolean atShaft = aligned && Math.abs(mob.posX - shaftX) < 0.2D;
+            boolean crossing = aligned && mob.posX >= exitX && mob.posX <= shaftX && Math.abs(feet - access.top) < 0.1D;
+            boolean atPassage = mob.posX >= access.x && mob.posX <= access.x + 63D
+                    && Math.abs(mob.posZ - (access.z + 0.5D)) <= 7D;
+            if(state == EMERGING) {
+                if(crossing) pitStage = 2;
+                else if(atShaft && feet > access.y + 0.05D) pitStage = 1;
+            } else if(atShaft && feet > access.y + 0.05D && feet < access.top - 0.05D) pitStage = 2;
+            else if(crossing && mob.posX > exitX + 0.1D) pitStage = 1;
+            else if(Math.abs(feet - access.y) <= 0.1D && (atPassage
+                    || GardenerNests.inHabitat(mob.posX - access.x, mob.posZ - access.z, 0))) pitStage = 3;
+        }
+        if(retry > 0) { retry--; return true; }
+        // Chamber walks can run in parallel. Keep the queue outside the shared
+        // throat so a returning resident does not wait on a distant approach.
+        boolean entering = state == EMERGING && (pitStage > 0
+                || Math.abs(mob.posX - shaftX) < 12D && Math.abs(mob.posZ - z) < 10D);
+        boolean leaving = state == RETURNING && (pitStage == 1 || pitStage == 2);
+        if((entering || leaving) && !access.claim(mob)) return true;
+        if(state == EMERGING) {
+            if(pitStage == 0) pitWalk(shaftX, access.y, z);
+            else if(pitStage == 1) recessedClimb(shaftX, access.top, z);
+            else if(pitStage == 2) recessedClimb(exitX, access.top, z);
+            else {
+                mob.moveGardener(0, -0.08D, 0);
+                if(!mob.onGround) {
+                    pitStage = 2; failed("recessed exit lost its ground support");
+                } else {
+                    access.release(mob); arrived(SURFACE);
+                }
+            }
+        } else if(pitStage == 0) {
+            int result = mob.surfaceTravel(exitX, access.top, z);
+            if(result > 0) { mob.stopSurfaceTravel(); pitStage = 1; }
+            else if(result < 0) failures = Math.min(16, failures + 1);
+        } else if(pitStage == 1) recessedClimb(shaftX, access.top, z);
+        else if(pitStage == 2) recessedClimb(shaftX, access.y, z);
+        else if(pitStage == 3) {
+            access.release(mob);
+            pitWalk(mob.nestX, mob.nestY, mob.nestZ);
+        } else arrived(UNDERGROUND);
+        return true;
+    }
+
+    private void recessedClimb(double x, double y, double z) {
+        double dx = x - mob.posX, dy = y - mob.boundingBox.minY, dz = z - mob.posZ;
+        double length = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if(length < 0.01D) { pitStage++; return; }
+        AxisAlignedBB box = mob.boundingBox.contract(0.002D, 0.002D, 0.002D);
+        // Reach the wall over the passage's headroom while keeping the collision
+        // body clear of the lintel. At the rim the underside probe keeps contact.
+        AxisAlignedBB contact = box.addCoord(-0.75D, 0, 0).addCoord(0, -0.1D, 0).addCoord(0, 1.3D, 0);
+        if(!GardenerNests.loaded(world, contact.expand(1, 0, 1))) { retry = 20; return; }
+        if(world.func_147461_a(contact).isEmpty()) { failed("no wall or ground contact at recessed entrance"); return; }
+        pitMove(dx, dy, dz, Math.min(0.08D, length));
     }
     private void pitWalk(double x, double y, double z) {
         if(destination == null) plan(new Node(MathHelper.floor_double(x), MathHelper.floor_double(y), MathHelper.floor_double(z), null, 0, 0));

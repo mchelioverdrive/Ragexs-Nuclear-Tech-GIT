@@ -51,7 +51,8 @@ import net.minecraftforge.event.world.BlockEvent;
 /** Post-unlock underground colonization, additive to the existing world generator. */
 public final class GardenerNests extends WorldSavedData {
     private static final String NAME = "GeminiGardenerNests";
-    private static final int LAYOUT = 3, HALF = 55, HEIGHT = 24;
+    private static final int LAYOUT = 3, TERRAIN_ACCESS = 2, HALF = 55, HEIGHT = 24;
+    private static final int ACCESS_DOOR_HEIGHT = (int) EntityGardener.BODY_HEIGHT + 1;
     private static final int[][] HOMES = {{-24, -16}, {24, -16}, {0, 26}};
     // Scans are chunk-major; only the current chunk and its notification neighbors need loading.
     private static final int SCANS_PER_TICK = 1024, EDITS_PER_TICK = 128;
@@ -160,8 +161,23 @@ public final class GardenerNests extends WorldSavedData {
     /** Registered pit, including while the resident's home chunk is unloaded. */
     public static final class Access {
         public final int x, y, z, top;
-        public final boolean ready;
-        private Access(Nest nest) { x = nest.x; y = nest.y; z = nest.z; top = nest.top; ready = nest.accessVersion > 0; }
+        public final boolean ready, recessed;
+        public final double laneZ;
+        private final Nest nest;
+        private Access(Nest nest) {
+            this.nest = nest; x = nest.x; y = nest.y; z = nest.z; top = nest.top;
+            ready = nest.accessVersion > 0; recessed = nest.accessVersion >= TERRAIN_ACCESS;
+            laneZ = z + (recessed ? nest.lane : -4) + 0.5D;
+        }
+        public boolean claim(EntityGardener mob) {
+            long now = mob.worldObj.getTotalWorldTime();
+            if(nest.pitOwner != null && !nest.pitOwner.equals(mob.getUniqueID()) && now < nest.pitLease) return false;
+            nest.pitOwner = mob.getUniqueID(); nest.pitLease = now + 40;
+            return true;
+        }
+        public void release(EntityGardener mob) {
+            if(mob.getUniqueID().equals(nest.pitOwner)) nest.pitOwner = null;
+        }
     }
     public static Access access(EntityGardener mob) {
         if(mob.isOcean() || mob.worldObj.isRemote) return null;
@@ -173,9 +189,10 @@ public final class GardenerNests extends WorldSavedData {
     /** Registered chamber slots and the open pit; never constructs or loads a route. */
     public static final class Delivery {
         public final int nestX, y, nestZ, top, slot;
+        private final int lane;
         public final double x, z;
-        private Delivery(int nx, int y, int nz, int top, int slot) {
-            nestX = nx; this.y = y; nestZ = nz; this.top = top; this.slot = slot;
+        private Delivery(int nx, int y, int nz, int top, int slot, int lane) {
+            nestX = nx; this.y = y; nestZ = nz; this.top = top; this.slot = slot; this.lane = lane;
             x = nx + (top < 0 ? 4.5D : 30.5D); z = nz + (slot - 1) * 4 + 0.5D;
         }
         private String key() { return nestX + ":" + y + ":" + nestZ + ":" + slot; }
@@ -184,20 +201,20 @@ public final class GardenerNests extends WorldSavedData {
         }
         public boolean atAccess(net.minecraft.entity.Entity e) {
             return top >= 0 && e.posY >= y && e.posY <= top + 1.1
-                    && Math.abs(e.posX - (nestX + 48.5)) <= 1.25 && Math.abs(e.posZ - (nestZ + 0.5)) < 0.6;
+                    && Math.abs(e.posX - (nestX + 48.5)) <= 1.25 && Math.abs(e.posZ - (nestZ + lane + 0.5)) < 0.6;
         }
         public net.minecraft.util.Vec3 waypoint(com.hbm.entity.mob.gemini.EntityWoodcrawler mob) {
             if(top >= 0 && mob.posY > y + 2) {
                 boolean shaft = atAccess(mob);
-                return net.minecraft.util.Vec3.createVectorHelper(nestX + (shaft ? 48.5D : 47.5D), shaft ? Math.max(y, mob.posY - 5) : top, nestZ + 0.5D);
+                return net.minecraft.util.Vec3.createVectorHelper(nestX + (shaft ? 48.5D : 47.5D), shaft ? Math.max(y, mob.posY - 5) : top, nestZ + lane + 0.5D);
             }
             return net.minecraft.util.Vec3.createVectorHelper(x, y, z);
         }
         public NBTTagCompound write() {
             NBTTagCompound n = new NBTTagCompound(); n.setInteger("X", nestX); n.setInteger("Y", y); n.setInteger("Z", nestZ);
-            n.setInteger("Top", top); n.setInteger("Slot", slot); return n;
+            n.setInteger("Top", top); n.setInteger("Slot", slot); n.setInteger("Lane", lane); return n;
         }
-        public static Delivery read(NBTTagCompound n) { return new Delivery(n.getInteger("X"), n.getInteger("Y"), n.getInteger("Z"), n.getInteger("Top"), MathHelper.clamp_int(n.getInteger("Slot"), 0, 2)); }
+        public static Delivery read(NBTTagCompound n) { return new Delivery(n.getInteger("X"), n.getInteger("Y"), n.getInteger("Z"), n.getInteger("Top"), MathHelper.clamp_int(n.getInteger("Slot"), 0, 2), MathHelper.clamp_int(n.getInteger("Lane"), -3, 3)); }
     }
     private static final class DeliveryClaim {
         final UUID owner; final long until;
@@ -207,14 +224,15 @@ public final class GardenerNests extends WorldSavedData {
         World world = carrier.worldObj;
         boolean registered = false;
         for(Nest nest : get(world).nests) if(nest.built && nest.accessVersion > 0 && nest.x == d.nestX && nest.y == d.y
-                && nest.z == d.nestZ && nest.top == d.top) { registered = true; break; }
+                && nest.z == d.nestZ && nest.top == d.top && nest.lane == d.lane) { registered = true; break; }
         if(!registered) return false;
         // Test the actual upright captive envelope along the clear west pit wall.
         double half = Math.max(0.6, victim.width) * 0.5 + 0.001;
-        AxisAlignedBB shaft = AxisAlignedBB.getBoundingBox(d.nestX + 48.5 - half, d.y, d.nestZ + 0.5 - half,
-                d.nestX + 48.5 + half, d.top + 3, d.nestZ + 0.5 + half);
-        AxisAlignedBB corridor = AxisAlignedBB.getBoundingBox(d.x - half, d.y + 0.01, d.nestZ + 0.5 - half,
-                d.nestX + 48.5 + half, d.y + Math.max(1.8, victim.height), d.nestZ + 0.5 + half);
+        double accessZ = d.nestZ + d.lane + 0.5;
+        AxisAlignedBB shaft = AxisAlignedBB.getBoundingBox(d.nestX + 48.5 - half, d.y, accessZ - half,
+                d.nestX + 48.5 + half, d.top + 3, accessZ + half);
+        AxisAlignedBB corridor = AxisAlignedBB.getBoundingBox(d.x - half, d.y + 0.01, accessZ - half,
+                d.nestX + 48.5 + half, d.y + Math.max(1.8, victim.height), accessZ + half);
         AxisAlignedBB slot = AxisAlignedBB.getBoundingBox(d.x - 0.6, d.y + 0.01, d.z - 0.6, d.x + 0.6, d.y + Math.max(1.8, victim.height), d.z + 0.6);
         if(!loaded(world, slot) || !world.func_147461_a(slot).isEmpty() || world.isAnyLiquid(slot)) return false;
         if(d.top >= 0 && (!loaded(world, shaft) || !loaded(world, corridor) || !world.func_147461_a(shaft).isEmpty()
@@ -231,7 +249,7 @@ public final class GardenerNests extends WorldSavedData {
         for(Nest nest : get(carrier.worldObj).nests) if(nest.built && nest.accessVersion > 0
                 && carrier.getDistanceSq(nest.x + 55.5, Math.max(nest.y, carrier.posY), nest.z + 0.5) <= 96 * 96) {
             for(int slot = 0; slot < 3; slot++) {
-                Delivery d = new Delivery(nest.x, nest.y, nest.z, nest.top, slot);
+                Delivery d = new Delivery(nest.x, nest.y, nest.z, nest.top, slot, nest.lane);
                 if(deliverySpace(carrier, victim, d)) result.add(d);
             }
         }
@@ -350,18 +368,22 @@ public final class GardenerNests extends WorldSavedData {
         // Exact saved coordinates select a record for an explicit upgrade. No automatic migration.
         for(Nest saved : data.nests) if(saved.x == x && saved.z == z && (requested == null || saved.y == y)) {
             if(!force) throw new net.minecraft.command.CommandException("Existing nest: repeat with force to regenerate/upgrade this record.");
-            if(!saved.built && saved.layout == LAYOUT) {
+            if(!saved.built && saved.layout == LAYOUT && !saved.siteRejected) {
                 saved.debug = saved.recovering = true; saved.failed = false; saved.idle = 0;
                 saved.journalReady = checkpoint(world, data);
                 if(!saved.journalReady) { saved.failed = true; saved.reason = "could not save construction journal; terrain work paused"; }
                 return info(world, saved, "construction already queued; " + describe(world, saved));
             }
-            y = MathHelper.clamp_int(saved.y, 9, 12); // Explicit upgrades keep the floor above bedrock and at Y=8..11.
+            y = saved.siteRejected ? saved.y : MathHelper.clamp_int(saved.y, 9, 12);
             String reason = placementBounds(world, x, y, z);
             if(reason != null) throw new net.minecraft.command.CommandException(reason);
+            boolean upgrading = !saved.siteRejected || saved.built || saved.upgrading;
+            if(!upgrading) for(Nest other : data.nests) if(other != saved && other.overlapsFootprint(x, z))
+                throw new net.minecraft.command.CommandException("Placement overlaps a newer nest reservation.");
             saved.y = y; saved.layout = LAYOUT; saved.built = false; saved.phase = 0;
-            saved.cursor = 0; saved.top = -1; saved.debug = true; saved.upgrading = true;
-            saved.failed = false; saved.recovering = true; saved.idle = 0; saved.reason = "queued explicit upgrade";
+            saved.cursor = 0; saved.top = -1; saved.debug = true; saved.upgrading = upgrading;
+            saved.failed = saved.siteRejected = false; saved.recovering = true; saved.idle = 0; saved.reason = "queued explicit upgrade";
+            saved.terrainAccess = true;
             saved.accessVersion = 0;
             saved.ensureCapacity();
             data.markDirty();
@@ -371,7 +393,7 @@ public final class GardenerNests extends WorldSavedData {
         }
         String reason = placementBounds(world, x, y, z);
         if(reason != null) throw new net.minecraft.command.CommandException(reason);
-        for(Nest saved : data.nests) if(Math.abs(saved.x - x) < 128 && Math.abs(saved.z - z) < 112)
+        for(Nest saved : data.nests) if(saved.overlapsFootprint(x, z))
             throw new net.minecraft.command.CommandException("Placement overlaps a saved nest; select its exact origin and use force to upgrade it.");
         Nest nest = new Nest(x, y, z); nest.debug = true; nest.ensureCapacity();
         nest.hasHome = true; nest.homeX = MathHelper.floor_double(player.posX); nest.homeZ = MathHelper.floor_double(player.posZ);
@@ -421,20 +443,31 @@ public final class GardenerNests extends WorldSavedData {
             return ModBlocks.mockery_growth;
         return Blocks.air;
     }
-    /** Fifteen clear blocks across, surrounded by a one-block organic seal. */
+    private static boolean shaft(int x, int z) {
+        // Round the corners without narrowing the west wall's three possible climbing lanes.
+        return x >= 48 && x <= 62 && Math.abs(z) <= 7
+                && (Math.abs(z) <= 6 || x >= 50 && x <= 60);
+    }
     private static Block accessBlock(Nest nest, int x, int y, int z) {
         int top = nest.top - nest.y;
-        if(x >= 47 && x <= 63 && Math.abs(z) <= 8 && y >= -1 && y < top + 12) {
-            if(y == -1) return ModBlocks.gardener_flesh;
-            if(x >= 48 && x <= 62 && Math.abs(z) <= 7) return Blocks.air;
-            // A body-sized opening from the chamber into the west pit wall.
-            if(x == 47 && Math.abs(z) <= 6 && y >= 0 && y < 12) return Blocks.air;
-            if(y < top) return ModBlocks.gardener_flesh;
-            return Blocks.air;
+        if(nest.terrainAccess) {
+            if(shaft(x, z)) return y == -1 ? ModBlocks.gardener_flesh : Blocks.air;
+            if(x == 47 && Math.abs(z) <= 6 && y >= 0 && y < ACCESS_DOOR_HEIGHT) return Blocks.air;
+            if(x >= 40 && x <= 47 && Math.abs(z - nest.lane) <= 3 && y >= top && y < top + 9)
+                return Blocks.air; // Cut a notch through the uphill lip. The existing ground is the dismount.
+            if(x == 47 && Math.abs(z - nest.lane) <= 3 && y >= ACCESS_DOOR_HEIGHT && y < top && nest.y + y < nest.wall[z + 8])
+                return ModBlocks.gardener_flesh;
+        } else {
+            // Only resume old journals that already edited terrain with this geometry.
+            if(x >= 47 && x <= 63 && Math.abs(z) <= 8 && y < top + 12) {
+                if(y == -1) return ModBlocks.gardener_flesh;
+                if(x >= 48 && x <= 62 && Math.abs(z) <= 7) return Blocks.air;
+                if(x == 47 && Math.abs(z) <= 6 && y < 12) return Blocks.air;
+                return y < top ? ModBlocks.gardener_flesh : Blocks.air;
+            }
+            if(x >= 40 && x < 47 && Math.abs(z) <= 7 && y >= top - 1 && y < top + 12)
+                return y == top - 1 ? ModBlocks.gardener_flesh : Blocks.air;
         }
-        // A supported surface dismount; never caps or obstructs the pit interior.
-        if(x >= 40 && x < 47 && Math.abs(z) <= 7 && y >= top - 1 && y < top + 12)
-            return y == top - 1 ? ModBlocks.gardener_flesh : Blocks.air;
         int start = nest.layout >= LAYOUT ? 30 : 0;
         if(x >= start && x < 47 && Math.abs(z) <= 7 && y >= -1 && y <= 12) {
             Block room = nest.layout >= LAYOUT ? cavernCell(x, y, z) : null;
@@ -445,7 +478,86 @@ public final class GardenerNests extends WorldSavedData {
     }
     private static Block jobBlock(Nest nest, int x, int y, int z) {
         Block access = accessBlock(nest, x, y, z);
+        // The chamber pass also touches these columns. Leave above-rim cells alone unless they are in the cut.
         return access != null ? access : nest.built ? null : cavernCell(x, y, z);
+    }
+
+    private static void rejectSite(WorldServer world, Nest nest, String reason) {
+        nest.reason = reason;
+        nest.siteRejected = nest.failed = true;
+        GeminiInvasionManager.debug(world, "nest-entrance-" + nest.x + ":" + nest.z,
+                "Nest entrance at " + nest.x + "," + nest.z + "; entranceY=" + nest.top
+                + "; reachableSurface=false; " + reason);
+    }
+
+    private static void surveyEntrance(WorldServer world, Nest nest) {
+        int[][] ground = new int[28][17];
+        int ceiling = 0;
+        for(int x = 36; x <= 63; x++) for(int z = -8; z <= 8; z++) {
+            ground[x - 36][z + 8] = surface(world, nest.x + x, nest.z + z);
+            if(shaft(x, z)) ceiling = Math.max(ceiling, world.getHeightValue(nest.x + x, nest.z + z));
+        }
+        int bestCost = Integer.MAX_VALUE;
+        for(int lane : new int[] {0, -3, 3}) {
+            // Use the dry ground on the climbing wall, rather than the tallest nearby column.
+            int top = ground[47 - 36][lane + 8];
+            if(top < nest.y + HEIGHT + 3 || top + 9 > world.getActualHeight()
+                    || !World.doesBlockHaveSolidTopSurface(world, nest.x + 47, top - 1, nest.z + lane)) continue;
+            boolean contact = false;
+            int cost = 0;
+            for(int x = 40; x < 47; x++) for(int z = lane - 3; z <= lane + 3; z++) {
+                cost += Math.max(0, ground[x - 36][z + 8] - top);
+                contact |= World.doesBlockHaveSolidTopSurface(world, nest.x + x, top - 1, nest.z + z);
+            }
+            if(!contact || cost > 96) continue;
+            int gap = 0;
+            for(int y = top - 1; y >= nest.y + ACCESS_DOOR_HEIGHT && gap < 6; y--) {
+                boolean wall = false;
+                for(int z = lane - 3; z <= lane + 3 && !wall; z++)
+                    wall = world.getBlock(nest.x + 47, y, nest.z + z).getMaterial().blocksMovement();
+                gap = wall ? 0 : gap + 1;
+            }
+            if(gap > 0) continue;
+            // Follow the full footprint out of the notch and onto the untouched slope.
+            int previous = top;
+            boolean connected = true;
+            for(int center = 42; center >= 39; center--) {
+                int height = -1;
+                for(int x = center - 3; x <= center + 3; x++) for(int z = lane - 3; z <= lane + 3; z++) {
+                    int local = ground[x - 36][z + 8];
+                    if(x >= 40) local = Math.min(top, local);
+                    if(local > 0 && World.doesBlockHaveSolidTopSurface(world, nest.x + x, local - 1, nest.z + z))
+                        height = Math.max(height, local);
+                }
+                if(height < 1 || Math.abs(height - previous) > 1
+                        || !clearExitStep(world, nest, lane, top, center, Math.max(height, previous))) { connected = false; break; }
+                previous = height;
+            }
+            if(connected && cost < bestCost) {
+                bestCost = cost; nest.top = top; nest.lane = lane;
+                nest.shaftCeiling = Math.max(top + 9, ceiling);
+                nest.wall = ground[47 - 36];
+            }
+        }
+        if(nest.top < 0) rejectSite(world, nest, "no dry, supported rim with a walkable approach");
+    }
+
+    private static boolean clearExitStep(World world, Nest nest, int lane, int top, int center, int y) {
+        double half = EntityGardener.BODY_WIDTH / 2D - 0.002D;
+        double x = nest.x + center + 0.5D, z = nest.z + lane + 0.5D;
+        AxisAlignedBB sweep = AxisAlignedBB.getBoundingBox(x - half, y + 0.002D, z - half,
+                x + half + 1, y + EntityGardener.BODY_HEIGHT - 0.002D, z + half);
+        List<AxisAlignedBB> collisions = new ArrayList<AxisAlignedBB>();
+        for(int bx = MathHelper.floor_double(sweep.minX); bx <= MathHelper.floor_double(sweep.maxX); bx++)
+            for(int bz = MathHelper.floor_double(sweep.minZ); bz <= MathHelper.floor_double(sweep.maxZ); bz++)
+                for(int by = y - 1; by <= MathHelper.floor_double(sweep.maxY); by++) {
+                    if(bx >= nest.x + 40 && by >= top && by < top + 9) continue;
+                    Block block = world.getBlock(bx, by, bz);
+                    if((block.getMaterial().isLiquid() || block == Blocks.fire) && by >= y) return false;
+                    block.addCollisionBoxesToList(world, bx, by, bz, sweep, collisions, null);
+                    if(!collisions.isEmpty()) return false;
+                }
+        return true;
     }
 
     /** Cells of the existing layouts and their bounded terrain preparation. */
@@ -642,10 +754,14 @@ public final class GardenerNests extends WorldSavedData {
             Nest nest = nests.get((nextJob++) % nests.size());
             if(nextJob < 0) nextJob = 0;
             if(!nest.debug && !(active(world) && world.getGameRules().getGameRuleBooleanValue("mobGriefing"))) continue;
-            if(nest.failed && world.getTotalWorldTime() % 200 != 0) continue;
+            if(nest.siteRejected || nest.failed && world.getTotalWorldTime() % 200 != 0) continue;
             if(!nest.built || nest.accessVersion == 0) {
                 int cursor = nest.cursor, phase = nest.phase;
                 build(world, nest);
+                if(nest.siteRejected) {
+                    if(!nest.debug) schedule.failed(this, world, "nest", nest.reason);
+                    markDirty(); return;
+                }
                 if(cursor != nest.cursor || phase != nest.phase || nest.built && nest.accessVersion > 0) {
                     nest.idle = 0; nest.failed = false;
                 } else if(++nest.idle >= 1200) { nest.failed = true; nest.recovering = true; }
@@ -671,7 +787,8 @@ public final class GardenerNests extends WorldSavedData {
         return true;
     }
     private static boolean constructionIntersects(World world, AxisAlignedBB box) {
-        for(Nest nest : get(world).nests) if((!nest.built || nest.accessVersion == 0) && nest.bounds().intersectsWith(box)) return true;
+        for(Nest nest : get(world).nests)
+            if(!nest.siteRejected && (!nest.built || nest.accessVersion == 0) && nest.bounds().intersectsWith(box)) return true;
         return WretchCamps.constructionIntersects(world, box);
     }
     /** Relocate one obstructing riding group per tick; never edit a still occupied solid cell. */
@@ -771,14 +888,9 @@ public final class GardenerNests extends WorldSavedData {
         String bounds = placementBounds(world, nest.x, nest.y, nest.z);
         if(bounds != null) { nest.reason = bounds; return; }
         if(nest.top < 0) {
-            // Survey the entire pit and dismount, including canopy height; one missing chunk per tick.
-            for(int x = nest.x + 40; x <= nest.x + 63; x++) for(int z = nest.z - 8; z <= nest.z + 8; z++)
+            for(int x = nest.x + 36; x <= nest.x + 63; x++) for(int z = nest.z - 8; z <= nest.z + 8; z++)
                 if(!prepareChunk(world, x, z)) { nest.reason = "loading access pit survey chunk"; return; }
-            int top = nest.y + HEIGHT + 2;
-            for(int x = nest.x + 40; x <= nest.x + 63; x++) for(int z = nest.z - 8; z <= nest.z + 8; z++)
-                top = Math.max(top, world.getHeightValue(x, z));
-            if(top + 12 >= world.getActualHeight()) { nest.reason = "surface pit exceeds world height"; return; }
-            nest.top = top;
+            surveyEntrance(world, nest);
             nest.journalReady = false; // Persist the original survey before any excavation.
             return;
         }
@@ -787,7 +899,8 @@ public final class GardenerNests extends WorldSavedData {
         int chamberCells = nest.built ? 0 : width * depth * 256 * 27;
         int accessStart = nest.layout >= LAYOUT ? 30 : 0;
         int accessWidth = 64 - accessStart;
-        int total = chamberCells + accessWidth * 17 * (nest.top + 12 - (nest.y - 1));
+        int accessCeiling = nest.terrainAccess ? nest.shaftCeiling : nest.top + 12;
+        int total = chamberCells + accessWidth * 17 * (accessCeiling - (nest.y - 1));
         int edits = 0;
         placementDepth++;
         try {
@@ -797,12 +910,16 @@ public final class GardenerNests extends WorldSavedData {
                     nest.cursor = 0;
                     if(++nest.phase < 5) { nest.reason = "construction pass " + nest.phase + "/4"; return; }
                     boolean completedNest = !nest.built;
-                    nest.built = true; nest.accessVersion = 1; nest.phase = 2; nest.reason = "none"; nest.recovering = nest.failed = false;
+                    nest.built = true; nest.accessVersion = nest.terrainAccess ? TERRAIN_ACCESS : 1;
+                    nest.phase = 2; nest.reason = "none"; nest.recovering = nest.failed = false;
                     if(!checkpoint(world, this)) {
                         nest.built = !completedNest; nest.accessVersion = 0; nest.phase = 4; nest.cursor = total;
                         nest.failed = nest.recovering = true; nest.reason = "could not save completion record; retrying"; return;
                     }
                     if(nest.upgrading) { nest.upgrading = false; updateLoadedHomes(world, nest); }
+                    if(nest.terrainAccess) GeminiInvasionManager.debug(world, "nest-entrance-" + nest.x + ":" + nest.z,
+                            "Nest entrance at " + (nest.x + 47) + "," + nest.top + "," + (nest.z + nest.lane)
+                            + "; entranceY=" + nest.top + "; reachableSurface=true; verified recessed entrance");
                     if(completedNest) {
                         GeminiIris.invasionPulse(world);
                         if(!nest.debug) schedule.success(this, world, "nest", nest.x, nest.y, nest.z, GeminiConfig.gardenerNestIntervalSeconds);
@@ -823,10 +940,33 @@ public final class GardenerNests extends WorldSavedData {
                     z = nest.z - 8 + access / accessWidth % 17;
                     y = nest.y - 1 + access / (accessWidth * 17);
                 }
-                Block block = jobBlock(nest, x - nest.x, y - nest.y, z - nest.z);
+                int dx = x - nest.x, dy = y - nest.y, dz = z - nest.z;
+                Block block = jobBlock(nest, dx, dy, dz);
                 if(block == null) { nest.cursor++; continue; }
                 if(!prepareChunk(world, x, z)) { nest.reason = "loading construction chunk at " + (x >> 4) + "," + (z >> 4); return; }
                 Block old = world.getBlock(x, y, z);
+                if(nest.terrainAccess && dx == 47 && dy >= ACCESS_DOOR_HEIGHT && block == ModBlocks.gardener_flesh
+                        && accessBlock(nest, dx, dy, dz) == block && !old.getMaterial().blocksMovement()) {
+                    nest.cursor++; continue; // Line actual terrain, leaving natural gaps and overhangs alone.
+                }
+                if(nest.terrainAccess && nest.phase == 0) {
+                    boolean chamber = index < chamberCells && inside(dx, dz) && !shaft(dx, dz);
+                    boolean passage = index >= chamberCells && dx < 47 && Math.abs(dz) <= 7 && !inside(dx, dz);
+                    int cover = chamber ? ceiling(dx, dz) + 3 : passage ? 14 : 0;
+                    if(dy == -1 && cover > 0 && surface(world, x, z) < nest.y + cover) {
+                        rejectSite(world, nest, "insufficient natural cover at " + x + "," + z); return;
+                    }
+                    if(dy >= 0 && (shaft(dx, dz) || dy >= 12) && accessBlock(nest, dx, dy, dz) == Blocks.air) {
+                        if(old.getMaterial().isLiquid()) {
+                            rejectSite(world, nest, "entrance intersects liquid at " + x + "," + y + "," + z); return;
+                        }
+                        for(ForgeDirection side : ForgeDirection.VALID_DIRECTIONS) {
+                            if(world.getBlock(x + side.offsetX, y + side.offsetY, z + side.offsetZ).getMaterial().isLiquid()) {
+                                rejectSite(world, nest, "entrance intersects liquid at " + x + "," + y + "," + z); return;
+                            }
+                        }
+                    }
+                }
                 if(old == Blocks.bedrock) { nest.reason = "bedrock at " + x + "," + y + "," + z + "; construction paused"; return; }
                 if(nest.phase == 0) { nest.cursor++; continue; } // Complete bedrock/boundary preflight before excavation.
                 boolean decoration = block == ModBlocks.mockery_growth;
@@ -904,10 +1044,7 @@ public final class GardenerNests extends WorldSavedData {
         return schedule.failure(rejected);
     }
     private boolean tooClose(int x, int z) {
-        for(Nest nest : nests) {
-            double dx = (double) x - nest.x, dz = (double) z - nest.z;
-            if(Math.abs(dx) < 128D && Math.abs(dz) < 112D) return true;
-        }
+        for(Nest nest : nests) if(nest.overlapsFootprint(x, z)) return true;
         return false;
     }
     private int areaNests(int x, int z) {
@@ -1084,7 +1221,8 @@ public final class GardenerNests extends WorldSavedData {
                 : nest.recovering || nest.built ? "recovering" : nest.phase == 0 && nest.cursor == 0 ? "queued" : "constructing")
                 + "; pass=" + nest.phase + "; cursor=" + nest.cursor + "; reason=" + nest.reason
                 + "; floor Y=" + (nest.y - 1) + "; chamber=" + (nest.layout >= LAYOUT ? "~105x99, interior height 20-24" : "legacy 29x29x15")
-                + "; access=" + (nest.accessVersion > 0 ? "15x15 open pit" : "pit conversion pending")
+                + "; access=" + (nest.accessVersion >= TERRAIN_ACCESS ? "recessed opening, rim Y=" + nest.top
+                    : nest.accessVersion > 0 ? "legacy open pit" : "entrance pending")
                 + "; replenish in=" + nest.spawnSeconds + " active seconds"
                 + "; layout=" + nest.layout + "; capacity=" + nest.residents.size() + " (configured=" + GeminiConfig.gardenerResidents + ")"
                 + "; spawned=" + spawned + "; pending=" + pending + "; defeated slots=" + defeated
@@ -1098,20 +1236,28 @@ public final class GardenerNests extends WorldSavedData {
     private static final class Nest {
         final int x, z;
         int y, layout = LAYOUT;
-        int phase, cursor, top = -1;
+        int phase, cursor, top = -1, lane, shaftCeiling;
+        int[] wall = new int[17];
         int idle;
         int accessVersion, spawnSeconds = GeminiConfig.gardenerReplenishSeconds;
         int homeX, homeZ;
         boolean hasHome, built, debug, upgrading;
-        boolean failed, recovering;
+        boolean failed, recovering, siteRejected, terrainAccess = true;
         boolean journalReady;
+        UUID pitOwner;
+        long pitLease;
         String reason = "queued";
         final List<Resident> residents = new ArrayList<Resident>();
         Nest(int x, int y, int z) { this.x = x; this.y = y; this.z = z; }
         void ensureCapacity() { while(residents.size() < GeminiConfig.gardenerResidents) residents.add(new Resident()); }
+        boolean overlapsFootprint(int otherX, int otherZ) {
+            if(siteRejected && !built && !upgrading) return x == otherX && z == otherZ;
+            return Math.abs(x - otherX) < 128 && Math.abs(z - otherZ) < 112;
+        }
         AxisAlignedBB bounds() {
-            return layout >= LAYOUT ? AxisAlignedBB.getBoundingBox(x - HALF, y - 1, z - HALF, x + 64, Math.max(y + 26, top + 12), z + HALF + 1)
-                    : AxisAlignedBB.getBoundingBox(x - 14, y - 1, z - 14, x + 15, y + 13, z + 15);
+            int accessCeiling = terrainAccess ? shaftCeiling : top + 12;
+            return layout >= LAYOUT ? AxisAlignedBB.getBoundingBox(x - HALF, y - 1, z - HALF, x + 64, Math.max(y + 26, accessCeiling), z + HALF + 1)
+                    : AxisAlignedBB.getBoundingBox(x - 14, y - 1, z - 14, x + 64, Math.max(y + 13, accessCeiling), z + 15);
         }
     }
     @Override public void readFromNBT(NBTTagCompound nbt) {
@@ -1174,6 +1320,14 @@ public final class GardenerNests extends WorldSavedData {
                 nest.residents.add(resident);
             }
             nest.accessVersion = tag.getInteger("AccessVersion");
+            nest.siteRejected = tag.getBoolean("SiteRejected");
+            nest.terrainAccess = tag.hasKey("TerrainAccess") ? tag.getBoolean("TerrainAccess")
+                    : nest.accessVersion >= TERRAIN_ACCESS || nest.accessVersion == 0
+                            && (!tag.getBoolean("PitJob") || nest.phase == 0 || nest.phase == 1 && nest.cursor == 0);
+            nest.lane = MathHelper.clamp_int(tag.getInteger("EntranceLane"), -3, 3);
+            nest.shaftCeiling = MathHelper.clamp_int(tag.getInteger("ShaftCeiling"), 0, 256);
+            int[] wall = tag.getIntArray("EntranceWall");
+            if(wall.length == 17) nest.wall = wall;
             nest.recovering = !nest.built || nest.accessVersion == 0;
             // A reload can replay a chunk save older than its job cursor. Reverify the
             // final pass from its start; keep excavation and all resident identities.
@@ -1184,6 +1338,9 @@ public final class GardenerNests extends WorldSavedData {
                 // Old cursors enumerate a different volume. Restart only the access job for built nests.
                 nest.phase = nest.cursor = 0; nest.top = -1;
                 if(!nest.built) nest.layout = LAYOUT;
+            }
+            if(nest.terrainAccess && nest.accessVersion == 0 && nest.top >= 0 && nest.shaftCeiling <= nest.top) {
+                nest.phase = nest.cursor = 0; nest.top = -1;
             }
             for(Resident resident : nest.residents) if(resident.state == 1) living.add(resident.id);
             nests.add(nest);
@@ -1211,6 +1368,8 @@ public final class GardenerNests extends WorldSavedData {
             tag.setInteger("AccessVersion", nest.accessVersion); tag.setBoolean("PitJob", true);
             tag.setInteger("SpawnSeconds", nest.spawnSeconds);
             tag.setInteger("Phase", nest.phase); tag.setInteger("Cursor", nest.cursor); tag.setInteger("Top", nest.top);
+            tag.setBoolean("TerrainAccess", nest.terrainAccess); tag.setBoolean("SiteRejected", nest.siteRejected);
+            tag.setInteger("EntranceLane", nest.lane); tag.setInteger("ShaftCeiling", nest.shaftCeiling); tag.setIntArray("EntranceWall", nest.wall);
             tag.setBoolean("Built", nest.built); tag.setBoolean("Debug", nest.debug); tag.setBoolean("Upgrading", nest.upgrading);
             tag.setInteger("Layout", nest.layout); tag.setString("Reason", nest.reason);
             tag.setInteger("ConstructionIdle", nest.idle); tag.setBoolean("ConstructionFailed", nest.failed);

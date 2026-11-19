@@ -31,6 +31,7 @@ import net.minecraft.world.World;
 
 /** A nest-bound miniboss. Captives stay real entities with server-owned transport. */
 public class EntityGardener extends EntityLiving implements IMob, IBossDisplayData, IGeminiCreature {
+    public static final float BODY_WIDTH = 5.8F, BODY_HEIGHT = 8F;
     public static final int IDLE = 0, REACH = 1, HOLD = 2, SLAM = 3, RECOVER = 4;
     public static final int CAPTURE = 5, LIFT = 6, ATTACH = 7, WRAP = 8, RELEASE = 9;
     private final EntityGardenerTentacle[] parts = new EntityGardenerTentacle[GardenerPose.ARMS * GardenerPose.SEGMENTS];
@@ -58,7 +59,7 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
     private long nextCaptureDiagnostic;
 
     public EntityGardener(World world) {
-        super(world); setSize(5.8F, 8F); stepHeight = 1F; experienceValue = 80; func_110163_bv();
+        super(world); setSize(BODY_WIDTH, BODY_HEIGHT); stepHeight = 1F; experienceValue = 80; func_110163_bv();
         ignoreFrustumCheck = true; setHealth(getMaxHealth());
     }
     @Override public IEntityLivingData onSpawnWithEgg(IEntityLivingData data) {
@@ -117,7 +118,7 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
     double huntingZ() { return burrowing.patrolZ(); }
     double huntingHomeX() { return hasSharedNest() ? sharedX : nestX; }
     double huntingHomeZ() { return hasSharedNest() ? sharedZ : nestZ; }
-    int surfaceTravel(double x, double y, double z) { return surfaceHunting.travel(x, y, z, 0.6D, 1.3D); }
+    int surfaceTravel(double x, double y, double z) { return surfaceHunting.travel(x, y, z, 0.12D, 1.3D); }
     void stopSurfaceTravel() { surfaceHunting.stop(); }
     void stopSurfaceTravel(String reason) { surfaceHunting.stop(reason); }
     void emergedOnSurface() { surfaceHunting.emerged(); }

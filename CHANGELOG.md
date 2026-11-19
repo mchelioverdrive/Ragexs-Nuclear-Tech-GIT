@@ -920,3 +920,8 @@
 
 - Reconstruct returning residents at rim height in the crossing stage after reload, rather than treating a center inside the pit as clearance for the entire body. Finish horizontal alignment before descending, including for residents already stuck in the descent stage, while retaining native collision and the existing pit geometry, captive transport and saved commute states.
 - Report failed commute positions and distinguish solid collisions, liquid, unloaded bounds, missing contact and insufficient native movement through the existing throttled Gemini diagnostics.
+
+2026-11-18 19:44 — Recess Underground Gardener entrances and route across ledges
+
+- Survey natural cover across new nest chambers and cut a rounded entrance with a short notch at the local ground elevation. Reject sites without a dry, supported approach before excavation. Save the surveyed entrance with the existing construction journal and preserve completed pits, resident identities, and cocoon delivery.
+- Use actual block collision shapes across the Gardener's full footprint for dispersal, pursuit, and return. Follow native steps, check landings before descending drops of up to four blocks, and require wall contact for climbs up to three blocks. Temporarily exclude failed routes and report landing rejection, planned movement, and measured displacement through Gemini debug.
