@@ -63,6 +63,18 @@ public final class GeminiPopulation {
         return mob == null || mob.isDead || mob.worldObj != world ? null : mob;
     }
 
+    /** Reuse loaded membership; includes Woodcrawlers, Gardeners, Wretches and Mockeries. */
+    static float irisPressure(net.minecraft.entity.player.EntityPlayer player) {
+        Map<UUID, EntityLiving> members = WORLDS.get(player.worldObj);
+        float pressure = 0;
+        if(members != null) for(EntityLiving mob : members.values())
+            if(mob.isEntityAlive() && mob.addedToChunk && mob.getDistanceSqToEntity(player) < 128D * 128D) {
+                pressure += 0.12F;
+                if(pressure >= 0.6F) return 0.6F;
+            }
+        return pressure;
+    }
+
     static String gardenerAdmissionReason(World world) {
         if(!GardenerNests.censusReady(world)) return "saved Underground Gardener census in progress";
         if(GeminiConfig.gardenerMaxLoaded <= 0) return "Gardener admission disabled (maxLoaded=0)";

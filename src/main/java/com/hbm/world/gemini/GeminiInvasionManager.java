@@ -77,6 +77,8 @@ public final class GeminiInvasionManager {
 			GardenerNests.reschedule(overworld);
 		}
 		debug(world, "phase-" + from + "-" + to, "Invasion phase " + from + " -> " + to + ".");
+        GeminiIris.invasionPulse(world);
+        GeminiIris.sync(world);
 	}
 	static net.minecraft.command.CommandException rejected(World world, String kind, String reason) {
 		debug(world, kind + "-failure", reason);
@@ -129,6 +131,7 @@ public final class GeminiInvasionManager {
 		data.setMarsVisited(visited);
 		if(previous != visited) debug(world, "activation", "Mars milestone=" + visited + "; invasion phase=" + data.getPhase() + ".");
 		if(previousPhase != data.getPhase()) phaseChanged(world, previousPhase, data.getPhase());
+        GeminiIris.sync(world);
 		return true;
 	}
 
@@ -188,16 +191,19 @@ public final class GeminiInvasionManager {
 	@SubscribeEvent
 	public void onDimensionChanged(PlayerEvent.PlayerChangedDimensionEvent event) {
 		recordArrival(event.player);
+        GeminiIris.sync(event.player.worldObj);
 	}
 
 	@SubscribeEvent
 	public void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
 		recordArrival(event.player);
+        GeminiIris.sync(event.player.worldObj);
 	}
 
 	@SubscribeEvent
 	public void onRespawn(PlayerEvent.PlayerRespawnEvent event) {
 		recordArrival(event.player);
+        GeminiIris.sync(event.player.worldObj);
 	}
 
 	private static boolean preventsSleep(EntityPlayer player) {
@@ -228,7 +234,9 @@ public final class GeminiInvasionManager {
 				|| !(event.world instanceof WorldServer) || event.world.isRemote
 				|| event.world.provider.dimensionId != 0
 				|| event.world.getTotalWorldTime() % 20 != 0) return;
-		// Diagnostics are opt-in; disabled invasions perform no progression or scheduling work.
+        // Inactive Iris snapshots/debug controls still synchronize; invasion scheduling gates are unchanged.
+        GeminiWorldSavedData irisData = GeminiWorldSavedData.get(event.world);
+        if(irisData != null) GeminiIris.tick((WorldServer)event.world, irisData);
 		if(!GeminiConfig.enabled) { WoodcrawlerSpawning.diagnostic(event.world, "disabled", "Gemini invasion disabled"); return; }
 		if(event.world.playerEntities.isEmpty()) { WoodcrawlerSpawning.diagnostic(event.world, "players", "No players in the Overworld"); return; }
 
@@ -255,6 +263,7 @@ public final class GeminiInvasionManager {
 		// dispatch a collection of invasions on unlock, login or server restart.
 		scheduleNext(overworld, data);
 		MinecraftForge.EVENT_BUS.post(new InvasionEvent(overworld));
+        if(overworld.rand.nextInt(8) == 0) GeminiIris.invasionPulse(overworld);
 	}
 
 	private static void scheduleNext(WorldServer world, GeminiWorldSavedData data) {

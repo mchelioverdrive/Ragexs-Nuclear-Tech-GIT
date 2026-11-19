@@ -1,4 +1,5 @@
 {
+    "gemini.iris_rumble": {"category": "ambient", "sounds": [{"name": "gemini/iris_rumble", "stream": false}]},
 	"entity.wretch.step": {"category": "hostile", "sounds": ["entity/wretch/step1", "entity/wretch/step2", "entity/wretch/step3"]},
 	"entity.wretch.stretch": {"category": "hostile", "sounds": ["entity/wretch/stretch1", "entity/wretch/stretch2"]},
 	"entity.wretch.tissue": {"category": "hostile", "sounds": ["entity/wretch/tissue1", "entity/wretch/tissue2"]},

@@ -3,6 +3,16 @@ package com.hbm.config;
 import net.minecraftforge.common.config.Configuration;
 
 public final class GeminiConfig {
+    public static boolean irisRendering = true;
+    public static boolean irisEffects = true;
+    public static float irisSize = 1F;
+    public static float irisPupilSpeed = 1F;
+    public static int irisObservationSeconds = 900;
+    public static int irisObservationDurationSeconds = 60;
+    public static int irisAmbientSeconds = 600;
+    public static float irisIntensity = 0.6F;
+    public static boolean irisProgressionVisibility = true;
+    public static int irisMinRenderChunks = 2;
 
 	public static final String CATEGORY = "21_gemini";
 	public static boolean enabled = true;
@@ -49,6 +59,7 @@ public final class GeminiConfig {
 	public static int gardenerNestChance = 8;
 	public static int gardenerNestLimit = 32;
 	public static int gardenerNestMinDistance = 64, gardenerNestMaxDistance = 160, gardenerNestsPerArea = 3;
+    public static int gardenerHuntingRadius = 160;
 	public static int gardenerSupportLimit = 4;
 	public static int gardenerBlocksPerSlam = 12;
 	public static int gardenerCocoonSeconds = 120, gardenerCocoonMaxLoaded = 16;
@@ -82,6 +93,19 @@ public final class GeminiConfig {
     /** Parse a complete candidate without changing any runtime fields. */
     public static Values parse(Configuration config) {
         Values values = new Values();
+        values.irisRendering = config.getBoolean("rendering", CATEGORY + ".iris", true, "Render the Iris in the Overworld sky. Debug show bypasses this switch.");
+        values.irisEffects = config.getBoolean("environmentalEffects", CATEGORY + ".iris", true, "Enable bounded atmospheric darkness, red haze, event pulses and distant organic ambience. Never changes blocks or AI.");
+        values.irisSize = config.getFloat("apparentSizeMultiplier", CATEGORY + ".iris", 1F, 0.25F, 2F, "Apparent angular size multiplier. Final diameter is about 64 degrees at 1; geometry remains inside the sky clipping volume.");
+        if(Float.isNaN(values.irisSize) || Float.isInfinite(values.irisSize)) values.irisSize = 1F;
+        values.irisPupilSpeed = config.getFloat("pupilAnimationSpeed", CATEGORY + ".iris", 1F, 0F, 4F, "Slow dilation speed multiplier; zero freezes dilation. Shared observation transitions remain timed independently.");
+        if(Float.isNaN(values.irisPupilSpeed) || Float.isInfinite(values.irisPupilSpeed)) values.irisPupilSpeed = 1F;
+        values.irisObservationSeconds = config.getInt("observationIntervalSeconds", CATEGORY + ".iris", 900, 30, 86400, "Base random observation interval, divided by invasion phase, randomized from one to two times that interval. Not every opportunity succeeds.");
+        values.irisObservationDurationSeconds = config.getInt("observationDurationSeconds", CATEGORY + ".iris", 60, 20, 3600, "Total observation seconds including slow arrival and return; one shared survival/adventure target region.");
+        values.irisAmbientSeconds = config.getInt("ambientSoundIntervalSeconds", CATEGORY + ".iris", 600, 30, 86400, "Base random ambient opportunity interval, divided by invasion phase. Nearby infestation increases acceptance; no per-tick sounds.");
+        values.irisIntensity = config.getFloat("atmosphericIntensity", CATEGORY + ".iris", 0.6F, 0F, 1F, "Maximum atmospheric effect strength. Local infestations intensify disturbances without changing weather or block light.");
+        if(Float.isNaN(values.irisIntensity) || Float.isInfinite(values.irisIntensity)) values.irisIntensity = 0.6F;
+        values.irisProgressionVisibility = config.getBoolean("progressionBasedVisibility", CATEGORY + ".iris", true, "Use rare early-night reveals and advanced daytime visibility. False shows all unlocked stages continuously, still attenuated by weather.");
+        values.irisMinRenderChunks = config.getInt("minimumRenderDistanceChunks", CATEGORY + ".iris", 2, 2, 16, "Minimum client terrain render-distance setting for automatic Iris rendering. Celestial geometry has no world-distance cutoff or chunk requests. Debug show bypasses this threshold.");
         config.setCategoryComment(CATEGORY, "Gemini runtime settings support /rntconfig reload. woodcrawlerSpawnWeight requires restart (biome registration). Saved infection/cocoon durations, encounter countdowns and existing boss health retain their snapshots. geminiOnly initializes missing world gamerules only.");
 		values.flashlightRange = config.getInt("flashlightRange", CATEGORY, 20, 4, 48,
 				"Effective range in blocks of held visible/UV flashlights. Both modes require direct aim and loaded, unobstructed line of sight. Right-click toggles power; sneak-right-click changes mode.");
@@ -208,7 +232,7 @@ public final class GeminiConfig {
             config.get(gardener, "residentDefaultsVersion", 0).set(2);
         }
         values.gardenerReplenishSeconds = config.getInt("replenishSeconds", gardener, 300, 10, 86400,
-                "Active seconds between single resident admissions in completed nests, and minimum delay after a resident dies. No catch-up after unloading or shutdown.");
+                "Active seconds between single resident replacements after death. Initial residents spawn on nest completion and retry blocked admissions each active second. No catch-up after unloading or shutdown.");
 
 		values.gardenerNestChance = config.getInt("nestChance", gardener, 8, 1, 10000,
 				"Legacy pacing input when nestIntervalSeconds is absent (8 maps to 120 seconds). Loaded-area scheduling replaces the old discovery roll; saved construction requests at most one missing chunk per tick. No offline catch-up.");
@@ -219,6 +243,8 @@ public final class GeminiConfig {
 		values.gardenerNestMaxDistance = config.getInt("nestMaxDistance", gardener, 160, 48, 512,
 				"Maximum nest-center distance from a living player/home anchor. Raised to the minimum if smaller. Prefer loaded terrain; if none fits, stage the enlarged footprint with at most one missing chunk request per tick.");
 		values.gardenerNestMaxDistance = Math.max(values.gardenerNestMinDistance, values.gardenerNestMaxDistance);
+        values.gardenerHuntingRadius = config.getInt("huntingRadius", gardener, 160, 64, 512,
+                "Nighttime surface roaming radius around each Underground Gardener's nest. Pursuit may extend 48 blocks farther; only loaded terrain is used.");
 		values.gardenerNestsPerArea = config.getInt("nestsPerArea", gardener, 3, 0, 8,
 				"Lifetime nests per survival area within nestMaxDistance plus 32 blocks. Existing homes remain fixed; active players away from home can seed other areas.");
         values.gardenerNestIntervalSeconds = config.getInt("nestIntervalSeconds", gardener,
@@ -278,6 +304,16 @@ public final class GeminiConfig {
 
     /** Commit only after all supported categories have parsed successfully, on the server thread. */
     public static void apply(Values values, boolean startup) {
+        irisRendering = values.irisRendering;
+        irisEffects = values.irisEffects;
+        irisSize = values.irisSize;
+        irisPupilSpeed = values.irisPupilSpeed;
+        irisObservationSeconds = values.irisObservationSeconds;
+        irisObservationDurationSeconds = values.irisObservationDurationSeconds;
+        irisAmbientSeconds = values.irisAmbientSeconds;
+        irisIntensity = values.irisIntensity;
+        irisProgressionVisibility = values.irisProgressionVisibility;
+        irisMinRenderChunks = values.irisMinRenderChunks;
         enabled = values.enabled;
         geminiOnly = values.geminiOnly;
         geminiStageSpawnSuppression = values.geminiStageSpawnSuppression;
@@ -331,6 +367,7 @@ public final class GeminiConfig {
         gardenerNestLimit = values.gardenerNestLimit;
         gardenerNestMinDistance = values.gardenerNestMinDistance;
         gardenerNestMaxDistance = values.gardenerNestMaxDistance;
+        gardenerHuntingRadius = values.gardenerHuntingRadius;
         gardenerNestsPerArea = values.gardenerNestsPerArea;
         gardenerSupportLimit = values.gardenerSupportLimit;
         gardenerBlocksPerSlam = values.gardenerBlocksPerSlam;
@@ -375,6 +412,16 @@ public final class GeminiConfig {
     }
 
     public static final class Values {
+        public boolean irisRendering = true;
+        public boolean irisEffects = true;
+        public float irisSize = 1F;
+        public float irisPupilSpeed = 1F;
+        public int irisObservationSeconds = 900;
+        public int irisObservationDurationSeconds = 60;
+        public int irisAmbientSeconds = 600;
+        public float irisIntensity = 0.6F;
+        public boolean irisProgressionVisibility = true;
+        public int irisMinRenderChunks = 2;
         public boolean enabled = true;
         public boolean geminiOnly = false, geminiStageSpawnSuppression = true;
         public float geminiFinalStageHostileSpawnMultiplier = 0F;
@@ -418,6 +465,7 @@ public final class GeminiConfig {
         public int gardenerNestChance = 8;
         public int gardenerNestLimit = 32;
         public int gardenerNestMinDistance = 64, gardenerNestMaxDistance = 160, gardenerNestsPerArea = 3;
+        public int gardenerHuntingRadius = 160;
         public int gardenerSupportLimit = 4;
         public int gardenerBlocksPerSlam = 12;
         public int gardenerCocoonSeconds = 120, gardenerCocoonMaxLoaded = 16;

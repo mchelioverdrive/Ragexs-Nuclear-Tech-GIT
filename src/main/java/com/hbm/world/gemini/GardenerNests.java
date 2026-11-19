@@ -276,6 +276,15 @@ public final class GardenerNests extends WorldSavedData {
         for(Nest nest : get(world).nests) if(nest.built && nest.accessVersion > 0) count++;
         return count;
     }
+
+    static float irisPressure(EntityPlayer player) {
+        GardenerNests data = (GardenerNests)player.worldObj.mapStorage.loadData(GardenerNests.class, saveName(player.worldObj));
+        if(data != null) for(Nest nest : data.nests) {
+            double dx = player.posX - nest.x, dz = player.posZ - nest.z;
+            if(nest.built && dx * dx + dz * dz < 192D * 192D) return 0.4F;
+        }
+        return 0;
+    }
     private static GeminiInvasionManager.StructureInfo info(World world, Nest nest, String status) {
         return new GeminiInvasionManager.StructureInfo("underground_gardener", nest.x, nest.y, nest.z, world.provider.dimensionId, status);
     }
@@ -623,8 +632,10 @@ public final class GardenerNests extends WorldSavedData {
         // Population timers run independently of the round-robin construction budget.
         if(world.getTotalWorldTime() % 20 == 0) for(Nest nest : nests) {
             if(!nest.built || !residentActivity(world, nest)) continue;
+            // Never-spawned slots belong to initial population, not the death-replacement timer.
+            spawn(world, nest, false);
             if(nest.spawnSeconds > 0) nest.spawnSeconds--;
-            if(nest.spawnSeconds == 0) { spawn(world, nest); nest.spawnSeconds = GeminiConfig.gardenerReplenishSeconds; }
+            if(nest.spawnSeconds == 0) { spawn(world, nest, true); nest.spawnSeconds = GeminiConfig.gardenerReplenishSeconds; }
             markDirty();
         }
         for(int count = 0; count < nests.size(); count++) {
@@ -782,7 +793,7 @@ public final class GardenerNests extends WorldSavedData {
         try {
             for(int scans = 0; scans < SCANS_PER_TICK && edits < EDITS_PER_TICK; scans++) {
                 if(nest.cursor >= total) {
-                    if(nest.phase == 4 && !nest.built && !prepareFirstResident(world, nest)) return;
+                    if(nest.phase == 4 && !nest.built && !prepareResidents(world, nest)) return;
                     nest.cursor = 0;
                     if(++nest.phase < 5) { nest.reason = "construction pass " + nest.phase + "/4"; return; }
                     boolean completedNest = !nest.built;
@@ -793,8 +804,9 @@ public final class GardenerNests extends WorldSavedData {
                     }
                     if(nest.upgrading) { nest.upgrading = false; updateLoadedHomes(world, nest); }
                     if(completedNest) {
+                        GeminiIris.invasionPulse(world);
                         if(!nest.debug) schedule.success(this, world, "nest", nest.x, nest.y, nest.z, GeminiConfig.gardenerNestIntervalSeconds);
-                        spawn(world, nest); // First admission happens on the construction completion tick.
+                        spawn(world, nest, false); // Populate every initial slot on the completion tick.
                         nest.spawnSeconds = GeminiConfig.gardenerReplenishSeconds;
                     }
                     return;
@@ -847,13 +859,15 @@ public final class GardenerNests extends WorldSavedData {
             nest.reason = "block/chunk callback exception; job retained (see server log)";
         } finally { placementDepth--; }
     }
-    private static boolean prepareFirstResident(WorldServer world, Nest nest) {
-        int[] home = HOMES[0];
-        for(int cx = (nest.x + home[0] - 21) >> 4; cx <= (nest.x + home[0] + 21) >> 4; cx++)
-            for(int cz = (nest.z + home[1] - 21) >> 4; cz <= (nest.z + home[1] + 21) >> 4; cz++)
-                if(!world.getChunkProvider().chunkExists(cx, cz)) {
-                    world.getChunkFromChunkCoords(cx, cz); nest.reason = "loading first resident clearance chunk"; return false;
-                }
+    private static boolean prepareResidents(WorldServer world, Nest nest) {
+        for(int slot = 0; slot < GeminiConfig.gardenerResidents; slot++) {
+            int[] home = nest.layout >= LAYOUT ? HOMES[slot % HOMES.length] : new int[] {0, 0};
+            for(int cx = (nest.x + home[0] - 21) >> 4; cx <= (nest.x + home[0] + 21) >> 4; cx++)
+                for(int cz = (nest.z + home[1] - 21) >> 4; cz <= (nest.z + home[1] + 21) >> 4; cz++)
+                    if(!world.getChunkProvider().chunkExists(cx, cz)) {
+                        world.getChunkFromChunkCoords(cx, cz); nest.reason = "loading resident clearance chunk"; return false;
+                    }
+        }
         return true;
     }
     /** Discover a small loaded origin; the saved job requests its actual footprint incrementally. */
@@ -973,11 +987,12 @@ public final class GardenerNests extends WorldSavedData {
         }
         return false;
     }
-    private void spawn(WorldServer world, Nest nest) {
+    private void spawn(WorldServer world, Nest nest, boolean replenish) {
         if(!nest.built || nest.accessVersion == 0) return;
         nest.ensureCapacity();
         if(!residentActivity(world, nest)) { nest.reason = "resident activity/configuration gate closed"; return; }
         String rejected = null;
+        boolean attempted = false;
         for(int slot = 0; slot < nest.residents.size(); slot++) {
             Resident resident = nest.residents.get(slot);
             net.minecraft.entity.EntityLiving found = GeminiPopulation.find(world, resident.id);
@@ -991,27 +1006,30 @@ public final class GardenerNests extends WorldSavedData {
                 continue;
             }
             if(resident.state == 1) continue; // Unloaded survivors still own their slot and count globally.
-            if(resident.state == 2) { resident = new Resident(); nest.residents.set(slot, resident); }
+            if((resident.state == 2) != replenish) continue;
+            attempted = true;
             String admission = GeminiPopulation.gardenerAdmissionReason(world);
             if(admission != null) { resident.reason = admission; rejected = admission; continue; }
+            // Keep a defeated slot distinguishable from an unfilled initial slot until insertion succeeds.
+            Resident candidate = replenish ? new Resident() : resident;
             EntityGardener boss = new EntityGardener(world);
             if(nest.debug) GeminiSpawning.markStructureDebugSpawn(boss);
-            boss.setNestIdentity(resident.id); assignHome(boss, nest, slot, true);
+            boss.setNestIdentity(candidate.id); assignHome(boss, nest, slot, true);
             String reason = boss.spawnRejection();
             if(reason == null && (!world.spawnEntityInWorld(boss) || !boss.addedToChunk || world.getEntityByID(boss.getEntityId()) != boss))
                 reason = "Forge/world entity insertion rejected";
             if(reason == null) {
-                resident.state = 1; resident.reason = "none"; remember(boss);
+                candidate.state = 1; candidate.reason = "none"; nest.residents.set(slot, candidate); remember(boss);
                 nest.reason = "none";
                 GeminiInvasionManager.debug(world, "gardener-spawn", "Resident " + (slot + 1) + " entered nest at " + boss.posX + "," + boss.posY + "," + boss.posZ);
-                return; // At most one new resident per opportunity.
+                if(replenish) return; // Death replacements still admit at most one per interval.
             } else {
                 // Some join handlers reserve membership before a later Forge listener vetoes insertion.
                 GeminiPopulation.forgetFailedSpawn(boss);
                 resident.reason = reason; rejected = "resident " + (slot + 1) + ": " + reason;
             }
         }
-        nest.reason = rejected == null ? "none" : rejected;
+        if(attempted) nest.reason = rejected == null ? "none" : rejected;
     }
     private static void assignHome(EntityGardener boss, Nest nest, int slot, boolean relocate) {
         int[] home = nest.layout >= LAYOUT ? HOMES[slot % HOMES.length] : new int[] {0, 0};

@@ -76,6 +76,16 @@ public final class WretchCamps extends WorldSavedData {
         for(Camp camp : get(world).camps) if(camp.state > 0 && camp.job == null && !camp.failed) count++;
         return count;
     }
+
+    static float irisPressure(EntityPlayer player) {
+        String name = NAME + (player.dimension == 0 ? "" : "_" + player.dimension);
+        WretchCamps data = (WretchCamps)player.worldObj.mapStorage.loadData(WretchCamps.class, name);
+        if(data != null) for(Camp camp : data.camps) {
+            double dx = player.posX - camp.x, dz = player.posZ - camp.z;
+            if(camp.state > 0 && camp.job == null && !camp.failed && dx * dx + dz * dz < 256D * 256D) return 0.5F;
+        }
+        return 0;
+    }
     private static String generationGate(World world) {
         String global = GeminiInvasionManager.structureGate(world, 4);
         if(global != null) return global;
@@ -338,6 +348,7 @@ public final class WretchCamps extends WorldSavedData {
                         camp.failed = camp.recovering = true; camp.reason = "could not save completion record; retrying"; return;
                     }
                     markDirty();
+                    GeminiIris.invasionPulse(world);
                     if(!camp.debug) schedule.success(this, world, "camp", camp.x, camp.y - 1, camp.z, GeminiConfig.wretchCampIntervalSeconds);
                     GeminiInvasionManager.debug(world, "camp-register", "Verified and registered " + description(camp)
                             + " at " + camp.x + ", " + (camp.y - 1) + ", " + camp.z + ".");

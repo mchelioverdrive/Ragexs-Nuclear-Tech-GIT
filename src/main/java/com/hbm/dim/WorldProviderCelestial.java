@@ -612,7 +612,8 @@ public abstract class WorldProviderCelestial extends WorldProvider {
 		//  * player launched satellites won't be visible
 		//  * artificial moons/rings (once implemented) won't be visible
 
-		if(skyProvider == null) skyProvider = new SkyProviderCelestial();
+		if(skyProvider == null) skyProvider = dimensionId == 0
+                ? new com.hbm.render.world.IrisSkyRenderer(new SkyProviderCelestial()) : new SkyProviderCelestial();
 		return skyProvider;
 	}
 

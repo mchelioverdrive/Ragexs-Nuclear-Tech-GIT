@@ -105,6 +105,7 @@ public class PacketDispatcher {
 		wrapper.registerMessage(WretchAnatomyPacket.Handler.class, WretchAnatomyPacket.class, i++, Side.CLIENT);
 		wrapper.registerMessage(WoodcrawlerRestraintPacket.Handler.class, WoodcrawlerRestraintPacket.class, i++, Side.CLIENT);
 		wrapper.registerMessage(WoodcrawlerStrugglePacket.Handler.class, WoodcrawlerStrugglePacket.class, i++, Side.SERVER);
+        wrapper.registerMessage(IrisStatePacket.Handler.class, IrisStatePacket.class, i++, Side.CLIENT);
 	}
 	
 }

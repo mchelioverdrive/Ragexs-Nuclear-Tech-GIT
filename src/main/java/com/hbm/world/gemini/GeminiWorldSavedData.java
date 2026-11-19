@@ -16,6 +16,7 @@ public final class GeminiWorldSavedData extends WorldSavedData {
 	private long phaseTicks;
 	private long elapsedTicks;
 	private boolean debug;
+    final GeminiIris iris = new GeminiIris();
 	final java.util.Map<String, Long> debugMessages = new java.util.HashMap<String, Long>();
 
 	public GeminiWorldSavedData(String name) {
@@ -154,6 +155,7 @@ public final class GeminiWorldSavedData extends WorldSavedData {
 		elapsedTicks = nbt.hasKey("elapsedTicks") ? Math.max(0L, nbt.getLong("elapsedTicks"))
 				: phaseStart(Math.max(1, phase)) + phaseTicks;
 		debug = nbt.getBoolean("debug");
+        iris.read(nbt.getCompoundTag("iris"));
 		debugMessages.clear();
 	}
 
@@ -165,5 +167,6 @@ public final class GeminiWorldSavedData extends WorldSavedData {
 		nbt.setInteger("eventSecondsRemaining", eventSecondsRemaining);
 		nbt.setLong("elapsedTicks", elapsedTicks);
 		nbt.setBoolean("debug", debug);
+        nbt.setTag("iris", iris.write());
 	}
 }

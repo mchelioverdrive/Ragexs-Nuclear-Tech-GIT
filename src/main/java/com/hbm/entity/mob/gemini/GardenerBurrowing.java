@@ -28,6 +28,9 @@ final class GardenerBurrowing {
     private double huntingX, huntingZ;
     private boolean pitTravel;
     private int pitStage;
+    private boolean delivery;
+    private int deliveryStall;
+    private double deliveryX, deliveryY, deliveryZ;
     private Node destination;
     private final List<Node> route = new ArrayList<Node>();
     private final List<Node> tunnel = new ArrayList<Node>();
@@ -41,6 +44,14 @@ final class GardenerBurrowing {
     boolean enabled() { return enabled; }
     boolean surface() { return enabled && (state == SURFACE || state == RETURNING); }
     boolean hunting() { return !enabled || state == UNDERGROUND || state == SURFACE && !retreat; }
+    boolean delivering() { return delivery; }
+    String movementState() { return delivery ? "carrying" : state == UNDERGROUND ? "underground" : state == EMERGING ? "emerging" : state == RETURNING ? "returning" : "surface"; }
+    void carryHome() {
+        if(!enabled) return;
+        delivery = true; deliveryStall = 0;
+        deliveryX = mob.posX; deliveryY = mob.posY; deliveryZ = mob.posZ;
+        retreat = true; start(RETURNING);
+    }
     double patrolX() { return hasHuntingGround && surface() ? huntingX : mob.nestX; }
     double patrolZ() { return hasHuntingGround && surface() ? huntingZ : mob.nestZ; }
     void enable() { enabled = true; }
@@ -53,9 +64,33 @@ final class GardenerBurrowing {
         long time = (world.getWorldTime() % 24000L + 24000L) % 24000L;
         boolean night = !world.provider.hasNoSky && time >= 13000 && time < 23000;
         if(!night && state != UNDERGROUND && !mob.pursuingPrey()) retreat = true;
-        if(mob.captureState() || mob.state() != EntityGardener.IDLE) return false;
+        if(delivery) {
+            if(!mob.captureState()) delivery = false;
+            else {
+                if(mob.getDistanceSq(deliveryX, deliveryY, deliveryZ) >= 1D) {
+                    deliveryStall = 0; deliveryX = mob.posX; deliveryY = mob.posY; deliveryZ = mob.posZ;
+                } else deliveryStall++;
+                if(deliveryStall >= 1200) {
+                    // Destroyed/blocked nests cannot hold a live victim forever. Keep the existing
+                    // slot attached and let its original local feeding fallback finish safely.
+                    delivery = false; state = SURFACE; retreat = !night; clear(); mob.stopSurfaceTravel();
+                    mob.huntingDiagnostic("delivery-fallback", "Nest return stalled; retaining captive for local feeding");
+                }
+            }
+        }
+        if(mob.state() != EntityGardener.IDLE || mob.captureState() && (!delivery || !mob.readyToCarry())) return false;
         GardenerNests.Access access = GardenerNests.access(mob);
+        if(night && state == RETURNING && !delivery && failures >= 4
+                && (access != null ? mob.posY >= access.top - 2D
+                    : world.canBlockSeeTheSky(MathHelper.floor_double(mob.posX), MathHelper.floor_double(mob.posY), MathHelper.floor_double(mob.posZ)))) {
+            // A ruined entrance must not suppress every subsequent night's hunt. Stay
+            // physically aboveground and retry the same associated nest on the next retreat.
+            retreat = false; arrived(SURFACE);
+            mob.huntingDiagnostic("return-recovery", "Nest entrance unavailable; resuming nighttime surface hunting");
+            return false;
+        }
         if(access != null) return pitTick(access, night);
+        pitTravel = false;
         if(state == UNDERGROUND && night) start(EMERGING);
         else if((state == SURFACE || state == EMERGING) && retreat) start(RETURNING);
         if(state == UNDERGROUND || state == SURFACE) return false;
@@ -73,8 +108,11 @@ final class GardenerBurrowing {
         column = exitCandidate = visited = step = 0; searching = headingToEntrance = cachedTravel = false;
     }
     private void start(int next) {
+        mob.stopSurfaceTravel(next == EMERGING ? "starting emergence" : delivery ? "carrying prey home" : "daytime retreat");
         clear(); state = next; retry = 0;
         pitStage = 0;
+        mob.huntingDiagnostic(next == EMERGING ? "emerging" : "returning",
+                next == EMERGING ? "Starting emergence" : "Returning underground toward nest");
         if(next == EMERGING) {
             retreat = false; failures = 0;
             if(knownTunnel() && mob.getDistanceSq(tunnel.get(0).x + 0.5D, tunnel.get(0).y, tunnel.get(0).z + 0.5D) < 0.01D) {
@@ -99,7 +137,12 @@ final class GardenerBurrowing {
         if(pitStage == 0) {
             if(state == RETURNING && mob.posY < access.y + 2) { clear(); pitStage = 3; }
             else if(state == EMERGING && mob.posY >= access.top - 0.1) { clear(); pitStage = 2; }
-            else if(inPit && mob.posY > access.y + 1) { clear(); pitStage = state == RETURNING ? 2 : 1; }
+            else if(inPit && mob.posY > access.y + 1) {
+                clear();
+                // A saved center inside the pit does not mean the 5.8-block body
+                // has cleared the lip. Finish the rim crossing before descending.
+                pitStage = state == RETURNING && mob.boundingBox.minY < access.top - 0.02D ? 2 : 1;
+            }
         }
         if(retry > 0) { retry--; return true; }
         double x = access.x + 51.5D, z = access.z - 3.5D;
@@ -109,14 +152,26 @@ final class GardenerBurrowing {
             else if(pitStage == 2) pitClimb(access.x + 43.5D, access.top + 0.1D, z);
             else {
                 // Clear the rim before crossing, then settle onto the dismount with native collision.
-                mob.moveGardener(0, -0.2D, 0); state = SURFACE; failures = 0; clear();
+                mob.moveGardener(0, -0.2D, 0); arrived(SURFACE);
             }
         } else {
-            if(pitStage == 0) pitWalk(access.x + 43.5D, access.top, z);
+            if(pitStage == 0) {
+                int result = mob.surfaceTravel(access.x + 43.5D, access.top, z);
+                if(result > 0) { mob.stopSurfaceTravel(); pitStage++; }
+                else if(result < 0) { failures = Math.min(16, failures + 1); }
+            }
             else if(pitStage == 1) pitClimb(x, access.top + 0.1D, z);
-            else if(pitStage == 2) pitClimb(x, access.y, z);
+            else if(pitStage == 2) {
+                double dx = x - mob.posX, dz = z - mob.posZ;
+                if(dx * dx + dz * dz > 0.0004D) {
+                    // Also repair already-running/saved stage-2 residents. A steep
+                    // diagonal into the shaft hits the rim before clearing it.
+                    double y = mob.boundingBox.minY >= access.top - 0.02D ? Math.max(mob.posY, access.top + 0.1D) : mob.posY;
+                    pitClimb(x, y, z);
+                } else pitClimb(x, access.y, z);
+            }
             else if(pitStage == 3) pitWalk(mob.nestX, mob.nestY, mob.nestZ);
-            else { state = UNDERGROUND; retreat = false; failures = 0; clear(); }
+            else arrived(UNDERGROUND);
         }
         return true;
     }
@@ -131,23 +186,39 @@ final class GardenerBurrowing {
         AxisAlignedBB wall = mob.boundingBox.getOffsetBoundingBox(0, -0.5, -0.7);
         if(!GardenerNests.loaded(world, wall.expand(1, 1, 1))) { retry = 20; return; }
         // Maintain real wall/foot contact through the rim and dismount; no ladder, flight or teleport.
-        if(world.func_147461_a(wall).isEmpty() && !supported(mob.boundingBox)) { retry = 20; return; }
+        if(world.func_147461_a(wall).isEmpty() && !supported(mob.boundingBox)) { failed("no wall or floor contact"); return; }
         pitMove(dx, dy, dz, Math.min(0.08, length));
     }
     private void pitMove(double dx, double dy, double dz, double speed) {
         double length = Math.sqrt(dx * dx + dy * dy + dz * dz);
         double mx = dx / length * speed, my = dy / length * speed, mz = dz / length * speed;
         AxisAlignedBB sweep = mob.boundingBox.addCoord(mx, my, mz).contract(0.002, 0.002, 0.002);
-        if(!GardenerNests.loaded(world, sweep.expand(1, 1, 1)) || world.isAnyLiquid(sweep)
-                || !world.getCollidingBoundingBoxes(mob, sweep).isEmpty()) { failed(); return; }
+        if(!GardenerNests.loaded(world, sweep.expand(1, 1, 1))) { failed("unloaded pit movement bounds"); return; }
+        if(world.isAnyLiquid(sweep)) { failed("liquid in pit movement bounds"); return; }
+        if(!world.getCollidingBoundingBoxes(mob, sweep).isEmpty()) {
+            failed("collision on pit step " + mx + "," + my + "," + mz + "; body=" + mob.boundingBox); return;
+        }
         double beforeX = mob.posX, beforeY = mob.posY, beforeZ = mob.posZ;
         mob.moveGardener(mx, my, mz); mob.fallDistance = 0;
-        if(mob.getDistanceSq(beforeX, beforeY, beforeZ) < speed * speed * 0.25) failed();
+        if(mob.getDistanceSq(beforeX, beforeY, beforeZ) < speed * speed * 0.25) failed("native pit movement made insufficient progress");
     }
     private void failed() {
+        failed("no usable nest route or obstructed passage");
+    }
+    private void failed(String reason) {
+        mob.huntingDiagnostic("commute-failure", "Nest navigation failed in state " + state + " stage " + pitStage
+                + "; position=" + mob.posX + "," + mob.posY + "," + mob.posZ + "; reason=" + reason + "; retrying");
         if(cachedTravel) tunnel.clear(); // Changed terrain or a protection veto invalidates this corridor, not the home.
         clear(); failures = Math.min(16, failures + 1);
         retry = Math.min(1200, 40 << Math.min(5, failures));
+    }
+    private void arrived(int next) {
+        boolean emerged = state == EMERGING && next == SURFACE;
+        state = next; failures = 0; retry = 0; clear(); mob.stopSurfaceTravel("nest commute completed");
+        if(next == UNDERGROUND) { retreat = false; delivery = false; }
+        if(emerged) mob.emergedOnSurface();
+        mob.huntingDiagnostic(next == SURFACE ? emerged ? "emerged" : "resumed" : "underground",
+                next == SURFACE ? emerged ? "Successful emergence; surface hunting active" : "Resuming surface hunting" : "Returned underground");
     }
     private AxisAlignedBB body(double x, double y, double z) {
         return AxisAlignedBB.getBoundingBox(x - mob.width / 2D + 0.002D, y + 0.002D, z - mob.width / 2D + 0.002D,
@@ -335,16 +406,15 @@ final class GardenerBurrowing {
             }
             if(state == RETURNING) {
                 mob.nestX = destination.x + 0.5D; mob.nestY = destination.y; mob.nestZ = destination.z + 0.5D;
-                state = UNDERGROUND; retreat = false;
+                retreat = false;
                 if(!knownTunnel()) tunnel.clear();
             } else {
                 if(!cachedTravel && route.size() < 512) {
                     tunnel.clear(); tunnel.add(new Node(originX, originY, originZ, null, 0, 0));
                     for(Node n : route) tunnel.add(new Node(n.x, n.y, n.z, null, 0, 0));
                 }
-                state = SURFACE;
             }
-            failures = 0; clear(); return;
+            arrived(state == RETURNING ? UNDERGROUND : SURFACE); return;
         }
         Node next = route.get(step);
         double dx = next.x + 0.5D - mob.posX, dy = next.y - mob.posY, dz = next.z + 0.5D - mob.posZ;

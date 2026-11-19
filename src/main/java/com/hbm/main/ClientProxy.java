@@ -204,6 +204,7 @@ public class ClientProxy extends ServerProxy {
 			net.minecraftforge.client.MinecraftForgeClient.registerItemRenderer(Item.getItemFromBlock(block), restraintRenderer);
 		registerClientEventHandler(new com.hbm.render.entity.RestraintClient());
 		registerClientEventHandler(new com.hbm.render.entity.WoodcrawlerToolsClient());
+        registerClientEventHandler(new com.hbm.render.world.IrisClient());
 		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.projectile.EntityTranquilizerDart.class, new net.minecraft.client.renderer.entity.RenderSnowball(ModItems.tranquilizer_dart));
 		//test crap
 		ClientRegistry.bindTileEntitySpecialRenderer(TileEntityObjTester.class, new RendererObjTester());

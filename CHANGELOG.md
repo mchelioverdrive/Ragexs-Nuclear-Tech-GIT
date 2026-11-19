@@ -560,7 +560,7 @@
 2026-11-07 05:52 — Make Wretch eye and multipart rays dedicated-server safe
 
 - Replace the preceding presentation stage's client-only interpolated player-position calls in melee/contact validation with native world-space eye coordinates. Use the same server-safe calculation for target observation, retaining visible anatomical hit validation without loading a client-only Minecraft method on dedicated servers.
-2026-11-07 15:53 � Complete Wretch capture, assimilation and victim integration
+2026-11-07 15:53 � Complete Wretch capture, assimilation and victim integration
 
 - Finish the preceding AI stage's ray ownership fix: independent enclosure rays retain their activity origin, and visibility/contact rays cannot mutate shared skeletal joints through vanilla 1.7.10 traversal.
 - Favor articulated hand grabs and add interruptible hold, pull and root-enclosure phases for eligible players, villagers and explicitly opted-in humanoids. Keep victims live until ordinary cancelable damage/death succeeds; preserve native inventory, drops and respawning. Release on escape, arm damage, invalid movement, logout, death and unloading, with temporary recapture and landing protection. Keep native floating validation from kicking a physically supported captive without granting flight or changing server policy.
@@ -788,7 +788,7 @@
 - Add live camp interval, distance, spacing and lifetime-limit settings plus a nest interval. Defaults are 300/120 active seconds after successful camps/nests and 256-block camp spacing; retain nest radii/density/limits and biome-independent invasive terrain replacement. Import legacy chance settings proportionally when interval keys are absent; campChance=0 remains a disable control. Preserve Mars, species, difficulty, griefing, camp mob-spawning gates and all existing resident identity/population/lifetime rules.
 - Register only verified completed placements, retain locate/list compatibility and broaden saved natural elevations/boundaries to match valid placement coordinates. Add paginated nest listing and status output for configuration, generation gates, saved countdowns, failures, eligible players and sampled loaded footprints; log successful coordinates/dimensions and throttle failed search summaries. Preserve normal mob terrain protections, cocoon emergence and unrelated world generation.
 
-2026-11-16 17:47 � Unblock automatic Gemini structures for all game modes and small view distances
+2026-11-16 17:47 � Unblock automatic Gemini structures for all game modes and small view distances
 
 - Allow living Creative, Survival and Adventure players to advance server-side nest/camp countdowns. Preserve phase 3-4 nests, phase 4 camps, invasion/species/gamerule/difficulty gates, saved intervals, retries, structure identities and resident AI/admission rules.
 - Select distinct centers from verified loaded minimum footprints instead of repeatedly sampling impossible radii. Prefer configured distances, then closer loaded terrain; when no footprint fits, permit one nearby bounded load (at most 49 explicit chunk requests for the existing 80-block camp or 16 for an excavated nest, without tickets). Retain full placement preflight, obstruction replacement, spacing and registration only after completion. Release obsolete pending origins rather than letting them displace viable candidates.
@@ -893,3 +893,30 @@
 - Save camps and their exact graded block journals before placement through checked writes in the native saved-data format; pause terrain work on disk errors and persist completion before reporting success. Apply, publish and verify edits through bounded server ticks; retain job progress, boss identities and resident slots across reloads and callback failures. Keep older completed camps and unfinished reservations; never automatically reconstruct unrecorded buildings from guesses.
 - Identify solid-placement obstructions by entity class/UUID, safely relocate one riding group at a time to supported loaded space outside construction volumes, and retry the occupied cell. Retain nest pass/cursor progress and the existing 15x15 organic access pit. Detect stalled jobs, retry with backoff and release failed unfinished reservations from discovery limits without releasing their occupied footprints or changing Gardener population/replenishment rules.
 - Include queued, constructing, recovering, failed and completed saved records in camp/nest locate and list commands, and separate completed counts from unfinished records in status. Preserve invasion phase/configuration semantics and allow debug construction independently of natural generation gates.
+
+2026-11-18 02:25 — Add the Iris as the Gemini invasion's celestial intelligence
+
+- Integrate the Hungry Eye with the existing four Mars-gated phases through the invasion controller, retaining all creature AI, disease rules, structure scheduling and geminionly behavior. Render original cached planetary tissue and an independently animated organic opening in the Overworld sky, before terrain and clouds, with one fixed celestial direction and phase-scaled visibility and size.
+- Save and synchronize rare reveals, shared regional observations, controlled atmospheric darkness/red haze, original organic ambience and throttled invasion/structure pulses. Reuse loaded Gemini membership, saved nest/camp positions and existing Deep Root infection state for local intensity without block/weather edits or chunk loading. Keep Neptune separate.
+- Add operator Iris status/show/hide/stage/observe/reset commands and live-reloadable server-synchronized settings. Keep persistent debug overrides separate from progression; forced show bypasses phase, daylight, weather, render-distance and rendering-enable restrictions. Document observation and apparent approach as gameplay interpretations of the series.
+
+2026-11-18 16:49 — Populate Gardener nests on completion
+
+- Attempt every configured initial Underground Gardener on nest completion, preparing clearance chunks for all initial homes. Retry blocked initial slots once per active second, including pending slots in existing saves, instead of delaying them behind the death-replacement interval. Retain population/clearance/Forge gates, persistent living UUIDs, natural despawn prevention and one replacement per configured interval after death; failed replacements remain defeated slots until admitted.
+
+2026-11-18 17:14 — Restore Underground Gardener surface hunting and nest delivery
+
+- Keep successful emergence in the existing saved surface state and replace short nest-centered steering with bounded, collision-tested surface routes, varied roaming destinations and a separate configurable hunting radius. Retain native stepping, model/gait, loaded-chunk limits and the existing pit/tunnel commute.
+- Prioritize prey pursuit over roaming, retain last-seen positions briefly, retry blocked approaches and abandon unreachable targets with cooldowns. Surface grabs use the existing capture slots, suppress new hunting and feeding during nest delivery, then finish the existing consumption sequence underground. Preserve escape/rescue rules, daytime retreat, saved nest identities and Ocean Gardener behavior; stalled nest returns retain the captive for local feeding. Recover inward after extended chases and resume nighttime hunting if a ruined entrance prevents routine retreat.
+- Expose meaningful hunting, commute and feeding transitions through the existing opt-in Gemini debug diagnostics. Document hunting radius, pursuit and delivery behavior.
+
+2026-11-18 18:27 — Move surfaced Underground Gardeners off their nest exits
+
+- Extend the existing surface path follower to find supported landings below raised nest dismounts, use terrain heights for intermediate routes and execute native collision, stepping and falling with the unchanged physical body and model. Remove the mismatched cave-steering gate from surface path execution; retain loaded-terrain limits and existing fall immunity without teleportation or excavation.
+- Request independent 12-32-block dispersal routes on emergence and subsequent 16-48-block roaming legs, avoiding occupied/reserved destinations. Preserve routes between ticks, permit overlapping residents to separate and recover from insufficient horizontal progress with temporary exclusions and capped retry backoff. Keep prey pursuit, capture, carrying, feeding and daytime retreat on their existing ownership paths; Ocean Gardeners are unchanged.
+- Include actual position, destination, path/follower activity, measured horizontal displacement and interval, failures, recovery counts and navigation-cancellation reasons in the existing opt-in Gemini diagnostics.
+
+2026-11-18 19:01 — Resume Gardener nest returns safely across the pit rim
+
+- Reconstruct returning residents at rim height in the crossing stage after reload, rather than treating a center inside the pit as clearance for the entire body. Finish horizontal alignment before descending, including for residents already stuck in the descent stage, while retaining native collision and the existing pit geometry, captive transport and saved commute states.
+- Report failed commute positions and distinguish solid collisions, liquid, unloaded bounds, missing contact and insufficient native movement through the existing throttled Gemini diagnostics.

@@ -7,6 +7,7 @@ import com.hbm.config.GeminiConfig;
 import com.hbm.world.gemini.GardenerNests;
 import com.hbm.world.gemini.GeminiHostileSpawning;
 import com.hbm.world.gemini.GeminiInvasionManager;
+import com.hbm.world.gemini.GeminiIris;
 import com.hbm.world.gemini.GeminiInvasionManager.StructureInfo;
 import com.hbm.world.gemini.WretchCamps;
 
@@ -27,7 +28,7 @@ public final class CommandGemini extends CommandBase {
     private static final int PAGE_SIZE = 8;
     @Override public String getCommandName() { return "gemini"; }
     @Override public int getRequiredPermissionLevel() { return 2; }
-    @Override public String getCommandUsage(ICommandSender sender) { return "/gemini help|status|phase|time|nest|camp|debug"; }
+    @Override public String getCommandUsage(ICommandSender sender) { return "/gemini help|status|phase|time|nest|camp|iris|debug"; }
 
     private static void reply(ICommandSender sender, String message) {
         sender.addChatMessage(new ChatComponentText("[Gemini] " + message));
@@ -77,11 +78,29 @@ public final class CommandGemini extends CommandBase {
             reply(sender, "/gemini help | status | debug <true|false>");
             reply(sender, "/gemini phase set <1|2|3|4> | phase next | phase reset");
             reply(sender, "/gemini time <add|set> <ticks>");
+            reply(sender, "/gemini iris status|show|hide|stage <1..4>|observe|reset");
             reply(sender, "/gemini nest spawn [x y z] [force] | nest locate | nest list [page]");
             reply(sender, "/gemini camp spawn [" + WretchCamps.TYPE + "] [x y z] [force] | camp locate | camp list [page]");
             return;
         }
         WorldServer world = world(sender);
+        if("iris".equals(args[0])) {
+            WorldServer overworld = DimensionManager.getWorld(0);
+            GeminiIris iris = GeminiIris.get(overworld);
+            if(args.length == 2 && "status".equals(args[1])) {
+                reply(sender, iris.status(overworld));
+                reply(sender, "Visibility is celestial/weather transmission; roofs, terrain, clouds and viewing direction can obscure it locally.");
+                return;
+            }
+            if(args.length == 3 && "stage".equals(args[1])) iris.control(overworld, "stage", parseIntBounded(sender, args[2], 1, 4));
+            else if(args.length == 2 && ("show".equals(args[1]) || "hide".equals(args[1]) || "reset".equals(args[1])))
+                iris.control(overworld, args[1], 0);
+            else if(args.length == 2 && "observe".equals(args[1])) {
+                if(!iris.observe(overworld, true)) throw new CommandException("No living survival/adventure player in the Overworld. Debug observation ignores sky, weather and progression restrictions.");
+            } else throw new WrongUsageException("/gemini iris status|show|hide|stage <1..4>|observe|reset");
+            reply(sender, iris.status(overworld));
+            return;
+        }
         if("status".equals(args[0]) && args.length == 1) {
             status(sender, world); return;
         }
@@ -210,8 +229,9 @@ public final class CommandGemini extends CommandBase {
     }
 
     @Override public List addTabCompletionOptions(ICommandSender sender, String[] args) {
-        if(args.length == 1) return getListOfStringsMatchingLastWord(args, "help", "status", "phase", "time", "nest", "camp", "debug");
+        if(args.length == 1) return getListOfStringsMatchingLastWord(args, "help", "status", "phase", "time", "nest", "camp", "iris", "debug");
         if(args.length == 2) {
+            if("iris".equals(args[0])) return getListOfStringsMatchingLastWord(args, "status", "show", "hide", "stage", "observe", "reset");
             if("phase".equals(args[0])) return getListOfStringsMatchingLastWord(args, "set", "next", "reset");
             if("time".equals(args[0])) return getListOfStringsMatchingLastWord(args, "add", "set");
             if("nest".equals(args[0])) return getListOfStringsMatchingLastWord(args, "spawn", "locate", "list");
@@ -219,6 +239,7 @@ public final class CommandGemini extends CommandBase {
             if("debug".equals(args[0])) return getListOfStringsMatchingLastWord(args, "true", "false");
         }
         if(args.length == 3) {
+            if("iris".equals(args[0]) && "stage".equals(args[1])) return getListOfStringsMatchingLastWord(args, "1", "2", "3", "4");
             if("phase".equals(args[0]) && "set".equals(args[1])) return getListOfStringsMatchingLastWord(args, "1", "2", "3", "4");
             if("camp".equals(args[0]) && "spawn".equals(args[1])) return getListOfStringsMatchingLastWord(args, WretchCamps.TYPE, "~", "force");
         }
