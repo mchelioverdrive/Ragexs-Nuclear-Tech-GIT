@@ -31,7 +31,7 @@ public final class GeminiInvasionManager {
 	public static long getRemainingTicks(World world) { return requireData(world).getRemainingTicks(); }
 	public static int getEventSecondsRemaining(World world) { return requireData(world).getEventSecondsRemaining(); }
 	public static boolean isDebug(World world) { return requireData(world).isDebug(); }
-	static boolean debugging(World world) {
+	public static boolean debugging(World world) {
 		GeminiWorldSavedData data = GeminiWorldSavedData.get(world);
 		return data != null && data.isDebug();
 	}

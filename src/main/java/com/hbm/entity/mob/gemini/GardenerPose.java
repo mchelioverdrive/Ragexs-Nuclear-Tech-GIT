@@ -13,6 +13,9 @@ public final class GardenerPose {
     private static final double[] HEIGHT = {4.3, 8.8, 7.6, 2.7, 0.35};
     private static final double[] ANGLE = {0.15, 1.10, 2.25, 3.28, 4.24, 5.43};
 
+    static double angle(int arm) { return ANGLE[arm]; }
+    static double tipRadius(int arm) { return RADIAL[SEGMENTS] * (1D + (arm % 3 - 1) * 0.035D); }
+
     public static Vec3 point(EntityGardener boss, int arm, int joint, float partial) {
         return point(boss, arm, joint, partial, boss.limbExtension(arm));
     }
@@ -41,14 +44,9 @@ public final class GardenerPose {
         double rootX = Math.cos(angle) * (diagonal ? 2.55D : RADIAL[0]);
         double rootZ = Math.sin(angle) * (diagonal ? 2.55D * 0.72D : RADIAL[0]);
         double age = boss.isAwake() ? boss.worldObj.getTotalWorldTime() + partial : 0;
-        double cycle = age * 0.075D + arm * Math.PI + (arm / 2) * 0.8D;
-        double stride = Math.sin(cycle) * boss.crawlAmount(partial);
         double radius = RADIAL[joint] * (1D + (arm % 3 - 1) * 0.035D);
         double x = Math.cos(angle) * radius, z = Math.sin(angle) * radius;
         double y = HEIGHT[joint] + boss.bodyShift(partial) * (1D - t);
-        x -= Math.sin(angle) * stride * t * 0.7D;
-        z += Math.cos(angle) * stride * t * 0.7D;
-        y += Math.max(0, Math.cos(cycle)) * boss.crawlAmount(partial) * t * 0.8D;
         double sway = Math.sin(age * 0.025D + arm * 1.7D - joint * 0.8D) * 0.18D * t;
         x += Math.sin(angle) * sway; z -= Math.cos(angle) * sway;
         if(joint == 0 && diagonal) { x = rootX; z = rootZ; }
@@ -87,6 +85,10 @@ public final class GardenerPose {
         x = rootX + (x - rootX) * extension;
         z = rootZ + (z - rootZ) * extension;
         y = HEIGHT[0] + boss.bodyShift(partial) + (y - HEIGHT[0] - boss.bodyShift(partial)) * extension;
+        if(!reaching && state == EntityGardener.IDLE && !boss.armDisabled(arm)) {
+            Vec3 walking = boss.locomotionJoint(arm, t, x, y, z, partial, extension);
+            x = walking.xCoord; y = walking.yCoord; z = walking.zCoord;
+        }
         if(boss.armDisabled(arm)) {
             x *= 1D - 0.55D * t; z *= 1D - 0.55D * t;
             y = diagonal ? HEIGHT[0] + boss.bodyShift(partial) + (0.3D - HEIGHT[0] - boss.bodyShift(partial)) * t

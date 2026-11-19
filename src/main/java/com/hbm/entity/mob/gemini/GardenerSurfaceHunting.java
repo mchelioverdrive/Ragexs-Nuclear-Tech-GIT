@@ -24,12 +24,12 @@ final class GardenerSurfaceHunting {
     private final Map<UUID, Long> rejected = new HashMap<UUID, Long>();
     private final List<Vec3> recent = new ArrayList<Vec3>();
     private Entity remembered;
-    private Vec3 lastSeen, roam;
+    private Vec3 lastSeen, roam, investigation;
     private long seenAt;
     private long progressAt;
     private double bestDistance;
     private int pause, pursuitFailures, recoveries;
-    private boolean roaming, dispersing;
+    private boolean roaming, dispersing, scouting, visible, committed;
     private double exitX, exitZ, sampleX, sampleZ, displacement, fallSpeed;
     private double sampleY;
     private long sampleAt, nextReport, measurementTicks, retryUntil;
@@ -44,6 +44,8 @@ final class GardenerSurfaceHunting {
     private boolean searching, failed, finalSegment;
     private String landingResult = "not checked", pathResult = "idle";
     private static final int LIMIT = 768, SEGMENT_LENGTH = 18;
+    private static final int PREY_MEMORY = 160, STALL_TICKS = 60, MAX_PAUSE = 40;
+    private static final double DISPERSAL_MIN = 16D, DISPERSAL_MAX = 40D, ROAM_MIN = 24D, ROAM_MAX = 64D;
     private static final double MAX_DROP = 4D, MAX_CLIMB = 3D, EPS = 0.002D;
     private static final int[][] DIRECTIONS = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, 1}, {1, -1}, {-1, -1}};
 
@@ -52,36 +54,73 @@ final class GardenerSurfaceHunting {
         Long until = rejected.get(prey.getUniqueID());
         return until == null || until <= mob.worldObj.getTotalWorldTime();
     }
+    void blockedGrab(Entity prey) {
+        if(prey == remembered) pursuitFailures++;
+    }
     boolean remember(Entity prey) {
-        if(prey == null) {
-            if(remembered != null) { cancel("prey lost"); roam = null; }
-            remembered = null; lastSeen = null; return false;
-        }
         long now = mob.worldObj.getTotalWorldTime();
+        if(prey == null) {
+            if(remembered != null) lose("prey left detection range");
+            return false;
+        }
         if(prey != remembered) {
             remembered = prey; lastSeen = Vec3.createVectorHelper(prey.posX, prey.boundingBox.minY, prey.posZ);
-            cancel("prey detected");
-            seenAt = now; pursuitFailures = 0; roam = null; roaming = false;
+            interrupt("prey detected");
+            seenAt = now; pursuitFailures = 0; roam = null; roaming = false; investigation = null; scouting = false;
+            visible = true; pause = 0; retryUntil = 0;
             progressAt = now; bestDistance = mob.getDistanceSqToEntity(prey);
             mob.huntingDiagnostic("pursuit", "Detected prey " + prey.getEntityId() + "; starting pursuit");
         }
-        if(mob.getEntitySenses().canSee(prey)) {
-            seenAt = now; lastSeen = Vec3.createVectorHelper(prey.posX, prey.boundingBox.minY, prey.posZ);
+        if((mob.ticksExisted + mob.getEntityId()) % 5 == 0) visible = mob.canSeeSurfacePrey(prey);
+        if(visible) {
+            // Sample only observations with a fresh line of sight. Between samples
+            // the follower keeps its existing route toward the last observation.
+            if((mob.ticksExisted + mob.getEntityId()) % 5 == 0) {
+                double distance = mob.getDistanceSqToEntity(prey);
+                if(distance < bestDistance - 1D) { bestDistance = distance; progressAt = now; pursuitFailures = 0; }
+                seenAt = now; lastSeen = Vec3.createVectorHelper(prey.posX, prey.boundingBox.minY, prey.posZ);
+            }
+            if(now - progressAt <= 320 && pursuitFailures < 3) return true;
+        } else {
+            lose("lost sight of prey " + prey.getEntityId()); return false;
         }
-        double distance = mob.getDistanceSqToEntity(prey);
-        if(distance < bestDistance - 1D) { bestDistance = distance; progressAt = now; pursuitFailures = 0; }
-        if(now - seenAt <= 200 && now - progressAt <= 600 && pursuitFailures < 4) return true;
-        if(rejected.size() >= 32) rejected.clear();
+        reject(prey, now);
+        lastSeen = null; remembered = null; interrupt("prey unreachable");
+        mob.huntingDiagnostic("abandon", "Abandoned unreachable prey " + prey.getEntityId());
+        return false;
+    }
+
+    private void lose(String reason) {
+        investigation = lastSeen;
+        lastSeen = null; remembered = null; scouting = false;
+        // Keep following an existing route to the observation when possible.
+        if(investigation != null) mob.huntingDiagnostic("investigation", "Investigating last seen position " + investigation + "; " + reason);
+    }
+    void discard(Entity prey) {
+        if(prey == remembered) {
+            lastSeen = null; remembered = null; investigation = null;
+            interrupt("prey no longer eligible");
+        }
+    }
+    private void reject(Entity prey, long now) {
+        if(rejected.size() >= 32) rejected.entrySet().removeIf(entry -> entry.getValue() <= now);
+        if(rejected.size() >= 32) rejected.remove(rejected.keySet().iterator().next());
         rejected.put(prey.getUniqueID(), now + 600);
-        mob.huntingDiagnostic("abandon", "Abandoned unseen or unreachable prey " + prey.getEntityId());
-        remembered = null; lastSeen = null; cancel("prey abandoned"); return false;
+    }
+    boolean crossingEdge() { return committed; }
+    void finishEdge() {
+        if(committed && step < route.size()) follow(route.get(step), 1D);
+    }
+    private void interrupt(String reason) {
+        if(!committed) cancel(reason);
     }
     void stop() {
         stop("movement ownership changed");
     }
     void stop(String reason) {
         cancel(reason);
-        remembered = null; lastSeen = roam = null; roaming = dispersing = false; pause = 0; fallSpeed = 0;
+        remembered = null; lastSeen = roam = investigation = null; roaming = dispersing = scouting = false; pause = 0; fallSpeed = 0;
+        recent.clear();
         retryUntil = 0;
     }
     void emerged() {
@@ -89,62 +128,109 @@ final class GardenerSurfaceHunting {
     }
     void tick(Entity prey) {
         if(prey != null && lastSeen != null) {
-            if(mob.surfaceCaptureReach(prey)) { cancel("prey in capture reach"); settle(); return; }
-            int result = travel(lastSeen.xCoord, lastSeen.yCoord, lastSeen.zCoord, 5D, 1.8D);
-            if(result < 0) pursuitFailures++;
-            // Reaching an unseen last position does not give omniscient tracking through walls.
+            if(!committed && mob.surfaceCaptureReach(prey)) { interrupt("prey in capture reach"); settle(); progressAt = mob.worldObj.getTotalWorldTime(); return; }
+            // Keep going until the body's articulated capture check succeeds.
+            // Arrival at an unreachable prey position is a failed approach.
+            int result = travel(lastSeen.xCoord, lastSeen.yCoord, lastSeen.zCoord, 0.85D, 1.8D);
+            if(result != 0 && !committed) {
+                pursuitFailures++;
+                retryUntil = mob.worldObj.getTotalWorldTime() + 12;
+            }
             return;
         }
-        if(dispersing && horizontalSq(mob.posX, mob.posZ, exitX, exitZ) >= 144D) dispersing = false;
-        if(pause > 0) { pause--; settle(); return; }
-        if(roam == null) {
-            double homeDX = mob.posX - mob.huntingHomeX(), homeDZ = mob.posZ - mob.huntingHomeZ();
-            double homeDistance = Math.sqrt(homeDX * homeDX + homeDZ * homeDZ);
-            boolean outside = homeDistance > GeminiConfig.gardenerHuntingRadius;
-            for(int attempt = 0; attempt < 12; attempt++) {
-                double angle = mob.getRNG().nextDouble() * Math.PI * 2D + mob.getUniqueID().hashCode() * 2.399963D;
-                double distance = dispersing ? 12D + mob.getRNG().nextDouble() * (20D + recoveries * 2D)
-                        : 16D + mob.getRNG().nextDouble() * 32D;
-                double x = mob.posX + Math.cos(angle) * distance, z = mob.posZ + Math.sin(angle) * distance;
-                // Occasionally head toward the existing settlement hint without orbiting it.
-                if(outside) {
-                    // A chase (or live radius reduction) can leave us farther out than
-                    // one roaming leg. Walk inward in reachable legs instead of idling.
-                    angle = Math.atan2(-homeDZ, -homeDX) + (mob.getRNG().nextDouble() - 0.5D) * 1.2D;
-                    distance = Math.min(24D, homeDistance - GeminiConfig.gardenerHuntingRadius + 12D);
-                    x = mob.posX + Math.cos(angle) * distance; z = mob.posZ + Math.sin(angle) * distance;
-                } else if(attempt == 0 && mob.getRNG().nextInt(4) == 0) {
-                    double dx = mob.huntingX() - mob.posX, dz = mob.huntingZ() - mob.posZ;
-                    double length = Math.sqrt(dx * dx + dz * dz);
-                    if(length > 16) { x = mob.posX + dx / length * distance; z = mob.posZ + dz / length * distance; }
-                }
-                double dx = x - mob.huntingHomeX(), dz = z - mob.huntingHomeZ();
-                double radius = outside ? homeDistance - 4D : GeminiConfig.gardenerHuntingRadius;
-                if(dx * dx + dz * dz > radius * radius || dx * dx + dz * dz < 144D) continue;
-                if(dispersing && horizontalSq(x, z, exitX, exitZ) < 144D) continue;
-                boolean repeated = false;
-                for(Vec3 old : recent) if((old.xCoord - x) * (old.xCoord - x) + (old.zCoord - z) * (old.zCoord - z) < 100D) repeated = true;
-                if(repeated) continue;
-                int bx = MathHelper.floor_double(x), bz = MathHelper.floor_double(z);
-                double range = 16D + recoveries * 4D;
-                Node landing = landing(bx, bz, mob.boundingBox.minY, range, true);
-                if(landing != null) roam = landing.point();
-                if(roam != null) {
-                    recent.add(roam); if(recent.size() > 6) recent.remove(0);
-                    report("destination", "Selected " + (dispersing ? "dispersal" : "roaming") + " destination", roam); break;
-                }
-            }
-            if(roam == null) {
-                recoveries = Math.min(8, recoveries + 1);
-                report("no-destination", "No clear unoccupied landing; expanding destination search", null);
-                pause = Math.min(100, 15 + recoveries * 10); settle(); return;
-            }
+        if(investigation != null) {
+            if(investigate()) return;
         }
+        if(dispersing && horizontalSq(mob.posX, mob.posZ, exitX, exitZ) >= DISPERSAL_MIN * DISPERSAL_MIN) dispersing = false;
+        if(pause > 0) {
+            if(--pause == 0) mob.huntingDiagnostic("pause-end", "Idle pause ended; resuming surface search");
+            settle(); return;
+        }
+        if(!committed && mob.worldObj.getTotalWorldTime() < retryUntil) { settle(); return; }
+        if(roam == null) selectRoam();
+        if(roam == null) { settle(); return; }
         int result = travel(roam.xCoord, roam.yCoord, roam.zCoord, 1D, 1D);
         if(result != 0) {
-            if(result > 0) recoveries = 0;
-            roam = null; pause = result > 0 ? mob.getRNG().nextInt(30) : Math.min(100, 10 + recoveries * 10);
+            roam = null; roaming = false;
+            if(result > 0) {
+                recoveries = 0;
+                if(!dispersing && mob.getRNG().nextInt(4) == 0) startPause(mob.getRNG().nextInt(MAX_PAUSE + 1));
+            }
         }
+    }
+
+    private boolean investigate() {
+        long now = mob.worldObj.getTotalWorldTime();
+        if(now - seenAt > PREY_MEMORY && committed) { finishEdge(); return true; }
+        if(now - seenAt <= PREY_MEMORY) {
+            int result = travel(investigation.xCoord, investigation.yCoord, investigation.zCoord, 2D, 1.25D);
+            if(result == 0) return true;
+            if(result > 0 && !scouting) {
+                scouting = true;
+                int start = mob.getRNG().nextInt(DIRECTIONS.length);
+                for(int attempt = 0; attempt < 4; attempt++) {
+                    int[] direction = DIRECTIONS[(start + attempt) % DIRECTIONS.length];
+                    Node landing = landing(MathHelper.floor_double(mob.posX) + direction[0] * 6,
+                            MathHelper.floor_double(mob.posZ) + direction[1] * 6, mob.boundingBox.minY, MAX_DROP, true);
+                    if(landing != null) { investigation = landing.point(); return true; }
+                }
+            }
+        }
+        investigation = null; interrupt("prey investigation finished");
+        mob.huntingDiagnostic("investigation-end", "No prey found at the last observation; resuming roaming");
+        return false;
+    }
+
+    private void startPause(int ticks) {
+        pause = ticks;
+        if(ticks > 0) mob.huntingDiagnostic("pause", "Taking a " + ticks + "-tick surface pause");
+    }
+
+    private void selectRoam() {
+        double homeDX = mob.posX - mob.huntingHomeX(), homeDZ = mob.posZ - mob.huntingHomeZ();
+        double homeDistance = Math.sqrt(homeDX * homeDX + homeDZ * homeDZ);
+        boolean outside = homeDistance > GeminiConfig.gardenerHuntingRadius;
+        for(int attempt = 0; attempt < 8; attempt++) {
+            double angle = mob.getRNG().nextDouble() * Math.PI * 2D + mob.getUniqueID().hashCode() * 2.399963D;
+            double min = dispersing ? DISPERSAL_MIN : ROAM_MIN, max = dispersing ? DISPERSAL_MAX : ROAM_MAX;
+            // After failed long legs try a shorter staging destination, then
+            // resume the normal range as soon as a route succeeds.
+            if(recoveries >= 3 && attempt >= 4) { min *= 0.5D; max = min + 8D; }
+            double distance = min + mob.getRNG().nextDouble() * (max - min);
+            double x = mob.posX + Math.cos(angle) * distance, z = mob.posZ + Math.sin(angle) * distance;
+            // Occasionally head toward the existing settlement hint without orbiting it.
+            if(outside) {
+                // A chase (or live radius reduction) can leave us farther out than
+                // one roaming leg. Walk inward in reachable legs instead of idling.
+                angle = Math.atan2(-homeDZ, -homeDX) + (mob.getRNG().nextDouble() - 0.5D) * 1.2D;
+                distance = Math.min(24D, homeDistance - GeminiConfig.gardenerHuntingRadius + 12D);
+                x = mob.posX + Math.cos(angle) * distance; z = mob.posZ + Math.sin(angle) * distance;
+            } else if(attempt == 0 && mob.getRNG().nextInt(4) == 0) {
+                double dx = mob.huntingX() - mob.posX, dz = mob.huntingZ() - mob.posZ;
+                double length = Math.sqrt(dx * dx + dz * dz);
+                if(length > 16) { x = mob.posX + dx / length * distance; z = mob.posZ + dz / length * distance; }
+            }
+            double dx = x - mob.huntingHomeX(), dz = z - mob.huntingHomeZ();
+            double radius = outside ? homeDistance - 4D : GeminiConfig.gardenerHuntingRadius;
+            if(dx * dx + dz * dz > radius * radius || dx * dx + dz * dz < 144D) continue;
+            if(dispersing && recoveries < 3 && horizontalSq(x, z, exitX, exitZ) < DISPERSAL_MIN * DISPERSAL_MIN) continue;
+            boolean repeated = false;
+            for(Vec3 old : recent) if((old.xCoord - x) * (old.xCoord - x) + (old.zCoord - z) * (old.zCoord - z) < 100D) repeated = true;
+            // A narrow loaded corridor may have just one viable destination.
+            // Let recovery revisit it after the landing exclusion has expired.
+            if(repeated && recoveries < 4) continue;
+            int bx = MathHelper.floor_double(x), bz = MathHelper.floor_double(z);
+            double range = 10D + Math.min(4, recoveries) * 3D;
+            Node landing = landing(bx, bz, mob.boundingBox.minY, range, true);
+            if(landing != null) roam = landing.point();
+            if(roam != null) {
+                recent.add(roam); if(recent.size() > 6) recent.remove(0);
+                report("destination", "Selected " + (dispersing ? "dispersal" : "roaming") + " destination", roam); return;
+            }
+        }
+        recoveries = Math.min(8, recoveries + 1);
+        report("no-destination", "No clear unoccupied landing; retrying with different destinations", null);
+        retryUntil = mob.worldObj.getTotalWorldTime() + Math.min(MAX_PAUSE, 10 + recoveries * 5);
     }
     /** 1 arrived, 0 moving/planning, -1 failed. Long trips use bounded local route segments. */
     int travel(double x, double y, double z, double reach, double urgency) {
@@ -155,19 +241,18 @@ final class GardenerSurfaceHunting {
         Vec3 requested = Vec3.createVectorHelper(x, y, z);
         double y0 = mob.boundingBox.minY, dx = x - mob.posX, dz = z - mob.posZ;
         double distance = Math.sqrt(dx * dx + dz * dz);
-        if(distance <= reach && Math.abs(y - y0) <= 0.55D && supported(mob.posX, y0, mob.posZ)) {
+        if(!committed && distance <= reach && Math.abs(y - y0) <= 0.55D && supported(mob.posX, y0, mob.posZ)) {
             report("arrival", "Reached supported destination", requested); clearPath(); recoveries = 0; return 1;
         }
         // Finish a committed edge before reacting to a moving prey target.
-        boolean traversing = step < route.size() && route.get(step).motion != Motion.WALK;
-        if(goal == null || !traversing && goal.squareDistanceTo(requested) > 16D) {
+        if(goal == null || !committed && goal.squareDistanceTo(requested) > 16D) {
             clearPath(); goal = requested;
         }
         if(segment == null) {
             // Start from stable ground, including fractional-height slabs or snow.
             if(!supported(mob.posX, y0, mob.posZ)) {
                 settle();
-                if(++blockedTicks >= 40) fail(null, "no support at route origin");
+                if(++blockedTicks >= STALL_TICKS) fail(null, "no support at route origin");
                 return 0;
             }
             blockedTicks = 0;
@@ -321,7 +406,7 @@ final class GardenerSurfaceHunting {
         double x = mob.posX, y = mob.boundingBox.minY, z = mob.posZ;
         double dx = next.x - x, dz = next.z - z, distance = Math.sqrt(dx * dx + dz * dz);
         if(distance <= 0.045D && Math.abs(y - next.y) <= 0.025D && supported(x, y, z)) {
-            step++; blockedTicks = 0; return;
+            step++; blockedTicks = 0; committed = false; return;
         }
         if(blockedTicks == 0 && (mob.ticksExisted % 16 == 0 || sampleAt == 0)
                 && (!clear(body(next.x, next.y, next.z)) || !supported(next.x, next.y, next.z))) {
@@ -334,17 +419,22 @@ final class GardenerSurfaceHunting {
             stall(next, "movement blocked by another Gardener"); return;
         }
         if(next.motion == Motion.CLIMB) {
-            if(y < next.y - EPS) {
+            double climbX = next.x - from.x, climbZ = next.z - from.z;
+            // Native horizontal collision needs the entire sole at or above the
+            // ledge. Even a subpixel shortfall still overlaps the block face.
+            if(y < next.y) {
                 double rise = Math.min(next.y - y, speed);
-                if(!wallContact(body(x, y, z), next.x - from.x, next.z - from.z)
+                if(!wallContact(body(x, y, z), climbX, climbZ)
                         || !clear(body(x, y, z).addCoord(0, rise, 0))) {
                     fail(next, "climb lost wall contact or headroom"); return;
                 }
+                mob.traversalPose(GardenerLocomotion.CLIMB, climbX, climbZ);
                 mob.moveGardener(0, rise, 0);
             } else {
                 if(!clear(body(x, y, z).addCoord(mx, 0, mz))) {
                     fail(next, "climb crest obstructed"); return;
                 }
+                mob.traversalPose(GardenerLocomotion.CREST, climbX, climbZ);
                 mob.moveGardener(mx, 0, mz);
             }
         } else if(next.motion == Motion.DESCEND) {
@@ -373,33 +463,34 @@ final class GardenerSurfaceHunting {
         if(moved < 0.000004D && Math.abs(mob.boundingBox.minY - y) < EPS) {
             stall(next, "native movement made no progress (" + next.motion + ")"); return;
         }
+        committed = next.motion != Motion.WALK;
         blockedTicks = 0;
-        if(moved > 0.000004D && roam != null && !dispersing && !roaming) {
+        if(moved > 0.000004D && roam != null && !roaming) {
             roaming = true; report("roaming", "Moving on a surface roaming route", roam);
         }
         measure(next);
     }
 
     private void stall(Node next, String reason) {
-        if(++blockedTicks >= 20) fail(next, reason);
+        if(++blockedTicks >= STALL_TICKS) fail(next, reason);
     }
 
     private void measure(Node next) {
         long now = mob.worldObj.getTotalWorldTime();
         double y = mob.boundingBox.minY;
         if(sampleAt == 0) { sampleAt = now; sampleX = mob.posX; sampleY = y; sampleZ = mob.posZ; return; }
-        if(now - sampleAt < 40) return;
+        if(now - sampleAt < STALL_TICKS) return;
         measurementTicks = now - sampleAt;
         displacement = Math.sqrt(horizontalSq(mob.posX, mob.posZ, sampleX, sampleZ));
         boolean verticalProgress = next.motion != Motion.WALK && Math.abs(y - sampleY) >= 0.25D;
-        if(displacement < 0.2D && !verticalProgress) { fail(next, "insufficient measured movement on " + next.motion); return; }
+        if(displacement < 0.2D && !verticalProgress) { fail(next, "active " + next.motion + " route made insufficient measured movement"); return; }
         if(now >= nextReport) { report("movement", "Following surface route: " + next.motion, goal); nextReport = now + 200; }
         sampleAt = now; sampleX = mob.posX; sampleY = y; sampleZ = mob.posZ;
     }
 
     private void clearPath() {
         nodes.clear(); open.clear(); floors.clear(); route.clear();
-        goal = null; segment = null; searching = failed = false; step = visited = blockedTicks = 0; sampleAt = 0;
+        goal = null; segment = null; searching = failed = committed = false; step = visited = blockedTicks = 0; sampleAt = 0;
         displacement = 0D; measurementTicks = 0L;
         pathResult = "idle"; landingResult = "not checked";
     }
@@ -422,7 +513,7 @@ final class GardenerSurfaceHunting {
         // approach available to replanning when another route can reach it.
         if(node != null) deny(node);
         else if(segment != null) deny(segment);
-        clearPath(); failed = true; retryUntil = mob.worldObj.getTotalWorldTime() + Math.min(100, recoveries * 10);
+        clearPath(); failed = true; retryUntil = mob.worldObj.getTotalWorldTime() + Math.min(MAX_PAUSE, recoveries * 5);
     }
 
     private boolean isDenied(int x, double y, int z) {
@@ -437,12 +528,13 @@ final class GardenerSurfaceHunting {
     }
 
     private void report(String event, String message, Vec3 target) {
+        if(!mob.huntingDebugEnabled()) return;
         double feet = mob.boundingBox.minY;
         Double ground = mob.onGround ? Double.valueOf(feet)
                 : floorLevels(mob.posX, mob.posZ, feet - MAX_DROP, feet).floor(feet + EPS);
         double distance = target == null ? 0 : Math.sqrt(horizontalSq(mob.posX, mob.posZ, target.xCoord, target.zCoord));
         String state = mob.surfaceMovementState();
-        if("surface".equals(state)) state = remembered != null ? "pursuit" : dispersing ? "dispersal" : "roaming";
+        if("surface".equals(state)) state = remembered != null ? "pursuit" : investigation != null ? "investigating" : dispersing ? "dispersal" : "roaming";
         mob.huntingDiagnostic(event, message + "; ai=" + state
                 + "; action=" + mob.state() + "; position=" + mob.posX + "," + mob.posY + "," + mob.posZ
                 + "; destination=" + target + "; feetY=" + feet + "; groundY=" + (ground == null ? "-" : ground)
@@ -467,7 +559,16 @@ final class GardenerSurfaceHunting {
     private boolean wallContact(AxisAlignedBB body, double dx, double dz) {
         double length = Math.sqrt(dx * dx + dz * dz);
         if(length < EPS) return false;
-        AxisAlignedBB wall = body.addCoord(1.05D * dx / length, 0, 1.05D * dz / length);
+        double x = 1.05D * dx / length, z = 1.05D * dz / length;
+        AxisAlignedBB wall = body.addCoord(x, 0, z);
+        // Probe only the leading face. The last few centimeters still brace
+        // against the terrain under the lip, after the torso has cleared it.
+        if(Math.abs(x) >= Math.abs(z)) {
+            if(x > 0) wall.minX = body.maxX - EPS;
+            else wall.maxX = body.minX + EPS;
+        } else if(z > 0) wall.minZ = body.maxZ - EPS;
+        else wall.maxZ = body.minZ + EPS;
+        wall.minY -= 0.12D;
         return GardenerNests.loaded(mob.worldObj, wall.expand(1, 0, 1)) && !mob.worldObj.func_147461_a(wall).isEmpty();
     }
 

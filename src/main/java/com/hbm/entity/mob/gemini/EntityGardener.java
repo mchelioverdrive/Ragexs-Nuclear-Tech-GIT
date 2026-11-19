@@ -10,6 +10,7 @@ import com.hbm.config.GeminiConfig;
 import com.hbm.main.MainRegistry;
 import com.hbm.world.gemini.GardenerNests;
 import com.hbm.world.gemini.GeminiInfections;
+import com.hbm.world.gemini.GeminiInvasionManager;
 import com.hbm.world.gemini.MockerySpawning;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.IEntityLivingData;
@@ -50,6 +51,8 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
     private double patrolX, patrolZ;
     private final GardenerBurrowing burrowing = new GardenerBurrowing(this);
     private final GardenerSurfaceHunting surfaceHunting = new GardenerSurfaceHunting(this);
+    private final GardenerLocomotion locomotion = new GardenerLocomotion(this);
+    private boolean traversalPose;
     private double travelX, travelY, travelZ;
     private float previousCrawl, crawl;
     private boolean anchored, fromSave;
@@ -68,6 +71,7 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
     }
     @Override protected void entityInit() {
         super.entityInit();
+        dataWatcher.addObject(19, 0); // Underground locomotion mode, wall heading and gait checkpoint.
         dataWatcher.addObject(20, -1); // Eye target
         dataWatcher.addObject(21, (byte) IDLE);
         dataWatcher.addObject(22, 0); // State start in world ticks, synchronized without a packet per frame
@@ -114,6 +118,10 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
     boolean pursuingPrey() { return prey(preyTarget) && freeCapture() != null; }
     boolean surfaceHunter() { return !isOcean() && burrowing.surface(); }
     boolean surfaceCaptureReach(Entity target) { return tipInReach(target) && reach(target, attackReach()); }
+    boolean canSeeSurfacePrey(Entity target) {
+        return GardenerNests.loaded(worldObj, boundingBox.addCoord(target.posX - posX, target.posY - posY, target.posZ - posZ))
+                && getEntitySenses().canSee(target);
+    }
     double huntingX() { return burrowing.patrolX(); }
     double huntingZ() { return burrowing.patrolZ(); }
     double huntingHomeX() { return hasSharedNest() ? sharedX : nestX; }
@@ -122,10 +130,12 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
     void stopSurfaceTravel() { surfaceHunting.stop(); }
     void stopSurfaceTravel(String reason) { surfaceHunting.stop(reason); }
     void emergedOnSurface() { surfaceHunting.emerged(); }
+    boolean crossingSurfaceEdge() { return surfaceHunting.crossingEdge(); }
     Vec3 surfaceHuntingDestination() { return surfaceHunting.destination(); }
     String surfaceMovementState() { return burrowing.movementState(); }
+    boolean huntingDebugEnabled() { return GeminiInvasionManager.debugging(worldObj); }
     void huntingDiagnostic(String event, String message) {
-        if(!isOcean()) com.hbm.world.gemini.GeminiInvasionManager.debug(worldObj,
+        if(!isOcean()) GeminiInvasionManager.debug(worldObj,
                 "gardener-" + getUniqueID() + "-" + event, "Gardener " + getEntityId() + ": " + message);
     }
     boolean readyToCarry() {
@@ -153,7 +163,22 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
     public float crawlAmount(float partial) { return previousCrawl + (crawl - previousCrawl) * partial; }
     public double bodyShift(float partial) {
         return (isAwake() ? Math.sin((worldObj.getTotalWorldTime() + partial) * 0.026D) * 0.12D : 0)
-                - crawlAmount(partial) * (isOcean() ? 0.12D : 0.55D);
+                + (isOcean() ? -crawlAmount(partial) * 0.12D : locomotion.bodyBob(partial));
+    }
+    public double climbPitch(float partial) { return isOcean() ? 0 : locomotion.pitch(partial); }
+    public double climbX(float partial) { return locomotion.tiltX(partial); }
+    public double climbZ(float partial) { return locomotion.tiltZ(partial); }
+    Vec3 locomotionJoint(int arm, double t, double x, double y, double z, float partial, double extension) {
+        return locomotion.joint(arm, t, x, y, z, partial, extension);
+    }
+    void traversalPose(int mode, double x, double z) {
+        traversalPose = true;
+        locomotion.command(mode, x, z);
+    }
+    private void updateLocomotion(double x, double y, double z, int defaultMode) {
+        if(!traversalPose) locomotion.command(defaultMode, 0, 0);
+        locomotion.advance(posX - x, posY - y, posZ - z);
+        dataWatcher.updateObject(19, locomotion.snapshot(dataWatcher.getWatchableObjectInt(19)));
     }
     @Override protected String getLivingSound() { return null; }
     @Override protected String getHurtSound() { return "mob.slime.big"; }
@@ -259,8 +284,13 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
     }
     public void setHuntingGround(double x, double z) { if(!isOcean()) burrowing.huntingGround(x, z); }
     private boolean active() {
-        return isEntityAlive() && anchored && GardenerNests.loaded(worldObj,
-                GeminiSpawning.isManual(this) ? boundingBox : visualBounds()) && environmentActive();
+        return isEntityAlive() && anchored && GardenerNests.loaded(worldObj, activityBounds()) && environmentActive();
+    }
+    private AxisAlignedBB activityBounds() {
+        if(GeminiSpawning.isManual(this)) return boundingBox;
+        // Each surface/commute step checks its own loaded sweep. An unloaded chunk
+        // under a decorative limb must not stop the entire body at the boundary.
+        return !isOcean() && burrowing.travelling() ? boundingBox : visualBounds();
     }
     public AxisAlignedBB visualBounds() {
         return boundingBox.expand(isOcean() ? 32 : 18, isOcean() ? 32 : 2, isOcean() ? 32 : 18);
@@ -307,6 +337,15 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
     }
     private String preyRejection(Entity target) { return preyRejection(target, true); }
     private String preyRejection(Entity target, boolean acquiring) {
+        String rejection = preyEligibility(target, acquiring);
+        if(rejection != null) return rejection;
+        if(!inTerritory(target)) return "Outside territory";
+        double search = surfaceHunter() ? (target == preyTarget ? 80D : 48D) : attackReach() + 7D;
+        if(preyDistanceSq(target) > search * search) return "Outside search reach";
+        return null;
+    }
+    private boolean targetableAfterLoss(Entity target) { return preyEligibility(target, true) == null; }
+    private String preyEligibility(Entity target, boolean acquiring) {
         if(target == null) return "No target";
         if(target == this || target instanceof IGeminiCreature || target instanceof IBossDisplayData) return "Excluded creature";
         if(!target.isEntityAlive() || target.worldObj != worldObj || !target.addedToChunk) return "Dead or unloaded prey";
@@ -321,9 +360,6 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
                 || ((EntityPlayer) target).capabilities.isCreativeMode)) return "Invulnerable player";
         if(target.riddenByEntity instanceof EntityPlayer && (((EntityPlayer) target.riddenByEntity).capabilities.disableDamage
                 || ((EntityPlayer) target.riddenByEntity).capabilities.isCreativeMode)) return "Invulnerable rider";
-        if(!inTerritory(target)) return "Outside territory";
-        double search = surfaceHunter() ? (target == preyTarget ? 80D : 48D) : attackReach() + 7D;
-        if(preyDistanceSq(target) > search * search) return "Outside search reach";
         return null;
     }
     /** Ceiling transport reaches from the upper body, rather than the ground-level territory band. */
@@ -372,7 +408,7 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
             Entity target = (Entity) entry;
             if(!prey(target)) { captureRejection(target, preyRejection(target)); continue; }
             if(isOcean() && ++examined > 32) break;
-            if(surfaceHunter() && (!surfaceHunting.available(target) || !getEntitySenses().canSee(target))) continue;
+            if(surfaceHunter() && (!surfaceHunting.available(target) || !canSeeSurfacePrey(target))) continue;
             String rejection = surfaceHunter() ? null : reachRejection(target, attackReach() + (target instanceof EntityPlayer ? 7D : 0D));
             if(rejection != null) { captureRejection(target, rejection); continue; }
             if(!isOcean() && target instanceof EntityLivingBase) {
@@ -389,7 +425,10 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
             if(!isOcean()) {
                 // Do not abandon a meal under the body for a player outside capture range.
                 if(!beneathBody(target)) score += 10000D;
-                if(!tipInReach(target)) score += 20000D;
+                if(!tipInReach(target)) {
+                    score += 20000D;
+                    if(surfaceHunter()) score += 64D * Math.abs(target.boundingBox.minY - boundingBox.minY);
+                }
             }
             if(score < best) {
                 if(!isOcean() && beneathBody(target) && captureArm(target) < 0) {
@@ -438,11 +477,19 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
     }
 
     @Override public void onUpdate() {
+        double clientX = posX, clientY = posY, clientZ = posZ;
         motionX = motionY = motionZ = 0;
         super.onUpdate();
         previousCrawl = crawl;
         crawl += (dataWatcher.getWatchableObjectFloat(29) - crawl) * 0.25F;
-        if(worldObj.isRemote) return;
+        if(worldObj.isRemote) {
+            if(!isOcean()) {
+                locomotion.read(dataWatcher.getWatchableObjectInt(19));
+                locomotion.advance(posX - clientX, posY - clientY, posZ - clientZ);
+            }
+            return;
+        }
+        traversalPose = false;
         if(addedToChunk) GardenerNests.remember(this);
         if(!isOcean() && (ticksExisted == 1 || ticksExisted % 100 == 0)) GardenerNests.bindResident(this);
         tickSurfaceBiomass();
@@ -450,11 +497,12 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
         if(!isOcean() && !GeminiSpawning.isManual(this) && nestY >= 8
                 && (nestY <= 44 || GeminiSpawning.structureDebugAdmission(this) && nestY + 13 < worldObj.getActualHeight())) burrowing.enable();
         if(!active()) {
-            release(GardenerNests.loaded(worldObj, GeminiSpawning.isManual(this) ? boundingBox : visualBounds())
+            release(GardenerNests.loaded(worldObj, activityBounds())
                     ? "Gardener deactivation" : "Chunk unloading");
             preyTarget = null; setAttackTarget(null); dataWatcher.updateObject(20, -1); dataWatcher.updateObject(28, (byte) 0);
             if(state() != IDLE) begin(IDLE);
             if(!isOcean()) surfaceHunting.stop("deactivation or unloaded bounds");
+            if(!isOcean()) updateLocomotion(posX, posY, posZ, GardenerLocomotion.WALK);
             dataWatcher.updateObject(29, 0F);
             smashCursor = -1; removeParts(); return;
         }
@@ -476,13 +524,15 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
             if(state() != IDLE) begin(IDLE);
             smashCursor = -1;
         }
-        if(ticksExisted % 20 == 1) {
-            maintainParts();
-            if(hunting && freeCapture() != null && state() == IDLE) findTarget();
-        }
+        if(ticksExisted % 20 == 1) maintainParts();
+        int searchInterval = surfaceHunter() ? 16 : 20;
+        int searchTick = surfaceHunter() ? ticksExisted + getEntityId() : ticksExisted;
+        if(searchTick % searchInterval == 1 && hunting && freeCapture() != null && state() == IDLE) findTarget();
         Entity target = preyTarget;
         if(!prey(target) || freeCapture() == null) {
             captureRejection(target, preyRejection(target));
+            if(surfaceHunter() && target != null && (!targetableAfterLoss(target) || freeCapture() == null))
+                surfaceHunting.discard(target);
             preyTarget = null; setAttackTarget(null); dataWatcher.updateObject(20, -1); target = null;
         }
         if(surfaceHunter() && hunting && !surfaceHunting.remember(target)) {
@@ -491,12 +541,18 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
         if(!commuting) {
             if(surfaceHunter()) {
                 if(hunting && state() == IDLE) surfaceHunting.tick(target);
+                else if(crossingSurfaceEdge()) surfaceHunting.finishEdge();
             } else tickLocomotion(target);
         }
-        if(!isOcean()) dataWatcher.updateObject(29, getDistanceSq(commuteX, commuteY, commuteZ) > 0.000025D ? 1F : 0F);
-        if(ticksExisted % 10 == 1 || dataWatcher.getWatchableObjectFloat(29) > 0) adaptLimbs();
+        if(!isOcean()) {
+            if(locomotion.fullClimbPose() || burrowing.surface()) dataWatcher.updateObject(30, 0xFFFFFF);
+            else if(ticksExisted % 10 == 1) adaptLimbs();
+            updateLocomotion(commuteX, commuteY, commuteZ, hasHuntingMeal() ? GardenerLocomotion.CARRY
+                    : surfaceHunter() && target != null ? GardenerLocomotion.PURSUE : GardenerLocomotion.WALK);
+        }
         if(cooldown > 0) cooldown--;
-        if(state() == IDLE && freeCapture() != null && target != null && cooldown == 0 && reach(target, attackReach()) && (isOcean() || tipInReach(target))) {
+        if(state() == IDLE && !crossingSurfaceEdge() && freeCapture() != null && target != null && cooldown == 0
+                && reach(target, attackReach()) && (isOcean() || tipInReach(target))) {
             int arm = captureArm(target);
             if(arm >= 0) {
                 dataWatcher.updateObject(23, (byte) arm);
@@ -505,6 +561,7 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
                 playSound("mob.ghast.charge", 0.65F, 0.5F);
             } else {
                 captureRejection(target, "No enabled tentacle with a clear reaching path");
+                if(surfaceHunter()) surfaceHunting.blockedGrab(target);
                 if(!isOcean()) cooldown = 20; // Retry transient obstruction without six probes every tick.
             }
         } else if(!isOcean() && state() == IDLE && target != null) {
@@ -543,6 +600,7 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
                 begin(IDLE); cooldown = 0;
                 return;
             }
+            if(attackTicks == 34 && surfaceHunter() && target != null) surfaceHunting.blockedGrab(target);
         }
         if(state() == SLAM && attackTicks >= 23 && attackTicks <= 28) {
             for(int segment = 0; segment < GardenerPose.SEGMENTS; segment++) {
@@ -1278,7 +1336,8 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
     private void tickLocomotion(Entity target) {
         if(captureState() || state() != IDLE || !isOcean() && target != null && tipInReach(target) && reach(target, attackReach())) {
             if(!isOcean()) travelX = travelY = travelZ = 0;
-            dataWatcher.updateObject(29, 0F); return;
+            if(isOcean()) dataWatcher.updateObject(29, 0F);
+            return;
         }
         if(ticksExisted % 10 == 1) {
             travelX = travelY = travelZ = 0;
@@ -1320,7 +1379,7 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
         double ox = posX, oy = posY, oz = posZ;
         if(canTravel(travelX, travelY, travelZ)) moveGardener(travelX, isOcean() ? travelY : -0.15D, travelZ);
         double moved = Math.abs(posX - ox) + Math.abs(posY - oy) + Math.abs(posZ - oz);
-        dataWatcher.updateObject(29, moved > 0.005D ? 1F : 0F);
+        if(isOcean()) dataWatcher.updateObject(29, moved > 0.005D ? 1F : 0F);
     }
     protected double travelVertical(double goalY, double speed) {
         return isOcean() ? MathHelper.clamp_double(goalY - posY, -speed * 0.5D, speed * 0.5D) : 0;

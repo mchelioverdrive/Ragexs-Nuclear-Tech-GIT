@@ -925,3 +925,9 @@
 
 - Survey natural cover across new nest chambers and cut a rounded entrance with a short notch at the local ground elevation. Reject sites without a dry, supported approach before excavation. Save the surveyed entrance with the existing construction journal and preserve completed pits, resident identities, and cocoon delivery.
 - Use actual block collision shapes across the Gardener's full footprint for dispersal, pursuit, and return. Follow native steps, check landings before descending drops of up to four blocks, and require wall contact for climbs up to three blocks. Temporarily exclude failed routes and report landing rejection, planned movement, and measured displacement through Gemini debug.
+
+2026-11-18 20:49 — Give Underground Gardeners articulated strides and active night hunting
+
+- Drive the existing six-limb skeleton from physical displacement with alternating support groups, bounded foothold sampling, and interpolated climb and pursuit poses. Synchronize compact motion checkpoints and keep the native body and existing capture skeleton.
+- Break registered nest emergence into approach, grip, vertical ascent, rim crossing, and supported dismount. Check the wall and swept body, recover interrupted climbs, and reuse climbing poses on surface ledges. Raise the full sole to ledge height before a horizontal crest step. Keep existing nest layouts and commute states.
+- Disperse onto 16–40-block routes, roam in 24–64-block legs within the existing configurable hunting radius, and keep intentional pauses under two seconds. Prioritize eligible visible prey, search last-seen terrain briefly, and resume roaming after failed approaches. Log distinct commute, pursuit, and measured navigation events through Gemini debug.

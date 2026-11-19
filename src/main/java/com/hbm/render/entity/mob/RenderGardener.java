@@ -33,12 +33,15 @@ public final class RenderGardener extends Render {
             GL11.glTranslated(-bx, -by, -bz);
             Tessellator tess = Tessellator.instance;
             tess.startDrawingQuads();
+            Vec3[] joints = new Vec3[GardenerPose.SEGMENTS + 1];
             for(int arm = 0; arm < GardenerPose.ARMS; arm++) {
                 tess.setColorOpaque_F(boss.armDisabled(arm) ? 0.15F : 0.27F, 0.20F, 0.17F);
+                for(int joint = 0; joint <= GardenerPose.SEGMENTS; joint++)
+                    joints[joint] = GardenerPose.point(boss, arm, joint, partial);
                 for(int segment = 0; segment < GardenerPose.SEGMENTS; segment++)
-                    tube(tess, GardenerPose.point(boss, arm, segment, partial), GardenerPose.point(boss, arm, segment + 1, partial), GardenerPose.RADIUS);
+                    tube(tess, joints[segment], joints[segment + 1], GardenerPose.RADIUS);
                 // Fine forks add the skeletal silhouette without independent decorative entities.
-                Vec3 root = GardenerPose.point(boss, arm, 2, partial), tip = GardenerPose.point(boss, arm, 4, partial);
+                Vec3 root = joints[2], tip = joints[GardenerPose.SEGMENTS];
                 int state = boss.armState(arm);
                 if(!boss.isOcean() && (EntityGardener.holdingState(state) || state == EntityGardener.RELEASE)) {
                     float close = state == EntityGardener.CAPTURE ? Math.min(1F, boss.armStateTime(arm, partial) / 16F)
