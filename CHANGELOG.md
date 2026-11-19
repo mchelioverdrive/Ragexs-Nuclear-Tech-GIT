@@ -931,3 +931,9 @@
 - Drive the existing six-limb skeleton from physical displacement with alternating support groups, bounded foothold sampling, and interpolated climb and pursuit poses. Synchronize compact motion checkpoints and keep the native body and existing capture skeleton.
 - Break registered nest emergence into approach, grip, vertical ascent, rim crossing, and supported dismount. Check the wall and swept body, recover interrupted climbs, and reuse climbing poses on surface ledges. Raise the full sole to ledge height before a horizontal crest step. Keep existing nest layouts and commute states.
 - Disperse onto 16–40-block routes, roam in 24–64-block legs within the existing configurable hunting radius, and keep intentional pauses under two seconds. Prioritize eligible visible prey, search last-seen terrain briefly, and resume roaming after failed approaches. Log distinct commute, pursuit, and measured navigation events through Gemini debug.
+
+2026-11-18 23:15 — Route Underground Gardeners through their saved nest entrances
+
+- Connect supported surface starts to the body-sized path grid, use connected staging routes, and allow longer wall-braced descents and nest approach climbs where the body clears the ledge and limbs can reach the wall.
+- Use the existing registered opening for both directions, with checked rim, shaft and chamber legs, individual surface approaches and a shared passage reservation. Animate the descent with the existing articulated limbs and retain attached prey during approach, waiting and entry.
+- Back off after rejected approaches and report entrance occupancy, path rejection, and measured movement through Gemini debug. Use the saved geometry for completed legacy and recessed pits.

@@ -31,7 +31,7 @@ final class GardenerSurfaceHunting {
     private int pause, pursuitFailures, recoveries;
     private boolean roaming, dispersing, scouting, visible, committed;
     private double exitX, exitZ, sampleX, sampleZ, displacement, fallSpeed;
-    private double sampleY;
+    private double sampleY, verticalDisplacement;
     private long sampleAt, nextReport, measurementTicks, retryUntil;
     private final Map<Long, Node> nodes = new HashMap<Long, Node>();
     private final Map<Long, Long> denied = new HashMap<Long, Long>();
@@ -39,14 +39,16 @@ final class GardenerSurfaceHunting {
     private final PriorityQueue<Node> open = new PriorityQueue<Node>();
     private final List<Node> route = new ArrayList<Node>();
     private Vec3 goal;
-    private Node segment;
+    private Node segment, frontier;
+    private double frontierDistance;
+    private final List<EntityGardener> neighbors = new ArrayList<EntityGardener>();
     private int step, visited, blockedTicks;
-    private boolean searching, failed, finalSegment;
+    private boolean searching, failed, finalSegment, preciseRoute;
     private String landingResult = "not checked", pathResult = "idle";
     private static final int LIMIT = 768, SEGMENT_LENGTH = 18;
     private static final int PREY_MEMORY = 160, STALL_TICKS = 60, MAX_PAUSE = 40;
     private static final double DISPERSAL_MIN = 16D, DISPERSAL_MAX = 40D, ROAM_MIN = 24D, ROAM_MAX = 64D;
-    private static final double MAX_DROP = 4D, MAX_CLIMB = 3D, EPS = 0.002D;
+    private static final double MAX_DROP = 4D, MAX_CLIMB = 3D, MAX_BRACED_LEDGE = 9D, EPS = 0.002D;
     private static final int[][] DIRECTIONS = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, 1}, {1, -1}, {-1, -1}};
 
     GardenerSurfaceHunting(EntityGardener mob) { this.mob = mob; }
@@ -241,7 +243,8 @@ final class GardenerSurfaceHunting {
         Vec3 requested = Vec3.createVectorHelper(x, y, z);
         double y0 = mob.boundingBox.minY, dx = x - mob.posX, dz = z - mob.posZ;
         double distance = Math.sqrt(dx * dx + dz * dz);
-        if(!committed && distance <= reach && Math.abs(y - y0) <= 0.55D && supported(mob.posX, y0, mob.posZ)) {
+        if(!committed && distance <= reach && Math.abs(y - y0) <= (reach < 0.5D ? 0.025D : 0.55D)
+                && supported(mob.posX, y0, mob.posZ) && clear(body(mob.posX, y0, mob.posZ))) {
             report("arrival", "Reached supported destination", requested); clearPath(); recoveries = 0; return 1;
         }
         // Finish a committed edge before reacting to a moving prey target.
@@ -249,18 +252,30 @@ final class GardenerSurfaceHunting {
             clearPath(); goal = requested;
         }
         if(segment == null) {
+            if(!clear(body(mob.posX, y0, mob.posZ))) {
+                fail(null, "invalid starting node: body obstructed, wet or outside loaded terrain");
+                return 0;
+            }
             // Start from stable ground, including fractional-height slabs or snow.
             if(!supported(mob.posX, y0, mob.posZ)) {
                 settle();
-                if(++blockedTicks >= STALL_TICKS) fail(null, "no support at route origin");
+                if(++blockedTicks >= STALL_TICKS) fail(null, "invalid starting node: no terrain support");
                 return 0;
             }
             blockedTicks = 0;
             finalSegment = distance <= SEGMENT_LENGTH;
+            preciseRoute = reach < 0.5D;
             segment = localLanding(requested, distance, reach);
             if(segment == null) { fail(null, "no supported local landing"); return 0; }
             Node start = new Node(mob.posX, y0, mob.posZ, null, Motion.WALK, 0, 0);
-            nodes.put(start.key(), start); open.add(start); searching = true; pathResult = "searching";
+            // The live position is not necessarily centered in its grid cell.
+            // Keep its identity separate so the same cell's center remains a valid connector.
+            frontierDistance = remaining(start);
+            for(Object entry : mob.worldObj.getEntitiesWithinAABB(EntityGardener.class, mob.boundingBox.expand(34, 40, 34))) {
+                EntityGardener other = (EntityGardener) entry;
+                if(other != mob && !other.isOcean() && other.isEntityAlive()) neighbors.add(other);
+            }
+            open.add(start); searching = true; pathResult = "searching";
         }
         if(searching) search();
         if(searching || failed) { settle(); return 0; }
@@ -281,6 +296,9 @@ final class GardenerSurfaceHunting {
         double feet = mob.boundingBox.minY;
         double y = scale == 1D ? requested.yCoord : feet;
         int bx = MathHelper.floor_double(x), bz = MathHelper.floor_double(z);
+        if(scale == 1D && reach < 0.5D) {
+            return exactLanding(x, y, z);
+        }
         Node best = landing(bx, bz, y, scale == 1D ? Math.max(0.55D, reach / 3D) : 24D, false);
         if(best != null && (scale < 1D || horizontalSq(best.x, best.z, x, z) <= reach * reach)) return best;
         best = null;
@@ -300,6 +318,29 @@ final class GardenerSurfaceHunting {
         return best;
     }
 
+    Vec3 approach(int x, int z, double preferredY, double range) {
+        Node node = landing(x, z, preferredY, range, true);
+        return node == null ? null : node.point();
+    }
+
+    private Node exactLanding(double x, double y, double z) {
+        AxisAlignedBB box = body(x, y, z);
+        if(!clear(box) || !supported(x, y, z)) {
+            landingResult = "requested waypoint has no clear supported landing";
+            return null;
+        }
+        if(isDenied(MathHelper.floor_double(x), y, MathHelper.floor_double(z))) {
+            landingResult = "recently rejected waypoint";
+            return null;
+        }
+        if(occupied(box, x, y, z, false)) {
+            landingResult = "waypoint occupied by another Gardener";
+            return null;
+        }
+        landingResult = "accepted at Y=" + y;
+        return new Node(x, y, z, null, Motion.WALK, 0, 0);
+    }
+
     private Node landing(int x, int z, double preferredY, double range, boolean reserve) {
         double cx = x + 0.5D, cz = z + 0.5D;
         AxisAlignedBB footprint = body(cx, preferredY, cz);
@@ -316,11 +357,18 @@ final class GardenerSurfaceHunting {
             AxisAlignedBB box = body(cx, y, cz);
             if(!clear(box)) { landingResult = "body clearance obstructed or wet"; continue; }
             if(!safeFooting(box)) { landingResult = "unsafe material at footing"; continue; }
+            if(reserve && canopy(cx, y, cz)) { landingResult = "tree canopy at landing"; continue; }
             if(occupied(box, cx, y, cz, reserve)) { landingResult = "occupied or reserved landing"; continue; }
             landingResult = "accepted at Y=" + y;
             return new Node(cx, y, cz, null, Motion.WALK, 0, 0);
         }
         return null;
+    }
+
+    private boolean canopy(double x, double y, double z) {
+        int bx = MathHelper.floor_double(x), by = MathHelper.floor_double(y - EPS), bz = MathHelper.floor_double(z);
+        Block block = mob.worldObj.getBlock(bx, by, bz);
+        return block.isWood(mob.worldObj, bx, by, bz) || block.isLeaves(mob.worldObj, bx, by, bz);
     }
 
     /** The block collision shapes under the entire body set candidate foot heights. */
@@ -349,7 +397,7 @@ final class GardenerSurfaceHunting {
                 && !mob.worldObj.isAnyLiquid(box) && mob.worldObj.func_147461_a(box).isEmpty();
     }
 
-    private boolean supported(double x, double y, double z) {
+    boolean supported(double x, double y, double z) {
         AxisAlignedBB box = body(x, y, z);
         if(y < 1 || !GardenerNests.loaded(mob.worldObj, box.expand(1, 0, 1))) return false;
         AxisAlignedBB sole = AxisAlignedBB.getBoundingBox(box.minX, y - 0.025D, box.minZ, box.maxX, y + EPS, box.maxZ);
@@ -384,16 +432,27 @@ final class GardenerSurfaceHunting {
 
     Vec3 destination() { return roam != null ? roam : goal; }
 
-    private boolean separating(double x, double y, double z) {
-        for(Object entry : mob.worldObj.getEntitiesWithinAABB(EntityGardener.class, mob.boundingBox.expand(8, 2, 8))) {
+    boolean separating(double x, double y, double z, boolean levelCorrection) {
+        AxisAlignedBB from = mob.boundingBox, to = body(x, y, z);
+        for(Object entry : mob.worldObj.getEntitiesWithinAABB(EntityGardener.class, from.addCoord(x - mob.posX,
+                y - from.minY, z - mob.posZ).expand(1, 1, 1))) {
             EntityGardener other = (EntityGardener) entry;
-            if(other == mob || other.isOcean() || !other.isEntityAlive() || Math.abs(other.posY - y) >= mob.height) continue;
-            double before = horizontalSq(mob.posX, mob.posZ, other.posX, other.posZ);
-            double after = horizontalSq(x, z, other.posX, other.posZ);
-            double spacing = (mob.width + other.width) / 2D;
-            if(after < spacing * spacing && after < before - 0.000001D) return false;
+            if(other != mob && !other.isOcean() && other.isEntityAlive() && crowds(from, to, other.boundingBox)
+                    && !(levelCorrection && from.intersectsWith(other.boundingBox))) return false;
         }
         return true;
+    }
+
+    private boolean crowds(AxisAlignedBB from, AxisAlignedBB to, AxisAlignedBB other) {
+        if(!to.intersectsWith(other)) return false;
+        return separation(to, other) <= separation(from, other) + 1E-7D;
+    }
+
+    private double separation(AxisAlignedBB a, AxisAlignedBB b) {
+        double dx = (a.minX + a.maxX - b.minX - b.maxX) * 0.5D;
+        double dy = (a.minY + a.maxY - b.minY - b.maxY) * 0.5D;
+        double dz = (a.minZ + a.maxZ - b.minZ - b.maxZ) * 0.5D;
+        return dx * dx + dy * dy + dz * dz;
     }
 
     private void settle() {
@@ -415,7 +474,8 @@ final class GardenerSurfaceHunting {
         double speed = mob.getEntityAttribute(SharedMonsterAttributes.movementSpeed).getAttributeValue() * urgency;
         double scale = distance > 0 ? Math.min(1D, speed / distance) : 0;
         double mx = dx * scale, mz = dz * scale;
-        if(!separating(x + mx, y, z + mz)) {
+        if((next.motion == Motion.WALK || distance > 0.045D && y >= next.y)
+                && !separating(x + mx, y, z + mz, false)) {
             stall(next, "movement blocked by another Gardener"); return;
         }
         if(next.motion == Motion.CLIMB) {
@@ -424,9 +484,10 @@ final class GardenerSurfaceHunting {
             // ledge. Even a subpixel shortfall still overlaps the block face.
             if(y < next.y) {
                 double rise = Math.min(next.y - y, speed);
+                if(!separating(x, y + rise, z, false)) { stall(next, "vertical movement blocked by another Gardener"); return; }
                 if(!wallContact(body(x, y, z), climbX, climbZ)
                         || !clear(body(x, y, z).addCoord(0, rise, 0))) {
-                    fail(next, "climb lost wall contact or headroom"); return;
+                    fail(next, "failed vertical transition: climb lost wall contact or headroom"); return;
                 }
                 mob.traversalPose(GardenerLocomotion.CLIMB, climbX, climbZ);
                 mob.moveGardener(0, rise, 0);
@@ -437,19 +498,33 @@ final class GardenerSurfaceHunting {
                 mob.traversalPose(GardenerLocomotion.CREST, climbX, climbZ);
                 mob.moveGardener(mx, 0, mz);
             }
-        } else if(next.motion == Motion.DESCEND) {
+        } else if(next.motion == Motion.DESCEND || next.motion == Motion.LOWER) {
             // Cross the edge at rim height. Let collision/gravity take over after the
             // entire footprint has cleared the ledge and the checked column is below it.
             if(distance > 0.045D && y >= from.y - EPS) {
                 AxisAlignedBB sweep = body(x, y, z).addCoord(mx, 0, mz);
                 if(!clear(sweep)) { fail(next, "descent edge obstructed"); return; }
+                if(next.motion == Motion.LOWER)
+                    mob.traversalPose(GardenerLocomotion.ENTRY, next.x - from.x, next.z - from.z);
                 mob.moveGardener(mx, 0, mz);
             } else {
                 AxisAlignedBB column = body(next.x, next.y, next.z).addCoord(0, Math.max(0D, y - next.y), 0);
                 if(!clear(column) || !supported(next.x, next.y, next.z) || y < next.y - 0.025D) {
-                    fail(next, "descent column or landing became unsafe"); return;
+                    fail(next, "failed vertical transition: descent column or landing became unsafe"); return;
                 }
-                settle();
+                double drop = next.motion == Motion.LOWER ? Math.min(speed, y - next.y)
+                        : Math.min(Math.max(0.08D, fallSpeed), y - next.y);
+                if(!separating(x, y - drop, z, false)) {
+                    stall(next, "vertical movement blocked by another Gardener"); return;
+                }
+                if(next.motion == Motion.LOWER) {
+                    double wallX = from.x - next.x, wallZ = from.z - next.z;
+                    if(!wallContact(body(x, y, z), wallX, wallZ)) {
+                        fail(next, "failed vertical transition: descent lost wall contact"); return;
+                    }
+                    mob.traversalPose(GardenerLocomotion.LOWER, wallX, wallZ);
+                    mob.moveGardener(0, -drop, 0);
+                } else settle();
             }
         } else {
             AxisAlignedBB sweep = body(x, y, z).addCoord(mx, 0, mz);
@@ -482,16 +557,17 @@ final class GardenerSurfaceHunting {
         if(now - sampleAt < STALL_TICKS) return;
         measurementTicks = now - sampleAt;
         displacement = Math.sqrt(horizontalSq(mob.posX, mob.posZ, sampleX, sampleZ));
-        boolean verticalProgress = next.motion != Motion.WALK && Math.abs(y - sampleY) >= 0.25D;
+        verticalDisplacement = y - sampleY;
+        boolean verticalProgress = next.motion != Motion.WALK && Math.abs(verticalDisplacement) >= 0.25D;
         if(displacement < 0.2D && !verticalProgress) { fail(next, "active " + next.motion + " route made insufficient measured movement"); return; }
         if(now >= nextReport) { report("movement", "Following surface route: " + next.motion, goal); nextReport = now + 200; }
         sampleAt = now; sampleX = mob.posX; sampleY = y; sampleZ = mob.posZ;
     }
 
     private void clearPath() {
-        nodes.clear(); open.clear(); floors.clear(); route.clear();
-        goal = null; segment = null; searching = failed = committed = false; step = visited = blockedTicks = 0; sampleAt = 0;
-        displacement = 0D; measurementTicks = 0L;
+        nodes.clear(); open.clear(); floors.clear(); route.clear(); neighbors.clear();
+        goal = null; segment = frontier = null; searching = failed = committed = false; step = visited = blockedTicks = 0; sampleAt = 0;
+        displacement = verticalDisplacement = 0D; measurementTicks = 0L;
         pathResult = "idle"; landingResult = "not checked";
     }
 
@@ -505,12 +581,12 @@ final class GardenerSurfaceHunting {
         if(sampleAt != 0) {
             measurementTicks = mob.worldObj.getTotalWorldTime() - sampleAt;
             displacement = Math.sqrt(horizontalSq(mob.posX, mob.posZ, sampleX, sampleZ));
+            verticalDisplacement = mob.boundingBox.minY - sampleY;
         }
         pathResult = searching || route.isEmpty() ? "search rejected" : "execution rejected";
         report("navigation", "Navigation failed: " + reason + "; recoveryAction="
                 + (roam != null ? "choose a different roaming destination" : "exclude failed landing and replan nearby"), goal);
-        // A blocked edge does not invalidate the whole destination. Keep the
-        // approach available to replanning when another route can reach it.
+        // An execution failure can be bypassed via another edge to the goal.
         if(node != null) deny(node);
         else if(segment != null) deny(segment);
         clearPath(); failed = true; retryUntil = mob.worldObj.getTotalWorldTime() + Math.min(MAX_PAUSE, recoveries * 5);
@@ -541,7 +617,9 @@ final class GardenerSurfaceHunting {
                 + "; destinationGroundY=" + (segment == null ? target == null ? "-" : target.yCoord : segment.y)
                 + "; horizontalDistance=" + distance + "; verticalDifference=" + (target == null ? 0 : target.yCoord - feet)
                 + "; landing=" + landingResult + "; path=" + pathResult + "; waypoint=" + step + "/" + route.size()
-                + "; horizontalDisplacement=" + displacement + "; measurementTicks=" + measurementTicks + "; recoveries=" + recoveries);
+                + "; horizontalDisplacement=" + displacement + "; verticalDisplacement=" + verticalDisplacement
+                + "; measurementTicks=" + measurementTicks + "; recoveries=" + recoveries + "; carryingPrey=" + mob.captureState()
+                + mob.nestNavigationContext());
     }
 
     private Motion edge(Node from, double x, double y, double z) {
@@ -549,11 +627,19 @@ final class GardenerSurfaceHunting {
         double high = Math.max(y, from.y);
         AxisAlignedBB start = body(from.x, from.y, from.z), end = body(x, y, z);
         if(!clear(body(from.x, high, from.z).addCoord(dx, 0, dz))) return null;
-        if(rise < -0.025D) return clear(end.addCoord(0, -rise, 0)) ? Motion.DESCEND : null;
+        if(rise < -0.025D) {
+            if(!clear(end.addCoord(0, -rise, 0))) return null;
+            if(rise >= -MAX_DROP - EPS) return Motion.DESCEND;
+            for(double feet = high; feet > y; feet -= 1D)
+                if(!wallContact(body(x, feet, z), -dx, -dz)) return null;
+            return Motion.LOWER;
+        }
         if(rise <= EPS) return Motion.WALK;
         if(!clear(start.addCoord(0, rise, 0))) return null;
         if(rise <= mob.stepHeight + EPS) return Motion.WALK;
-        return wallContact(start, dx, dz) ? Motion.CLIMB : null;
+        for(double feet = from.y; feet < y; feet += 1D)
+            if(!wallContact(body(from.x, feet, from.z), dx, dz)) return null;
+        return Motion.CLIMB;
     }
 
     private boolean wallContact(AxisAlignedBB body, double dx, double dz) {
@@ -576,44 +662,80 @@ final class GardenerSurfaceHunting {
         return 10D * (Math.abs(node.x - segment.x) + Math.abs(node.z - segment.z)) + 5D * Math.abs(node.y - segment.y);
     }
 
+    private double remaining(Node node) {
+        return Math.sqrt(horizontalSq(node.x, node.z, goal.xCoord, goal.zCoord)) + 0.5D * Math.abs(node.y - goal.yCoord);
+    }
+
+    private void routeTo(Node end, boolean staging) {
+        for(Node node = end; node.parent != null; node = node.parent) route.add(node);
+        Collections.reverse(route); searching = false; nodes.clear(); open.clear(); floors.clear(); neighbors.clear();
+        pathResult = "ready after " + visited + " nodes";
+        report("path", staging ? "Connected route to an alternate staging point" : "Surface route ready", goal);
+        if(staging) finalSegment = false;
+    }
+
     private void search() {
         for(int budget = 0; budget < 8 && visited < LIMIT && !open.isEmpty(); budget++) {
             Node current = open.poll();
-            if(nodes.get(current.key()) != current || current.closed) continue;
+            if((current.parent != null && nodes.get(current.key()) != current) || current.closed) continue;
             current.closed = true; visited++;
-            if(current.key() == segment.key() && current.parent != null) {
-                for(Node n = current; n.parent != null; n = n.parent) route.add(n);
-                Collections.reverse(route); searching = false; nodes.clear(); open.clear(); floors.clear();
-                pathResult = "ready after " + visited + " nodes";
-                report("path", "Surface route ready", goal); return;
+            if(current.parent != null) {
+                if(current.key() == segment.key()) { routeTo(current, false); return; }
+                double distance = remaining(current);
+                if(distance < frontierDistance - (frontier == null ? 3D : 0D)) {
+                    frontier = current; frontierDistance = distance;
+                }
             }
-            for(int side = 0; side < (current.parent == null ? 5 : 4); side++) {
-                int x = MathHelper.floor_double(current.x) + (side == 0 ? 1 : side == 1 ? -1 : 0);
-                int z = MathHelper.floor_double(current.z) + (side == 2 ? 1 : side == 3 ? -1 : 0);
-                double cx = x + 0.5D, cz = z + 0.5D;
-                if(horizontalSq(cx, cz, current.x, current.z) < EPS * EPS
-                        || Math.abs(cx - mob.posX) > 29D || Math.abs(cz - mob.posZ) > 29D) continue;
-                long column = key(x, current.y, z);
-                TreeSet<Double> levels = floors.get(column);
-                if(levels == null) {
-                    levels = floorLevels(cx, cz, current.y - MAX_DROP, current.y + MAX_CLIMB);
-                    floors.put(column, levels);
-                }
-                for(double y : levels) {
-                    long key = key(x, y, z);
-                    if(key == current.key() && side != 4 || isDenied(x, y, z) || !safeFooting(body(cx, y, cz))) continue;
-                    Motion motion = edge(current, cx, y, cz);
-                    if(motion == null) continue;
-                    double cost = current.cost + 10D + 4D * Math.abs(y - current.y) + (motion == Motion.CLIMB ? 6D : 0D);
-                    Node old = nodes.get(key);
-                    if(old != null && old != current && old.cost <= cost || nodes.size() >= LIMIT || open.size() >= LIMIT * 2) continue;
-                    Node next = new Node(cx, y, cz, current, motion, cost, 0D);
-                    next.score = cost + heuristic(next) * 1.25D;
-                    nodes.put(key, next); open.add(next);
-                }
+            int x = MathHelper.floor_double(current.x), z = MathHelper.floor_double(current.z);
+            for(int[] direction : DIRECTIONS) connect(current, x + direction[0], z + direction[1]);
+            if(current.parent == null) {
+                connect(current, x, z);
+                // A broad body resting on a rim may have no aligned point one
+                // cell away. Probe a second ring using the same swept edge checks.
+                if(open.isEmpty()) for(int[] direction : DIRECTIONS) connect(current, x + 2 * direction[0], z + 2 * direction[1]);
             }
         }
-        if(open.isEmpty() || visited >= LIMIT) fail(null, "no safe route after " + visited + " expanded nodes");
+        if(open.isEmpty() || visited >= LIMIT) {
+            if(!finalSegment && frontier != null) {
+                deny(segment);
+                routeTo(frontier, true);
+            } else fail(null, "no connected path after " + visited + " expanded nodes"
+                    + (visited == 1 ? " (supported origin has no clear walking, climbing or descent edge)" : ""));
+        }
+    }
+
+    private void connect(Node from, int x, int z) {
+        double cx = x + 0.5D, cz = z + 0.5D;
+        double horizontal = Math.sqrt(horizontalSq(cx, cz, from.x, from.z));
+        if(horizontal < EPS || Math.abs(cx - mob.posX) > 29D || Math.abs(cz - mob.posZ) > 29D) return;
+        long column = key(x, from.y, z);
+        TreeSet<Double> levels = floors.get(column);
+        if(levels == null) {
+            levels = floorLevels(cx, cz, from.y - MAX_BRACED_LEDGE, from.y + (preciseRoute ? MAX_BRACED_LEDGE : MAX_CLIMB));
+            floors.put(column, levels);
+        }
+        AxisAlignedBB start = body(from.x, from.y, from.z);
+        for(double y : levels) {
+            long key = key(x, y, z);
+            if(isDenied(x, y, z)) continue;
+            AxisAlignedBB end = body(cx, y, cz);
+            if(!safeFooting(end)) continue;
+            double cost = from.cost + 10D * horizontal + 4D * Math.abs(y - from.y);
+            Node old = nodes.get(key);
+            if(old != null && old.cost <= cost || nodes.size() >= LIMIT || open.size() >= LIMIT * 2) continue;
+            boolean crowded = false;
+            for(EntityGardener other : neighbors) {
+                if(other.isEntityAlive() && crowds(start, end, other.boundingBox)) { crowded = true; break; }
+            }
+            if(crowded) continue;
+            Motion motion = edge(from, cx, y, cz);
+            if(motion == null) continue;
+            if(motion == Motion.CLIMB) cost += 6D;
+            if(old != null && old.cost <= cost) continue;
+            Node next = new Node(cx, y, cz, from, motion, cost, 0D);
+            next.score = cost + heuristic(next) * 1.25D;
+            nodes.put(key, next); open.add(next);
+        }
     }
 
     private static double horizontalSq(double x, double z, double tx, double tz) {
@@ -625,7 +747,7 @@ final class GardenerSurfaceHunting {
         return ((long) x & 0x3ffffffL) << 38 | ((long) z & 0x3ffffffL) << 12 | Math.round(y * 16D) & 4095L;
     }
 
-    private enum Motion { WALK, DESCEND, CLIMB }
+    private enum Motion { WALK, DESCEND, CLIMB, LOWER }
 
     private static final class Node implements Comparable<Node> {
         final double x, y, z, cost;

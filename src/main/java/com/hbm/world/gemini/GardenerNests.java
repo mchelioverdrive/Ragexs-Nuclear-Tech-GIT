@@ -162,17 +162,25 @@ public final class GardenerNests extends WorldSavedData {
     public static final class Access {
         public final int x, y, z, top;
         public final boolean ready, recessed;
-        public final double laneZ;
+        public final double laneZ, openingX, shaftX, passageX, passageZ;
         private final Nest nest;
         private Access(Nest nest) {
             this.nest = nest; x = nest.x; y = nest.y; z = nest.z; top = nest.top;
             ready = nest.accessVersion > 0; recessed = nest.accessVersion >= TERRAIN_ACCESS;
             laneZ = z + (recessed ? nest.lane : -4) + 0.5D;
+            openingX = x + 43.5D; shaftX = x + 51.5D; passageX = x + 39.5D;
+            // The legacy climbing lane is offset toward the wall, outside the full body's lower doorway clearance.
+            passageZ = recessed ? laneZ : z + 0.5D;
         }
         public boolean claim(EntityGardener mob) {
             long now = mob.worldObj.getTotalWorldTime();
             if(nest.pitOwner != null && !nest.pitOwner.equals(mob.getUniqueID()) && now < nest.pitLease) return false;
             nest.pitOwner = mob.getUniqueID(); nest.pitLease = now + 40;
+            return true;
+        }
+        public boolean renew(EntityGardener mob) {
+            if(!mob.getUniqueID().equals(nest.pitOwner)) return false;
+            nest.pitLease = mob.worldObj.getTotalWorldTime() + 40;
             return true;
         }
         public void release(EntityGardener mob) {

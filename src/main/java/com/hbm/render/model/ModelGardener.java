@@ -18,7 +18,7 @@ public class ModelGardener extends ModelBase {
         GL11.glPushMatrix();
         GL11.glTranslated(0, boss.bodyShift(partial), 0);
         double climb = boss.climbPitch(partial);
-        if(climb > 0.01D) {
+        if(Math.abs(climb) > 0.01D) {
             GL11.glTranslated(0, 4.3D, 0);
             GL11.glRotated(climb, -boss.climbZ(partial), 0, boss.climbX(partial));
             GL11.glTranslated(0, -4.3D, 0);
@@ -49,7 +49,7 @@ public class ModelGardener extends ModelBase {
         Entity target = boss.eyeTarget();
         double age = boss.isAwake() ? boss.worldObj.getTotalWorldTime() + partial : 0;
         double yaw = Math.sin(age * 0.009D) * 0.6D, pitch = 0;
-        if(boss.climbPitch(partial) > 0.5D) yaw = Math.atan2(-boss.climbX(partial), -boss.climbZ(partial));
+        if(Math.abs(boss.climbPitch(partial)) > 0.5D) yaw = Math.atan2(-boss.climbX(partial), -boss.climbZ(partial));
         if(target != null) {
             double dx = target.lastTickPosX + (target.posX - target.lastTickPosX) * partial
                     - boss.lastTickPosX - (boss.posX - boss.lastTickPosX) * partial;

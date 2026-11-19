@@ -127,12 +127,21 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
     double huntingHomeX() { return hasSharedNest() ? sharedX : nestX; }
     double huntingHomeZ() { return hasSharedNest() ? sharedZ : nestZ; }
     int surfaceTravel(double x, double y, double z) { return surfaceHunting.travel(x, y, z, 0.12D, 1.3D); }
+    Vec3 surfaceApproach(int x, int z, double y, double range) { return surfaceHunting.approach(x, z, y, range); }
+    boolean gardenerFooting(double x, double y, double z) { return surfaceHunting.supported(x, y, z); }
+    boolean gardenerSeparation(double x, double y, double z, boolean levelCorrection) {
+        return surfaceHunting.separating(x, y, z, levelCorrection);
+    }
     void stopSurfaceTravel() { surfaceHunting.stop(); }
     void stopSurfaceTravel(String reason) { surfaceHunting.stop(reason); }
     void emergedOnSurface() { surfaceHunting.emerged(); }
     boolean crossingSurfaceEdge() { return surfaceHunting.crossingEdge(); }
-    Vec3 surfaceHuntingDestination() { return surfaceHunting.destination(); }
+    Vec3 surfaceHuntingDestination() {
+        Vec3 approach = burrowing.approachDestination();
+        return approach == null ? surfaceHunting.destination() : approach;
+    }
     String surfaceMovementState() { return burrowing.movementState(); }
+    String nestNavigationContext() { return burrowing.diagnosticContext(); }
     boolean huntingDebugEnabled() { return GeminiInvasionManager.debugging(worldObj); }
     void huntingDiagnostic(String event, String message) {
         if(!isOcean()) GeminiInvasionManager.debug(worldObj,
@@ -816,7 +825,14 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
                     : Math.max(2.8D, width * 0.5D + widest * 0.5D + 0.75D);
             double height = !isOcean() && captive instanceof EntityLivingBase ? Math.max(0.8D, captive.height * 0.5D + 0.1D)
                     : bodyOffset() + (isOcean() ? 2D : 2.5D);
-            return Vec3.createVectorHelper(posX + Math.cos(angle) * radius, posY + height, posZ + Math.sin(angle) * radius);
+            boolean carrying = !isOcean() && burrowing.delivering();
+            if(carrying && captive.getBoundingBox() != null) {
+                // Hold solid vehicles close to the center so their collision box cannot wedge against the carrier.
+                radius = 0.9D;
+                height = captive.height * 0.5D + 0.2D;
+            }
+            return Vec3.createVectorHelper(posX + Math.cos(angle) * radius, (carrying ? boundingBox.minY : posY) + height,
+                    posZ + Math.sin(angle) * radius);
         }
         private double captureDistance() {
             return captureGoal().distanceTo(Vec3.createVectorHelper(captive.posX,

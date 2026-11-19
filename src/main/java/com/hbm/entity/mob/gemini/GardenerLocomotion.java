@@ -9,6 +9,8 @@ import com.hbm.world.gemini.GardenerNests;
 /** Distance-driven pose shared by rendering and the existing damageable limb segments. */
 final class GardenerLocomotion {
     static final int WALK = 0, APPROACH = 1, GRIP = 2, CLIMB = 3, CREST = 4, BURROW = 5, PURSUE = 6, CARRY = 7;
+    static final int ENTRY = 8, LOWER = 9;
+    private static final int MODE_HIGH_BIT = 1 << 19, POSE_MASK = MODE_HIGH_BIT | 2047;
     private static final double TAU = Math.PI * 2D, STANCE = 0.64D;
     // The six shoulders go around the body. Neighboring legs are on opposing tripods.
     private static final double[] PHASE = {0.00D, 0.54D, 0.08D, 0.50D, 0.04D, 0.58D};
@@ -35,10 +37,12 @@ final class GardenerLocomotion {
         if(x != 0 || z != 0) facing = (int) Math.round(Math.atan2(z, x) * 256D / TAU) & 255;
     }
 
-    boolean fullClimbPose() { return mode == GRIP || mode == CLIMB || mode == CREST; }
+    boolean fullClimbPose() { return mode == GRIP || mode == CLIMB || mode == CREST || mode == ENTRY || mode == LOWER; }
+
+    private boolean changingGrip() { return mode == CLIMB || mode == LOWER; }
 
     void read(int packed) {
-        mode = packed & 7;
+        mode = (packed & 7) | ((packed & MODE_HIGH_BIT) >> 16);
         facing = packed >> 3 & 255;
         if(packed != checkpoint) {
             double observed = (packed >> 11 & 255) / 256D;
@@ -50,8 +54,8 @@ final class GardenerLocomotion {
     }
 
     int snapshot(int previous) {
-        int pose = mode | facing << 3;
-        if((previous & 2047) != pose || (mob.ticksExisted + mob.getEntityId()) % 8 == 0)
+        int pose = (mode & 7) | (mode & 8) << 16 | facing << 3;
+        if((previous & POSE_MASK) != pose || (mob.ticksExisted + mob.getEntityId()) % 8 == 0)
             return pose | ((int) (unit(phase) * 256D) << 11);
         return previous;
     }
@@ -63,7 +67,7 @@ final class GardenerLocomotion {
         previousWalkX = walkX;
         previousWalkZ = walkZ;
         previousHeading = heading;
-        heading += MathHelper.wrapAngleTo180_double(facing * 360D / 256D - heading) * (pitch < 0.2D ? 1D : 0.28D);
+        heading += MathHelper.wrapAngleTo180_double(facing * 360D / 256D - heading) * (Math.abs(pitch) < 0.2D ? 1D : 0.28D);
         double horizontal = Math.sqrt(dx * dx + dz * dz);
         // Ignore placement/teleport corrections. The renderer follows native entity interpolation.
         if(horizontal > 0.003D && horizontal <= 0.65D) {
@@ -73,7 +77,7 @@ final class GardenerLocomotion {
         double strideSpeed = horizontal > 0.003D && horizontal <= 0.65D ? horizontal : 0;
         speed += (strideSpeed - speed) * 0.35D;
         if(speed < 0.002D) speed = 0;
-        boolean movingVertically = mode == CLIMB || mode == BURROW;
+        boolean movingVertically = changingGrip() || mode == BURROW;
         double vertical = movingVertically && Math.abs(dy) <= 0.65D ? Math.abs(dy) : 0;
         if(vertical > 0.003D) verticalSign = Math.signum(dy);
         burrowSpeed += ((mode == BURROW ? vertical : 0) - burrowSpeed) * 0.3D;
@@ -84,9 +88,10 @@ final class GardenerLocomotion {
         phase += advance + correction;
         phaseCorrection -= correction;
 
-        double bracing = mode == APPROACH ? 0.45D : mode == GRIP || mode == CLIMB ? 1D : mode == CREST ? 0.72D : 0;
+        double bracing = mode == APPROACH ? 0.45D : mode == GRIP || changingGrip() ? 1D : mode == CREST || mode == ENTRY ? 0.72D : 0;
         wallBlend += (bracing - wallBlend) * 0.22D;
-        double wantedPitch = mode == CLIMB ? 19D : mode == GRIP ? 12D : mode == CREST ? 7D : mode == APPROACH ? 4D : 0D;
+        double wantedPitch = mode == LOWER ? -16D : mode == ENTRY ? -12D
+                : mode == CLIMB ? 19D : mode == GRIP ? 12D : mode == CREST ? 7D : mode == APPROACH ? 4D : 0D;
         pitch += (wantedPitch - pitch) * 0.22D;
         // Stagger local collision probes across limbs and residents. Render frames only read the cache.
         int first = 2 * ((mob.ticksExisted + mob.getEntityId()) % 3);
@@ -136,19 +141,32 @@ final class GardenerLocomotion {
             updateGrip(arm, Double.isNaN(landing) ? 2.6D : forward, Double.isNaN(landing) ? 2.2D : landing + 0.35D);
             return;
         }
+        if(mode == ENTRY) {
+            // Front limbs feel below the lip while the rear limbs brace near the rim.
+            double reach = 3.4D + front(arm) * 1.8D;
+            double landing = floor(x + fx * reach, z + fz * reach, mob.boundingBox.minY, 0.6D, 3.5D);
+            if(Double.isNaN(landing)) {
+                double sideReach = Math.copySign(1.25D, side);
+                landing = floor(x - fz * sideReach, z + fx * sideReach, mob.boundingBox.minY, 0.6D, 4.5D);
+            }
+            updateGrip(arm, Double.isNaN(landing) ? reach * 0.8D : reach,
+                    Double.isNaN(landing) ? -0.8D - Math.max(0D, front(arm)) * 1.4D : landing + 0.16D);
+            return;
+        }
         double reach = Math.max(2.5D, 6.2D + front(arm) * 1.4D);
         double startY = mob.posY + y;
-        double endY = startY + (mode == CLIMB ? 0.6D : 3.8D);
+        double endY = startY + (mode == LOWER ? -2.4D - lift(arm, 1F) : mode == CLIMB ? 0.6D : 3.8D);
         MovingObjectPosition hit = null;
-        AxisAlignedBB probe = AxisAlignedBB.getBoundingBox(x, mob.posY - 0.75D, z, x, endY + 4D, z).addCoord(fx * reach, 0, fz * reach);
+        AxisAlignedBB probe = AxisAlignedBB.getBoundingBox(x, Math.min(mob.posY - 0.75D, endY), z,
+                x, Math.max(startY, endY + 4D), z).addCoord(fx * reach, 0, fz * reach);
         if(GardenerNests.loaded(mob.worldObj, probe)) {
             hit = mob.worldObj.func_147447_a(Vec3.createVectorHelper(x, startY, z),
                     Vec3.createVectorHelper(x + fx * reach, endY, z + fz * reach), false, true, false);
-            if(hit == null && mode == CLIMB) {
+            if(hit == null && changingGrip()) {
                 hit = mob.worldObj.func_147447_a(Vec3.createVectorHelper(x, startY, z),
                         Vec3.createVectorHelper(x + fx * reach, endY + 4D, z + fz * reach), false, true, false);
             }
-            if(hit == null && mode == CLIMB) {
+            if(hit == null && changingGrip()) {
                 // The last pull still grips the rim beneath the torso.
                 hit = mob.worldObj.func_147447_a(Vec3.createVectorHelper(x, mob.posY + 1.2D, z),
                         Vec3.createVectorHelper(x + fx * reach, mob.posY - 0.75D, z + fz * reach), false, true, false);
@@ -194,7 +212,7 @@ final class GardenerLocomotion {
         double rootY = 4.3D + mob.bodyShift(partial);
         double tipWeight = t * t;
         double wall = lerp(previousWallBlend, wallBlend, partial);
-        if(turn > 0.0002D && t < 1D) {
+        if(Math.abs(turn) > 0.0002D && t < 1D) {
             double fx = tiltX(partial), fz = tiltZ(partial);
             double forward = x * fx + z * fz;
             double shoulderTurn = (1D - t) * (forward * (Math.cos(turn) - 1D) - (y - rootY) * Math.sin(turn));
@@ -219,16 +237,16 @@ final class GardenerLocomotion {
         y += (height + Math.min(0.7D, burrowSpeed * 8D) * tipWeight * swing) * walk * extension;
         if(wall > 0.002D) {
             double fx = wallX(), fz = wallZ();
-            double brace = wall * (mode == APPROACH ? 0.45D + Math.max(0D, front(arm)) * 0.55D : 1D);
+            double brace = wall * (mode == APPROACH || mode == ENTRY ? 0.45D + Math.max(0D, front(arm)) * 0.55D : 1D);
             double side = lateral(arm);
-            double reach = lerp(previousGripReach[arm], gripReach[arm], partial) - (mode == CLIMB ? 0.8D * swing : 0D);
+            double reach = lerp(previousGripReach[arm], gripReach[arm], partial) - (changingGrip() ? 0.8D * swing : 0D);
             double tx = fx * reach - fz * side;
             double tz = fz * reach + fx * side;
             double arch = Math.sin(Math.PI * t);
             double hx = Math.cos(angle) * 2.7D * (1D - t) + tx * t - fz * side * 0.24D * arch;
             double hz = Math.sin(angle) * 2.3D * (1D - t) + tz * t + fx * side * 0.24D * arch;
             double hy = rootY * (1D - t) + (lerp(previousGripHeight[arm], gripHeight[arm], partial)
-                    + (mode == CLIMB ? swing * 0.8D : 0D)) * t + arch * 1.8D;
+                    + (changingGrip() ? swing * (mode == LOWER ? -0.8D : 0.8D) : 0D)) * t + arch * 1.8D;
             x += (hx - x) * brace;
             z += (hz - z) * brace;
             y += (hy - y) * brace;
