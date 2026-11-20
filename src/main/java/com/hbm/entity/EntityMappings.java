@@ -334,6 +334,7 @@ public class EntityMappings {
 		registerGeminiEntity(com.hbm.entity.mob.gemini.EntityOceanGardener.class, "ocean_gardener", id++, MainRegistry.instance, 192, 2, true);
 		registerGeminiEntity(com.hbm.entity.mob.gemini.EntityWoodcrawlerProboscis.class, "woodcrawler_proboscis", id++, MainRegistry.instance, 96, 2, false);
 		registerGeminiEntity(com.hbm.entity.mob.gemini.EntityGardenerCocoon.class, "gardener_cocoon", id++, MainRegistry.instance, 96, 20, false);
+		registerGeminiEntity(com.hbm.entity.mob.gemini.EntityGeminiLight.class, "gemini_light", id++, MainRegistry.instance, 192, 2, false);
 	}
 
 	private static final java.util.Set<Class<?>> GEMINI_ENTITIES = new java.util.HashSet<Class<?>>();

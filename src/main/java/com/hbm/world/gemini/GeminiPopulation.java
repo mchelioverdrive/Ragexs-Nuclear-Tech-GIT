@@ -75,6 +75,18 @@ public final class GeminiPopulation {
         return pressure;
     }
 
+    static float gardenPressure(net.minecraft.entity.player.EntityPlayer player) {
+        Map<UUID, Entity> cocoons = COCOONS.get(player.worldObj);
+        if(cocoons != null) for(Entity entry : cocoons.values()) {
+            if(entry instanceof EntityGardenerCocoon && entry.isEntityAlive() && entry.addedToChunk
+                    && entry.getDistanceSqToEntity(player) < 128D * 128D) {
+                EntityGardenerCocoon cocoon = (EntityGardenerCocoon)entry;
+                if(!cocoon.isHanging() && !cocoon.isEmpty()) return 0.6F;
+            }
+        }
+        return 0F;
+    }
+
     static String gardenerAdmissionReason(World world) {
         if(!GardenerNests.censusReady(world)) return "saved Underground Gardener census in progress";
         if(GeminiConfig.gardenerMaxLoaded <= 0) return "Gardener admission disabled (maxLoaded=0)";

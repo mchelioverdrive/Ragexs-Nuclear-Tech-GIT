@@ -943,3 +943,9 @@
 - Hold captured prey in server-owned grips that suspend native travel and reject conflicting player movement. Keep native tracking for observers and interpolate position updates for captive players. Release the grip on escape, death, or invalid ownership.
 - Carry Underground Gardener prey through the nest commute, then lift it from the carry position into the feeding position. Advance bites on the existing damage cadence even when terrain intersects the grip. Ocean Gardeners use their own elevated feeding position. Ceiling wrapping retains its placement checks and can fall back to local feeding.
 - Preserve Woodcrawler dragging and cocoon delivery, Wretch hand and torso animations, and Nature's Mockery assimilation. Draw held prey into each creature's feeding position and record attachment, interruptions, and completion in Gemini debug.
+
+2026-11-19 01:39 — Add Lights in the Sky and Harvest encounters
+
+- Add independent airborne Light predators to the existing Gemini invasion. Groups watch and follow exposed prey at night, then descend, capture, harvest and withdraw. Distant fullbright glows, fading, and visible capture tethers use the normal entity tracker and Gemini grip synchronization.
+- Add the rarer Harvest encounter with a wider search pattern, distinct amber glows and a deeper call. Nearby cocoon gardens, nests and camps increase encounter odds. Harvest increases nearby Underground Gardener activity through its existing hunting and commute behavior.
+- Add reloadable Gemini Light settings and Overworld debug controls. One bounded encounter owns target claims and releases grips when Lights are destroyed, interrupted, unloaded or stopped.

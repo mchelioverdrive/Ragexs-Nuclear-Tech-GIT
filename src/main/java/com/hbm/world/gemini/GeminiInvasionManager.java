@@ -1,6 +1,7 @@
 package com.hbm.world.gemini;
 
 import com.hbm.config.GeminiConfig;
+import com.hbm.entity.mob.gemini.EntityGeminiLight;
 import com.hbm.config.SpaceConfig;
 import com.hbm.dim.CelestialBody;
 import com.hbm.dim.duna.WorldProviderDuna;
@@ -236,7 +237,10 @@ public final class GeminiInvasionManager {
 				|| event.world.getTotalWorldTime() % 20 != 0) return;
         // Inactive Iris snapshots/debug controls still synchronize; invasion scheduling gates are unchanged.
         GeminiWorldSavedData irisData = GeminiWorldSavedData.get(event.world);
-        if(irisData != null) GeminiIris.tick((WorldServer)event.world, irisData);
+        if(irisData != null) {
+            GeminiIris.tick((WorldServer)event.world, irisData);
+            irisData.lights.tick((WorldServer)event.world);
+        }
 		if(!GeminiConfig.enabled) { WoodcrawlerSpawning.diagnostic(event.world, "disabled", "Gemini invasion disabled"); return; }
 		if(event.world.playerEntities.isEmpty()) { WoodcrawlerSpawning.diagnostic(event.world, "players", "No players in the Overworld"); return; }
 
@@ -265,6 +269,27 @@ public final class GeminiInvasionManager {
 		MinecraftForge.EVENT_BUS.post(new InvasionEvent(overworld));
         if(overworld.rand.nextInt(8) == 0) GeminiIris.invasionPulse(overworld);
 	}
+
+    @SubscribeEvent
+    public void onLightJoin(net.minecraftforge.event.entity.EntityJoinWorldEvent event) {
+        if(event.world.isRemote || !(event.entity instanceof EntityGeminiLight)) return;
+        GeminiWorldSavedData data = event.world.provider.dimensionId == 0 ? GeminiWorldSavedData.get(event.world) : null;
+        if(data == null || !data.lights.owns((EntityGeminiLight)event.entity)) event.setCanceled(true);
+    }
+
+    @SubscribeEvent
+    public void onLightChunkUnload(net.minecraftforge.event.world.ChunkEvent.Unload event) {
+        if(event.world.isRemote || event.world.provider.dimensionId != 0) return;
+        GeminiWorldSavedData data = GeminiWorldSavedData.get(event.world);
+        if(data != null) data.lights.unloadChunk(event.getChunk().xPosition, event.getChunk().zPosition);
+    }
+
+    @SubscribeEvent
+    public void onLightWorldUnload(net.minecraftforge.event.world.WorldEvent.Unload event) {
+        if(event.world.isRemote || event.world.provider.dimensionId != 0) return;
+        GeminiWorldSavedData data = GeminiWorldSavedData.get(event.world);
+        if(data != null) data.lights.unload(event.world);
+    }
 
 	private static void scheduleNext(WorldServer world, GeminiWorldSavedData data) {
 		int phase = Math.max(0, Math.min(3, data.getPhase() - 1));

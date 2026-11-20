@@ -8,6 +8,7 @@ import com.hbm.world.gemini.GardenerNests;
 import com.hbm.world.gemini.GeminiHostileSpawning;
 import com.hbm.world.gemini.GeminiInvasionManager;
 import com.hbm.world.gemini.GeminiIris;
+import com.hbm.world.gemini.GeminiLights;
 import com.hbm.world.gemini.GeminiInvasionManager.StructureInfo;
 import com.hbm.world.gemini.WretchCamps;
 
@@ -16,6 +17,7 @@ import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.command.WrongUsageException;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.ChunkCoordinates;
 import net.minecraft.util.MathHelper;
@@ -28,7 +30,7 @@ public final class CommandGemini extends CommandBase {
     private static final int PAGE_SIZE = 8;
     @Override public String getCommandName() { return "gemini"; }
     @Override public int getRequiredPermissionLevel() { return 2; }
-    @Override public String getCommandUsage(ICommandSender sender) { return "/gemini help|status|phase|time|nest|camp|iris|debug"; }
+    @Override public String getCommandUsage(ICommandSender sender) { return "/gemini help|status|phase|time|nest|camp|iris|lights|harvest|debug"; }
 
     private static void reply(ICommandSender sender, String message) {
         sender.addChatMessage(new ChatComponentText("[Gemini] " + message));
@@ -79,11 +81,26 @@ public final class CommandGemini extends CommandBase {
             reply(sender, "/gemini phase set <1|2|3|4> | phase next | phase reset");
             reply(sender, "/gemini time <add|set> <ticks>");
             reply(sender, "/gemini iris status|show|hide|stage <1..4>|observe|reset");
+            reply(sender, "/gemini <lights|harvest> <start|stop|status>");
             reply(sender, "/gemini nest spawn [x y z] [force] | nest locate | nest list [page]");
             reply(sender, "/gemini camp spawn [" + WretchCamps.TYPE + "] [x y z] [force] | camp locate | camp list [page]");
             return;
         }
         WorldServer world = world(sender);
+        if("lights".equals(args[0]) || "harvest".equals(args[0])) {
+            GeminiLights.Kind kind = "harvest".equals(args[0]) ? GeminiLights.Kind.HARVEST : GeminiLights.Kind.LIGHTS;
+            if(args.length != 2) throw new WrongUsageException("/gemini " + args[0] + " <start|stop|status>");
+            if("start".equals(args[1])) {
+                ChunkCoordinates at = sender instanceof MinecraftServer ? world.getSpawnPoint() : sender.getPlayerCoordinates();
+                GeminiLights.forceStart(world, kind, at.posX + 0.5D, at.posZ + 0.5D);
+            } else if("stop".equals(args[1])) {
+                GeminiLights.forceStop(world, kind);
+            } else if(!"status".equals(args[1])) {
+                throw new WrongUsageException("/gemini " + args[0] + " <start|stop|status>");
+            }
+            reply(sender, GeminiLights.status(world, kind));
+            return;
+        }
         if("iris".equals(args[0])) {
             WorldServer overworld = DimensionManager.getWorld(0);
             GeminiIris iris = GeminiIris.get(overworld);
@@ -229,8 +246,9 @@ public final class CommandGemini extends CommandBase {
     }
 
     @Override public List addTabCompletionOptions(ICommandSender sender, String[] args) {
-        if(args.length == 1) return getListOfStringsMatchingLastWord(args, "help", "status", "phase", "time", "nest", "camp", "iris", "debug");
+        if(args.length == 1) return getListOfStringsMatchingLastWord(args, "help", "status", "phase", "time", "nest", "camp", "iris", "lights", "harvest", "debug");
         if(args.length == 2) {
+            if("lights".equals(args[0]) || "harvest".equals(args[0])) return getListOfStringsMatchingLastWord(args, "start", "stop", "status");
             if("iris".equals(args[0])) return getListOfStringsMatchingLastWord(args, "status", "show", "hide", "stage", "observe", "reset");
             if("phase".equals(args[0])) return getListOfStringsMatchingLastWord(args, "set", "next", "reset");
             if("time".equals(args[0])) return getListOfStringsMatchingLastWord(args, "add", "set");

@@ -13,6 +13,11 @@ public final class GeminiConfig {
     public static float irisIntensity = 0.6F;
     public static boolean irisProgressionVisibility = true;
     public static int irisMinRenderChunks = 2;
+    public static boolean lightsEnabled = true;
+    public static int lightsMinPhase = 3, lightsIntervalSeconds = 480, harvestIntervalSeconds = 2400;
+    public static int lightsMaxActive = 10, lightsDurationSeconds = 160;
+    public static int lightsDetectionRange = 80, lightsHuntingRange = 42;
+    public static float lightsHarvestDamage = 10F, lightsMovementSpeed = 0.38F;
 
 	public static final String CATEGORY = "21_gemini";
 	public static boolean enabled = true;
@@ -106,6 +111,19 @@ public final class GeminiConfig {
         if(Float.isNaN(values.irisIntensity) || Float.isInfinite(values.irisIntensity)) values.irisIntensity = 0.6F;
         values.irisProgressionVisibility = config.getBoolean("progressionBasedVisibility", CATEGORY + ".iris", true, "Use rare early-night reveals and advanced daytime visibility. False shows all unlocked stages continuously, still attenuated by weather.");
         values.irisMinRenderChunks = config.getInt("minimumRenderDistanceChunks", CATEGORY + ".iris", 2, 2, 16, "Minimum client terrain render-distance setting for automatic Iris rendering. Celestial geometry has no world-distance cutoff or chunk requests. Debug show bypasses this threshold.");
+        String lights = CATEGORY + ".lights";
+        values.lightsEnabled = config.getBoolean("enabled", lights, true, "Allow natural nighttime Lights in the Sky and Harvest encounters.");
+        values.lightsMinPhase = config.getInt("minimumPhase", lights, 3, 1, 4, "Minimum invasion phase for Lights in the Sky. Harvest also requires at least phase 3.");
+        values.lightsIntervalSeconds = config.getInt("ordinaryIntervalSeconds", lights, 480, 30, 86400, "Base average eligible seconds between ordinary encounter rolls that succeed. Later phases and nearby infestation improve the odds.");
+        values.harvestIntervalSeconds = config.getInt("harvestIntervalSeconds", lights, 2400, 60, 86400, "Base average eligible seconds between Harvest rolls that succeed. Later phases and nearby infestation improve the odds.");
+        values.lightsMaxActive = config.getInt("maximumActiveLights", lights, 10, 0, 16, "Maximum Lights admitted to the single active Overworld encounter. Zero also prevents forced admission.");
+        values.lightsDurationSeconds = config.getInt("eventDurationSeconds", lights, 160, 30, 600, "Hard lifetime in server seconds for a newly started encounter.");
+        values.lightsDetectionRange = config.getInt("detectionRange", lights, 80, 16, 112, "Horizontal detection radius in blocks for exposed prey.");
+        values.lightsHuntingRange = config.getInt("huntingRange", lights, 42, 8, 80, "Horizontal distance in blocks at which a Light may commit to hunting, limited by detectionRange.");
+        values.lightsHarvestDamage = config.getFloat("harvestDamage", lights, 10F, 0F, 40F, "Damage in health points delivered once per capture.");
+        values.lightsMovementSpeed = config.getFloat("movementSpeed", lights, 0.38F, 0.08F, 0.8F, "Base flight speed in blocks per tick. Distant drift is slower than a dive.");
+        if(!Float.isFinite(values.lightsHarvestDamage)) values.lightsHarvestDamage = 10F;
+        if(!Float.isFinite(values.lightsMovementSpeed)) values.lightsMovementSpeed = 0.38F;
         config.setCategoryComment(CATEGORY, "Gemini runtime settings support /rntconfig reload. woodcrawlerSpawnWeight requires restart (biome registration). Saved infection/cocoon durations, encounter countdowns and existing boss health retain their snapshots. geminiOnly initializes missing world gamerules only.");
 		values.flashlightRange = config.getInt("flashlightRange", CATEGORY, 20, 4, 48,
 				"Effective range in blocks of held visible/UV flashlights. Both modes require direct aim and loaded, unobstructed line of sight. Right-click toggles power; sneak-right-click changes mode.");
@@ -314,6 +332,16 @@ public final class GeminiConfig {
         irisIntensity = values.irisIntensity;
         irisProgressionVisibility = values.irisProgressionVisibility;
         irisMinRenderChunks = values.irisMinRenderChunks;
+        lightsEnabled = values.lightsEnabled;
+        lightsMinPhase = values.lightsMinPhase;
+        lightsIntervalSeconds = values.lightsIntervalSeconds;
+        harvestIntervalSeconds = values.harvestIntervalSeconds;
+        lightsMaxActive = values.lightsMaxActive;
+        lightsDurationSeconds = values.lightsDurationSeconds;
+        lightsDetectionRange = values.lightsDetectionRange;
+        lightsHuntingRange = values.lightsHuntingRange;
+        lightsHarvestDamage = values.lightsHarvestDamage;
+        lightsMovementSpeed = values.lightsMovementSpeed;
         enabled = values.enabled;
         geminiOnly = values.geminiOnly;
         geminiStageSpawnSuppression = values.geminiStageSpawnSuppression;
@@ -422,6 +450,11 @@ public final class GeminiConfig {
         public float irisIntensity = 0.6F;
         public boolean irisProgressionVisibility = true;
         public int irisMinRenderChunks = 2;
+        public boolean lightsEnabled = true;
+        public int lightsMinPhase = 3, lightsIntervalSeconds = 480, harvestIntervalSeconds = 2400;
+        public int lightsMaxActive = 10, lightsDurationSeconds = 160;
+        public int lightsDetectionRange = 80, lightsHuntingRange = 42;
+        public float lightsHarvestDamage = 10F, lightsMovementSpeed = 0.38F;
         public boolean enabled = true;
         public boolean geminiOnly = false, geminiStageSpawnSuppression = true;
         public float geminiFinalStageHostileSpawnMultiplier = 0F;

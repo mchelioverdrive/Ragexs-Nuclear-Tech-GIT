@@ -72,10 +72,10 @@ final class GardenerBurrowing {
     void huntingGround(double x, double z) { huntingX = x; huntingZ = z; hasHuntingGround = true; }
 
     /** Returns true while the commute owns movement. Captured prey always finishes on the existing controller. */
-    boolean tick() {
+    boolean tick(boolean harvestHunting) {
         if(!enabled) return false;
         long time = (world.getWorldTime() % 24000L + 24000L) % 24000L;
-        boolean night = !world.provider.hasNoSky && time >= 13000 && time < 23000;
+        boolean night = !world.provider.hasNoSky && (time >= 13000 && time < 23000 || harvestHunting);
         if(!night && state != UNDERGROUND && !mob.pursuingPrey()) retreat = true;
         if(delivery && !mob.captureState()) delivery = false;
         if(mob.state() != EntityGardener.IDLE || mob.captureState() && (!delivery || !mob.readyToCarry())) return false;

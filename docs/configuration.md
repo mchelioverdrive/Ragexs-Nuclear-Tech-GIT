@@ -111,6 +111,27 @@ All settings support `/rntconfig reload` and synchronize from the server without
 
 Appearance is an original procedural planetary tissue texture on retained curved geometry, with a separate irregular dark red opening. No footage or human eye texture is used. Primary visual references are Gemini Home Entertainment's [Our Solar System](https://www.youtube.com/watch?v=6gCUsOfgjvs) and [Crusader Probe Mission](https://www.youtube.com/watch?v=0sd2ahUfi9Y). Targeted observation, gradual apparent approach and timed atmospheric disturbances are gameplay interpretations, not confirmed abilities or astronomical measurements from the series. Neptune remains a separate celestial body in the existing planetary system; this feature gives it no independent invasion leadership or boss behavior.
 
+### Lights in the Sky and Harvest
+
+Lights are airborne Gemini predators. Small groups watch exposed players from above at night, drift toward open areas and sometimes disappear under a player's gaze. A Light can dive on an exposed survival or adventure player, animal or villager. The grip lifts the victim, deals one burst of damage and lowers the victim before the Light withdraws. Hitting the Light or breaking its grip can interrupt the sequence. Cover and vehicles can prevent a Light from acquiring prey.
+
+Harvest spreads a larger group across the area. Amber glows and a deeper call distinguish it from ordinary encounters. Harvest can trigger the existing Iris disturbance, and nearby Underground Gardeners search farther and more frequently while using their usual nests and routes. Active surface cocoon gardens, nests and Wretch camps make nearby encounters more likely. Natural encounters start in the Overworld between world times 13000 and 22499, outside Peaceful difficulty, and begin to withdraw near dawn. The invasion phase and nearby infestation influence the odds.
+
+| Setting in `21_gemini.lights` | Default | Behavior |
+| --- | --- | --- |
+| `enabled` | `true` | Allow natural Lights in the Sky and Harvest encounters. |
+| `minimumPhase` | `3` | Earliest eligible phase (1–4). Harvest also requires phase 3 or later. |
+| `ordinaryIntervalSeconds` | `480` | Base interval for ordinary encounter odds (30–86400). The server rolls every 15 eligible seconds. |
+| `harvestIntervalSeconds` | `2400` | Base interval for Harvest odds (60–86400). The server rolls for Harvest first. |
+| `maximumActiveLights` | `10` | Maximum group size (0–16). Zero prevents admission. Ordinary groups aim for 3–4 Lights and Harvest groups for 8–10, subject to the cap and loaded airspace. |
+| `eventDurationSeconds` | `160` | Maximum active duration of a new encounter (30–600 seconds). |
+| `detectionRange` | `80` | Horizontal observation range in blocks (16–112). |
+| `huntingRange` | `42` | Horizontal distance for committing to a hunt (8–80 blocks, capped by detection range). Animals and villagers use a more local search. |
+| `harvestDamage` | `10.0` | Health points of damage per completed charge (0–40). |
+| `movementSpeed` | `0.38` | Base flight speed in blocks per tick (0.08–0.8). Drifting, diving and climbing use different fractions or multiples of this speed. |
+
+Operators can use `/gemini lights start|stop|status` and `/gemini harvest start|stop|status` in the Overworld. A successful forced start replaces the current encounter and uses the sender's area or world spawn for the server console. It skips the phase, enablement, time, difficulty and natural terrain eligibility checks. The cap and loaded-airspace checks still apply. A force stop releases captives immediately. The server allows one active encounter across the Overworld and keeps its Lights and grips in memory. A world unload or restart ends the encounter. Settings are read through `/rntconfig reload`. An active event keeps the duration set when it started.
+
 ### Gemini invasion progression
 
 `21_gemini.enabled` defaults to `true`. Natural Gemini activity is gated by the world-level `geminiMarsVisited` milestone, normally recorded when a server player is actually in Mars's existing Duna dimension. Crafting, launching a rocket, visiting another planet, and orbiting Mars do not qualify. A real arrival by dimension transfer, login or respawn qualifies. The milestone is shared by all players and survives death, disconnection and server restarts, including visits made while invasions are disabled. Worlds without a saved milestone remain locked until a qualifying arrival or an administrative unlock; earlier visits cannot be inferred from old saves.
@@ -123,7 +144,7 @@ Progression is server-owned and saved in Overworld `data/GeminiInvasion.dat`, al
 | --- | --- | --- | --- |
 | 1 | Mars arrival | Frequent forest Woodcrawler encounters, villager capture and Fake People | `phase1EncounterPercent=25` |
 | 2 | `phase2DelayDays=3` | Deep Root transmission/progression and terminal Nature's Mockery conversion | `phase2EncounterPercent=50` |
-| 3 | `phase3DelayDays=5` | Underground Gardener nests, rare Ocean Gardeners, bounded organic block spread/budding and local creature coordination | `phase3EncounterPercent=75` |
+| 3 | `phase3DelayDays=5` | Underground Gardener nests, rare Ocean Gardeners, bounded organic block spread/budding, local creature coordination and default eligibility for Lights in the Sky and Harvest | `phase3EncounterPercent=75` |
 | 4 | `phase4DelayDays=7` | Rare Wretches at automatically scheduled abandoned camps | `phase4EncounterPercent=100` |
 
 Delays accept 1-10000 days and measure time spent in the preceding phase; default phase 4 begins after 15 active days. Encounter percentages accept 1-100 and still thin ordinary natural Woodcrawler attempts and Ocean Gardener discovery. They do not scale or reject scripted Woodcrawler encounters or automatic structure scheduling. Ocean Gardeners retain their separate bounded minute opportunity from phase 3; camps and underground nests use independent saved active-time schedules.

@@ -17,6 +17,7 @@ public final class GeminiWorldSavedData extends WorldSavedData {
 	private long elapsedTicks;
 	private boolean debug;
     final GeminiIris iris = new GeminiIris();
+    final GeminiLights lights = new GeminiLights();
 	final java.util.Map<String, Long> debugMessages = new java.util.HashMap<String, Long>();
 
 	public GeminiWorldSavedData(String name) {

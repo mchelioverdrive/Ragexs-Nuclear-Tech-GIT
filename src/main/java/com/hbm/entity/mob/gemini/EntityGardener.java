@@ -11,6 +11,7 @@ import com.hbm.handler.GeminiCaptures;
 import com.hbm.world.gemini.GardenerNests;
 import com.hbm.world.gemini.GeminiInfections;
 import com.hbm.world.gemini.GeminiInvasionManager;
+import com.hbm.world.gemini.GeminiLights;
 import com.hbm.world.gemini.MockerySpawning;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.IEntityLivingData;
@@ -42,6 +43,7 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
     private static final int CAPTURE_SLOTS = 3;
     private final CaptureSlot[] captures = {new CaptureSlot(0), new CaptureSlot(1), new CaptureSlot(2)};
     private Entity preyTarget;
+    private boolean harvestHunting;
     private final List<SurfaceBiomass> surfaceBiomass = new ArrayList<SurfaceBiomass>();
     private boolean placingSurface;
     private String cocoonAdmissionFailure;
@@ -349,7 +351,7 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
         String rejection = preyEligibility(target, acquiring);
         if(rejection != null) return rejection;
         if(!inTerritory(target)) return "Outside territory";
-        double search = surfaceHunter() ? (target == preyTarget ? 80D : 48D) : attackReach() + 7D;
+        double search = surfaceHunter() ? (target == preyTarget ? 80D : surfaceSearchRange()) : attackReach() + 7D;
         if(preyDistanceSq(target) > search * search) return "Outside search reach";
         return null;
     }
@@ -407,12 +409,14 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
                 && target.boundingBox.maxZ >= boundingBox.minZ && target.boundingBox.minZ <= boundingBox.maxZ
                 && target.boundingBox.minY <= boundingBox.maxY;
     }
+    private double surfaceSearchRange() { return harvestHunting ? 64D : 48D; }
+
     private void findTarget() {
         if(surfaceHunter() && prey(preyTarget)) return;
         Entity closest = null;
         double best = Double.MAX_VALUE;
         int examined = 0;
-        double scan = surfaceHunter() ? 48D : attackReach() + 7D;
+        double scan = surfaceHunter() ? surfaceSearchRange() : attackReach() + 7D;
         for(Object entry : worldObj.getEntitiesWithinAABBExcludingEntity(this, boundingBox.expand(scan, isOcean() ? 32 : surfaceHunter() ? 16 : 8, scan))) {
             Entity target = (Entity) entry;
             if(!prey(target)) { captureRejection(target, preyRejection(target)); continue; }
@@ -525,7 +529,8 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
         }
         dataWatcher.updateObject(27, (byte) mask);
         double commuteX = posX, commuteY = posY, commuteZ = posZ;
-        boolean commuting = !isOcean() && burrowing.tick();
+        harvestHunting = !isOcean() && GeminiLights.harvestNear(worldObj, nestX, nestZ);
+        boolean commuting = !isOcean() && burrowing.tick(harvestHunting);
         boolean hunting = isOcean() || burrowing.hunting() && !hasHuntingMeal();
         if(!hunting) {
             preyTarget = null; setAttackTarget(null); dataWatcher.updateObject(20, -1);
@@ -533,7 +538,7 @@ public class EntityGardener extends EntityLiving implements IMob, IBossDisplayDa
             smashCursor = -1;
         }
         if(ticksExisted % 20 == 1) maintainParts();
-        int searchInterval = surfaceHunter() ? 16 : 20;
+        int searchInterval = surfaceHunter() ? (harvestHunting ? 8 : 16) : 20;
         int searchTick = surfaceHunter() ? ticksExisted + getEntityId() : ticksExisted;
         if(searchTick % searchInterval == 1 && hunting && freeCapture() != null && state() == IDLE) findTarget();
         Entity target = preyTarget;

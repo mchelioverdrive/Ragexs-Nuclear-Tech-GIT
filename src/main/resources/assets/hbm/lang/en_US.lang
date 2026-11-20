@@ -1222,6 +1222,7 @@ death.attack.euthanizedSelf=%1$s euthanized himself, what a dork.
 death.attack.exhaust=%1$s was turned into shish kebab by a starting rocket.
 death.attack.flamethrower=%1$s was cremated by %2$s.
 death.attack.flamethrower.item=%1$s was cremated by %2$s using %3$s.
+death.attack.geminiHarvest=%1$s was harvested by a Light.
 death.attack.ice=%1$s was turned into a popsicle by %2$s.
 death.attack.laser=%1$s was turned into ash by %2$s.
 death.attack.laser.item=%1$s was turned into ash by %2$s using %3$s.
