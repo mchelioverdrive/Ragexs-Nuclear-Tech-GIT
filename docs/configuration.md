@@ -672,11 +672,16 @@ The implementation uses [ModularBosses 1.8](https://github.com/gummby8/ModularBo
 
 ## Prismarine Colossus
 
-Startup category `12_mobs.prismarineColossus` in `hbm.cfg`. Settings are independent of Wither Storm, Sandworm and nuclear explosions.
+Startup category `12_mobs.prismarineColossus` in `hbm.cfg`.
 
 | Settings | Defaults | Behavior |
 | --- | --- | --- |
-| `enabled`, `maxActivePerDimension` | true, 2 | Limit new encounters; saved dormant/unloaded bosses count. Existing bosses remain loadable when disabled. |
+| `enabled`, `maxActivePerDimension` | true, 2 | Limit new encounters. Saved boss entities count even if dormant or unloaded. A temple statue occupies no slot until it awakens. Existing bosses remain loadable when disabled. |
+| `requireWitherStormDefeat` | true | Require a recorded Wither Storm defeat for normal activation, including Ocean Temple cores, natural spawns and ordinary waking of dormant boss entities. Operator spawn and activate commands bypass the gate. |
+| `generateOceanTemples` | true | Allow new temples during Overworld terrain population in suitable ocean biomes. Also respects RTM's `5.00_enableStructures` flag. |
+| `oceanTempleMinSeparation` | 2048 | Minimum center-to-center distance in blocks (96–65536). New candidate sites are spaced in whole chunks and checked against saved temples. |
+| `oceanTempleRarity` | 2 | A 1-in-N chance per grid cell to consider a new site (1–1024). The site must also pass biome and terrain-population checks. |
+| `requireTempleInteraction` | true | Require a right-click on the Ocean Temple core. With false, a player within five blocks can also awaken it once the other requirements are met. |
 | `health`, `attackDamage`, `attackCooldownTicks` | 600, 24, 65 | Native health cap 1024. Attacks have separate windup, contact and recovery windows. Romeo recovers faster; glitched cooldowns vary. |
 | `movementSpeed`, `targetRange`, `modelScale` | 0.16, 64, 1 | Blocks per tick, blocks, and anatomy scale. Default height is 20 blocks. Scale (0.5–2) affects geometry, contact, reach and climbing and persists per entity. |
 | `weakPointMultiplier`, `gauntletRequired`, `allowBodyDamage` | 8, true, false | Rear-facing animated symbol rectangle is vulnerable. Gauntlet melee finishes it; disable the requirement to use other weapons. Body hits deal 1% damage, capped at 2, and stop at one health unless body kills are enabled. Explosions/magic/fire cannot count as directed symbol hits. Void damage remains an administrative escape hatch. |
@@ -685,10 +690,12 @@ Startup category `12_mobs.prismarineColossus` in `hbm.cfg`. Settings are indepen
 | `terrainDestruction`, `blocksPerTick` | true, 32 | Swept limb contact, also gated by mobGriefing. The dimension-wide coordinate budget covers obstruction probes and destruction lookups, including air and protected blocks. Hard cap 256. Queued contacts expire after 100 ticks and do not load chunks or persist across reloads. Existing explicit config values are respected. |
 | `protectedBlocks` | chests, ender chests, enchanting tables | Additional block registry names. Bedrock, negative-hardness blocks, portals, command blocks, liquids and all tile entities are always protected. Respect canEntityDestroy and Forge BreakEvent with the Minecraft fake player; claim mods must enforce their normal fake-player break rules. Drops are suppressed during removals. |
 | `particleIntensity`, `soundVolume` | 12, 2 | Bounded local particles and existing Minecraft stone/golem/impact sounds. Client particle settings also apply. No decorative server fragment entities. |
-| `naturalSpawning`, `proximityActivation` | false, false | Optional single loaded-ocean attempt every 24000 ticks near a survival player; no monument edits. Optional dormant activation within eight blocks. |
+| `naturalSpawning`, `proximityActivation` | false, false | Optional single loaded-ocean encounter attempt every 24000 ticks near a survival player. Optional waking of dormant boss entities within eight blocks. Ocean Temple generation and core interaction have separate settings. |
 | `giantClock`, `clockChangesTime`, `permanentClockTime` | true, false, false | Romeo visibly raises a clock once. Time mutation requires explicit enablement. Normally restore the original time plus elapsed daylight progression after ten seconds, death or unload; preserve unrelated time commands. Keeping the shift requires a second explicit option. |
 
 The Colossus can step up one block when its body has clearance and the elevated foot has support. Its gait follows horizontal distance and adjusts each foot to nearby terrain. During blocked pursuit it can punch a breakable obstruction that lies within the animated fist's reach. The server tracks attack timing, aim, arm choice, foot placement, grab escape progress and weak-point flare. Climb and escape inputs are validated on the server tick. Interrupted attacks reload in a stagger. A saved encounter ledger enforces admission across restarts. See [Colossus commands and survival controls](commands.md#rntcolossus).
+
+Temple starts and completed placement slices are saved with the world. Disabling new temples or changing their spacing or rarity preserves existing sites and allows unfinished sites to complete as their chunks populate. Temples do not retrofit previously populated terrain. The entrance shafts use the standard Overworld waterline, and an awakened Colossus walks on the arena floor with its normal combat movement.
 
 ## Giant Ghast
 

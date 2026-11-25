@@ -12,6 +12,7 @@ import com.hbm.world.gen.component.SiloComponent;
 import com.hbm.world.gen.terrain.OverworldLargeTerrain;
 import com.hbm.world.gen.terrain.BedrockOilSurface;
 import com.hbm.world.gen.structure.LegacyStructureGenerator;
+import com.hbm.world.gen.structure.OceanTempleGenerator;
 
 import cpw.mods.fml.common.IWorldGenerator;
 import cpw.mods.fml.common.registry.GameRegistry;
@@ -34,12 +35,14 @@ public class HbmWorld {
 		MapGenStructureIO.registerStructure(BunkerStart.class, "NTMBunker");
 		NBTStructure.register();
 		LegacyStructureGenerator.register();
+		OceanTempleGenerator.register();
 		registerNTMFeatures();
 		
 		registerWorldGen(new HbmWorldGen(), 1);
 		registerWorldGen(new LegacyStructureGenerator(), 1);
 		registerWorldGen(new BedrockOilSurface(), 1);
 		registerWorldGen(new com.hbm.world.gen.FakeCommandBlockGenerator(), 2);
+		registerWorldGen(new OceanTempleGenerator(), 3);
 		MinecraftForge.EVENT_BUS.register(new OverworldLargeTerrain());
 		
 		worldGenerator = new NTMWorldGenerator();

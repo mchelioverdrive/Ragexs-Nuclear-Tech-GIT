@@ -10,12 +10,19 @@ public final class ColossusConfig {
     public static boolean enabled = true, terrain = true, climbing = true, gauntletRequired = true;
     public static boolean natural = false, clock = true, clockTime = false, permanentTime = false, creative = false;
     public static boolean attacks = true, proximityActivation = false, bypassArmor = false;
+    public static boolean requireWitherStormDefeat = true, generateOceanTemples = true, requireTempleInteraction = true;
+    public static int oceanTempleMinSeparation = 2048, oceanTempleRarity = 2;
     public static int blocks = 32, maximum = 2, cooldown = 65, particles = 12, escapePresses = 5;
     public static float health = 600, damage = 24, speed = 0.16F, range = 64, scale = 1, weakMultiplier = 8, volume = 2;
     public static Set<String> protectedBlocks = new HashSet<String>();
     public static void loadFromConfig(Configuration c) {
         String s = CommonConfig.CATEGORY_MOBS + ".prismarineColossus";
         enabled = bool(c, s, "enabled", "Allow new Colossus encounters. Saved bosses remain loadable.", true);
+        requireWitherStormDefeat = bool(c, s, "requireWitherStormDefeat", "Require a recorded Wither Storm defeat for normal Colossus activation. Operator commands bypass this.", true);
+        generateOceanTemples = bool(c, s, "generateOceanTemples", "Allow new Overworld Ocean Temples where RTM structure generation is enabled. Existing temples are preserved.", true);
+        oceanTempleMinSeparation = integer(c, s, "oceanTempleMinSeparation", "Minimum distance between Ocean Temple centers in blocks, rounded up to whole chunks for new candidate sites.", 2048, 96, 65536);
+        oceanTempleRarity = integer(c, s, "oceanTempleRarity", "One candidate per grid cell, with a 1-in-N chance to attempt generation. Higher values are rarer.", 2, 1, 1024);
+        requireTempleInteraction = bool(c, s, "requireTempleInteraction", "Require a right-click on the Ocean Temple core. False also permits activation when a player approaches the core.", true);
         health = number(c, s, "health", "Boss health; respects the native 1.7.10 health attribute limit.", 600, 20, 1024);
         damage = number(c, s, "attackDamage", "Base punch damage; slam, stomp, sweep and consume scale from this.", 24, 1, 200);
         cooldown = integer(c, s, "attackCooldownTicks", "Recovery between attacks; Romeo uses three quarters of this.", 65, 20, 1200);

@@ -978,3 +978,9 @@
 - Require a world-wide Ender Dragon defeat for both survival rituals. Route legacy euphemium activation through the server and leave the structure and its materials intact when either ritual is blocked. Recognize earlier Dragon defeats from the vanilla exit fountain in saved End chunks.
 - Add the persistent operator-level `/witherstormbypass` toggle. Preserve operator spawning, the challenge countdown, and its one-time spawn. The timed challenge encounter grants no boss milestones.
 - Store Dragon and final-stage Wither Storm defeats in shared boss progression data so future bosses can declare prerequisites.
+
+2026-11-25 00:02 — Add Ocean Temples and Prismarine Colossus progression
+
+- Require a recorded Wither Storm defeat for ordinary Colossus activation and record Colossus defeats in the shared world milestones. Operators can still spawn or awaken bosses directly.
+- Generate rare flooded Overworld temples with two entrance shafts, prismarine pillars, sea lanterns, a clear central arena and two treasure chambers. Each temple saves its placement slices and uses a one-shot core to replace the dormant statue with the active boss.
+- Add settings for the progression gate, core interaction, temple generation, minimum separation and rarity. Existing temple sites and saved milestones survive configuration changes.

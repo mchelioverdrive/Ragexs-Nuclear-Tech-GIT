@@ -13,6 +13,8 @@ import com.hbm.config.GiantEndermanConfig;
 import com.hbm.entity.mob.giantenderman.EntityGiantEnderman;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.ColossusAttachmentPacket;
+import com.hbm.world.progression.BossProgression;
+import com.hbm.world.progression.BossProgression.Boss;
 import api.hbm.entity.IRadiationImmune;
 import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint;
 import net.minecraft.block.Block;
@@ -127,7 +129,19 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
             ? Math.max(0,captureTime()+ColossusPose.ESCAPE_TICKS-(int)stateTime(0)) : 0;
     }
     public void setVariant(int variant) { dataWatcher.updateObject(20,(byte)MathHelper.clamp_int(variant,0,3)); }
+    public static boolean progressionAllowsActivation(World world) {
+        return !ColossusConfig.requireWitherStormDefeat || BossProgression.get(world).canSummon(Boss.PRISMARINE_COLOSSUS);
+    }
+
+    /** Explicit activation, including the administrative command. */
     public void activate() { if(!worldObj.isRemote && dormant()) { setVariant(ACTIVE); sound("mob.irongolem.throw",0.7F); cooldown=35; } }
+
+    private boolean tryWake() {
+        if(!dormant()) return true;
+        if(!progressionAllowsActivation(worldObj)) return false;
+        activate();
+        return true;
+    }
     public void setDropShards(boolean value) { dropShards=value; }
     public boolean admit() { registered=ColossusEncounters.get(worldObj).admit(getUniqueID()); return registered; }
     public boolean safeSpawn() { return clearBody(posX,posY,posZ) && supported(posX,posY,posZ); }
@@ -189,7 +203,7 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
         boolean tickingAttack=false;
         if(dormant()) {
             moving=0; stepY=Double.NaN;
-            if(ColossusConfig.proximityActivation && target instanceof EntityPlayer && getDistanceSqToEntity(target)<64) activate();
+            if(ColossusConfig.proximityActivation && target instanceof EntityPlayer && getDistanceSqToEntity(target)<64) tryWake();
         } else {
             if(state()==ColossusPose.IDLE) {
                 if(cooldown>0) cooldown--;
@@ -709,8 +723,7 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
         releaseGrab(); begin(ColossusPose.STUN); cooldown=40;
     }
     public void endermanStrike(EntityGiantEnderman enderman,float damage) {
-        if(worldObj.isRemote || !GiantEndermanConfig.bossCombat || !isEntityAlive()) return;
-        activate();
+        if(worldObj.isRemote || !GiantEndermanConfig.bossCombat || !isEntityAlive() || !tryWake()) return;
         if(targetable(enderman)) target=enderman;
         float amount=Math.min(damage,Math.max(0,getHealth()-getMaxHealth()*0.12F));
         if(amount>0 && super.attackEntityFrom(DamageSource.causeMobDamage(enderman),amount)) {
@@ -718,7 +731,7 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
         }
     }
     public boolean endermanFinish(EntityGiantEnderman enderman) {
-        if(worldObj.isRemote || !GiantEndermanConfig.bossCombat || !canEndermanFinish()) return false;
+        if(worldObj.isRemote || !GiantEndermanConfig.bossCombat || !canEndermanFinish() || !tryWake()) return false;
         DamageSource source=DamageSource.causeMobDamage(enderman).setDamageBypassesArmor();
         if(!super.attackEntityFrom(source,Math.max(1024,getMaxHealth()*2)) || getHealth()>0) return false;
         dataWatcher.updateObject(26,1);
@@ -727,7 +740,7 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
     @Override public boolean attackEntityFrom(DamageSource source,float damage) { return hit(-1,source,damage); }
     public boolean hit(int slot,DamageSource source,float damage) {
         if(worldObj.isRemote || !isEntityAlive() || !Float.isFinite(damage) || damage<=0) return false;
-        activate();
+        if(source != DamageSource.outOfWorld && !tryWake()) return false;
         Entity actor=source.getEntity(); if(targetable(actor)) target=(EntityLivingBase)actor;
         evaluate(skeleton,0);
         if(weakHit(source)) {
@@ -770,7 +783,10 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
     }
     @Override protected boolean interact(EntityPlayer p) {
         if(worldObj.isRemote) return true;
-        if(p.isSneaking() && dormant()) { activate(); return true; }
+        if(p.isSneaking() && dormant()) {
+            if(!tryWake()) p.addChatMessage(new ChatComponentTranslation("colossus.activation.locked"));
+            return true;
+        }
         if(!ColossusConfig.climbing || !isEntityAlive() || !p.isEntityAlive() || p.ridingEntity!=null || grips.size()>=4 || p==grabbed || p instanceof net.minecraftforge.common.util.FakePlayer) return false;
         if(grips.containsKey(p.getUniqueID())) return true;
         Vec3 local=fromWorld(Vec3.createVectorHelper(p.posX,p.posY,p.posZ),ColossusPose.ROOT);
@@ -888,6 +904,8 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
     @Override public void onDeath(DamageSource source) {
         super.onDeath(source);
         if(!dead) return;
+        if(!worldObj.isRemote && getHealth() <= 0F && source != DamageSource.outOfWorld)
+            BossProgression.get(worldObj).recordDefeat(Boss.PRISMARINE_COLOSSUS);
         releaseAll(); terrain.clear(); begin(ColossusPose.DEATH); restoreClock(); sound("mob.irongolem.death",0.5F);
     }
     @Override protected void dropFewItems(boolean player,int looting) { }

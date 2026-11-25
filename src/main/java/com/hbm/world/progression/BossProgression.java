@@ -17,7 +17,8 @@ public final class BossProgression extends WorldSavedData {
 
     public enum Boss {
         ENDER_DRAGON("EnderDragon", null),
-        WITHER_STORM("WitherStorm", ENDER_DRAGON);
+        WITHER_STORM("WitherStorm", ENDER_DRAGON),
+        PRISMARINE_COLOSSUS("PrismarineColossus", WITHER_STORM);
 
         private final String saveKey;
         private final Boss prerequisite;
@@ -49,7 +50,11 @@ public final class BossProgression extends WorldSavedData {
 
     public boolean canSummon(Boss boss) {
         return (boss == Boss.WITHER_STORM && witherStormBypass)
-            || boss.prerequisite == null || defeated.contains(boss.prerequisite);
+            || boss.prerequisite == null || isDefeated(boss.prerequisite);
+    }
+
+    public boolean isDefeated(Boss boss) {
+        return defeated.contains(boss);
     }
 
     public void recordDefeat(Boss boss) {

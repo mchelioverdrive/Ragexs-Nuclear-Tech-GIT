@@ -64,6 +64,7 @@ public final class ColossusEvents {
     @SubscribeEvent public void natural(TickEvent.WorldTickEvent event) {
         World w=event.world;
         if(event.phase!=TickEvent.Phase.END || w.isRemote || !ColossusConfig.natural || w.provider.dimensionId!=0 || w.getTotalWorldTime()%24000!=0 || w.playerEntities.isEmpty() || !ColossusEncounters.get(w).room()) return;
+        if(!EntityPrismarineColossus.progressionAllowsActivation(w)) return;
         EntityPlayer p=(EntityPlayer)w.playerEntities.get(w.rand.nextInt(w.playerEntities.size()));
         if(p.capabilities.isCreativeMode || !p.isEntityAlive()) return;
         double angle=w.rand.nextDouble()*Math.PI*2,x=p.posX+Math.cos(angle)*64,z=p.posZ+Math.sin(angle)*64;

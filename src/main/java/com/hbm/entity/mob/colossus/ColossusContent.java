@@ -1,7 +1,10 @@
 package com.hbm.entity.mob.colossus;
 
+import com.hbm.blocks.generic.BlockGeneric;
 import com.hbm.config.ColossusConfig;
 import cpw.mods.fml.common.registry.GameRegistry;
+import net.minecraft.block.Block;
+import net.minecraft.block.material.Material;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
@@ -10,12 +13,27 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemSword;
 import net.minecraft.util.ChatComponentTranslation;
+import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 
 public final class ColossusContent {
     private ColossusContent() { }
     public static Item gauntlet,shard,egg;
+    public static Block prismarine, seaLantern, templeCore;
+
     public static void register() {
+        prismarine = new BlockGeneric(Material.rock) {
+            @Override public int getRenderColor(int metadata) { return 0x86E9CD; }
+            @Override public int colorMultiplier(IBlockAccess world, int x, int y, int z) { return getRenderColor(0); }
+        }.setBlockName("temple_prismarine_brick").setBlockTextureName("hbm:gneiss_brick").setHardness(2F).setResistance(10F);
+        seaLantern = new BlockGeneric(Material.glass).setBlockName("temple_sea_lantern")
+            .setBlockTextureName("hbm:lamp_tritium_blue_on").setStepSound(Block.soundTypeGlass).setHardness(0.5F).setLightLevel(1F);
+        templeCore = new BlockOceanTempleCore();
+        GameRegistry.registerBlock(prismarine, "temple_prismarine_brick");
+        GameRegistry.registerBlock(seaLantern, "temple_sea_lantern");
+        GameRegistry.registerBlock(templeCore, "ocean_temple_core");
+        GameRegistry.registerTileEntity(BlockOceanTempleCore.Tile.class, "rntOceanTempleCore");
+
         gauntlet=new ItemSword(Item.ToolMaterial.EMERALD) {
             @Override public boolean isFull3D() { return true; }
             @Override public void addInformation(ItemStack stack,EntityPlayer player,java.util.List lines,boolean advanced) {

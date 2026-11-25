@@ -7544,6 +7544,14 @@ colossus.gauntlet.tip=Strike the glowing symbol on the back of the Colossus's he
 colossus.climb=Climbing: W/S to move, Space to brace against shaking, Sneak to release. Reach the rear-head symbol!
 colossus.escape=Tap %s to escape  %s/%s
 colossus.spawn.unsafe=Colossus disabled, encounter limit reached, or unsafe location. Use a broad, clear, loaded area.
+tile.temple_prismarine_brick.name=Prismarine Bricks
+tile.temple_sea_lantern.name=Sea Lantern
+tile.ocean_temple_core.name=Ocean Temple Core
+colossus.activation.locked=The ancient guardian remains dormant. A greater threat must first be defeated.
+colossus.activation.spent=The temple core has already awakened its guardian.
+colossus.activation.unavailable=The temple cannot awaken its guardian right now.
+colossus.activation.incomplete=Explore the rest of the temple before awakening its guardian.
+colossus.activation.obstructed=The guardian's platform must be clear before it can awaken.
 
 entity.hbm.giant_enderman.name=Giant Enderman
 item.giant_enderman_spawn_egg.name=Giant Enderman Spawn Egg
