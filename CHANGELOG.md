@@ -958,3 +958,7 @@
 2026-11-24 22:42 — Add Brazen Bull sound effects
 
 - Reuse RTM screams and a metal impact alongside vanilla mob hurt and fire effects. The server varies pitch and timing, with shorter scream intervals after damage and at low health. The Bull stops its occupant sounds when the captive leaves or dies and stops the fire loop when heating ends. Heating and damage mechanics retain their existing behavior.
+
+2026-11-24 22:53 — Give Fake People occasional hilltop screams
+
+- Both disguises can take a loaded walking route to an exposed rise when idle and pause for a single positional scream. Hunting takes priority, and unsuccessful searches yield to ordinary wandering. Use the bundled GHE human screams downmixed for positional playback and pitched-down vanilla villager calls, with randomized timing, a nighttime bias, and a configurable 96-block default range.

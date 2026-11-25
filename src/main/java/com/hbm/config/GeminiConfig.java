@@ -47,6 +47,12 @@ public final class GeminiConfig {
 	public static int woodcrawlerMaxLoaded = 16, woodcrawlerMaxPending = 16;
 	public static int fakePersonMaxLoaded = 16;
 	public static float fakePersonConversionChance = 0.80F;
+	public static boolean fakePersonHilltopScreaming = true;
+	public static int fakePersonHilltopSearchRadius = 48;
+	public static int fakePersonScreamMinIntervalSeconds = 90;
+	public static int fakePersonScreamMaxIntervalSeconds = 180;
+	public static int fakePersonScreamAudibleDistance = 96;
+	public static float fakePersonScreamNightProbability = 0.75F;
 	public static int woodcrawlerConversionSeconds = 30;
 	public static boolean deepRootEnabled = true;
 	public static final int[] deepRootStageSeconds = {300, 600, 600, 600, 600};
@@ -174,6 +180,15 @@ public final class GeminiConfig {
 				"Maximum loaded Fake People for conversions and initial camp residents. Zero disables these admissions; manual spawn eggs bypass the cap and saved creatures are retained. No independent biome spawn entries are added.");
 		values.fakePersonConversionChance = config.getFloat("fakePersonConversionChance", CATEGORY, 0.80F, 0F, 1F,
 				"Saved conversion outcome: Fake Person probability; the remainder produces a Woodcrawler (default 80/20). Population-limited cocoons wait without rerolling. Previous defaults 0.35/0.90 migrate once to 0.80; other custom values are retained.");
+		String fakePeople = CATEGORY + ".fakePeople";
+		values.fakePersonHilltopScreaming = config.getBoolean("hilltopScreaming", fakePeople, true, "Enable occasional hilltop screams from idle Fake People of either disguise.");
+		values.fakePersonHilltopSearchRadius = config.getInt("hilltopSearchRadius", fakePeople, 48, 4, 48, "Maximum distance in blocks from the Fake Person to a candidate hilltop.");
+		values.fakePersonScreamMinIntervalSeconds = config.getInt("screamMinIntervalSeconds", fakePeople, 90, 10, 86400, "Minimum seconds before another hilltop scream opportunity.");
+		values.fakePersonScreamMaxIntervalSeconds = Math.max(values.fakePersonScreamMinIntervalSeconds,
+				config.getInt("screamMaxIntervalSeconds", fakePeople, 180, 10, 86400, "Maximum randomized cooldown in seconds. Raised to the minimum interval if entered below it. Missing hilltops or interruptions can delay screams further."));
+		values.fakePersonScreamAudibleDistance = config.getInt("screamAudibleDistance", fakePeople, 96, 16, 192, "Nominal audible distance in blocks. Uses native positional sound attenuation.");
+		values.fakePersonScreamNightProbability = config.getFloat("nighttimeScreamProbability", fakePeople, 0.75F, 0F, 1F, "Chance to try for a hilltop when an opportunity comes up at night. Other times use one quarter of this chance.");
+		if(Float.isNaN(values.fakePersonScreamNightProbability)) values.fakePersonScreamNightProbability = 0.75F;
 		int conversionDefaultsVersion = config.getInt("woodcrawlerConversionDefaultsVersion", CATEGORY, 0, 0, 1,
 				"Internal one-time conversion-default migration. Saved cocoon decisions are never changed.");
 		if(conversionDefaultsVersion == 0) {
@@ -379,6 +394,12 @@ public final class GeminiConfig {
         woodcrawlerMaxPending = values.woodcrawlerMaxPending;
         fakePersonMaxLoaded = values.fakePersonMaxLoaded;
         fakePersonConversionChance = values.fakePersonConversionChance;
+        fakePersonHilltopScreaming = values.fakePersonHilltopScreaming;
+        fakePersonHilltopSearchRadius = values.fakePersonHilltopSearchRadius;
+        fakePersonScreamMinIntervalSeconds = values.fakePersonScreamMinIntervalSeconds;
+        fakePersonScreamMaxIntervalSeconds = values.fakePersonScreamMaxIntervalSeconds;
+        fakePersonScreamAudibleDistance = values.fakePersonScreamAudibleDistance;
+        fakePersonScreamNightProbability = values.fakePersonScreamNightProbability;
         woodcrawlerConversionSeconds = values.woodcrawlerConversionSeconds;
         deepRootEnabled = values.deepRootEnabled;
         System.arraycopy(values.deepRootStageSeconds, 0, deepRootStageSeconds, 0, deepRootStageSeconds.length);
@@ -481,6 +502,12 @@ public final class GeminiConfig {
         public int woodcrawlerMaxLoaded = 16, woodcrawlerMaxPending = 16;
         public int fakePersonMaxLoaded = 16;
         public float fakePersonConversionChance = 0.80F;
+        public boolean fakePersonHilltopScreaming = true;
+        public int fakePersonHilltopSearchRadius = 48;
+        public int fakePersonScreamMinIntervalSeconds = 90;
+        public int fakePersonScreamMaxIntervalSeconds = 180;
+        public int fakePersonScreamAudibleDistance = 96;
+        public float fakePersonScreamNightProbability = 0.75F;
         public int woodcrawlerConversionSeconds = 30;
         public boolean deepRootEnabled = true;
         public final int[] deepRootStageSeconds = {300, 600, 600, 600, 600};

@@ -1,5 +1,7 @@
 {
     "gemini.iris_rumble": {"category": "ambient", "sounds": [{"name": "gemini/iris_rumble", "stream": false}]},
+	"gemini.fake_person.scream_player": {"category": "hostile", "sounds": ["ghespace/fakepeople/scream1", "ghespace/fakepeople/scream2", "ghespace/fakepeople/scream3", "ghespace/fakepeople/scream4", "ghespace/fakepeople/scream5", "ghespace/fakepeople/scream6"]},
+	"gemini.fake_person.scream_villager": {"category": "hostile", "sounds": ["minecraft:mob/villager/death", "minecraft:mob/villager/hit1", "minecraft:mob/villager/hit2", "minecraft:mob/villager/hit3", "minecraft:mob/villager/hit4"]},
 	"entity.wretch.step": {"category": "hostile", "sounds": ["entity/wretch/step1", "entity/wretch/step2", "entity/wretch/step3"]},
 	"entity.wretch.stretch": {"category": "hostile", "sounds": ["entity/wretch/stretch1", "entity/wretch/stretch2"]},
 	"entity.wretch.tissue": {"category": "hostile", "sounds": ["entity/wretch/tissue1", "entity/wretch/tissue2"]},

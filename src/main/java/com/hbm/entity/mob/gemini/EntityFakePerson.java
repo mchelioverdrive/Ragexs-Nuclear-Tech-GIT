@@ -5,6 +5,7 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 
 import com.hbm.entity.mob.ai.EntityAIFakePerson;
+import com.hbm.entity.mob.ai.EntityAIFakePersonHilltop;
 import com.hbm.world.gemini.FakePersonSpawning;
 
 import net.minecraft.entity.Entity;
@@ -53,6 +54,7 @@ public final class EntityFakePerson extends EntityMob implements IDeepRootCarrie
 		tasks.addTask(1, new EntityAIFakePerson(this));
 		tasks.addTask(2, new EntityAIMoveIndoors(this));
 		tasks.addTask(3, new EntityAIOpenDoor(this, true));
+		tasks.addTask(4, new EntityAIFakePersonHilltop(this));
 		tasks.addTask(9, new EntityAIWander(this, 0.6D));
 		tasks.addTask(10, new EntityAIWatchClosest(this, EntityLivingBase.class, 8F));
 	}
