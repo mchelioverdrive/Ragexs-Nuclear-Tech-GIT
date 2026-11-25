@@ -954,3 +954,7 @@
 
 - Register graphite ingots and magnetite as black dye, hematite powder and conditioned iron oxide fines as red dye, and goethite as yellow dye. Forge and RTM recipes that look up the corresponding dye colors accept them alongside existing dyes.
 - Add graphite alternatives for four black crayons and two brown chemical dyes. Keep the chemical-dye recipes and existing material processing routes.
+
+2026-11-24 22:42 — Add Brazen Bull sound effects
+
+- Reuse RTM screams and a metal impact alongside vanilla mob hurt and fire effects. The server varies pitch and timing, with shorter scream intervals after damage and at low health. The Bull stops its occupant sounds when the captive leaves or dies and stops the fire loop when heating ends. Heating and damage mechanics retain their existing behavior.

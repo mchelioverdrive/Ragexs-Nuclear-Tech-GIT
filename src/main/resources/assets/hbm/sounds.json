@@ -46,6 +46,7 @@
 	"block.igeneratorOperate": {"category": "block", "sounds": [{"name": "block/igeneratorOperate", "stream": false}]},
 	"block.turbofanOperate": {"category": "block", "sounds": [{"name": "block/turbofanOperate", "stream": true}]},
 	"block.pressOperate": {"category": "block", "sounds": [{"name": "block/pressOperate", "stream": false}]},
+	"block.bullScream": {"category": "player", "sounds": ["screm/scream09", "screm/scream10", "screm/scream11", "screm/scream12", "screm/scream13", "screm/scream14", "screm/scream25"]},
 	"block.broadcast1": {"category": "block", "sounds": [{"name": "block/broadcast1", "stream": true}]},
 	"block.broadcast2": {"category": "block", "sounds": [{"name": "block/broadcast2", "stream": true}]},
 	"block.broadcast3": {"category": "block", "sounds": [{"name": "block/broadcast3", "stream": true}]},

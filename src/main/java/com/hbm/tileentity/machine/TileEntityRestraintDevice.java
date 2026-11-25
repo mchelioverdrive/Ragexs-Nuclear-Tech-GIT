@@ -1,6 +1,7 @@
 package com.hbm.tileentity.machine;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import api.hbm.energymk2.EnergyUnits;
 import api.hbm.energymk2.IEnergyReceiverMK2;
@@ -10,9 +11,16 @@ import com.hbm.config.RestraintConfig;
 import com.hbm.handler.restraint.RestraintState;
 import com.hbm.handler.restraint.Restraints;
 import com.hbm.items.ModItems;
+import com.hbm.sound.AudioWrapper;
+import com.hbm.sound.PositionedAudio;
 import com.hbm.tileentity.TileEntityMachineBase;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.monster.EntitySkeleton;
+import net.minecraft.entity.monster.EntityZombie;
+import net.minecraft.entity.passive.EntityVillager;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -39,7 +47,33 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
     private long clientCycleAt;
     private boolean clientInitialized;
     private boolean collisionCellsChecked;
-    private com.hbm.sound.AudioWrapper dischargeAudio;
+    private AudioWrapper dischargeAudio;
+
+    private boolean bullHeating, bullStruggling;
+    private int bullScreamDelay, bullRattleDelay;
+    private int bullScreamSequence, bullRattleSequence;
+    private BullVoice bullVoice = BullVoice.OTHER;
+    private float bullScreamPitch, bullRattlePitch;
+    private boolean playBullScream, playBullRattle;
+    private AudioWrapper bullFireAudio, bullScreamAudio, bullRattleAudio;
+
+    private enum BullVoice {
+        PLAYER("hbm:block.bullScream"), VILLAGER("mob.villager.hit"), ZOMBIE("mob.zombie.hurt"),
+        SKELETON("mob.skeleton.hurt"), OTHER("game.neutral.hurt");
+
+        private static final BullVoice[] VALUES = values();
+        private final String sound;
+
+        BullVoice(String sound) { this.sound = sound; }
+
+        static BullVoice of(EntityLivingBase occupant) {
+            if(occupant instanceof EntityPlayer) return PLAYER;
+            if(occupant instanceof EntityVillager) return VILLAGER;
+            if(occupant instanceof EntityZombie) return ZOMBIE;
+            if(occupant instanceof EntitySkeleton) return SKELETON;
+            return OTHER;
+        }
+    }
 
     public TileEntityRestraintDevice() { super(1); }
     public Kind kind() {
@@ -143,6 +177,7 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
     }
     public void forget() {
         captive = null; cachedEntity = -1; missingTicks = 0; armedBy = null;
+        if(kind() == Kind.BULL) setBullSoundState(false, false);
         if(kind() != Kind.GUILLOTINE) setActive(false);
         sync();
     }
@@ -233,6 +268,7 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
     private void setActive(boolean value) {
         if(active == value) return;
         active = value; markDirty(); markNetworkDirty();
+        if(!active && bullHeating) setBullSoundState(false, bullStruggling);
         worldObj.func_147451_t(xCoord, yCoord, zCoord);
     }
 
@@ -244,6 +280,7 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
                     dischargeAudio.startSound();
                 }
             } else stopAudio();
+            if(kind() == Kind.BULL) updateBullAudioClient();
             previousHatch = hatch; previousStraps = straps;
             hatch += ((locked ? 0F : 1F) - hatch) * 0.2F;
             straps += ((captive == null ? 0F : 1F) - straps) * 0.25F;
@@ -298,22 +335,83 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
             }
         }
         if(kind() == Kind.BULL) {
+            boolean heating = false;
             if(active && locked && e != null) {
                 if(burnTicks <= 0 && isItemValidForSlot(0, slots[0])) {
                     burnTicks = TileEntityFurnace.getItemBurnTime(slots[0]); decrStackSize(0, 1); markDirty();
                 }
-                if(burnTicks > 0) { --burnTicks; if(worldObj.getTotalWorldTime() % 10 == 0) temperature = Math.min(RestraintConfig.bullMaxTemperature, temperature + 5); }
-                else setActive(false);
+                if(burnTicks > 0) {
+                    heating = true;
+                    --burnTicks;
+                    if(worldObj.getTotalWorldTime() % 10 == 0) temperature = Math.min(RestraintConfig.bullMaxTemperature, temperature + 5);
+                } else setActive(false);
             }
             if(!active && temperature > 20 && worldObj.getTotalWorldTime() % 10 == 0) --temperature;
+            boolean hurt = false;
             if(e != null && temperature > 80 && worldObj.getTotalWorldTime() % 20 == 0) {
+                float health = e.getHealth(), absorption = e.getAbsorptionAmount();
                 e.attackEntityFrom(DamageSource.inFire, RestraintConfig.bullDamage * (temperature - 20) / 100F);
-                if(active) sound("fire.fire", 0.6F);
+                hurt = e.getHealth() < health || e.getAbsorptionAmount() < absorption;
             }
+            // Damage can release the occupant synchronously through the restraint death handler.
+            updateBullSounds(e != null && e.isEntityAlive() && owns(e) ? e : null, heating && active, hurt);
         }
         if(kind() == Kind.HANGING && e != null && e.isEntityAlive() && owns(e)) position(e);
         if(active || temperature > 20 || burnTicks > 0) markDirty();
         networkPackNTIfDirty(64);
+    }
+
+    private void updateBullSounds(EntityLivingBase occupant, boolean heating, boolean hurt) {
+        // Restraints hold captives still. An awake captive behind the locked hatch can rattle it.
+        setBullSoundState(heating && occupant != null, locked && occupant != null && RestraintState.get(occupant).asleep <= 0);
+        if(bullHeating) {
+            int healthDelay = Math.round(32F * MathHelper.clamp_float(occupant.getHealth() / occupant.getMaxHealth(), 0F, 1F));
+            if(hurt) bullScreamDelay = Math.min(bullScreamDelay, 18 + healthDelay);
+            if(--bullScreamDelay <= 0) {
+                bullScreamDelay = 20 + healthDelay + worldObj.rand.nextInt(18);
+                bullVoice = BullVoice.of(occupant);
+                bullScreamPitch = 0.90F + worldObj.rand.nextFloat() * 0.25F;
+                ++bullScreamSequence;
+                markNetworkDirty();
+            }
+        }
+        if(bullStruggling && --bullRattleDelay <= 0) {
+            bullRattleDelay = 34 + worldObj.rand.nextInt(30);
+            bullRattlePitch = 1.10F + worldObj.rand.nextFloat() * 0.20F;
+            ++bullRattleSequence;
+            markNetworkDirty();
+        }
+    }
+
+    private void setBullSoundState(boolean heating, boolean struggling) {
+        if(bullHeating != heating || bullStruggling != struggling) markNetworkDirty();
+        bullHeating = heating;
+        bullStruggling = struggling;
+        if(!heating) bullScreamDelay = 0;
+        if(!struggling) bullRattleDelay = 0;
+    }
+
+    @SideOnly(Side.CLIENT)
+    private void updateBullAudioClient() {
+        if(bullHeating && (bullFireAudio == null || worldObj.getTotalWorldTime() % 20 == 0 && !bullFireAudio.isPlaying())) {
+            bullFireAudio = replaceBullAudio(bullFireAudio, "fire.fire", 0.2F, 1F, yCoord + 0.25F, true);
+        }
+        if(playBullScream) {
+            bullScreamAudio = replaceBullAudio(bullScreamAudio, bullVoice.sound, 0.85F, bullScreamPitch, yCoord + 1F, false);
+            playBullScream = false;
+        }
+        if(playBullRattle) {
+            bullRattleAudio = replaceBullAudio(bullRattleAudio, "hbm:door.sliding_seal_stop", 0.45F, bullRattlePitch, yCoord + 1F, false);
+            playBullRattle = false;
+        }
+    }
+
+    @SideOnly(Side.CLIENT)
+    private AudioWrapper replaceBullAudio(AudioWrapper previous, String name, float volume, float pitch, float y, boolean repeat) {
+        if(previous != null) previous.stopSound();
+        AudioWrapper sound = new PositionedAudio(name, xCoord + 0.5F, y, zCoord + 0.5F, volume, pitch, repeat);
+        sound.startSound();
+        return sound;
     }
 
     public float animationCycle(float partial) {
@@ -321,23 +419,40 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
         return Math.min(kind() == Kind.HANGING ? 80 : kind() == Kind.GUILLOTINE ? 45 : 100000,
                 clientCycle + Math.max(0L, worldObj.getTotalWorldTime() - clientCycleAt) + partial);
     }
+    private static AudioWrapper stopSound(AudioWrapper audio) {
+        if(audio != null) audio.stopSound();
+        return null;
+    }
     private void stopAudio() { if(dischargeAudio != null) { dischargeAudio.stopSound(); dischargeAudio = null; } }
-    @Override public void onChunkUnload() { stopAudio(); super.onChunkUnload(); }
-    @Override public void invalidate() { stopAudio(); super.invalidate(); }
+    private void stopBullAudio() {
+        bullFireAudio = stopSound(bullFireAudio);
+        bullScreamAudio = stopSound(bullScreamAudio);
+        bullRattleAudio = stopSound(bullRattleAudio);
+        playBullScream = playBullRattle = false;
+    }
+    @Override public void onChunkUnload() { stopAudio(); stopBullAudio(); super.onChunkUnload(); }
+    @Override public void invalidate() { stopAudio(); stopBullAudio(); super.invalidate(); }
     @Override public void serialize(ByteBuf b) {
         super.serialize(b); b.writeBoolean(active); b.writeBoolean(locked); b.writeInt(temperature); b.writeInt(cycle); b.writeLong(energyQuanta);
         b.writeBoolean(captive != null);
         if(captive != null) { b.writeLong(captive.getMostSignificantBits()); b.writeLong(captive.getLeastSignificantBits()); }
         if(kind() == Kind.HANGING) { b.writeBoolean(hasNoose()); b.writeFloat(captiveHeight); }
+        if(kind() == Kind.BULL) {
+            b.writeBoolean(bullHeating); b.writeBoolean(bullStruggling);
+            b.writeInt(bullScreamSequence); b.writeByte(bullVoice.ordinal()); b.writeFloat(bullScreamPitch);
+            b.writeInt(bullRattleSequence); b.writeFloat(bullRattlePitch);
+        }
     }
     @Override public void deserialize(ByteBuf b) {
         super.deserialize(b); boolean wasActive = active;
         active = b.readBoolean(); locked = b.readBoolean(); temperature = b.readInt(); cycle = b.readInt(); energyQuanta = b.readLong();
+        UUID previousCaptive = captive;
         captive = b.readBoolean() ? new UUID(b.readLong(), b.readLong()) : null;
         if(kind() == Kind.HANGING) {
             boolean noose = b.readBoolean(); captiveHeight = b.readFloat();
             slots[0] = noose ? new ItemStack(ModItems.noose) : null;
         }
+        if(kind() == Kind.BULL && b.isReadable()) readBullSoundState(b, previousCaptive);
         if(!clientInitialized) {
             previousHatch = hatch = locked ? 0F : 1F;
             previousStraps = straps = captive == null ? 0F : 1F;
@@ -345,6 +460,26 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
         }
         clientCycle = cycle; clientCycleAt = worldObj == null ? 0 : worldObj.getTotalWorldTime();
         if(worldObj != null && wasActive != active) worldObj.func_147451_t(xCoord, yCoord, zCoord);
+    }
+
+    private void readBullSoundState(ByteBuf b, UUID previousCaptive) {
+        bullHeating = b.readBoolean() && active && captive != null;
+        bullStruggling = b.readBoolean() && locked && captive != null;
+        int oldScream = bullScreamSequence, oldRattle = bullRattleSequence;
+        bullScreamSequence = b.readInt(); bullVoice = BullVoice.VALUES[b.readUnsignedByte()]; bullScreamPitch = b.readFloat();
+        bullRattleSequence = b.readInt(); bullRattlePitch = b.readFloat();
+
+        // Initial chunk data and periodic syncs carry the latest cue without replaying it.
+        boolean sameCaptive = clientInitialized && Objects.equals(previousCaptive, captive);
+        if(!bullHeating) bullFireAudio = stopSound(bullFireAudio);
+        if(!bullHeating || !sameCaptive) {
+            bullScreamAudio = stopSound(bullScreamAudio);
+            playBullScream = false;
+        } else if(oldScream != bullScreamSequence) playBullScream = true;
+        if(!bullStruggling || !sameCaptive) {
+            bullRattleAudio = stopSound(bullRattleAudio);
+            playBullRattle = false;
+        } else if(oldRattle != bullRattleSequence) playBullRattle = true;
     }
     @Override public void writeToNBT(NBTTagCompound n) {
         super.writeToNBT(n);
