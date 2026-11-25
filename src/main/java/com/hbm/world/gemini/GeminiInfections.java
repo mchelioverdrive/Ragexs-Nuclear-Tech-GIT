@@ -18,7 +18,7 @@ import net.minecraft.util.Vec3;
 public final class GeminiInfections {
 	private GeminiInfections() { }
 
-	/** Deterministic exposure for an already validated interaction; the canonical pathogen rechecks the Mars gate. */
+	/** Deterministic exposure for a validated interaction. The pathogen rechecks the invasion activity gate. */
 	public static boolean expose(EntityLivingBase victim, String source, String sourceHost) {
 		return loaded(victim) && DiseaseManager.infect(victim, DiseaseManager.pathogen(DeepRootDisease.ID), source, sourceHost);
 	}

@@ -44,14 +44,19 @@ public final class GeminiWorldSavedData extends WorldSavedData {
 	void setMarsVisited(boolean visited) {
 		if(geminiMarsVisited == visited) return;
 		geminiMarsVisited = visited;
-		if(visited && phase == 0) {
-			phase = 1;
-			phaseTicks = 0;
-		}
 		markDirty();
 	}
 
-	int getPhase() { return geminiMarsVisited ? phase : 0; }
+	/** Phase 0 denotes a world whose invasion has never initialized. */
+	boolean initialize() {
+		if(phase != 0) return false;
+		phase = 1;
+		phaseTicks = 0;
+		markDirty();
+		return true;
+	}
+
+	int getPhase() { return phase; }
 	long getElapsedTicks() { return elapsedTicks; }
 	long getRemainingTicks() { return getPhase() < 1 || phase >= 4 ? -1 : Math.max(0L, phaseDuration(phase) - phaseTicks); }
 	boolean isDebug() { return debug; }
@@ -71,7 +76,6 @@ public final class GeminiWorldSavedData extends WorldSavedData {
 
 	/** No event replay: at most three ordered unlock transitions, regardless of the jump. */
 	void advanceTicks(World world, long ticks) {
-		if(!geminiMarsVisited) return;
 		elapsedTicks += Math.min(ticks, Long.MAX_VALUE - elapsedTicks);
 		while(phase < 4) {
 			long remaining = Math.max(0L, phaseDuration(phase) - phaseTicks);
@@ -84,13 +88,9 @@ public final class GeminiWorldSavedData extends WorldSavedData {
 		markDirty();
 	}
 
-	void setPhase(World world, int target) {
-		if(geminiMarsVisited && phase == target) return;
-		int previous = getPhase();
-		boolean activating = !geminiMarsVisited;
-		geminiMarsVisited = true;
+	void setPhase(World world, int previous, int target) {
+		if(previous == target) return;
 		phase = Math.max(1, Math.min(phase, target));
-		if(activating) GeminiInvasionManager.debug(world, "activation", "Invasion activated by phase control.");
 		if(previous != phase) GeminiInvasionManager.phaseChanged(world, previous, phase);
 		while(phase < target) { int from = phase++; GeminiInvasionManager.phaseChanged(world, from, phase); }
 		phaseTicks = 0;
@@ -111,9 +111,8 @@ public final class GeminiWorldSavedData extends WorldSavedData {
 		markDirty();
 	}
 
-	void reset(World world) {
-		int previous = getPhase();
-		phase = geminiMarsVisited ? 1 : 0;
+	void reset(World world, int previous) {
+		phase = previous > 0 ? 1 : 0;
 		phaseTicks = elapsedTicks = 0;
 		eventSecondsRemaining = 0;
 		if(previous != getPhase()) GeminiInvasionManager.phaseChanged(world, previous, getPhase());
@@ -123,7 +122,6 @@ public final class GeminiWorldSavedData extends WorldSavedData {
 	/** Loaded, enabled Overworld time only; never infer elapsed time from /time or wall clocks. */
 	void advancePhase(World world) {
 		// Preserve the natural one-transition/full-delay rule, including after config reload.
-		if(!geminiMarsVisited) return;
 		elapsedTicks += Math.min(20L, Long.MAX_VALUE - elapsedTicks);
 		if(phase < 4 && (phaseTicks += 20L) >= phaseDuration(phase)) {
 			int previous = phase++;
@@ -144,11 +142,9 @@ public final class GeminiWorldSavedData extends WorldSavedData {
 
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
-		// Missing keys in existing worlds mean locked and not yet scheduled.
 		geminiMarsVisited = nbt.getBoolean("geminiMarsVisited");
-		// Existing Mars-unlocked saves enter phase 1, rather than unlocking every threat.
-		// A command-locked world retains its progression for a later unlock.
-		phase = Math.max(geminiMarsVisited ? 1 : 0, Math.min(4, nbt.getInteger("phase")));
+		// Saves from before phases existed only recorded the Mars milestone.
+		phase = nbt.hasKey("phase") ? Math.max(0, Math.min(4, nbt.getInteger("phase"))) : geminiMarsVisited ? 1 : 0;
 		phaseTicks = Math.max(0L, Math.min(24000L * 10000L, nbt.getLong("phaseTicks")));
 		eventSecondsRemaining = Math.max(0, nbt.getInteger("eventSecondsRemaining"));
 		// Older saves retain their exact current phase and phase-local progress. Past custom

@@ -128,9 +128,8 @@ public final class EntityWoodcrawlerCocoon extends Entity implements IGeminiCrea
 	void cancelPlacement() { finish(); }
 
 	private boolean active() {
-		return !worldObj.isRemote && GeminiInvasionManager.hasMarsVisited(worldObj)
-				&& worldObj.difficultySetting != EnumDifficulty.PEACEFUL
-				&& (manual || GeminiInvasionManager.canActivityOccur(worldObj));
+		return !worldObj.isRemote && worldObj.difficultySetting != EnumDifficulty.PEACEFUL
+				&& (manual ? GeminiInvasionManager.manualActivationAllowed(worldObj) : GeminiInvasionManager.canActivityOccur(worldObj));
 	}
 
 	public boolean shouldConvertToFakePerson() {

@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Collections;
 import java.util.Map;
 
-import com.hbm.config.GeminiConfig;
 import com.hbm.main.MainRegistry;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
@@ -21,13 +20,17 @@ final class GeminiStructureSchedule {
     static final int ATTEMPTS = 24, RETRY_SECONDS = 60;
     private int seconds = 20, failures;
     private String lastFailure = "none";
-    private int revision = GeminiConfig.revision;
+    private int configuredInterval;
     private long lastLog = Long.MIN_VALUE;
     private long lastTick = Long.MIN_VALUE;
     private int calls, examined, unloaded, spacing, plans, loadedChunks;
     private boolean fallbackUsed;
     private ChunkCoordinates fallbackPoint;
     private String lastSuccess = "none", searchMode = "not searched";
+
+    GeminiStructureSchedule(int configuredInterval) {
+        this.configuredInterval = configuredInterval;
+    }
 
     void tick(WorldServer world) { lastTick = world.getTotalWorldTime(); if(calls < Integer.MAX_VALUE) calls++; }
     void examined() { examined++; }
@@ -52,8 +55,8 @@ final class GeminiStructureSchedule {
     }
 
     boolean due(WorldSavedData owner, int interval) {
-        if(revision != GeminiConfig.revision) {
-            revision = GeminiConfig.revision;
+        if(configuredInterval != interval) {
+            configuredInterval = interval;
             seconds = Math.min(seconds, Math.min(interval, RETRY_SECONDS));
         }
         if(--seconds > 0) { owner.markDirty(); return false; }

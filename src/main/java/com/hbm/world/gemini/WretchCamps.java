@@ -38,7 +38,7 @@ import net.minecraftforge.event.world.BlockEvent;
 public final class WretchCamps extends WorldSavedData {
     private static final String NAME = "GeminiWretchCamps";
     private static final int LIMIT = 256;
-    private final GeminiStructureSchedule schedule = new GeminiStructureSchedule();
+    private final GeminiStructureSchedule schedule = new GeminiStructureSchedule(GeminiConfig.wretchCampIntervalSeconds);
     private final List<Camp> camps = new ArrayList<Camp>();
     private final List<Camp> pending = new ArrayList<Camp>();
     private final Map<Long, BitSet> placedColumns = new HashMap<Long, BitSet>();

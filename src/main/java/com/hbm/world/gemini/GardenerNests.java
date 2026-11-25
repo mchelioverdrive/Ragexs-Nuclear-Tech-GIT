@@ -92,7 +92,7 @@ public final class GardenerNests extends WorldSavedData {
     }
     private final List<Nest> nests = new ArrayList<Nest>();
     private final List<Residence> residences = new ArrayList<Residence>();
-    private final GeminiStructureSchedule schedule = new GeminiStructureSchedule();
+    private final GeminiStructureSchedule schedule = new GeminiStructureSchedule(GeminiConfig.gardenerNestIntervalSeconds);
     private final Map<String, DeliveryClaim> deliveries = new LinkedHashMap<String, DeliveryClaim>();
     // Living identities survive chunk unload. Loaded membership remains in GeminiPopulation.
     private final Set<UUID> living = new LinkedHashSet<UUID>();

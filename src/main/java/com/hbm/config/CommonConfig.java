@@ -1,5 +1,6 @@
 package com.hbm.config;
 
+import java.util.Arrays;
 import java.util.Locale;
 
 import com.hbm.main.MainRegistry;
@@ -25,10 +26,17 @@ public class CommonConfig {
 				if(property.getType() != original.getType() || property.isList() != original.isList())
 					throw new IllegalArgumentException(category + "." + property.getName() + ": incorrect property type");
 				String[] values = property.isList() ? property.getStringList() : new String[] {property.getString()};
+				String[] validValues = original.getValidValues();
 				for(String value : values) {
+					if(validValues != null && validValues.length > 0) {
+						if(!Arrays.asList(validValues).contains(value))
+							throw new IllegalArgumentException(category + "." + property.getName() + ": invalid value '" + value
+									+ "' (expected " + String.join(", ", validValues) + ")");
+						continue;
+					}
 					try {
 						if(original.getType() == Property.Type.INTEGER) Integer.parseInt(value);
-						// Gemini's STRING settings are getFloat values; Forge also gives
+						// Gemini's unrestricted STRING settings are getFloat values; Forge also gives
 						// ordinary text properties numeric bounds, so bounds cannot identify them.
 						if(original.getType() == Property.Type.DOUBLE
 								|| original.getType() == Property.Type.STRING && category.startsWith(GeminiConfig.CATEGORY)) {

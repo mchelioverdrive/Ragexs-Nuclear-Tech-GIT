@@ -59,7 +59,7 @@ public final class GeminiIris {
     /** Once per server second, called by the existing invasion controller even when its gates pause. */
     static void tick(WorldServer world, GeminiWorldSavedData data) {
         GeminiIris iris = data.iris;
-        int phase = data.getPhase();
+        int phase = GeminiInvasionManager.getPhase(world);
         boolean active = GeminiInvasionManager.canActivityOccur(world) && !world.playerEntities.isEmpty();
         boolean debug = iris.visibility == 1 || iris.stage > 0 || iris.observation > 0;
         if(!world.playerEntities.isEmpty() && (active || debug)) {

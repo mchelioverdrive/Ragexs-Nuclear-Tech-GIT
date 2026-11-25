@@ -275,8 +275,9 @@ public final class EntityGardenerCocoon extends Entity implements IGeminiCreatur
         }
     }
     private boolean active() {
-        return GeminiInvasionManager.hasMarsVisited(worldObj) && worldObj.difficultySetting != EnumDifficulty.PEACEFUL
-                && (manual || GeminiConfig.gardenerEnabled && GeminiInvasionManager.canActivityOccur(worldObj, 3));
+        return worldObj.difficultySetting != EnumDifficulty.PEACEFUL
+                && (manual ? GeminiInvasionManager.manualActivationAllowed(worldObj)
+                : GeminiConfig.gardenerEnabled && GeminiInvasionManager.canActivityOccur(worldObj, 3));
     }
     @Override public void onUpdate() {
         super.onUpdate(); motionX = motionY = motionZ = 0;

@@ -967,3 +967,8 @@
 
 - Add vanilla villagers to the live passive spawn pass in habitable Overworld biomes. Spawn on dry surfaces in small groups, randomize professions through Forge, and save their natural origin for loaded population checks. Existing villages and manual spawns keep their normal rules.
 - Make the spawn settings reloadable and share the passive mob cap. Pause new natural villagers during active Gemini phases so GHE can deplete the available prey. Existing villagers remain available to the usual GHE and disease mechanics.
+
+2026-11-24 23:34 — Make Gemini invasion activation configurable
+
+- Add the reloadable `21_gemini.geminiActivationMode` setting. `MARS` keeps the existing planetary arrival requirement, `IMMEDIATE` starts at Phase 1, and `DISABLED` pauses natural progression, spawning, and construction.
+- Retain the shared Overworld milestone, phase, timers, and structure schedules across mode changes. Keep the manual debug controls and show the selected activation condition and progression blocker in `/gemini status`.

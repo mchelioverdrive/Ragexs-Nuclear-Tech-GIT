@@ -76,7 +76,9 @@ public final class GeminiLights {
     void tick(WorldServer world) {
         long now = world.getTotalWorldTime();
         if(active != null) {
-            if(now >= active.endsAt || !active.forced && (world.playerEntities.isEmpty() || !eligible(world, active.kind))) {
+            // Natural activation gates new encounters. Existing Lights keep their normal lifetime.
+            if(now >= active.endsAt || !active.forced && (world.playerEntities.isEmpty() || !lightsAvailable(world)
+                    || GeminiInvasionManager.getSavedPhase(world) < requiredPhase(active.kind))) {
                 finish(world);
                 return;
             }
@@ -123,9 +125,15 @@ public final class GeminiLights {
     }
 
     private static boolean eligible(World world, Kind kind) {
-        int required = kind == Kind.HARVEST ? Math.max(3, GeminiConfig.lightsMinPhase) : GeminiConfig.lightsMinPhase;
-        return GeminiConfig.lightsEnabled && !world.provider.hasNoSky && world.difficultySetting != EnumDifficulty.PEACEFUL
-                && GeminiInvasionManager.canActivityOccur(world, required);
+        return lightsAvailable(world) && GeminiInvasionManager.canActivityOccur(world, requiredPhase(kind));
+    }
+
+    private static boolean lightsAvailable(World world) {
+        return GeminiConfig.lightsEnabled && !world.provider.hasNoSky && world.difficultySetting != EnumDifficulty.PEACEFUL;
+    }
+
+    private static int requiredPhase(Kind kind) {
+        return kind == Kind.HARVEST ? Math.max(3, GeminiConfig.lightsMinPhase) : GeminiConfig.lightsMinPhase;
     }
 
     private static long clock(World world) { return Math.floorMod(world.getWorldTime(), 24000L); }

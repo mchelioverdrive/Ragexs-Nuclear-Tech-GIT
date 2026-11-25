@@ -126,14 +126,14 @@ public final class CommandGemini extends CommandBase {
                 int phase = parseIntBounded(sender, args[2], 1, 4);
                 GeminiInvasionManager.setPhase(world, phase);
             } else if(args.length == 2 && "next".equals(args[1])) {
-                int phase = GeminiInvasionManager.getPhase(world);
+                int phase = GeminiInvasionManager.getControlPhase(world);
                 if(phase >= 4) throw new CommandException("Already in the final invasion phase (4).");
                 GeminiInvasionManager.setPhase(world, phase + 1);
             } else if(args.length == 2 && "reset".equals(args[1])) {
                 GeminiInvasionManager.reset(world);
                 reply(sender, "Progression reset. Mars milestone, gamerules, entities and structures retained.");
             } else throw new WrongUsageException("/gemini phase set <1|2|3|4> | /gemini phase next | /gemini phase reset");
-            reply(sender, "Phase=" + GeminiInvasionManager.getPhase(world) + "; elapsed ticks=" + GeminiInvasionManager.getElapsedTicks(world)
+            reply(sender, "Phase=" + GeminiInvasionManager.getControlPhase(world) + "; elapsed ticks=" + GeminiInvasionManager.getElapsedTicks(world)
                     + "; progression active=" + GeminiInvasionManager.progressionActive(world) + ".");
             return;
         }
@@ -145,7 +145,7 @@ public final class CommandGemini extends CommandBase {
                 GeminiInvasionManager.addElapsedTicks(world, target);
             } else GeminiInvasionManager.setElapsedTicks(world, target);
             target = GeminiInvasionManager.getElapsedTicks(world);
-            reply(sender, "Elapsed ticks=" + target + "; phase=" + GeminiInvasionManager.getPhase(world) + ". World clock unchanged.");
+            reply(sender, "Elapsed ticks=" + target + "; phase=" + GeminiInvasionManager.getControlPhase(world) + ". World clock unchanged.");
             reply(sender, "Structure schedules follow phase changes on live server ticks. Skipped encounters, construction, mob AI, infections and cooldowns were not replayed.");
             return;
         }
@@ -197,13 +197,16 @@ public final class CommandGemini extends CommandBase {
     }
 
     private static void status(ICommandSender sender, WorldServer world) {
-        boolean visited = GeminiInvasionManager.hasMarsVisited(world);
-        int phase = GeminiInvasionManager.getPhase(world);
+        int phase = GeminiInvasionManager.getSavedPhase(world);
+        String blocker = GeminiInvasionManager.progressionBlocker(world);
         long elapsed = GeminiInvasionManager.getElapsedTicks(world), remaining = GeminiInvasionManager.getRemainingTicks(world);
-        reply(sender, "visitedMars=" + visited + (visited ? "" : " (invasion has not started; retained progress may exist)")
-                + "; configured=" + GeminiConfig.enabled + "; progression active=" + GeminiInvasionManager.progressionActive(world) + ".");
+        reply(sender, "geminiActivationMode=" + GeminiConfig.geminiActivationMode
+                + ", activation condition satisfied=" + GeminiInvasionManager.activationConditionSatisfied(world)
+                + ", visitedMars=" + GeminiInvasionManager.hasMarsVisited(world) + ", enabled=" + GeminiConfig.enabled + ".");
+        reply(sender, "Invasion " + (phase == 0 ? "has not started" : blocker == null ? "is progressing" : "is paused")
+                + (blocker == null ? "." : " (" + blocker + ")."));
         reply(sender, "geminionly=" + world.getGameRules().getGameRuleBooleanValue(GeminiHostileSpawning.RULE)
-                + "; phase=" + phase + "; debug=" + GeminiInvasionManager.isDebug(world) + ".");
+                + "; saved phase=" + phase + "; debug=" + GeminiInvasionManager.isDebug(world) + ".");
         reply(sender, "Elapsed=" + elapsed + " ticks (" + String.format(Locale.ROOT, "%.3f", elapsed / 24000D) + " Minecraft days)"
                 + "; next phase=" + (remaining < 0 ? phase == 4 ? "final phase" : "not started" : remaining + " ticks")
                 + "; encounter countdown=" + GeminiInvasionManager.getEventSecondsRemaining(world) + " seconds.");

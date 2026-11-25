@@ -1,10 +1,11 @@
 package com.hbm.world.gemini;
 
 import com.hbm.config.GeminiConfig;
-import com.hbm.entity.mob.gemini.EntityGeminiLight;
+import com.hbm.config.GeminiConfig.ActivationMode;
 import com.hbm.config.SpaceConfig;
 import com.hbm.dim.CelestialBody;
 import com.hbm.dim.duna.WorldProviderDuna;
+import com.hbm.entity.mob.gemini.EntityGeminiLight;
 import com.hbm.main.MainRegistry;
 
 import cpw.mods.fml.common.eventhandler.Event;
@@ -17,6 +18,7 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
+import net.minecraftforge.common.DimensionManager;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.player.PlayerSleepInBedEvent;
 
@@ -38,24 +40,45 @@ public final class GeminiInvasionManager {
 	}
 	public static void setDebug(World world, boolean enabled) { requireData(world).setDebug(enabled); }
 	public static boolean progressionActive(World world) {
-		WorldServer overworld = net.minecraftforge.common.DimensionManager.getWorld(0);
+		WorldServer overworld = DimensionManager.getWorld(0);
 		return overworld != null && canActivityOccur(overworld) && !overworld.playerEntities.isEmpty();
+	}
+	public static String progressionBlocker(World world) {
+		return progressionBlocker(DimensionManager.getWorld(0), requireData(world));
+	}
+	private static String progressionBlocker(WorldServer overworld, GeminiWorldSavedData data) {
+		String blocker = activationBlocker(data);
+		if(blocker != null) return blocker;
+		if(!GeminiConfig.enabled) return "Gemini invasion enabled is false";
+		if(overworld.playerEntities.isEmpty()) return "no players in the Overworld";
+		return data.getPhase() == 0 ? "waiting for the next invasion update" : null;
+	}
+	public static int getControlPhase(World world) {
+		return controlPhase(requireData(world));
+	}
+	private static int controlPhase(GeminiWorldSavedData data) {
+		return GeminiConfig.geminiActivationMode == ActivationMode.MARS ? activePhase(data) : data.getPhase();
 	}
 	public static void setPhase(World world, int phase) {
 		if(phase < 1 || phase > 4) throw new net.minecraft.command.CommandException("Supported phases are 1, 2, 3 and 4.");
 		GeminiWorldSavedData data = requireData(world);
+		int previousPhase = controlPhase(data);
 		long previous = data.getElapsedTicks();
-		data.setPhase(world, phase);
+		// Keep the existing phase command's Mars override in MARS mode.
+		if(GeminiConfig.geminiActivationMode == ActivationMode.MARS) data.setMarsVisited(true);
+		data.setPhase(world, previousPhase, phase);
+		if(previousPhase == 0) debug(world, "activation", "Invasion activated by phase control.");
 		if(previous != data.getElapsedTicks()) debug(world, "timer", "Phase control set invasion timer to " + data.getElapsedTicks() + " ticks.");
 	}
 	public static void reset(World world) {
-		requireData(world).reset(world);
-		debug(world, "timer", "Invasion progression reset; Mars milestone and existing structures retained.");
+		GeminiWorldSavedData data = requireData(world);
+		data.reset(world, controlPhase(data));
+		debug(world, "timer", "Invasion progression reset. Mars milestone and existing structures retained.");
 	}
 	public static void setElapsedTicks(World world, long ticks) {
 		if(ticks < 0) throw new net.minecraft.command.CommandException("Ticks must be nonnegative.");
 		GeminiWorldSavedData data = requireData(world);
-		if(!data.hasMarsVisited()) throw new net.minecraft.command.CommandException("Invasion has not started. Use /gemini phase set 1 or /visitedmars true first.");
+		requireControlPhase(data);
 		long previous = data.getElapsedTicks();
 		data.setElapsedTicks(world, ticks);
 		debug(world, "timer", "Invasion timer changed from " + previous + " to " + ticks + " ticks.");
@@ -64,15 +87,20 @@ public final class GeminiInvasionManager {
 		GeminiWorldSavedData data = requireData(world);
 		if(ticks < 0 || ticks > Long.MAX_VALUE - data.getElapsedTicks())
 			throw new net.minecraft.command.CommandException("Ticks must be nonnegative and must not overflow the invasion timer.");
-		if(!data.hasMarsVisited()) throw new net.minecraft.command.CommandException("Invasion has not started. Use /gemini phase set 1 or /visitedmars true first.");
+		requireControlPhase(data);
 		long previous = data.getElapsedTicks();
 		data.advanceTicks(world, ticks);
 		debug(world, "timer", "Invasion timer advanced from " + previous + " to " + data.getElapsedTicks() + " ticks.");
 	}
 
+	private static void requireControlPhase(GeminiWorldSavedData data) {
+		if(controlPhase(data) == 0)
+			throw new net.minecraft.command.CommandException("Invasion has not started. Use /gemini phase set 1 first.");
+	}
+
 	/** Unlock consumers query the saved phase; transitions also shorten pending structure countdowns. */
 	static void phaseChanged(World world, int from, int to) {
-		WorldServer overworld = net.minecraftforge.common.DimensionManager.getWorld(0);
+		WorldServer overworld = DimensionManager.getWorld(0);
 		if(overworld != null) {
 			WretchCamps.reschedule(overworld);
 			GardenerNests.reschedule(overworld);
@@ -90,7 +118,7 @@ public final class GeminiInvasionManager {
 	public static void debug(World world, String key, String message) {
 		GeminiWorldSavedData data = GeminiWorldSavedData.get(world);
 		if(data == null || !data.isDebug()) return;
-		WorldServer overworld = net.minecraftforge.common.DimensionManager.getWorld(0);
+		WorldServer overworld = DimensionManager.getWorld(0);
 		long now = overworld.getTotalWorldTime();
 		Long previous = data.debugMessages.get(key);
 		if(previous != null && now >= previous && now - previous < 200L) return;
@@ -127,12 +155,36 @@ public final class GeminiInvasionManager {
 	public static boolean setMarsVisited(World world, boolean visited) {
 		GeminiWorldSavedData data = GeminiWorldSavedData.get(world);
 		if(data == null) return false;
-		boolean previous = data.hasMarsVisited();
-		int previousPhase = data.getPhase();
+		if(data.hasMarsVisited() == visited) return true;
 		data.setMarsVisited(visited);
-		if(previous != visited) debug(world, "activation", "Mars milestone=" + visited + "; invasion phase=" + data.getPhase() + ".");
-		if(previousPhase != data.getPhase()) phaseChanged(world, previousPhase, data.getPhase());
-        GeminiIris.sync(world);
+		debug(world, "activation", "Mars milestone=" + visited + ".");
+		if(GeminiConfig.geminiActivationMode == ActivationMode.MARS && !activateIfReady(world, data)) GeminiIris.sync(world);
+		return true;
+	}
+
+	/** Return the unmet condition, or null when the selected mode permits activation. */
+	private static String activationBlocker(GeminiWorldSavedData data) {
+		switch(GeminiConfig.geminiActivationMode) {
+			case DISABLED: return "geminiActivationMode is DISABLED";
+			case IMMEDIATE: return null;
+			case MARS: return data.hasMarsVisited() ? null : "waiting for a player to reach Mars (Duna)";
+			default: throw new IllegalStateException("Unknown Gemini activation mode");
+		}
+	}
+
+	public static boolean activationConditionSatisfied(World world) {
+		return activationBlocker(requireData(world)) == null;
+	}
+
+	public static boolean manualActivationAllowed(World world) {
+		GeminiWorldSavedData data = GeminiWorldSavedData.get(world);
+		return data != null && (GeminiConfig.geminiActivationMode == ActivationMode.DISABLED || activationBlocker(data) == null);
+	}
+
+	private static boolean activateIfReady(World world, GeminiWorldSavedData data) {
+		if(activationBlocker(data) != null || !data.initialize()) return false;
+		debug(world, "invasion-start", "Invasion started in " + GeminiConfig.geminiActivationMode + " mode.");
+		phaseChanged(world, 0, 1);
 		return true;
 	}
 
@@ -147,21 +199,30 @@ public final class GeminiInvasionManager {
 
 	public static boolean canActivityOccur(World world, int requiredPhase) {
 		return GeminiConfig.enabled && world instanceof WorldServer && !world.isRemote
-				&& world.provider.dimensionId == 0 && getPhase(world) >= requiredPhase;
+				&& world.provider.dimensionId == 0 && getPhase(world) >= Math.max(1, requiredPhase);
 	}
 
-	/** Saved unlock state, independent of enablement. */
+	/** Phase available under the selected activation condition, independent of the master switch. */
 	public static int getPhase(World world) {
 		GeminiWorldSavedData data = GeminiWorldSavedData.get(world);
-		return data == null ? 0 : data.getPhase();
+		return data == null ? 0 : activePhase(data);
 	}
+
+	private static int activePhase(GeminiWorldSavedData data) {
+		return activationBlocker(data) == null ? data.getPhase() : 0;
+	}
+
+	public static int getSavedPhase(World world) { return requireData(world).getPhase(); }
 
     /** Exact shared scheduler gates; also used by status while callbacks are paused. */
     static String structureGate(World world, int requiredPhase) {
         if(!(world instanceof WorldServer) || world.isRemote || world.provider.dimensionId != 0) return "Overworld server only";
         if(!GeminiConfig.enabled) return "Gemini invasion enabled is false";
-        if(!hasMarsVisited(world)) return "Mars milestone is locked";
-        if(getPhase(world) < requiredPhase) return "requires invasion phase " + requiredPhase + "+ (current " + getPhase(world) + ")";
+        GeminiWorldSavedData data = GeminiWorldSavedData.get(world);
+        if(data == null) return "server Overworld unavailable";
+        String blocker = activationBlocker(data);
+        if(blocker != null) return blocker;
+        if(data.getPhase() < requiredPhase) return "requires invasion phase " + requiredPhase + "+ (current " + data.getPhase() + ")";
         if(world.playerEntities.isEmpty()) return "no players in the Overworld";
         return null;
     }
@@ -176,8 +237,7 @@ public final class GeminiInvasionManager {
 		if(!(player instanceof EntityPlayerMP) || player.worldObj.isRemote) return;
 		World world = player.worldObj;
 		if(player.dimension != world.provider.dimensionId || !isMars(world)) return;
-		GeminiWorldSavedData data = GeminiWorldSavedData.get(world);
-		if(data != null) setMarsVisited(world, true);
+		setMarsVisited(world, true);
 	}
 
 	private static boolean isMars(World world) {
@@ -235,21 +295,16 @@ public final class GeminiInvasionManager {
 				|| !(event.world instanceof WorldServer) || event.world.isRemote
 				|| event.world.provider.dimensionId != 0
 				|| event.world.getTotalWorldTime() % 20 != 0) return;
-        // Inactive Iris snapshots/debug controls still synchronize; invasion scheduling gates are unchanged.
-        GeminiWorldSavedData irisData = GeminiWorldSavedData.get(event.world);
-        if(irisData != null) {
-            GeminiIris.tick((WorldServer)event.world, irisData);
-            irisData.lights.tick((WorldServer)event.world);
-        }
-		if(!GeminiConfig.enabled) { WoodcrawlerSpawning.diagnostic(event.world, "disabled", "Gemini invasion disabled"); return; }
-		if(event.world.playerEntities.isEmpty()) { WoodcrawlerSpawning.diagnostic(event.world, "players", "No players in the Overworld"); return; }
-
 		WorldServer overworld = (WorldServer) event.world;
 		GeminiWorldSavedData data = GeminiWorldSavedData.get(overworld);
 		if(data == null) return;
-		if(!data.hasMarsVisited()) { WoodcrawlerSpawning.diagnostic(overworld, "mars", "Mars visit requirement not satisfied"); return; }
-		if(data.getPhase() < 1) { WoodcrawlerSpawning.diagnostic(overworld, "phase", "Incorrect invasion phase"); return; }
-		data.advancePhase(overworld);
+		boolean initialized = GeminiConfig.enabled && !overworld.playerEntities.isEmpty() && activateIfReady(overworld, data);
+		// Debug controls and existing encounters still need their updates when natural scheduling is paused.
+		GeminiIris.tick(overworld, data);
+		data.lights.tick(overworld);
+		String blocker = progressionBlocker(overworld, data);
+		if(blocker != null) { WoodcrawlerSpawning.diagnostic(overworld, blocker, blocker); return; }
+		if(!initialized) data.advancePhase(overworld);
 		// Independent saved structure opportunities must run before encounter-countdown returns.
 		try { GardenerNests.schedule(overworld); }
 		finally { WretchCamps.schedule(overworld); }

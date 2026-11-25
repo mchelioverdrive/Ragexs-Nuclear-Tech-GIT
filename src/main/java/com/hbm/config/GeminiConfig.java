@@ -1,8 +1,14 @@
 package com.hbm.config;
 
+import java.util.Arrays;
+
+import com.hbm.main.MainRegistry;
+
 import net.minecraftforge.common.config.Configuration;
 
 public final class GeminiConfig {
+	public enum ActivationMode { DISABLED, IMMEDIATE, MARS }
+
     public static boolean irisRendering = true;
     public static boolean irisEffects = true;
     public static float irisSize = 1F;
@@ -20,6 +26,9 @@ public final class GeminiConfig {
     public static float lightsHarvestDamage = 10F, lightsMovementSpeed = 0.38F;
 
 	public static final String CATEGORY = "21_gemini";
+	private static final String ACTIVATION_MODE_KEY = "geminiActivationMode";
+	private static final ActivationMode DEFAULT_ACTIVATION_MODE = ActivationMode.MARS;
+	public static ActivationMode geminiActivationMode = DEFAULT_ACTIVATION_MODE;
 	public static boolean enabled = true;
 	public static boolean geminiOnly = false, geminiStageSpawnSuppression = true;
 	public static float geminiFinalStageHostileSpawnMultiplier = 0F;
@@ -141,7 +150,18 @@ public final class GeminiConfig {
                 "geminiPhase" + (i + 1) + "HostileSpawnMultiplier", new float[] {0.75F, 0.5F, 0.25F}[i]);
         values.geminiFinalStageHostileSpawnMultiplier = multiplier(config, "geminiFinalStageHostileSpawnMultiplier", 0F);
 		values.enabled = config.getBoolean("enabled", CATEGORY, true,
-				"Enable natural Gemini activity after a player visits Mars (Duna). Disabling pauses scheduling; the world keeps its Mars milestone. Manual spawn eggs bypass this setting.");
+				"Master switch for natural Gemini activity. Disabling pauses scheduling and retains world progress. Manual spawn eggs bypass this setting.");
+		String activationMode = config.getString(ACTIVATION_MODE_KEY, CATEGORY, DEFAULT_ACTIVATION_MODE.name(),
+				"Natural invasion activation: DISABLED pauses the invasion, IMMEDIATE requires no travel, and MARS requires an arrival on Mars (Duna).",
+				Arrays.stream(ActivationMode.values()).map(ActivationMode::name).toArray(String[]::new));
+		try {
+			values.geminiActivationMode = ActivationMode.valueOf(activationMode);
+		} catch(IllegalArgumentException ex) {
+			// Reload rejects invalid choices before parsing. Recover the startup config with the default.
+			config.getCategory(CATEGORY).get(ACTIVATION_MODE_KEY).set(DEFAULT_ACTIVATION_MODE.name());
+			MainRegistry.logger.warn("Invalid {}.{} value '{}'. Using {}.", CATEGORY, ACTIVATION_MODE_KEY,
+					activationMode, DEFAULT_ACTIVATION_MODE);
+		}
 		values.phase2DelayDays = config.getInt("phase2DelayDays", CATEGORY, 3, 1, 10000,
 				"Minecraft days in phase 1 before infection unlocks. One day is 24000 enabled Overworld ticks with players present.");
 		values.phase3DelayDays = config.getInt("phase3DelayDays", CATEGORY, 5, 1, 10000,
@@ -171,7 +191,7 @@ public final class GeminiConfig {
 		values.woodcrawlerLeapMinDistance = config.getInt("woodcrawlerLeapMinDistance", CATEGORY, 3, 1, 12,
 				"Minimum straight-line launch-to-landing distance in blocks; close prey uses ordinary attacks.");
 		values.woodcrawlerSpawnWeight = config.getInt("woodcrawlerSpawnWeight", CATEGORY, 2, 0, 20,
-				"Forest monster spawn weight after Mars. Zero disables both natural and invasion Woodcrawler spawns.");
+				"Forest monster spawn weight during an active invasion. Zero disables both natural and invasion Woodcrawler spawns.");
 		values.woodcrawlerMaxLoaded = config.getInt("woodcrawlerMaxLoaded", CATEGORY, 16, 0, 64,
 				"Maximum loaded Woodcrawlers for natural and reproduction admissions. Manual spawn eggs bypass the cap; saved creatures are retained.");
 		values.woodcrawlerMaxPending = config.getInt("woodcrawlerMaxPending", CATEGORY, 16, 0, 64,
@@ -282,7 +302,7 @@ public final class GeminiConfig {
 				"Lifetime nests per survival area within nestMaxDistance plus 32 blocks. Existing homes remain fixed; active players away from home can seed other areas.");
         values.gardenerNestIntervalSeconds = config.getInt("nestIntervalSeconds", gardener,
                 Math.max(60, Math.min(86400, values.gardenerNestChance * 120 / 8)), 60, 86400,
-                "Active seconds between successful automatic nests. First eligible attempt within 20 seconds; failures retry after 60 seconds. Saves retain countdowns; phase changes shorten them to 20 seconds; reload clamps to the new interval/retry delay.");
+                "Active seconds between successful automatic nests. First eligible attempt within 20 seconds. Failures retry after 60 seconds. Saves retain countdowns. Phase changes shorten them to 20 seconds, and interval changes clamp them to the new interval or retry delay.");
         values.wretchCampIntervalSeconds = config.getInt("campIntervalSeconds", wretch,
                 Math.max(60, Math.min(86400, values.wretchCampChance * 300 / 256)), 60, 86400,
                 "Active seconds between successful automatic camps near living players of any game mode in phase 4. First attempt within 20 seconds; failed searches retry after 60 seconds. No biome or new-chunk requirement.");
@@ -316,9 +336,9 @@ public final class GeminiConfig {
 		}
 		String ocean = CATEGORY + ".oceanGardener";
 		values.oceanGardenerEnabled = config.getBoolean("enabled", ocean, true,
-				"Enable rare phase-3 Ocean Gardeners in loaded deep Overworld oceans after Mars. Saved residents remain dormant when disabled.");
+				"Enable rare phase-3 Ocean Gardeners in loaded deep Overworld oceans during the invasion. Saved residents remain dormant when disabled.");
 		values.oceanGardenerMaxLoaded = config.getInt("maxLoaded", ocean, 1, 0, 16,
-				"Loaded natural Ocean Gardener cap, separate from underground Gardeners. Manual eggs bypass caps after Mars; saved residents remain.");
+				"Loaded natural Ocean Gardener cap, separate from underground Gardeners. Admitted manual eggs bypass caps. Saved residents remain.");
 		values.oceanGardenerChance = config.getInt("encounterChance", ocean, 32, 1, 10000,
 				"One-in-N roll per active minute before phase probability and four loaded deep-water probes. Territories stay 512 blocks apart, with 128 lifetime reservations.");
 		values.deepRootEnabled = config.getBoolean("enabled", disease, true,
@@ -358,6 +378,7 @@ public final class GeminiConfig {
         lightsHarvestDamage = values.lightsHarvestDamage;
         lightsMovementSpeed = values.lightsMovementSpeed;
         enabled = values.enabled;
+        geminiActivationMode = values.geminiActivationMode;
         geminiOnly = values.geminiOnly;
         geminiStageSpawnSuppression = values.geminiStageSpawnSuppression;
         geminiFinalStageHostileSpawnMultiplier = values.geminiFinalStageHostileSpawnMultiplier;
@@ -477,6 +498,7 @@ public final class GeminiConfig {
         public int lightsDetectionRange = 80, lightsHuntingRange = 42;
         public float lightsHarvestDamage = 10F, lightsMovementSpeed = 0.38F;
         public boolean enabled = true;
+        public ActivationMode geminiActivationMode = DEFAULT_ACTIVATION_MODE;
         public boolean geminiOnly = false, geminiStageSpawnSuppression = true;
         public float geminiFinalStageHostileSpawnMultiplier = 0F;
         public final float[] geminiIntermediateStageHostileSpawnMultipliers = {0.75F, 0.5F, 0.25F};
@@ -581,7 +603,7 @@ public final class GeminiConfig {
         values.woodcrawlerInvasionMaxSpawnAttempts = config.getInt("woodcrawlerInvasionMaxSpawnAttempts", CATEGORY,
                 24, 1, 24, "Maximum loaded placement probes per entire encounter, including failed probes; never forces chunks or scans surrounding biomes.");
         values.geminiPreventSleeping = config.getBoolean("geminiPreventSleeping", CATEGORY, true,
-                "Prevent survival/adventure sleeping in the Overworld throughout enabled, Mars-unlocked invasion phases 1-4. Disabled/locked invasions restore normal sleeping immediately.");
+                "Prevent survival/adventure sleeping in the Overworld during active invasion phases 1-4. Paused invasions restore normal sleeping immediately.");
         values.woodcrawlerInvasionDiagnostics = config.getBoolean("woodcrawlerInvasionDiagnostics", CATEGORY, false,
                 "Log encounter results/rejection totals and paused scheduling reasons. Repeated failures are throttled to once per reason per minute per world; no per-position logging.");
     }
