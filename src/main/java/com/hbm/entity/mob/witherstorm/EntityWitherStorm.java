@@ -6,6 +6,8 @@ import java.util.UUID;
 import com.hbm.config.WitherStormConfig;
 import com.hbm.entity.logic.IChunkLoader;
 import com.hbm.main.MainRegistry;
+import com.hbm.world.progression.BossProgression;
+import com.hbm.world.progression.BossProgression.Boss;
 import api.hbm.entity.IRadiationImmune;
 import net.minecraft.entity.Entity;
 import net.minecraft.block.material.Material;
@@ -63,6 +65,7 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
     private double roamX, roamZ, roamGround;
     private int roamTicks, roamDelay, roamCheck;
     private WitherStormPursuit pursuit = new WitherStormPursuit();
+    private boolean challengeSpawned, legacySpawn;
     private Ticket flightTicket;
     private ChunkCoordIntPair flightChunk;
 
@@ -344,7 +347,11 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
         if(targetIds[head] != null && targetIds[head].equals(e.getUniqueID())) d *= 0.6D;
         return d;
     }
-    void startPursuit() { if(pursuit == null) pursuit = new WitherStormPursuit(); }
+    private void startPursuit() { if(pursuit == null) pursuit = new WitherStormPursuit(); }
+    void markChallengeSpawn() {
+        challengeSpawned = true;
+        startPursuit();
+    }
 
     void startFlightTicket() {
         if(pursuit != null && flightTicket == null)
@@ -815,8 +822,17 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
     @Override protected float getSoundVolume() { return 1.5F; }
     @Override public int getTalkInterval() { return 200; }
     @Override public void onDeath(DamageSource source) {
-        if(!worldObj.isRemote) { dataWatcher.updateObject(22, (byte)0); WitherStormEncounters.get(worldObj).remove(getUniqueID()); }
+        boolean finalDefeat = false;
+        if(!worldObj.isRemote) {
+            WitherStormEncounters encounters = WitherStormEncounters.get(worldObj);
+            // Old encounter records track whether the challenge ran without identifying its boss.
+            finalDefeat = !isDead && hasCore() && getHealth() <= 0F && getStage() == WitherStormStage.D && transitionTicks() == 0
+                && !challengeSpawned && (!legacySpawn || !encounters.hasLegacyChallengeSpawn());
+            dataWatcher.updateObject(22, (byte)0);
+            encounters.remove(getUniqueID());
+        }
         super.onDeath(source);
+        if(finalDefeat && dead) BossProgression.get(worldObj).recordDefeat(Boss.WITHER_STORM);
     }
     @Override protected void dropFewItems(boolean player, int looting) { entityDropItem(new ItemStack(Items.nether_star), 0); }
     @Override public void setDead() {
@@ -832,6 +848,7 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
     @Override public void writeEntityToNBT(NBTTagCompound n) {
         super.writeEntityToNBT(n);
         n.setInteger("Growth", getGrowth()); n.setString("Phase", getPhase().name()); n.setBoolean("Core", hasCore()); n.setBoolean("Registered", registered);
+        if(!legacySpawn) n.setBoolean("ChallengeSpawned", challengeSpawned);
         n.setInteger("Transition", transitionTicks()); n.setInteger("RoarTimer", roarTimer);
         n.setInteger("StageBTicks", stageBTicks);
         n.setInteger("GrowthSoundMass", lastGrowthSoundMass);
@@ -861,6 +878,8 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
         stageBTicks = getStage() == WitherStormStage.B ? Math.max(0, n.getInteger("StageBTicks")) : 0;
         dataWatcher.updateObject(31, (byte)(n.getByte("TransformingHeads") & dataWatcher.getWatchableObjectByte(29)));
         registered = n.getBoolean("Registered"); dataWatcher.updateObject(22, (byte)(!n.hasKey("Core") || n.getBoolean("Core") ? 1 : 0));
+        legacySpawn = !n.hasKey("ChallengeSpawned", 1);
+        challengeSpawned = n.getBoolean("ChallengeSpawned");
         lastGrowthSoundMass = n.getInteger("GrowthSoundMass");
         dataWatcher.updateObject(23, Math.max(0, Math.min(80, n.getInteger("Transition")))); roarTimer = Math.max(40, Math.min(500, n.getInteger("RoarTimer")));
         for(int i = 0; i < parts.length; i++) { partIds[i] = WitherStormMath.uuid(n, "Part" + i); partChunksX[i] = n.getInteger("PartX" + i); partChunksZ[i] = n.getInteger("PartZ" + i); }

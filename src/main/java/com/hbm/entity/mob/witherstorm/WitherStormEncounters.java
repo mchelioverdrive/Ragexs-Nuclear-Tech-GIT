@@ -24,6 +24,7 @@ public final class WitherStormEncounters extends WorldSavedData {
     private final Map<UUID, Entity> loaded = new HashMap<UUID, Entity>();
     private byte challengeOverride;
     private boolean challengeActive, challengeCompleted;
+    private boolean legacyChallengeSpawned;
     private long challengeStart;
     private long retryAt;
     private final Map<Integer, WitherStormPursuit.Trails> trails = new HashMap<>();
@@ -55,6 +56,7 @@ public final class WitherStormEncounters extends WorldSavedData {
         return true;
     }
     public boolean room() { return encounters.size() < WitherStormConfig.maxEncounters; }
+    boolean hasLegacyChallengeSpawn() { return legacyChallengeSpawned; }
     EntityWitherStorm nearestThreat(EntityLivingBase mob, double range) {
         EntityWitherStorm nearest = null;
         double best = range * range;
@@ -123,7 +125,7 @@ public final class WitherStormEncounters extends WorldSavedData {
                 int y = Math.max(world.getTopSolidOrLiquidBlock(x, z), world.getHeightValue(x, z)) + 7;
                 AxisAlignedBB box = AxisAlignedBB.getBoundingBox(x - 0.5D, y, z - 0.5D, x + 1.5D, y + 4, z + 1.5D);
                 if(!world.func_147461_a(box).isEmpty() || !world.checkNoEntityCollision(box) || world.isAnyLiquid(box)) continue;
-                if(WitherStormEvents.spawnInitial(world, x + 0.5D, y, z + 0.5D, 0, true)) {
+                if(WitherStormEvents.spawnChallenge(world, x + 0.5D, y, z + 0.5D)) {
                     challengeCompleted = true;
                     markDirty();
                 }
@@ -182,6 +184,8 @@ public final class WitherStormEncounters extends WorldSavedData {
         challengeOverride = tag.getByte("ChallengeOverride");
         challengeActive = tag.getBoolean("ChallengeActive");
         challengeCompleted = tag.getBoolean("ChallengeCompleted");
+        legacyChallengeSpawned = tag.hasKey("LegacyChallengeSpawned", 1)
+            ? tag.getBoolean("LegacyChallengeSpawned") : challengeCompleted;
         challengeStart = tag.getLong("ChallengeStart");
         encounters.clear(); loaded.clear();
         NBTTagList list = tag.getTagList("Encounters", 10);
@@ -195,6 +199,7 @@ public final class WitherStormEncounters extends WorldSavedData {
         tag.setByte("ChallengeOverride", challengeOverride);
         tag.setBoolean("ChallengeActive", challengeActive);
         tag.setBoolean("ChallengeCompleted", challengeCompleted);
+        tag.setBoolean("LegacyChallengeSpawned", legacyChallengeSpawned);
         tag.setLong("ChallengeStart", challengeStart);
         NBTTagList list = new NBTTagList();
         for(Map.Entry<UUID, Integer> entry : encounters.entrySet()) {

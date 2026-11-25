@@ -1113,6 +1113,7 @@ public class MainRegistry {
 		MinecraftForge.EVENT_BUS.register(new com.hbm.explosion.ExplosionTerrainAccess());
 		com.hbm.entity.mob.witherstorm.WitherStormEvents witherStormEvents = new com.hbm.entity.mob.witherstorm.WitherStormEvents();
 		MinecraftForge.EVENT_BUS.register(witherStormEvents);
+		MinecraftForge.EVENT_BUS.register(new com.hbm.world.progression.BossProgression.Events());
 		MinecraftForge.EVENT_BUS.register(new com.hbm.entity.mob.giantghast.GiantGhastEncounters.Effects());
 		MinecraftForge.EVENT_BUS.register(new com.hbm.entity.mob.magmagolem.MagmaGolemTerrain.Explosions());
 		FMLCommonHandler.instance().bus().register(witherStormEvents);
@@ -1176,6 +1177,7 @@ public class MainRegistry {
 		com.hbm.explosion.ExplosionNukeRayBatched.startWorkers();
 		World world = event.getServer().getEntityWorld();
 		RBMKDials.createDials(world);
+		com.hbm.world.progression.BossProgression.importLegacyEnd(world);
 		event.registerServerCommand(new CommandReloadRecipes());
 		event.registerServerCommand(new CommandDebugChunkLoad());
 		event.registerServerCommand(new CommandPowerNetStats());
@@ -1192,6 +1194,7 @@ public class MainRegistry {
 		event.registerServerCommand(new CommandBedrockDrop());
 		event.registerServerCommand(new CommandRNTAchievement());
 		event.registerServerCommand(new com.hbm.commands.CommandWitherStorm());
+		event.registerServerCommand(new com.hbm.commands.CommandWitherStormBypass());
 		event.registerServerCommand(new com.hbm.commands.CommandColossus());
 		event.registerServerCommand(new com.hbm.commands.CommandGiantGhast());
 

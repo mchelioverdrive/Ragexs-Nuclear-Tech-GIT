@@ -972,3 +972,9 @@
 
 - Add the reloadable `21_gemini.geminiActivationMode` setting. `MARS` keeps the existing planetary arrival requirement, `IMMEDIATE` starts at Phase 1, and `DISABLED` pauses natural progression, spawning, and construction.
 - Retain the shared Overworld milestone, phase, timers, and structure schedules across mode changes. Keep the manual debug controls and show the selected activation condition and progression blocker in `/gemini status`.
+
+2026-11-24 23:47 — Gate Wither Storm rituals behind the Ender Dragon
+
+- Require a world-wide Ender Dragon defeat for both survival rituals. Route legacy euphemium activation through the server and leave the structure and its materials intact when either ritual is blocked. Recognize earlier Dragon defeats from the vanilla exit fountain in saved End chunks.
+- Add the persistent operator-level `/witherstormbypass` toggle. Preserve operator spawning, the challenge countdown, and its one-time spawn. The timed challenge encounter grants no boss milestones.
+- Store Dragon and final-stage Wither Storm defeats in shared boss progression data so future bosses can declare prerequisites.

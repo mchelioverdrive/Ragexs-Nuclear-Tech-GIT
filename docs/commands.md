@@ -349,7 +349,9 @@ Omitting the form or choosing `command` starts the Command Block Wither with thr
 
 For survival summoning, place a **Fake Command Block** above one soul sand block and flank the Fake Command Block with soul sand. Leave both lower corners empty. Place three wither skeleton skulls on the top row. The last skull starts the encounter in either horizontal orientation and consumes the structure if the summon succeeds. Find the Fake Command Block in stronghold libraries, jungle temples, and exposed Ice Plains Spikes formations. Mine it with a diamond-tier pickaxe. The legacy euphemium structure still accepts a sneak-right-click with a nether star.
 
-Challenge mode starts a 24,000-tick countdown in the Overworld. The command saves a world-specific override. Running `challenge true` during a countdown preserves its progress, and `challenge false` cancels a pending spawn. Once the automatic summon succeeds, the world has used its challenge spawn. The encounter cap applies, so a full cap leaves the spawn pending. The challenge Storm follows sampled trails from eligible Overworld players and continues toward its last recorded position if they leave.
+Both survival rituals require a world-wide Ender Dragon defeat or the operator bypass described below. A blocked activation leaves the structure and any held nether star intact. Place a skull again to retry the Fake Command Block ritual, or activate the euphemium ritual again with the nether star. The `spawn` subcommand remains available to operators at any stage.
+
+Challenge mode starts a 24,000-tick countdown in the Overworld. The command saves a world-specific override. Running `challenge true` during a countdown preserves its progress, and `challenge false` cancels a pending spawn. Once the automatic summon succeeds, the world has used its challenge spawn. The encounter cap applies, so a full cap leaves the spawn pending. The challenge Storm follows sampled trails from eligible Overworld players and continues toward its last recorded position if they leave. The timed spawn is available before the Dragon defeat and grants no boss progression.
 
 The core is visible in Stage A, Stage A with the transformed head, and damaged Stage C. The mantle covers it in the other forms. Damage to heads passes to the boss, and tentacles pass half damage to the same health pool.
 
@@ -366,6 +368,20 @@ Growth comes from consumed terrain (three mass per block), item stack counts, fa
 | Stage D | Above 250,000. The tall mantle reforms with visible purple seams. |
 
 Only transformed heads use tractor beams, after their transformation animation finishes. ThunderStorm refreshes ordinary rain/thunder for ten seconds while active in a dimension with a sky. Growth, transformed heads, elapsed Stage B ticks, attack timers, component UUIDs and terrain cursors survive saving. Older saves with a transformed side head gain its partner. Raising growth preserves completed head transformations, while lowering it recalculates heads from the configured thresholds. The boss uses loaded terrain only and may stop at unloaded boundaries. See [Wither Storm configuration](configuration.md#wither-storm).
+
+### `/witherstormbypass`
+
+Operator level 2 controls the Ender Dragon requirement for Wither Storm rituals.
+
+```text
+/witherstormbypass
+/witherstormbypass true
+/witherstormbypass false
+```
+
+With no argument the command reports the current setting. `true` allows either ritual immediately, and `false` restores the Dragon requirement. The setting is off by default and is saved with the boss milestones in `<world>/data/rntBossProgression.dat`.
+
+The server records Dragon deaths in the End and imports older defeats from the saved vanilla End exit fountain on first startup with this feature. An existing save needs surviving portal blocks and the fountain's central bedrock pillar for automatic recognition. Defeating the Wither Storm after its Stage D transition finishes records the next milestone. In older saves that already used the challenge spawn, previously saved Storms lack the origin data needed to award that milestone.
 
 ### `/rntsandworm`
 
@@ -444,7 +460,7 @@ The arm and TNT sequence follows the [Story Mode Giant Magma Golem encounter](ht
 
 ## Permissions notes
 
-Most server command classes do not override Forge's default permission behavior. `/rntwitherstorm` and `/rntachievement` explicitly require permission level 2, and `/hbmbedrockdrop` explicitly requires permission level 4. Server owners should additionally restrict command access with their server management tooling, especially for radiation, stations, satellites, recipe reloads, chunk diagnostics, and nuclear toggles.
+Most server command classes do not override Forge's default permission behavior. `/rntwitherstorm`, `/witherstormbypass`, and `/rntachievement` explicitly require permission level 2, and `/hbmbedrockdrop` explicitly requires permission level 4. Server owners should additionally restrict command access with their server management tooling, especially for radiation, stations, satellites, recipe reloads, chunk diagnostics, and nuclear toggles.
 
 ## /rntgiantenderman
 

@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import com.hbm.blocks.ModBlocks;
 import com.hbm.config.WitherStormConfig;
+import com.hbm.world.progression.BossProgression;
+import com.hbm.world.progression.BossProgression.Boss;
 import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
@@ -17,6 +19,7 @@ import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntitySkull;
+import net.minecraft.util.ChatComponentText;
 import net.minecraft.world.World;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
@@ -79,8 +82,7 @@ public final class WitherStormEvents {
     private void summonStructure(BlockEvent.PlaceEvent placement) {
         World world = placement.world;
         int y = placement.y - 1;
-        if(y < 1 || !isWitherSkull(world, placement.x, y + 1, placement.z)
-            || !WitherStormEncounters.get(world).room()) return;
+        if(y < 1 || !isWitherSkull(world, placement.x, y + 1, placement.z)) return;
         for(int axis = 0; axis < 2; axis++) {
             int dx = 1 - axis, dz = axis;
             for(int offset = -1; offset <= 1; offset++) {
@@ -98,7 +100,7 @@ public final class WitherStormEvents {
                 }
                 if(!matches || !world.canMineBlock(placement.player, x, y - 1, z)
                     || !placement.player.canPlayerEdit(x, y - 1, z, 1, placement.itemInHand)) continue;
-                if(spawnInitial(world, x + 0.5D, y + 2D, z + 0.5D, axis * 90F, false)) consume(world, x, y, z, dx, dz);
+                if(spawnFromRitual(world, placement.player, x + 0.5D, y + 2D, z + 0.5D, axis * 90F)) consume(world, x, y, z, dx, dz);
                 return;
             }
         }
@@ -108,10 +110,20 @@ public final class WitherStormEvents {
         TileEntity tile = world.getTileEntity(x, y, z);
         return tile instanceof TileEntitySkull && ((TileEntitySkull)tile).func_145904_a() == 1;
     }
-    static boolean spawnInitial(World world, double x, double y, double z, float yaw, boolean challenge) {
+    private static boolean spawnFromRitual(World world, EntityPlayer player, double x, double y, double z, float yaw) {
+        if(!BossProgression.get(world).canSummon(Boss.WITHER_STORM)) {
+            player.addChatMessage(new ChatComponentText("An ancient power prevents the Command Block from activating. Defeat the Ender Dragon first."));
+            return false;
+        }
+        return WitherStormEncounters.get(world).room() && spawnInitial(world, x, y, z, yaw, false);
+    }
+    static boolean spawnChallenge(World world, double x, double y, double z) {
+        return spawnInitial(world, x, y, z, 0, true);
+    }
+    private static boolean spawnInitial(World world, double x, double y, double z, float yaw, boolean challenge) {
         EntityWitherStorm boss = new EntityWitherStorm(world);
         boss.setLocationAndAngles(x, y, z, yaw, 0);
-        if(challenge) boss.startPursuit();
+        if(challenge) boss.markChallengeSpawn();
         if(!world.spawnEntityInWorld(boss)) { boss.setDead(); return false; }
         if(challenge) boss.startFlightTicket();
         boss.playSound("hbm:entity.witherStorm.transform", 2F, 1F);
@@ -136,9 +148,11 @@ public final class WitherStormEvents {
     }
     @SubscribeEvent(priority = EventPriority.LOWEST) public void summon(PlayerInteractEvent event) {
         EntityPlayer player = event.entityPlayer;
+        World world = player.worldObj;
+        // Client cancellation suppresses the packet that triggers the server-side ritual.
+        if(world.isRemote) return;
         ItemStack held = player.getHeldItem();
         if(event.action != PlayerInteractEvent.Action.RIGHT_CLICK_BLOCK || !WitherStormConfig.survivalSummon || !player.isSneaking() || held == null || held.getItem() != Items.nether_star) return;
-        World world = player.worldObj;
         int x = event.x, y = event.y, z = event.z;
         if(!WitherStormMath.areaLoaded(world, x, z, 2) || world.getBlock(x, y, z) != ModBlocks.block_euphemium) return;
         for(int axis = 0; axis < 2; axis++) {
@@ -151,8 +165,7 @@ public final class WitherStormEvents {
             }
             if(!valid || !player.canPlayerEdit(x, y - 1, z, event.face, held)) continue;
             event.setCanceled(true);
-            if(world.isRemote || !WitherStormEncounters.get(world).room()) return;
-            if(!spawnInitial(world, x + 0.5D, y + 3D, z + 0.5D, player.rotationYaw, false)) return;
+            if(!spawnFromRitual(world, player, x + 0.5D, y + 3D, z + 0.5D, player.rotationYaw)) return;
             consume(world, x, y, z, 1 - axis, axis);
             if(!player.capabilities.isCreativeMode && --held.stackSize == 0) player.inventory.setInventorySlotContents(player.inventory.currentItem, null);
             return;
