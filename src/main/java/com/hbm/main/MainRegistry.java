@@ -1222,9 +1222,11 @@ public class MainRegistry {
         Configuration candidate = CommonConfig.readForReload(mainConfiguration.getConfigFile(), mainConfiguration);
         GeminiConfig.Values gemini = GeminiConfig.parse(candidate);
         GeneralConfig.RuntimeValues general = GeneralConfig.parseRuntime(candidate);
+        MobConfig.NaturalVillagerValues villagers = new MobConfig.NaturalVillagerValues(candidate);
         // All parsing/validation finishes before these non-throwing field assignments.
         GeminiConfig.apply(gemini, false);
         GeneralConfig.applyRuntime(general);
+        MobConfig.naturalVillagers = villagers;
     }
 
     private void loadConfig(FMLPreInitializationEvent event) {

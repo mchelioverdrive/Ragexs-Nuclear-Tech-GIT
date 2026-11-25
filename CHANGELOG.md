@@ -962,3 +962,8 @@
 2026-11-24 22:53 — Give Fake People occasional hilltop screams
 
 - Both disguises can take a loaded walking route to an exposed rise when idle and pause for a single positional scream. Hunting takes priority, and unsuccessful searches yield to ordinary wandering. Use the bundled GHE human screams downmixed for positional playback and pitched-down vanilla villager calls, with randomized timing, a nighttime bias, and a configurable 96-block default range.
+
+2026-11-24 23:05 — Add natural Overworld villagers
+
+- Add vanilla villagers to the live passive spawn pass in habitable Overworld biomes. Spawn on dry surfaces in small groups, randomize professions through Forge, and save their natural origin for loaded population checks. Existing villages and manual spawns keep their normal rules.
+- Make the spawn settings reloadable and share the passive mob cap. Pause new natural villagers during active Gemini phases so GHE can deplete the available prey. Existing villagers remain available to the usual GHE and disease mechanics.

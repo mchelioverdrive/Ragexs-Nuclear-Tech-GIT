@@ -1,8 +1,49 @@
 package com.hbm.config;
 
+import java.util.BitSet;
+
 import net.minecraftforge.common.config.Configuration;
 
 public class MobConfig {
+
+	public static NaturalVillagerValues naturalVillagers;
+
+	public static final class NaturalVillagerValues {
+		private static final int[] DEFAULT_BIOMES = {
+			1, 2, 4, 5, 6, 17, 18, 19, 27, 28, 29, 32, 33, 35, 36,
+			129, 130, 132, 133, 134, 155, 156, 157, 160, 161, 163, 164
+		};
+
+		public final boolean enabled;
+		public final int weight, minGroup, maxGroup, localLimit, radius, playerDistance;
+		private final BitSet biomes = new BitSet(256);
+
+		public NaturalVillagerValues(Configuration config) {
+			String category = CommonConfig.CATEGORY_MOBS;
+			enabled = config.getBoolean("12.V00_enableNaturalVillagerSpawning", category, true,
+					"Allow natural Overworld villagers before an active Gemini invasion.");
+			weight = config.getInt("12.V01_naturalVillagerSpawnWeight", category, 2, 0, 100,
+					"Weight in the passive spawn list. Zero disables natural villager spawning.");
+			minGroup = config.getInt("12.V02_naturalVillagerMinGroupSize", category, 1, 1, 4,
+					"Minimum target group size. Terrain and population limits can reduce the actual group.");
+			maxGroup = config.getInt("12.V03_naturalVillagerMaxGroupSize", category, 3, minGroup, 4,
+					"Maximum target group size. Forge makes at most four placement attempts per group.");
+			localLimit = config.getInt("12.V04_naturalVillagerLocalLimit", category, 8, 0, 64,
+					"Maximum living loaded natural villagers within the check radius. Zero disables new spawns.");
+			radius = config.getInt("12.V05_naturalVillagerPopulationRadius", category, 128, 16, 256,
+					"Horizontal population check radius in blocks, at all elevations.");
+			playerDistance = config.getInt("12.V06_naturalVillagerMinPlayerDistance", category, 24, 24, 128,
+					"Minimum distance from any player in blocks. Vanilla already requires 24 blocks.");
+			for(int id : CommonConfig.createConfigIntList(config, category, "12.V07_naturalVillagerBiomeIds",
+					"Allowed Overworld biome IDs (0-255). An empty list disables natural villager spawning.", DEFAULT_BIOMES)) {
+				if(id >= 0 && id < 256) biomes.set(id);
+			}
+		}
+
+		public boolean allowsBiome(int id) {
+			return biomes.get(id);
+		}
+	}
 
 	public static boolean enableMaskman = false;
 	public static int maskmanDelay = 60 * 60 * 60;
@@ -70,6 +111,7 @@ public class MobConfig {
 	public static void loadFromConfig(Configuration config) {
 
 		final String CATEGORY = CommonConfig.CATEGORY_MOBS;
+		naturalVillagers = new NaturalVillagerValues(config);
 
 		enableMaskman = CommonConfig.createConfigBool(config, CATEGORY, "12.M00_enableMaskman", "Whether mask man should spawn", false);
 		maskmanDelay = CommonConfig.createConfigInt(config, CATEGORY, "12.M01_maskmanDelay", "How many world ticks need to pass for a check to be performed", 60 * 60 * 60);

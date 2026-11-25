@@ -12,15 +12,36 @@ Always stop the server before editing startup configuration unless a command exp
 
 `/rntconfig reload` (operator level 2, including the server console and integrated server) rereads `config/hbm.cfg` with the existing Forge configuration parser. It validates the file and supported values before applying anything. Invalid types, malformed/non-finite numbers, invalid booleans, unfinished categories/lists and read failures retain the previous runtime configuration and report an error. Finite numeric values use the existing range clamps. The command does not rewrite the file.
 
-Supported live values are all `21_gemini` settings and subcategories **except `woodcrawlerSpawnWeight`**, plus these `01_general` settings: `1.18_enableExtendedLogging`, `1.45_enablePowerNetDiagnostics`, `1.46_enableMachineRuntimeDiagnostics`, `1.36_enableMOTD` and `1.37_enableGuideBook`. These general settings affect subsequent logging, diagnostics and login handling. All other common settings remain unchanged until restart; this includes registration, potion/dimension IDs, radiation implementation selection, sound initialization, blocks, items and startup recipe options. JSON machine/resource configuration remains startup-only for this command. Use the existing `/ntmreload` for supported recipe/item-pool JSON and `/ntmclient` for local `hbmClient.json` preferences.
+Supported live values are all `21_gemini` settings and subcategories **except `woodcrawlerSpawnWeight`**, the `12_mobs` natural villager settings below, and the `01_general` keys `1.18_enableExtendedLogging`, `1.45_enablePowerNetDiagnostics`, `1.46_enableMachineRuntimeDiagnostics`, `1.36_enableMOTD` and `1.37_enableGuideBook`. These general settings affect subsequent logging, diagnostics and login handling. All other common settings remain unchanged until restart, including registration, potion/dimension IDs, radiation implementation selection, sound initialization, blocks, items and startup recipe options. JSON machine/resource configuration remains startup-only for this command. Use the existing `/ntmreload` for supported recipe/item-pool JSON and `/ntmclient` for local `hbmClient.json` preferences.
 
 Gemini admission limits apply to the next admission in every active world without deleting existing creatures, nests or cocoons. Loaded Woodcrawlers refresh their native detection-range attribute on their next server tick, including after loading an older saved entity. Existing infection/cocoon durations, conversion decisions, boss health attributes and event countdowns retain their saved snapshots; new instances use the new settings. In-flight AI timers continue and consult updated thresholds on subsequent ticks. Progression and world gamerules are never reset. Reload registers no listeners or entities. Supported settings govern server decisions; native entity metadata, attributes, disease state and sound packets already convey their results, so no additional client configuration packet is needed.
+
+### Natural villagers
+
+Vanilla villagers can appear independently of villages during the Overworld's live passive spawn pass. They require dry surface positions with solid footing, collision-free space, and distance from players. Forest ground under foliage can qualify. The native pass respects `doMobSpawning` and its passive mob cap, and Forge chooses a random profession through the normal villager initialization. Villagers can join villages, breed and trade through vanilla behavior.
+
+All these `12_mobs` keys support `/rntconfig reload`.
+
+| Key | Default | Accepted values |
+| --- | --- | --- |
+| `12.V00_enableNaturalVillagerSpawning` | `true` | Boolean |
+| `12.V01_naturalVillagerSpawnWeight` | `2` | 0–100. Zero disables new natural villagers. |
+| `12.V02_naturalVillagerMinGroupSize` | `1` | 1–4. Minimum target size for a selected group. |
+| `12.V03_naturalVillagerMaxGroupSize` | `3` | Minimum target size through 4. Terrain, vetoes and population limits can yield smaller groups. |
+| `12.V04_naturalVillagerLocalLimit` | `8` | 0–64. Zero disables new natural villagers. |
+| `12.V05_naturalVillagerPopulationRadius` | `128` | 16–256 blocks horizontally, across elevations. |
+| `12.V06_naturalVillagerMinPlayerDistance` | `24` | 24–128 blocks. The lower bound is vanilla's minimum. |
+| `12.V07_naturalVillagerBiomeIds` | `1, 2, 4, 5, 6, 17, 18, 19, 27, 28, 29, 32, 33, 35, 36, 129, 130, 132, 133, 134, 155, 156, 157, 160, 161, 163, 164` | Forge biome ID list from 0–255. Out-of-range IDs are ignored. An empty list disables new natural villagers. |
+
+The default list covers plains, forests, savannas, taigas, swamps, deserts and selected variants. Add the biome IDs from your modpack to allow additional Overworld biomes. The local limit counts living, loaded villagers with the saved `RNTNaturalVillager` marker around each qualifying candidate. Marked Overworld villagers also contribute to the native passive spawn count. Village-generated villagers, offspring and manually spawned villagers do not receive the marker. Lower limits apply to future admissions and leave existing villagers alive.
+
+Natural villager spawning pauses in active Gemini phases 1–4 so GHE can deplete the available prey. Locking the Mars milestone or disabling the invasion resumes natural spawning when its own configuration permits it. Existing villagers remain eligible for GHE targeting, capture, Fake Person conversion, Deep Root Disease and Nature's Mockery conversion under the usual phase and disease rules. The `geminionly` gamerule and hostile-spawn multipliers govern hostile mobs separately.
 
 ### Gemini-only mode and hostile spawn suppression
 
 `21_gemini.geminiOnly=false` initializes the `geminionly` gamerule when a server world has no saved value. Existing saved values take precedence and reload never overwrites them. As with vanilla gamerules, dimensions of one save share the rule; different saves retain independent choices. Change it immediately with `/gamerule geminionly true` or `/gamerule geminionly false`.
 
-When true, the rule rejects non-GHE automatic hostile spawn attempts in every dimension. It takes priority over phase suppression and does not require the Mars milestone. The permitted classes come directly from Gemini entity registration, including Woodcrawler, Fake Person, Nature's Mockery, Underground Gardener, Ocean Gardener, Wretch and their registered support entities. Other HBM entities receive no namespace exemption. Passive creatures and villagers are untouched; calm Endermen and zombie pigmen are treated as neutral. Other mods' creatures use their actual Forge monster classification, so a mod declaring a neutral creature as a monster may require its own compatibility support.
+When true, the rule rejects non-GHE automatic hostile spawn attempts in every dimension. It takes priority over phase suppression and does not require the Mars milestone. The permitted classes come directly from Gemini entity registration, including Woodcrawler, Fake Person, Nature's Mockery, Underground Gardener, Ocean Gardener, Wretch and their registered support entities. Other HBM entities receive no namespace exemption. This rule leaves passive creatures and villagers alone and treats calm Endermen and zombie pigmen as neutral. Other mods' creatures use their actual Forge monster classification, so a mod declaring a neutral creature as a monster may require its own compatibility support.
 
 With `geminionly=false`, `geminiStageSpawnSuppression=true` enables these default non-GHE hostile spawn-attempt acceptance rates in the Overworld, using the existing saved invasion phase:
 
