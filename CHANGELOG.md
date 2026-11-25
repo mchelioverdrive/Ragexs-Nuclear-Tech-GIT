@@ -949,3 +949,8 @@
 - Add independent airborne Light predators to the existing Gemini invasion. Groups watch and follow exposed prey at night, then descend, capture, harvest and withdraw. Distant fullbright glows, fading, and visible capture tethers use the normal entity tracker and Gemini grip synchronization.
 - Add the rarer Harvest encounter with a wider search pattern, distinct amber glows and a deeper call. Nearby cocoon gardens, nests and camps increase encounter odds. Harvest increases nearby Underground Gardener activity through its existing hunting and commute behavior.
 - Add reloadable Gemini Light settings and Overworld debug controls. One bounded encounter owns target claims and releases grips when Lights are destroyed, interrupted, unloaded or stopped.
+
+2026-11-24 22:29 — Use graphite and iron minerals as dyes
+
+- Register graphite ingots and magnetite as black dye, hematite powder and conditioned iron oxide fines as red dye, and goethite as yellow dye. Forge and RTM recipes that look up the corresponding dye colors accept them alongside existing dyes.
+- Add graphite alternatives for four black crayons and two brown chemical dyes. Keep the chemical-dye recipes and existing material processing routes.

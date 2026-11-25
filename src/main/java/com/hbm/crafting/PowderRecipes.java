@@ -152,5 +152,10 @@ public class PowderRecipes {
 
 		for(int i = 0; i < 15; i++) CraftingManager.addShapelessAuto(new ItemStack(ModItems.crayon, 4, i), new Object[] { new ItemStack(ModItems.chemical_dye, 1, i), KEY_ANY_TAR, Items.paper });
 
+		// A dyeBlack crayon input would let finished black crayons craft more of themselves.
+		CraftingManager.addShapelessAuto(DictFrame.fromOne(ModItems.crayon, EnumChemDye.BLACK, 4), ModItems.ingot_graphite, KEY_ANY_TAR, Items.paper);
+		CraftingManager.addShapelessAuto(DictFrame.fromOne(ModItems.chemical_dye, EnumChemDye.BROWN, 2),
+			DictFrame.fromOne(ModItems.chemical_dye, EnumChemDye.ORANGE), ModItems.ingot_graphite);
+
 	}
 }

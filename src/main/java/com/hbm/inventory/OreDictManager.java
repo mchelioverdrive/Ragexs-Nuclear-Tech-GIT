@@ -805,6 +805,19 @@ public class OreDictManager {
 
 		OreDictionary.registerOre("dyeRed", cinnebar);
 		OreDictionary.registerOre("dye", cinnebar);
+
+		// Use clean graphite stock. dust_graphite is spent reactor pellet powder.
+		OreDictionary.registerOre(KEY_BLACK, ingot_graphite);
+		OreDictionary.registerOre("dye", ingot_graphite);
+		OreDictionary.registerOre(KEY_BLACK, magnetite);
+		OreDictionary.registerOre("dye", magnetite);
+		OreDictionary.registerOre(KEY_RED, powder_hematite);
+		OreDictionary.registerOre("dye", powder_hematite);
+		OreDictionary.registerOre(KEY_RED, iron_fines);
+		OreDictionary.registerOre("dye", iron_fines);
+		OreDictionary.registerOre(KEY_YELLOW, goethite);
+		OreDictionary.registerOre("dye", goethite);
+
 		OreDictionary.registerOre("dyeYellow", sulfur);
 		OreDictionary.registerOre("dye", sulfur);
 		OreDictionary.registerOre("dyeBlack", powder_coal);

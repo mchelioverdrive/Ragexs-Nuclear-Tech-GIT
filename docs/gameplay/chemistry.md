@@ -64,6 +64,14 @@ Common strengths are hydrochloric acid 30 wt%, nitric acid 65 wt%, sulfuric acid
 
 Manufactured salt brine supplies chlor-alkali chemistry. Geological mineral brine also supplies bromine and iodine; adding table salt to water cannot supply those elements. Evaporation needs heat and produces steam. Lithium, coltan, bauxite and rare-earth chains connect leaching, separation, oxide/halide preparation and reduction. Concentrate is not finished metal.
 
+## Pigments and dyes
+
+Graphite ingots and sorted magnetite count as black dye, hematite powder and conditioned iron oxide fines as red dye, and sorted goethite as yellow dye. Sort iron oxide chunks at the anvil for magnetite, hematite and goethite, then shred the hematite. The Chemical Reactor's oxidative concentration recipe supplies conditioned fines from iron powder. Existing graphite and iron processing recipes still accept these materials.
+
+Forge's Ore Dictionary recipes accept these pigments for wool, stained glass and stained hardened clay. RTM recipes that request the same dye colors also accept them, including relevant Assembler recipes. Use the pigments directly on paintable pylons to change their color. Graphite can replace black chemical dye when making four black crayons or two brown chemical dyes. Sheep dyeing, leather armor and fireworks still require vanilla dye items.
+
+The Leaching Reactor (Crystallizer) makes batches of four chemical dyes from coke, titanium, iron, tungsten, copper or cobalt dust using a wood oil or fish oil bath. Coal dust and fine soot also count as black dye, and elemental sulfur already counts as yellow.
+
 ## Gases and chemical manufacturing
 
 Nitrogen/hydrogen supply ammonia; hydrogen also supports refining. Methane reforming and coal gasification supply synthesis gas for methanol and other routes. Raw natural gas contains methane and helium; separation supplies both without requiring space travel.
