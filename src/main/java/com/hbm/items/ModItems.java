@@ -1801,6 +1801,9 @@ public class ModItems {
 	public static Item journal_silver;
 	public static Item assembly_template;
 	public static Item chemistry_template;
+	public static Item stapler;
+	public static Item staples;
+	public static Item stapled_template_bundle;
 	public static Item chemistry_icon;
 	public static Item crucible_template;
 	public static Item fluid_identifier;
@@ -6392,6 +6395,9 @@ public class ModItems {
 		journal_silver = new ItemTemplateFolder().setUnlocalizedName("journal_silver").setMaxStackSize(1).setCreativeTab(MainRegistry.templateTab).setTextureName(RefStrings.MODID + ":journal_silver");
 		assembly_template = new ItemAssemblyTemplate().setUnlocalizedName("assembly_template").setMaxStackSize(1).setCreativeTab(MainRegistry.templateTab).setTextureName(RefStrings.MODID + ":assembly_template");
 		chemistry_template = new ItemChemistryTemplate().setUnlocalizedName("chemistry_template").setMaxStackSize(1).setCreativeTab(MainRegistry.templateTab).setTextureName(RefStrings.MODID + ":chemistry_template");
+		stapler = new ItemStapler().setUnlocalizedName("stapler").setMaxStackSize(1).setCreativeTab(MainRegistry.templateTab).setTextureName(RefStrings.MODID + ":stapler");
+		staples = new Item().setUnlocalizedName("staples").setCreativeTab(MainRegistry.templateTab).setTextureName(RefStrings.MODID + ":staples");
+		stapled_template_bundle = new ItemStapledTemplateBundle().setUnlocalizedName("stapled_template_bundle").setMaxStackSize(1).setCreativeTab(MainRegistry.templateTab).setTextureName(RefStrings.MODID + ":stapled_template_bundle");
 		chemistry_icon = new ItemChemistryIcon().setUnlocalizedName("chemistry_icon").setMaxStackSize(1).setCreativeTab(MainRegistry.partsTab);
 		crucible_template = new ItemCrucibleTemplate().setUnlocalizedName("crucible_template").setMaxStackSize(1).setCreativeTab(MainRegistry.templateTab).setTextureName(RefStrings.MODID + ":crucible_template");
 		fluid_identifier = new ItemFluidIdentifier().setUnlocalizedName("fluid_identifier").setMaxStackSize(1).setCreativeTab(MainRegistry.templateTab).setTextureName(RefStrings.MODID + ":fluid_identifier");
@@ -8790,6 +8796,9 @@ public class ModItems {
 		GameRegistry.registerItem(fluid_duct, fluid_duct.getUnlocalizedName());
 		GameRegistry.registerItem(assembly_template, assembly_template.getUnlocalizedName());
 		GameRegistry.registerItem(chemistry_template, chemistry_template.getUnlocalizedName());
+		GameRegistry.registerItem(stapler, stapler.getUnlocalizedName());
+		GameRegistry.registerItem(staples, staples.getUnlocalizedName());
+		GameRegistry.registerItem(stapled_template_bundle, stapled_template_bundle.getUnlocalizedName());
 		GameRegistry.registerItem(chemistry_icon, chemistry_icon.getUnlocalizedName());
 		GameRegistry.registerItem(crucible_template, crucible_template.getUnlocalizedName());
 

@@ -2,6 +2,8 @@ package com.hbm.inventory.container;
 
 import com.hbm.inventory.SlotCraftingOutput;
 import com.hbm.inventory.SlotUpgrade;
+import com.hbm.items.ModItems;
+import com.hbm.items.machine.ItemStapledTemplateBundle;
 import com.hbm.tileentity.machine.TileEntityMachineChemfac;
 
 import net.minecraft.entity.player.EntityPlayer;
@@ -42,7 +44,10 @@ public class ContainerChemfac extends Container {
 					}
 				}
 				
-				this.addSlotToContainer(new Slot(tile, this.inventorySlots.size(), 66 + j * LANE_PITCH_X, 32 + i * LANE_PITCH_Y));
+				final int template = tile.getTemplateIndex(i * 2 + j);
+				this.addSlotToContainer(new Slot(tile, template, 66 + j * LANE_PITCH_X, 32 + i * LANE_PITCH_Y) {
+					@Override public boolean isItemValid(ItemStack stack) { return chemfac.isItemValidForSlot(template, stack); }
+				});
 			}
 		}
 		
@@ -74,9 +79,12 @@ public class ContainerChemfac extends Container {
         } else if(stack.getItem() instanceof com.hbm.items.machine.ItemMachineUpgrade) {
             if(!mergeItemStack(stack, 1, 5, false)) return null;
         } else {
+            boolean template = stack.getItem() == ModItems.chemistry_template || ItemStapledTemplateBundle.isBundle(stack);
             for(int lane = 0; lane < 8 && stack.stackSize > 0; lane++) {
-                if(stack.getItem() == com.hbm.items.ModItems.chemistry_template) {
-                    int slot = chemfac.getTemplateIndex(lane); mergeItemStack(stack, slot, slot + 1, false);
+                if(template) {
+                    int slot = chemfac.getTemplateIndex(lane);
+                    if(!chemfac.isItemValidForSlot(slot, stack)) return null;
+                    mergeItemStack(stack, slot, slot + 1, false);
                 } else {
                     int[] slots = chemfac.getSlotIndicesFromIndex(lane); mergeItemStack(stack, slots[0], slots[1] + 1, false);
                 }

@@ -9,6 +9,7 @@ import com.hbm.machine.MachineDirtyCause;
 import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.items.ModItems;
 import com.hbm.items.machine.ItemAssemblyTemplate;
+import com.hbm.items.machine.ItemStapledTemplateBundle;
 import com.hbm.lib.Library;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
@@ -337,10 +338,8 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 	}
 
 	protected boolean canProcess(int index) {
-		int template = getTemplateIndex(index);
 		runtimeMaterialEligible[index] = false;
 		runtimeHasRequiredItems[index] = false;
-		if(slots[template] == null || slots[template].getItem() != ModItems.assembly_template) return false;
 		this.resolveRecipe(index);
 		AStack[] recipe = this.cachedRecipes[index];
 		if(recipe == null) return false;
@@ -351,11 +350,6 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 	}
 
 	protected boolean hasAssemblerInputs(int index) {
-
-		int template = getTemplateIndex(index);
-
-		if(slots[template] == null || slots[template].getItem() != ModItems.assembly_template)
-			return false;
 
 		this.resolveRecipe(index);
 		AStack[] recipe = this.cachedRecipes[index];
@@ -462,9 +456,10 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 						int slot = access != null ? access[i] : i;
 						ItemStack stack = inv.getStackInSlot(slot);
 
-						if(stack != null && stack.getItem() == ModItems.assembly_template && (sided == null || sided.canExtractItem(slot, stack, 0))) {
+						if(ItemStapledTemplateBundle.resolve(stack, ModItems.assembly_template) != null
+								&& (sided == null || sided.canExtractItem(slot, stack, 0))) {
 							slots[template] = stack.copy();
-							sided.setInventorySlotContents(slot, null);
+							inv.setInventorySlotContents(slot, null);
 							inv.markDirty();
 							this.needsTemplateSwitch[index] = false;
 							changed = true;
@@ -473,9 +468,7 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 					}
 				}
 
-				boolean noTemplate = slots[template] == null || slots[template].getItem() != ModItems.assembly_template;
-
-				if(!noTemplate) {
+				if(slots[template] != null) {
 
 					this.resolveRecipe(index);
 					AStack[] recipe = this.cachedRecipes[index];
@@ -677,13 +670,22 @@ public abstract class TileEntityMachineAssemblerBase extends TileEntityMachineBa
 		this.cachedOutputArrays[index] = null;
 		this.cachedProcessTimes[index] = 0;
 
-		if(template == null || template.getItem() != ModItems.assembly_template) return;
+		template = ItemStapledTemplateBundle.resolve(template, ModItems.assembly_template);
+		if(template == null) return;
 		List<AStack> recipe = AssemblerRecipes.getRecipeFromTempate(template);
 		if(recipe == null) return;
 		this.cachedRecipes[index] = recipe.toArray(new AStack[recipe.size()]);
 		this.cachedOutputs[index] = AssemblerRecipes.getOutputFromTempate(template);
 		this.cachedOutputArrays[index] = new ItemStack[] { this.cachedOutputs[index] };
 		this.cachedProcessTimes[index] = ItemAssemblyTemplate.getProcessTime(template);
+	}
+
+	@Override
+	public boolean isItemValidForSlot(int slot, ItemStack stack) {
+		for(int lane = 0; lane < getRecipeCount(); lane++) {
+			if(slot == getTemplateIndex(lane)) return ItemStapledTemplateBundle.resolve(stack, ModItems.assembly_template) != null;
+		}
+		return super.isItemValidForSlot(slot, stack);
 	}
 
 	public abstract int getRecipeCount();

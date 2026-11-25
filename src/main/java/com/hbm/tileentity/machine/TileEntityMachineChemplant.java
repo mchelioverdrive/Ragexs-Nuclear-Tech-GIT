@@ -15,6 +15,7 @@ import com.hbm.inventory.recipes.ChemplantRecipes;
 import com.hbm.inventory.recipes.ChemplantRecipes.ChemRecipe;
 import com.hbm.items.ModItems;
 import com.hbm.items.machine.ItemMachineUpgrade.UpgradeType;
+import com.hbm.items.machine.ItemStapledTemplateBundle;
 import com.hbm.lib.Library;
 import com.hbm.main.MainRegistry;
 import com.hbm.machine.MachineDirtyCause;
@@ -62,6 +63,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 	private long observedRecipeGeneration = -1L;
 	private ItemStack observedTemplate;
 	private int observedTemplateMeta;
+	private int observedBundleSelection;
 	private boolean cachedEligible;
 	private boolean needsInputTransfer = true;
 	private boolean runtimeStateInitialized;
@@ -737,7 +739,9 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 
 	private boolean recipeChanged() {
 		ItemStack template = slots[4];
-		return this.observedRecipeGeneration != ChemplantRecipes.recipeGeneration || this.observedTemplate != template || this.observedTemplateMeta != (template == null ? 0 : template.getItemDamage());
+		return this.observedRecipeGeneration != ChemplantRecipes.recipeGeneration || this.observedTemplate != template
+				|| this.observedTemplateMeta != (template == null ? 0 : template.getItemDamage())
+				|| this.observedBundleSelection != (ItemStapledTemplateBundle.isBundle(template) ? ItemStapledTemplateBundle.getSelectedIndex(template) : -1);
 	}
 
 	private void resolveRecipe() {
@@ -745,8 +749,10 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 		ItemStack template = slots[4];
 		this.observedTemplate = template;
 		this.observedTemplateMeta = template == null ? 0 : template.getItemDamage();
+		this.observedBundleSelection = ItemStapledTemplateBundle.isBundle(template) ? ItemStapledTemplateBundle.getSelectedIndex(template) : -1;
 		this.observedRecipeGeneration = ChemplantRecipes.recipeGeneration;
-		this.cachedRecipe = template != null && template.getItem() == ModItems.chemistry_template ? ChemplantRecipes.indexMapping.get(this.observedTemplateMeta) : null;
+		ItemStack selected = ItemStapledTemplateBundle.resolve(template, ModItems.chemistry_template);
+		this.cachedRecipe = selected == null ? null : ChemplantRecipes.indexMapping.get(selected.getItemDamage());
 		if(previous != null && previous != cachedRecipe && !physicalBatch.active()) progress = 0;
 	}
 
@@ -849,7 +855,7 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
         if(stack == null) return false;
         if(slot == 0) return stack.getItem() instanceof IBatteryItem || stack.getItem() == ModItems.battery_creative;
         if(slot >= 1 && slot <= 3) return stack.getItem() instanceof com.hbm.items.machine.ItemMachineUpgrade;
-        if(slot == 4) return stack.getItem() == ModItems.chemistry_template;
+        if(slot == 4) return ItemStapledTemplateBundle.resolve(stack, ModItems.chemistry_template) != null;
         if(slot >= 13 && slot <= 16) return true;
         for(int channel = 0; channel < 4; channel++) {
             if(slot == inputContainerSlot(channel)) return acceptsContainer(inputTank(channel), stack, true);
@@ -893,7 +899,10 @@ public class TileEntityMachineChemplant extends TileEntityMachineBase implements
 
 		this.energyQuanta = EnergyUnits.readEnergyQuanta(nbt, "power");
 		this.progress = nbt.getInteger("progress");
-		if(!nbt.hasKey("realSimProcessVersion") && slots[4] != null && slots[4].getItemDamage() == 58) this.progress = 0;
+		if(!nbt.hasKey("realSimProcessVersion")) {
+			ItemStack template = ItemStapledTemplateBundle.resolve(slots[4], ModItems.chemistry_template);
+			if(template != null && template.getItemDamage() == 58) this.progress = 0;
+		}
 		this.nextRuntimeTick = nbt.hasKey("runtimeChemplantNextTick") ? nbt.getLong("runtimeChemplantNextTick") : -1L;
 		this.isProgressing = nbt.hasKey("runtimeChemplantActive") ? nbt.getBoolean("runtimeChemplantActive") : this.progress > 0;
 		this.runtimeActive = this.isProgressing;

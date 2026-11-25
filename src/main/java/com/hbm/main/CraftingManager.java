@@ -1310,6 +1310,8 @@ public class CraftingManager {
 		addRecipeAuto(new ItemStack(ModBlocks.press_preheater), new Object[] { "CCC", "SLS", "TST", 'C', CU.plate(), 'S', Blocks.stone, 'L', Fluids.LAVA.getCraftingContainerDict(1000), 'T', W.ingot() });
 
 		addRecipeAuto(new ItemStack(ModItems.fluid_identifier_multi), new Object[] { "D", "C", "P", 'D', "dye", 'C', DictFrame.fromOne(ModItems.circuit, EnumCircuitType.ANALOG), 'P', IRON.plate() });
+		addRecipeAuto(new ItemStack(ModItems.stapler), new Object[] { "PPB", "  B", "PPP", 'P', STEEL.plate(), 'B', STEEL.bolt() });
+		addShapelessAuto(new ItemStack(ModItems.staples, 16), STEEL.wireFine());
 
 		//addShapelessAuto(ItemBattery.getEmptyBattery(ModItems.anchor_remote), new Object[] { DIAMOND.gem(), ModItems.ducttape, DictFrame.fromOne(ModItems.circuit, EnumCircuitType.BASIC) });
 		//addRecipeAuto(new ItemStack(ModBlocks.teleanchor), new Object[] { "ODO", "EAE", "ODO", 'O', Blocks.obsidian, 'D', DIAMOND.gem(), 'E', ModItems.powder_magic, 'A', ModItems.gem_alexandrite });

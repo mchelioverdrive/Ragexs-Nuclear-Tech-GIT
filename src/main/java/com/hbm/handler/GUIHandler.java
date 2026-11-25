@@ -1,5 +1,6 @@
 package com.hbm.handler;
 
+import com.hbm.items.machine.ItemStapler;
 import com.hbm.tileentity.IGUIProvider;
 
 import cpw.mods.fml.common.network.IGuiHandler;
@@ -14,6 +15,11 @@ public class GUIHandler implements IGuiHandler {
 
 	@Override
 	public Object getServerGuiElement(int ID, EntityPlayer player, World world, int x, int y, int z) {
+		if(ID == ItemStapler.GUI_ID) {
+			ItemStack held = player.getHeldItem();
+			return held != null && held.getItem() instanceof ItemStapler
+					? ((ItemStapler) held.getItem()).provideContainer(ID, player, world, x, y, z) : null;
+		}
 		TileEntity tileEntity = world.getTileEntity(x, y, z);
 		
 		if(tileEntity instanceof IGUIProvider) {
@@ -47,6 +53,11 @@ public class GUIHandler implements IGuiHandler {
 
 	@Override
 	public Object getClientGuiElement(int ID, EntityPlayer player, World world, int x, int y, int z) {
+		if(ID == ItemStapler.GUI_ID) {
+			ItemStack held = player.getHeldItem();
+			return held != null && held.getItem() instanceof ItemStapler
+					? ((ItemStapler) held.getItem()).provideGUI(ID, player, world, x, y, z) : null;
+		}
 		TileEntity tileEntity = world.getTileEntity(x, y, z);
 		
 		if(tileEntity instanceof IGUIProvider) {

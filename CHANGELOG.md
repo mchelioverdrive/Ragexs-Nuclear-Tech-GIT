@@ -996,3 +996,10 @@
 - Unlock rare natural Europa encounters through shared, persistent excavation. Count manual mining and confirmed removals by the Excavator and Mining Laser. Track player-placed terrain in chunk data.
 - Make the Lank watch and follow from a distance, retreat on foot and leave only under cover. Preserve projectile defense and use existing open terrain for defensive teleports.
 - Add reloadable progression, cooldown, population and stalking settings. Keep operator summons independent of natural admission.
+
+2026-11-25 00:48 — Add stapled template bundles
+
+- Craft a reusable stapler and steel staples. Use the stapler to store complete assembly and chemistry templates together and select the active template from either item screen.
+- Fabrication machines and chemical reactors read the selected template using their existing recipe rules. Fabrication template crates move the complete bundle during automated template switches.
+- Removing a template spends one durability and returns the original stack. At zero durability, the bundle separates and returns every remaining template. Configure capacity, starting durability and staple cost under Tools. Existing bundles keep their contents and original durability.
+- Closing the stapler returns any work items. Logout and normal server shutdown return them before saving the player inventory.

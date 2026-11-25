@@ -4,6 +4,7 @@ import org.lwjgl.opengl.GL11;
 
 import com.hbm.inventory.container.ContainerMachineAssembler;
 import com.hbm.items.ModItems;
+import com.hbm.items.machine.ItemStapledTemplateBundle;
 import com.hbm.lib.RefStrings;
 import com.hbm.tileentity.machine.TileEntityMachineAssembler;
 import com.hbm.util.I18nUtil;
@@ -33,7 +34,7 @@ public class GUIMachineAssembler extends GuiInfoContainer {
 
 		this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 116, guiTop + 70 - 52, 16, 52, assembler.getStoredEnergyQuanta(), assembler.getEnergyCapacityQuanta());
 		
-		if(assembler.getStackInSlot(4) == null || assembler.getStackInSlot(4).getItem()!= ModItems.assembly_template) {
+		if(ItemStapledTemplateBundle.resolve(assembler.getStackInSlot(4), ModItems.assembly_template) == null) {
 
 			String[] warnText = I18nUtil.resolveKeyArray("desc.gui.assembler.warning");
 			this.drawCustomInfoStat(mouseX, mouseY, guiLeft - 16, guiTop + 36, 16, 16, guiLeft - 8, guiTop + 36 + 16, warnText);
@@ -67,7 +68,7 @@ public class GUIMachineAssembler extends GuiInfoContainer {
 			drawTexturedModalRect(guiLeft + 45, guiTop + 82, 2, 222, j, 32);
 		}
 		
-		if(assembler.getStackInSlot(4) == null || assembler.getStackInSlot(4).getItem()!= ModItems.assembly_template) {
+		if(ItemStapledTemplateBundle.resolve(assembler.getStackInSlot(4), ModItems.assembly_template) == null) {
 			this.drawInfoPanel(guiLeft - 16, guiTop + 36, 16, 16, 6);
 		}
 		

@@ -27,6 +27,7 @@ import com.hbm.hazard.HazardRegistry;
 import com.hbm.inventory.FluidContainerRegistry;
 import com.hbm.inventory.OreDictManager;
 import com.hbm.inventory.OreDictManager.DictFrame;
+import com.hbm.inventory.container.ContainerStapler;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.material.Mats;
 import com.hbm.inventory.recipes.*;
@@ -74,11 +75,13 @@ import net.minecraft.dispenser.BehaviorProjectileDispense;
 import net.minecraft.dispenser.IBlockSource;
 import net.minecraft.dispenser.IPosition;
 import net.minecraft.entity.IProjectile;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.Item.ToolMaterial;
 import net.minecraft.item.ItemArmor.ArmorMaterial;
 import net.minecraft.item.ItemStack;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.stats.Achievement;
 import net.minecraft.stats.AchievementList;
 import net.minecraft.stats.StatBase;
@@ -1162,6 +1165,13 @@ public class MainRegistry {
 	//yes kids, this is where we would usually register commands
 	@EventHandler
 	public void serverStopping(cpw.mods.fml.common.event.FMLServerStoppingEvent event) {
+		MinecraftServer server = FMLCommonHandler.instance().getMinecraftServerInstance();
+		if(server != null && server.getConfigurationManager() != null) {
+			// Return the work inventory before Minecraft saves the players and closes their connections.
+			for(Object player : server.getConfigurationManager().playerEntityList) {
+				ContainerStapler.closeFor((EntityPlayerMP) player, false);
+			}
+		}
 		com.hbm.explosion.ExplosionNukeRayBatched.shutdownWorkers();
 	}
 

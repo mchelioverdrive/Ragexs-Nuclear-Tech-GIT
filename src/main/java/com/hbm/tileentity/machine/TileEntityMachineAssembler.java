@@ -84,7 +84,7 @@ public class TileEntityMachineAssembler extends TileEntityMachineAssemblerBase i
 		if(i == 1)
 			return true;
 		
-		return false;
+		return super.isItemValidForSlot(i, itemStack);
 	}
 	
 	@Override

@@ -2,6 +2,7 @@ package com.hbm.inventory.container;
 
 import com.hbm.inventory.SlotCraftingOutput;
 import com.hbm.inventory.SlotTakeOnly;
+import com.hbm.items.machine.ItemStapledTemplateBundle;
 import com.hbm.tileentity.machine.TileEntityMachineChemplant;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
@@ -49,6 +50,8 @@ public class ContainerMachineChemplant extends Container {
         ItemStack stack = source.getStack(), original = stack.copy();
         if(index < 29) {
             if(!mergeItemStack(stack, 29, inventorySlots.size(), true)) return null;
+        } else if(ItemStapledTemplateBundle.isBundle(stack)) {
+            if(!chemplant.isItemValidForSlot(4, stack) || !mergeItemStack(stack, 4, 5, false)) return null;
         } else {
             // Route service containers before ordinary reactants; all four channels are considered.
             boolean moved = false;

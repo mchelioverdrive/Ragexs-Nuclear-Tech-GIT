@@ -2,8 +2,8 @@ package com.hbm.inventory.container;
 
 import com.hbm.inventory.SlotCraftingOutput;
 import com.hbm.items.ModItems;
-import com.hbm.items.machine.ItemAssemblyTemplate;
 import com.hbm.items.machine.ItemMachineUpgrade;
+import com.hbm.items.machine.ItemStapledTemplateBundle;
 import com.hbm.tileentity.machine.TileEntityMachineAssembler;
 
 import api.hbm.energymk2.IBatteryItem;
@@ -27,7 +27,9 @@ private TileEntityMachineAssembler assembler;
 		this.addSlotToContainer(new Slot(te, 2, 152, 36));
 		this.addSlotToContainer(new Slot(te, 3, 152, 54));
 		//Schematic
-		this.addSlotToContainer(new Slot(te, 4, 80, 54));
+		this.addSlotToContainer(new Slot(te, 4, 80, 54) {
+			@Override public boolean isItemValid(ItemStack stack) { return assembler.isItemValidForSlot(4, stack); }
+		});
 		//Output
 		this.addSlotToContainer(new SlotCraftingOutput(invPlayer.player, te, 5, 134, 90));
 		//Input
@@ -77,7 +79,8 @@ private TileEntityMachineAssembler assembler;
 					if(!this.mergeItemStack(stack, 0, 1, false)) return null;
 				} else if(rStack.getItem() instanceof ItemMachineUpgrade) {
 					if(!this.mergeItemStack(stack, 1, 4, false)) return null;
-				} else if(rStack.getItem() instanceof ItemAssemblyTemplate) {
+				} else if(rStack.getItem() == ModItems.assembly_template || ItemStapledTemplateBundle.isBundle(rStack)) {
+					if(!assembler.isItemValidForSlot(4, rStack)) return null;
 					if(!this.mergeItemStack(stack, 4, 5, false)) return null;
 				} else {
 					if(!this.mergeItemStack(stack, 6, 18, false)) return null;

@@ -11,6 +11,7 @@ import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.inventory.recipes.ChemplantRecipes;
 import com.hbm.inventory.recipes.ChemplantRecipes.ChemRecipe;
 import com.hbm.items.ModItems;
+import com.hbm.items.machine.ItemStapledTemplateBundle;
 import com.hbm.lib.Library;
 import com.hbm.machine.MachineDirtyCause;
 import com.hbm.machine.MachineExecutionStrategy;
@@ -45,6 +46,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 	public boolean isProgressing;
 	private final ItemStack[] cachedTemplateStacks;
 	private final int[] cachedTemplateMeta;
+	private final int[] cachedBundleSelections;
 	private final ChemRecipe[] cachedRecipes;
 	private final long[] cachedRecipeGenerations;
 	private final int[][] cachedSlotIndices;
@@ -82,6 +84,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 		maxProgress = new int[count];
 		cachedTemplateStacks = new ItemStack[count];
 		cachedTemplateMeta = new int[count];
+		cachedBundleSelections = new int[count];
 		cachedRecipes = new ChemRecipe[count];
 		cachedRecipeGenerations = new long[count];
 		cachedSlotIndices = new int[count][];
@@ -418,11 +421,6 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 		runtimeMaterialEligible[index] = false;
 		runtimeHasRequiredItems[index] = false;
 
-		int template = getTemplateIndex(index);
-
-		if(slots[template] == null || slots[template].getItem() != ModItems.chemistry_template)
-			return false;
-
 		ChemRecipe recipe = this.resolveRecipe(index);
 
 		if(recipe == null)
@@ -531,10 +529,6 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 	}
 
 	private boolean loadItems(int index) {
-
-		int template = getTemplateIndex(index);
-		if(slots[template] == null || slots[template].getItem() != ModItems.chemistry_template)
-			return false;
 
 		ChemRecipe recipe = this.resolveRecipe(index);
 		boolean changed = false;
@@ -714,12 +708,16 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
 	private ChemRecipe resolveRecipe(int index) {
 		ItemStack template = this.slots[getTemplateIndex(index)];
 		int meta = template == null ? 0 : template.getItemDamage();
-		if(this.cachedTemplateStacks[index] != template || this.cachedTemplateMeta[index] != meta || this.cachedRecipeGenerations[index] != ChemplantRecipes.recipeGeneration) {
+		int selection = ItemStapledTemplateBundle.isBundle(template) ? ItemStapledTemplateBundle.getSelectedIndex(template) : -1;
+		if(this.cachedTemplateStacks[index] != template || this.cachedTemplateMeta[index] != meta
+				|| this.cachedBundleSelections[index] != selection || this.cachedRecipeGenerations[index] != ChemplantRecipes.recipeGeneration) {
 			ChemRecipe previous = cachedRecipes[index];
 			this.cachedTemplateStacks[index] = template;
 			this.cachedTemplateMeta[index] = meta;
+			this.cachedBundleSelections[index] = selection;
 			this.cachedRecipeGenerations[index] = ChemplantRecipes.recipeGeneration;
-			this.cachedRecipes[index] = template != null && template.getItem() == ModItems.chemistry_template ? ChemplantRecipes.indexMapping.get(meta) : null;
+			ItemStack selected = ItemStapledTemplateBundle.resolve(template, ModItems.chemistry_template);
+			this.cachedRecipes[index] = selected == null ? null : ChemplantRecipes.indexMapping.get(selected.getItemDamage());
 			if(previous != null && previous != cachedRecipes[index] && !physicalBatches[index].active()) progress[index] = 0;
 		}
 		return this.cachedRecipes[index];
@@ -971,7 +969,12 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
             physicalBatches[i].read(nbt.getCompoundTag("realSimLane" + i));
             physicalBatches[i].electrifyUtilities();
         }
-		if(!nbt.hasKey("realSimProcessVersion")) for(int i = 0; i < progress.length && i < getRecipeCount(); i++) { int slot = getTemplateIndex(i); if(slots[slot] != null && slots[slot].getItemDamage() == 58) progress[i] = 0; }
+		if(!nbt.hasKey("realSimProcessVersion")) {
+			for(int i = 0; i < progress.length && i < getRecipeCount(); i++) {
+				ItemStack template = ItemStapledTemplateBundle.resolve(slots[getTemplateIndex(i)], ModItems.chemistry_template);
+				if(template != null && template.getItemDamage() == 58) progress[i] = 0;
+			}
+		}
 
 		for(int i = 0; i < tanks.length; i++) {
 			tanks[i].readFromNBT(nbt, "t" + i);
@@ -1011,7 +1014,7 @@ public abstract class TileEntityMachineChemplantBase extends TileEntityMachineBa
         if(slot == 0) return stack.getItem() instanceof IBatteryItem || stack.getItem() == ModItems.battery_creative;
         if(slot >= 1 && slot <= 4) return stack.getItem() instanceof com.hbm.items.machine.ItemMachineUpgrade;
         for(int lane = 0; lane < getRecipeCount(); lane++) {
-            if(slot == getTemplateIndex(lane)) return stack.getItem() == ModItems.chemistry_template;
+            if(slot == getTemplateIndex(lane)) return ItemStapledTemplateBundle.resolve(stack, ModItems.chemistry_template) != null;
             int[] indices = getCachedSlotIndicesFromIndex(lane);
             if(slot >= indices[0] && slot <= indices[1]) return true;
         }

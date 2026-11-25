@@ -15,6 +15,7 @@ import java.util.WeakHashMap;
 import com.hbm.dim.laythe.WorldProviderLaythe;
 import com.hbm.entity.mob.EntityFRIEND;
 import com.hbm.handler.*;
+import com.hbm.inventory.container.ContainerStapler;
 import com.hbm.items.food.ItemConserve;
 import com.hbm.items.tool.IItemAbility;
 import com.hbm.items.tool.ItemSwordAbility;
@@ -100,6 +101,7 @@ import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.eventhandler.Event.Result;
 import cpw.mods.fml.common.gameevent.PlayerEvent;
 import cpw.mods.fml.common.gameevent.PlayerEvent.PlayerChangedDimensionEvent;
+import cpw.mods.fml.common.gameevent.PlayerEvent.PlayerLoggedOutEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
 import cpw.mods.fml.common.gameevent.TickEvent.Phase;
 import cpw.mods.fml.common.gameevent.TickEvent.WorldTickEvent;
@@ -236,6 +238,7 @@ public class ModEventHandler {
 		if(!(event.entityLiving instanceof EntityPlayer)) return;
 
 		EntityPlayer victim = (EntityPlayer) event.entityLiving;
+		ContainerStapler.closeFor(victim, true);
 
 		// Only care if killed by a player (optional, remove if you want ALL deaths)
 		//if(!(event.source.getEntity() instanceof EntityPlayer)) {
@@ -1741,6 +1744,12 @@ public class ModEventHandler {
 			event.setResult(Result.DENY);
 		default:
 		}
+	}
+
+	@SubscribeEvent
+	public void onStaplerLogout(PlayerLoggedOutEvent event) {
+		// Forge fires this before writing the player inventory.
+		ContainerStapler.closeFor(event.player, false);
 	}
 
 	@SubscribeEvent

@@ -18,6 +18,10 @@ public class ToolConfig {
 	public static boolean abilityCrystallizer = true;
 	public static boolean abilityMercury = true;
 	public static boolean abilityExplosion = true;
+
+	public static int stapledTemplateLimit = 64;
+	public static int stapledTemplateDurability = 32;
+	public static int staplesPerTemplate = 1;
 	
 	public static void loadFromConfig(Configuration config) {
 
@@ -36,5 +40,12 @@ public class ToolConfig {
 		abilityCrystallizer = config.get(CATEGORY_TOOLS, "11.10_abilityCrystallizer", true, "Allow auto-crystallizer ability").getBoolean(true);
 		abilityMercury = config.get(CATEGORY_TOOLS, "11.11_abilityMercury", true, "Allow mercury touch ability (digging redstone gives mercury)").getBoolean(true);
 		abilityExplosion = config.get(CATEGORY_TOOLS, "11.12_abilityExplosion", true, "Allow explosion ability").getBoolean(true);
+
+		stapledTemplateLimit = config.getInt("11.13_stapledTemplateLimit", CATEGORY_TOOLS, 64, 1, 254,
+				"Maximum templates when adding to a bundle. Existing contents are retained.");
+		stapledTemplateDurability = config.getInt("11.14_stapledTemplateDurability", CATEGORY_TOOLS, 32, 1, Integer.MAX_VALUE,
+				"Removal durability of newly stapled bundles. Existing bundles keep their original durability.");
+		staplesPerTemplate = config.getInt("11.15_staplesPerTemplate", CATEGORY_TOOLS, 1, 1, 64,
+				"Staples consumed for each added template.");
 	}
 }

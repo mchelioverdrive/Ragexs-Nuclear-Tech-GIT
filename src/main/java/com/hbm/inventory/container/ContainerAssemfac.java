@@ -39,7 +39,10 @@ public class ContainerAssemfac extends Container {
 		}
 		
 		for(int i = 0; i < 8; i++) {
-			this.addSlotToContainer(new Slot(tile, 17 + i * 14, 106, 13 + i * 19 - (i % 2 == 1 ? 1 : 0)));
+			final int template = tile.getTemplateIndex(i);
+			this.addSlotToContainer(new Slot(tile, template, 106, 13 + i * 19 - (i % 2 == 1 ? 1 : 0)) {
+				@Override public boolean isItemValid(ItemStack stack) { return assemfac.isItemValidForSlot(template, stack); }
+			});
 			this.addSlotToContainer(new SlotCraftingOutput(playerInv.player, tile, 18 + i * 14, 234, 13 + i * 16));
 		}
 		
