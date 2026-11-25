@@ -280,6 +280,7 @@ public class ModEventHandler {
 	public void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
 
 		if(!event.player.worldObj.isRemote) {
+			com.hbm.world.progression.UAPEncounters.recordArrival(event.player);
 
 			if(GeneralConfig.enableMOTD) {
 				event.player.addChatMessage(new ChatComponentText("Loaded world with " + RefStrings.NAME + " " + RefStrings.VERSION + " for Minecraft 1.7.10!"));
@@ -365,6 +366,7 @@ public class ModEventHandler {
 	public void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
 
 		EntityPlayer player = event.player;
+		com.hbm.world.progression.UAPEncounters.recordArrival(player);
 
 		//if((player.getUniqueID().toString().equals(ShadyUtil.Dr_Nostalgia) || player.getDisplayName().equals("Dr_Nostalgia")) && !player.worldObj.isRemote) {
 //
@@ -415,6 +417,7 @@ public class ModEventHandler {
 	@SubscribeEvent
 	public void onPlayerChangeDimension(PlayerChangedDimensionEvent event) {
 		EntityPlayer player = event.player;
+		com.hbm.world.progression.UAPEncounters.recordArrival(player);
 		HbmPlayerProps data = HbmPlayerProps.getData(player);
 		data.setKeyPressed(EnumKeybind.JETPACK, false);
 		data.setKeyPressed(EnumKeybind.DASH, false);
@@ -969,7 +972,10 @@ public class ModEventHandler {
 
 	@SubscribeEvent
 	public void worldTick(WorldTickEvent event) {
-		if(event.phase == Phase.END && !event.world.isRemote) com.hbm.explosion.NuclearDropSuppression.tick(event.world);
+		if(event.phase == Phase.END && !event.world.isRemote) {
+			com.hbm.explosion.NuclearDropSuppression.tick(event.world);
+			com.hbm.world.progression.UAPEncounters.tick(event.world);
+		}
 
 
 		if(event.world != null && !event.world.isRemote) {

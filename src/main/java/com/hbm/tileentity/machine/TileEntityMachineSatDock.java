@@ -292,7 +292,7 @@ public class TileEntityMachineSatDock extends TileEntityLoadedBase implements IS
         for (EntityMinerRocket rocket : getDockedRockets()) {
             if (slots[15] != null && ISatChip.getFreqS(slots[15]) != rocket.getDataWatcher().getWatchableObjectInt(17)) {
                 rocket.setDead();
-                ExplosionNukeSmall.explode(worldObj, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, ExplosionNukeSmall.PARAMS_TOTS);
+                ExplosionNukeSmall.explode(worldObj, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, ExplosionNukeSmall.PARAMS_TOTS, false);
                 break;
             }
             if (slots[15] != null && rocket.getDataWatcher().getWatchableObjectInt(16) == 1 && rocket.timer == 50) {

@@ -7,6 +7,7 @@ import com.hbm.handler.radiation.ChunkRadiationManager;
 import com.hbm.main.MainRegistry;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.AuxParticlePacketNT;
+import com.hbm.world.progression.UAPEncounters;
 
 import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint;
 import net.minecraft.nbt.NBTTagCompound;
@@ -16,6 +17,10 @@ public class ExplosionNukeSmall {
 
 
 	public static void explode(World world, double posX, double posY, double posZ, MukeParams params) {
+		explode(world, posX, posY, posZ, params, true);
+	}
+
+	public static void explode(World world, double posX, double posY, double posZ, MukeParams params, boolean nuclearWeapon) {
 
 		// spawn particles, if present
 		if(params.particle != null) {
@@ -34,12 +39,13 @@ public class ExplosionNukeSmall {
 		}
 
 		if(params.shrapnelCount > 0) ExplosionLarge.spawnShrapnels(world, posX, posY, posZ, params.shrapnelCount);
+		boolean craterStarted = false;
 		if(params.miniNuke && !params.safe && params.blastRadius > 0F && !world.isRemote) {
 			boolean ignite = java.util.Arrays.asList(params.explosionAttribs).contains(ExAttrib.FIRE);
-			world.spawnEntityInWorld(EntityNukeExplosionMK5.smallCrater(world, params.blastRadius, posX, posY, posZ, ignite));
+			craterStarted = world.spawnEntityInWorld(EntityNukeExplosionMK5.smallCrater(world, params.blastRadius, posX, posY, posZ, ignite));
 		}
 		if(params.killRadius > 0) ExplosionNukeGeneric.dealDamage(world, posX, posY, posZ, params.killRadius);
-		if(!params.miniNuke) world.spawnEntityInWorld(EntityNukeExplosionMK5.statFac(world, (int) params.blastRadius, posX, posY, posZ));
+		if(!params.miniNuke) world.spawnEntityInWorld(EntityNukeExplosionMK5.statFac(world, (int) params.blastRadius, posX, posY, posZ, nuclearWeapon));
 
 		if(params.miniNuke) {
 			float radMod = params.radiationLevel / 3F;
@@ -50,6 +56,9 @@ public class ExplosionNukeSmall {
 						ChunkRadiationManager.proxy.incrementRad(world, (int) Math.floor(posX + i * 16), (int) Math.floor(posY), (int) Math.floor(posZ + j * 16), 50 / (Math.abs(i) + Math.abs(j) + 1) * radMod);
 					}
 				}
+			}
+			if(nuclearWeapon && !params.visual && (params.killRadius > 0F || params.radiationLevel > 0F || craterStarted)) {
+				UAPEncounters.recordNuclearDetonation(world);
 			}
 		}
 	}

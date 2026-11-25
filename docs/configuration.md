@@ -12,7 +12,7 @@ Always stop the server before editing startup configuration unless a command exp
 
 `/rntconfig reload` (operator level 2, including the server console and integrated server) rereads `config/hbm.cfg` with the existing Forge configuration parser. It validates the file and supported values before applying anything. Invalid types, numbers, booleans or activation modes, unfinished categories/lists, and read failures retain the previous runtime configuration and report an error. Finite numeric values use the existing range clamps. The command does not rewrite the file.
 
-Supported live values are all `21_gemini` settings and subcategories **except `woodcrawlerSpawnWeight`**, the `12_mobs` natural villager settings below, and the `01_general` keys `1.18_enableExtendedLogging`, `1.45_enablePowerNetDiagnostics`, `1.46_enableMachineRuntimeDiagnostics`, `1.36_enableMOTD` and `1.37_enableGuideBook`. These general settings affect subsequent logging, diagnostics and login handling. All other common settings remain unchanged until restart, including registration, potion/dimension IDs, radiation implementation selection, sound initialization, blocks, items and startup recipe options. JSON machine/resource configuration remains startup-only for this command. Use the existing `/ntmreload` for supported recipe/item-pool JSON and `/ntmclient` for local `hbmClient.json` preferences.
+Supported live values are all `21_gemini` settings and subcategories **except `woodcrawlerSpawnWeight`**, the `12_mobs` natural villager and UAP settings below, and the `01_general` keys `1.18_enableExtendedLogging`, `1.45_enablePowerNetDiagnostics`, `1.46_enableMachineRuntimeDiagnostics`, `1.36_enableMOTD` and `1.37_enableGuideBook`. These general settings affect subsequent logging, diagnostics and login handling. All other common settings remain unchanged until restart, including registration, potion/dimension IDs, radiation implementation selection, sound initialization, blocks, items and startup recipe options. JSON machine/resource configuration remains startup-only for this command. Use the existing `/ntmreload` for supported recipe/item-pool JSON and `/ntmclient` for local `hbmClient.json` preferences.
 
 Gemini admission limits apply to the next admission in every active world without deleting existing creatures, nests or cocoons. Loaded Woodcrawlers refresh their native detection-range attribute on their next server tick, including after loading an older saved entity. Existing infection/cocoon durations, conversion decisions, boss health attributes and event countdowns retain their saved snapshots; new instances use the new settings. In-flight AI timers continue and consult updated thresholds on subsequent ticks. Progression and world gamerules are never reset. Reload registers no listeners or entities. Supported settings govern server decisions; native entity metadata, attributes, disease state and sound packets already convey their results, so no additional client configuration packet is needed.
 
@@ -36,6 +36,26 @@ All these `12_mobs` keys support `/rntconfig reload`.
 The default list covers plains, forests, savannas, taigas, swamps, deserts and selected variants. Add the biome IDs from your modpack to allow additional Overworld biomes. The local limit counts living, loaded villagers with the saved `RNTNaturalVillager` marker around each qualifying candidate. Marked Overworld villagers also contribute to the native passive spawn count. Village-generated villagers, offspring and manually spawned villagers do not receive the marker. Lower limits apply to future admissions and leave existing villagers alive.
 
 Natural villager spawning pauses in active Gemini phases 1–4 so GHE can deplete the available prey. Pausing the invasion resumes natural villager spawning when its own configuration permits it. Existing villagers remain eligible for GHE targeting, capture, Fake Person conversion, Deep Root Disease and Nature's Mockery conversion under the usual phase and disease rules. The `geminionly` gamerule and hostile-spawn multipliers govern hostile mobs separately.
+
+### UAP encounters
+
+Natural UAP sightings take place in the Overworld after any player visits the Moon (Mun) and a nuclear weapon detonates in the Overworld. The milestones can occur in either order and are shared by the save. Dimension changes, logins and respawns on Mun record the visit. Full nuclear and thermonuclear weapons and weapon mini-nukes count when their blast runs. Conventional charges, exotic antimatter blasts, auxiliary blasts and visual effects do not qualify. On existing saves, the milestones are recorded from new observations, including the next login on Mun.
+
+All keys are in `12_mobs.uap` and support `/rntconfig reload`.
+
+| Key | Default | Behavior |
+| --- | --- | --- |
+| `enabled` | `true` | Allow natural sightings. Milestone recording continues while disabled. |
+| `requireMoonExploration` | `true` | Require a recorded visit to Mun. |
+| `requireNuclearDetonation` | `true` | Require a recorded Overworld nuclear detonation. |
+| `initialDelayTicks` | `24000` | Delay after the configured requirements are first met. Changes apply until a delay has started. |
+| `minimumCooldownTicks` | `72000` | Minimum time from the last successful natural spawn. Reloads use the new value from that same spawn. |
+| `maxActivePerDimension` | `1` | Loaded UAPs (including manually spawned ones) count toward natural spawn admission. Zero blocks natural spawning. |
+| `preferNighttime` | `true` | Each eligible 600-tick check has a 1-in-12 chance at night and a 1-in-96 chance otherwise. With this off, the chance is 1 in 12 at any time. |
+
+The initial delay and cooldown use saved Overworld game ticks. They continue while the world ticks with encounters disabled. Reloading keeps the existing initial deadline and applies the current requirements to future admissions. Downtime adds no ticks. A failed roll or placement does not start a cooldown.
+
+Sightings use already-loaded, collision-free air with open sky and a clear view from a living, awake player within 64 blocks. Further sightings start beyond observation range of any existing UAP in the area. The natural spawn pass respects difficulty, `doMobSpawning` and Gemini's automatic hostile-spawn rules. A natural sighting lasts up to 1,200 active entity ticks and ends on chunk unload or restart. `/summon UAP` and existing spawn items bypass the natural gates and retain their normal persistence.
 
 ### Gemini-only mode and hostile spawn suppression
 

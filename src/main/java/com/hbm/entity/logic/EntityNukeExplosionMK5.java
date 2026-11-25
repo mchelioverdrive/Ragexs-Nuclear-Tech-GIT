@@ -18,6 +18,7 @@ import com.hbm.explosion.nuclear.NuclearDetonationSpec;
 import com.hbm.explosion.nuclear.NuclearEffectsProfile;
 import com.hbm.explosion.nuclear.NuclearEffectsSolver;
 import com.hbm.main.MainRegistry;
+import com.hbm.world.progression.UAPEncounters;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.NuclearSeismicPacket;
 import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint;
@@ -142,6 +143,7 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 	private long lastClassificationDiagnosticTick = Long.MIN_VALUE;
 	private NuclearDetonationSpec spec;
 	private NuclearEffectsProfile effects;
+	private boolean pendingNuclearMilestone;
 	private NuclearBurstContext burstContext;
 	ExplosionNukeRayBatched explosion;
 	private NBTTagCompound pendingExplosionData;
@@ -160,6 +162,10 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 		if(!worldObj.isRemote) loadChunk((int)Math.floor(posX / 16D), (int)Math.floor(posZ / 16D));
 		activeWorkTick = ExplosionWorkScheduler.currentTick();
 		if(!ensureEffects()) return;
+		if(pendingNuclearMilestone) {
+			UAPEncounters.recordNuclearDetonation(worldObj);
+			pendingNuclearMilestone = false;
+		}
 		if(smallCraterRadius == 0D) for(Object player : worldObj.playerEntities) ((EntityPlayer)player).triggerAchievement(MainRegistry.achManhattan);
 		if(!worldObj.isRemote) {
 			activeWorkTick = ExplosionWorkScheduler.currentTick();
@@ -541,6 +547,7 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 	}
 
 	@Override protected void readEntityFromNBT(NBTTagCompound nbt) {
+		pendingNuclearMilestone = nbt.getBoolean("pendingNuclearMilestone");
 		detonationStartedAt = System.nanoTime() - nbt.getLong("detonationElapsedNanos");
 		ignitionTerrain().read(nbt.getCompoundTag("ignitionTerrainRequest"));
 		breachTerrain().read(nbt.getCompoundTag("breachTerrainRequest")); breachSearch = null;
@@ -567,6 +574,7 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 		}
 	}
 	@Override protected void writeEntityToNBT(NBTTagCompound nbt) {
+		nbt.setBoolean("pendingNuclearMilestone", pendingNuclearMilestone);
 		nbt.setLong("detonationElapsedNanos", System.nanoTime() - detonationStartedAt);
 		NBTTagCompound request = new NBTTagCompound(); ignitionTerrain().write(request); nbt.setTag("ignitionTerrainRequest", request);
 		NBTTagCompound breachRequest = new NBTTagCompound(); breachTerrain().write(breachRequest); nbt.setTag("breachTerrainRequest", breachRequest);
@@ -583,14 +591,20 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 	}
 
 	public static EntityNukeExplosionMK5 statFac(World world, int r, double x, double y, double z) {
+		return statFac(world, r, x, y, z, true);
+	}
+
+	public static EntityNukeExplosionMK5 statFac(World world, int r, double x, double y, double z, boolean nuclearWeapon) {
 		if(GeneralConfig.enableExtendedLogging && !world.isRemote) MainRegistry.logger.log(Level.INFO, "[NUKE] Initialized explosion at " + x + " / " + y + " / " + z + " with legacy radius " + r + "!");
 		if(r == 0) r = 25;
 		EntityNukeExplosionMK5 mk5 = new EntityNukeExplosionMK5(world);
+		mk5.pendingNuclearMilestone = nuclearWeapon;
 		mk5.length = Math.max(1, r); mk5.strength = 1; mk5.speed = 1; mk5.setPosition(x, y, z);
 		return mk5;
 	}
 	private static void copyContext(NuclearDetonationSpec target, NuclearBurstContext context) { target.burstType = context.burstType; target.burstHeight = context.burstHeight; target.groundCoupling = context.groundCoupling; target.burialDepth = context.burialDepth; target.predictedBreakthroughFactor = target.surfaceBreakthroughFactor = context.predictedBreakthroughFactor; target.actualSurfaceBreach = context.actualSurfaceBreach; target.atmosphericReleaseFactor = context.atmosphericReleaseFactor; target.surfaceDeformationFactor = context.surfaceDeformationFactor; target.contained = context.contained; target.vented = context.vented; target.breachX = context.breachX; target.breachY = context.breachY; target.breachZ = context.breachZ; }
-	public static EntityNukeExplosionMK5 statFacNoRad(World world, int r, double x, double y, double z) { EntityNukeExplosionMK5 mk5 = statFac(world, r, x, y, z); mk5.fallout = false; return mk5; }
+	// N2, TNT, and auxiliary terrain jobs use this legacy non-nuclear factory.
+	public static EntityNukeExplosionMK5 statFacNoRad(World world, int r, double x, double y, double z) { EntityNukeExplosionMK5 mk5 = statFac(world, r, x, y, z, false); mk5.fallout = false; return mk5; }
 	public static EntityNukeExplosionMK5 smallCrater(World world, float radius, double x, double y, double z, boolean ignite) {
 		EntityNukeExplosionMK5 job = statFacNoRad(world, Math.max(1, (int)Math.ceil(radius)), x, y, z);
 		job.smallCraterRadius = radius; job.smallIgnition = ignite;

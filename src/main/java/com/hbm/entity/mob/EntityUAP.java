@@ -26,6 +26,9 @@ import java.util.List;
 
 public class EntityUAP extends EntityFlying implements IMob {
 
+	private static final int ENCOUNTER_LIFETIME = 1200;
+	private final boolean naturalEncounter;
+
 	public int courseChangeCooldown;
 	public int scanCooldown;
 	/*public double waypointX;
@@ -35,8 +38,13 @@ public class EntityUAP extends EntityFlying implements IMob {
 	private Entity target;
 	private List<Entity> secondaries = new ArrayList();
 
-	public EntityUAP(World p_i1587_1_) {
-		super(p_i1587_1_);
+	public EntityUAP(World world) {
+		this(world, false);
+	}
+
+	public EntityUAP(World world, boolean naturalEncounter) {
+		super(world);
+		this.naturalEncounter = naturalEncounter;
 		this.setSize(6F, 6F);
 		this.isImmuneToFire = true;
 		this.experienceValue = 500;
@@ -47,6 +55,26 @@ public class EntityUAP extends EntityFlying implements IMob {
 	@Override
 	protected boolean canDespawn() {
 		return false;
+	}
+
+	@Override
+	public void onUpdate() {
+		if(naturalEncounter && !worldObj.isRemote && ticksExisted >= ENCOUNTER_LIFETIME) {
+			setDead();
+			return;
+		}
+		super.onUpdate();
+	}
+
+	// A sighting ends when its chunk goes away. Manual UAPs retain normal persistence.
+	@Override
+	public boolean writeToNBTOptional(NBTTagCompound tag) {
+		return !naturalEncounter && super.writeToNBTOptional(tag);
+	}
+
+	@Override
+	public boolean writeMountToNBT(NBTTagCompound tag) {
+		return !naturalEncounter && super.writeMountToNBT(tag);
 	}
 
 	@Override
@@ -94,7 +122,8 @@ public class EntityUAP extends EntityFlying implements IMob {
 			double tz = this.posZ + rand.nextInt(40) - 20;
 			EntityPlayer closestPlayer = this.worldObj.getClosestPlayer(tx, ty, tz, 10.0D);
 
-			if (closestPlayer == null && worldObj.isAirBlock((int) tx, (int) ty, (int) tz)) {
+			if (closestPlayer == null && (!naturalEncounter || worldObj.blockExists((int) tx, (int) ty, (int) tz))
+					&& worldObj.isAirBlock((int) tx, (int) ty, (int) tz)) {
 				this.setPosition(tx, ty, tz);
 				this.motionX = 0;
 				this.motionY = 0;

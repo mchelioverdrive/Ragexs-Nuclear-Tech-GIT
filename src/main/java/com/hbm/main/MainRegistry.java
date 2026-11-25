@@ -1226,10 +1226,12 @@ public class MainRegistry {
         GeminiConfig.Values gemini = GeminiConfig.parse(candidate);
         GeneralConfig.RuntimeValues general = GeneralConfig.parseRuntime(candidate);
         MobConfig.NaturalVillagerValues villagers = new MobConfig.NaturalVillagerValues(candidate);
+        UAPConfig.Values uap = new UAPConfig.Values(candidate);
         // All parsing/validation finishes before these non-throwing field assignments.
         GeminiConfig.apply(gemini, false);
         GeneralConfig.applyRuntime(general);
         MobConfig.naturalVillagers = villagers;
+        UAPConfig.settings = uap;
     }
 
     private void loadConfig(FMLPreInitializationEvent event) {
@@ -1249,6 +1251,7 @@ public class MainRegistry {
 		ToolConfig.loadFromConfig(config);
 		WeaponConfig.loadFromConfig(config);
 		MobConfig.loadFromConfig(config);
+		UAPConfig.settings = new UAPConfig.Values(config);
 		com.hbm.config.WitherStormConfig.loadFromConfig(config);
 		com.hbm.config.ColossusConfig.loadFromConfig(config);
 		com.hbm.config.GiantGhastConfig.loadFromConfig(config);

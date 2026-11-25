@@ -984,3 +984,9 @@
 - Require a recorded Wither Storm defeat for ordinary Colossus activation and record Colossus defeats in the shared world milestones. Operators can still spawn or awaken bosses directly.
 - Generate rare flooded Overworld temples with two entrance shafts, prismarine pillars, sea lanterns, a clear central arena and two treasure chambers. Each temple saves its placement slices and uses a one-shot core to replace the dormant statue with the active boss.
 - Add settings for the progression gate, core interaction, temple generation, minimum separation and rarity. Existing temple sites and saved milestones survive configuration changes.
+
+2026-11-25 00:16 — Gate natural UAP encounters behind Moon travel and nuclear detonation
+
+- Record the first Mun visit and qualifying Overworld nuclear weapon detonation in shared save data. Either milestone can come first. The initial delay and encounter cooldown survive server restarts.
+- Add rare, night-biased Overworld sightings near players in loaded, open air. Reuse the existing UAP flight and visuals and keep manual spawns independent of natural admission.
+- Add reloadable encounter settings for the enabled state, both prerequisites, initial delay, cooldown, active cap and nighttime preference.
