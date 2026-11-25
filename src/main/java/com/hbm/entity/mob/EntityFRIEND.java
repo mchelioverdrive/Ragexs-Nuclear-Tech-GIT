@@ -1,79 +1,130 @@
 package com.hbm.entity.mob;
 
-import com.hbm.dim.laythe.WorldProviderLaythe;
 import com.hbm.entity.mob.ai.EntityAIDigToPlayer;
+import com.hbm.entity.mob.ai.EntityAILankStalk;
+import com.hbm.entity.mob.ai.LankTerrain;
+
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityCreature;
 import net.minecraft.entity.SharedMonsterAttributes;
-import net.minecraft.entity.ai.*;
+import net.minecraft.entity.ai.EntityAIBase;
+import net.minecraft.entity.ai.EntityAILookIdle;
+import net.minecraft.entity.ai.EntityAISwimming;
+import net.minecraft.entity.ai.EntityAIWander;
+import net.minecraft.entity.ai.EntityAIWatchClosest;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.projectile.EntityArrow;
+import net.minecraft.entity.projectile.EntityThrowable;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.ChunkCoordinates;
 import net.minecraft.util.DamageSource;
+import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
-
-import java.util.List;
 
 public class EntityFRIEND extends EntityCreature {
 
+	private final EntityAILankStalk stalking;
+	private boolean naturalEncounter;
+	private int departureTick;
+	private int teleportCooldown;
+	private EntityPlayer projectileAttacker;
+	private int defensiveUntil;
+
 	public EntityFRIEND(World world) {
 		super(world);
+		stalking = new EntityAILankStalk(this);
+		this.tasks.addTask(0, new EntityAISwimming(this));
+		this.tasks.addTask(1, new EntityAIBase() {
+			{
+				setMutexBits(3);
+			}
 
-		this.tasks.addTask(0, new EntityAIDigToPlayer(this, 0.1D, 160.0D));
-		this.tasks.addTask(1, new EntityAIWatchClosest(this, EntityPlayer.class, 64.0F));
-		this.tasks.addTask(2, new EntityAISwimming(this));
-		this.tasks.addTask(3, new EntityAIWander(this, 1.0D));
-		this.tasks.addTask(4, new EntityAILookIdle(this));
+			@Override
+			public boolean shouldExecute() {
+				return isDefending();
+			}
 
-		this.targetTasks.addTask(1, new EntityAINearestAttackableTarget(this, EntityPlayer.class, 0, true));
+			@Override
+			public void updateTask() {
+				if(projectileAttacker == null) return;
+				getLookHelper().setLookPositionWithEntity(projectileAttacker, 30F, 30F);
+				if(getDistanceSqToEntity(projectileAttacker) < 4D && getEntitySenses().canSee(projectileAttacker)) {
+					attackEntityAsMob(projectileAttacker);
+					projectileAttacker = null;
+				} else if(ticksExisted % 12 == 0 && LankTerrain.canUseNavigator(EntityFRIEND.this)) {
+					getNavigator().tryMoveToEntityLiving(projectileAttacker, 1.2D);
+				}
+			}
+
+			@Override
+			public void resetTask() {
+				getNavigator().clearPathEntity();
+			}
+		});
+		this.tasks.addTask(2, stalking);
+		this.tasks.addTask(3, new EntityAIDigToPlayer(this, 0.1D, 160.0D));
+		this.tasks.addTask(4, new EntityAIWatchClosest(this, EntityPlayer.class, 64.0F));
+		this.tasks.addTask(5, new EntityAIWander(this, 1.0D) {
+			@Override
+			public boolean shouldExecute() {
+				return LankTerrain.canUseNavigator(EntityFRIEND.this) && super.shouldExecute();
+			}
+		});
+		this.tasks.addTask(6, new EntityAILookIdle(this));
 
 		this.renderDistanceWeight *= 10;
 		this.setSize(0.6F, 3.3F);
 	}
 
-	//	@Override
-//	public boolean getCanSpawnHere() {
-//
-//		// Only in Laythe (europa)
-//		if (!(this.worldObj.provider instanceof WorldProviderLaythe)) return false;
-//
-//		// Only below Y = 50
-//		if (this.posY >= 50) return false;
-//
-//		// 1% chance
-//		//if (this.rand.nextInt(100) != 0) return false;
-//
-//		// Check for other FRIEND entities
-//		//double range = 64;
-//		//List<EntityFRIEND> friends = this.worldObj.getEntitiesWithinAABB(
-//		//	EntityFRIEND.class,
-//		//	this.boundingBox.expand(range, range, range)
-//		//);
-////
-//		//for (EntityFRIEND f : friends) {
-//		//	if (f != this) return false;
-//		//}
-//		//done in ntmworldgenerator
-//
-//		return super.getCanSpawnHere();
-//	}
+	public void beginNaturalEncounter(EntityPlayer target) {
+		naturalEncounter = true;
+		departureTick = 2400 + rand.nextInt(3601);
+		setObservedPlayer(target);
+	}
 
-	// ✅ LIMIT TO ONE ENTITY NEARBY
+	public EntityPlayer getObservedPlayer() {
+		return stalking.getTarget();
+	}
+
+	public void setObservedPlayer(EntityPlayer player) {
+		stalking.setTarget(player);
+	}
+
+	public boolean isNaturalEncounter() {
+		return naturalEncounter;
+	}
+
+	public static boolean isUnclaimed(EntityPlayer player, EntityFRIEND requester) {
+		for(Object entry : player.worldObj.loadedEntityList) {
+			if(entry instanceof EntityFRIEND && entry != requester) {
+				EntityFRIEND other = (EntityFRIEND) entry;
+				if(other.isEntityAlive() && other.getObservedPlayer() == player) return false;
+			}
+		}
+		return true;
+	}
+
 	@Override
 	public boolean getCanSpawnHere() {
+		return naturalEncounter && super.getCanSpawnHere();
+	}
 
-		double range = 64;
+	// Natural visitors end on unload. Summoned and existing saved entities keep normal persistence.
+	@Override
+	public boolean writeToNBTOptional(NBTTagCompound tag) {
+		return !naturalEncounter && super.writeToNBTOptional(tag);
+	}
 
-		List<EntityFRIEND> list = this.worldObj.getEntitiesWithinAABB(
-			EntityFRIEND.class,
-			this.boundingBox.expand(range, range, range)
-		);
+	@Override
+	public boolean writeMountToNBT(NBTTagCompound tag) {
+		return !naturalEncounter && super.writeMountToNBT(tag);
+	}
 
-		for (EntityFRIEND e : list) {
-			if (e != this) return false;
-		}
-
-		return super.getCanSpawnHere();
+	@Override
+	protected void despawnEntity() {
+		// Distance or player camera direction alone must never remove a Lank.
 	}
 
 	@Override
@@ -89,186 +140,72 @@ public class EntityFRIEND extends EntityCreature {
 		return true;
 	}
 
-	private int teleportCooldown = 0;
-
 	@Override
-	public void onUpdate() {
-		super.onUpdate();
-		if (teleportCooldown > 0) teleportCooldown--;
-
-		if (forcedAggroTime > 0) {
-			forcedAggroTime--;
-
-			if (forcedTarget != null) {
-				this.getNavigator().tryMoveToEntityLiving(forcedTarget, 1.2D);
-			}
-		} else {
-			forcedTarget = null;
+	protected void updateAITick() {
+		if(teleportCooldown > 0) teleportCooldown--;
+		if(!isDefending()) projectileAttacker = null;
+		if(naturalEncounter && !isDefending() && ticksExisted >= departureTick && ticksExisted % 100 == 0
+				&& LankTerrain.hiddenFromObservers(worldObj, posX, boundingBox.minY, posZ, height, false)) {
+			setDead();
 		}
-
 	}
 
-	// ✅ REAL DAMAGE
 	@Override
 	public boolean attackEntityAsMob(Entity entity) {
-
 		boolean hit = entity.attackEntityFrom(DamageSource.causeMobDamage(this), 6.0F);
-
-		if (hit && entity instanceof EntityPlayer) {
-
-			EntityPlayer player = (EntityPlayer) entity;
-
-			// teleport after landing hit
-			if (!this.worldObj.isRemote && teleportCooldown <= 0) {
-				this.teleportUndergroundNearPlayer(player);
-				teleportCooldown = 40; // 2 seconds
-			}
+		if(hit && entity instanceof EntityPlayer && !worldObj.isRemote && teleportCooldown == 0) {
+			teleportUndergroundNearPlayer((EntityPlayer) entity);
+			teleportCooldown = 40;
 		}
-
 		return hit;
 	}
 
-	public int forcedAggroTime = 0;
-	private EntityPlayer forcedTarget = null;
+	public boolean isDefending() {
+		return projectileAttacker != null && ticksExisted < defensiveUntil && projectileAttacker.worldObj == worldObj
+				&& LankTerrain.isTarget(projectileAttacker);
+	}
 
 	@Override
 	public boolean attackEntityFrom(DamageSource source, float amount) {
-
-		Entity src = source.getSourceOfDamage();
-
-		//50%
-
-
-			// Handle projectiles FIRST (like Enderman)
-			if (src instanceof net.minecraft.entity.projectile.EntityArrow
-				|| src instanceof net.minecraft.entity.projectile.EntityThrowable) {
-
-				if (!this.worldObj.isRemote) {
-
-					EntityPlayer player = null;
-
-					if (src instanceof net.minecraft.entity.projectile.EntityArrow) {
-						net.minecraft.entity.projectile.EntityArrow arrow = (net.minecraft.entity.projectile.EntityArrow) src;
-						if (arrow.shootingEntity instanceof EntityPlayer) {
-							player = (EntityPlayer) arrow.shootingEntity;
-						}
-					} else if (src instanceof net.minecraft.entity.projectile.EntityThrowable) {
-						net.minecraft.entity.projectile.EntityThrowable throwable = (net.minecraft.entity.projectile.EntityThrowable) src;
-						if (throwable.getThrower() instanceof EntityPlayer) {
-							player = (EntityPlayer) throwable.getThrower();
-						}
-					}
-
-					// 50/50 behavior (FIXED RNG)
-					if (this.rand.nextBoolean()) {
-
-						boolean success = false;
-
-						if (player != null) {
-							for (int i = 0; i < 16; i++) {
-								if (this.teleportUndergroundNearPlayer(player)) {
-									success = true;
-									break;
-								}
-							}
-						}
-
-						// fallback if no player OR teleport failed
-						if (!success) {
-							for (int i = 0; i < 16; i++) {
-								if (this.teleportRandomly()) break;
-							}
-						}
-
-					} else {
-						// move toward player (creepy pressure)
-						if (player != null) {
-							this.forcedAggroTime = 60; // 3 seconds
-							this.forcedTarget = player;
-						}
-					}
-				}
-
-				return false; // always cancel projectile damage
-			}
-
-
-		return super.attackEntityFrom(source, amount);
-	}
-
-	private boolean teleportRandomly() {
-
-		double range = 16;
-
-		for (int i = 0; i < 16; i++) {
-
-			int x = (int)(this.posX + (rand.nextDouble() - 0.5D) * range);
-			int z = (int)(this.posZ + (rand.nextDouble() - 0.5D) * range);
-			int y = worldObj.getTopSolidOrLiquidBlock(x, z);
-
-			if (y > 0 && y < worldObj.getHeight()) {
-				this.setPosition(x + 0.5, y, z + 0.5);
-				return true;
-			}
+		Entity projectile = source.getSourceOfDamage();
+		if(!(projectile instanceof EntityArrow) && !(projectile instanceof EntityThrowable)) {
+			return super.attackEntityFrom(source, amount);
 		}
 
+		if(!worldObj.isRemote && teleportCooldown == 0) {
+			Entity shooter = projectile instanceof EntityArrow ? ((EntityArrow) projectile).shootingEntity
+					: ((EntityThrowable) projectile).getThrower();
+			EntityPlayer player = shooter instanceof EntityPlayer ? (EntityPlayer) shooter : null;
+			if(rand.nextBoolean()) {
+				if(player == null || !teleportUndergroundNearPlayer(player)) tryDefensiveTeleport(posX, posY, posZ, 8, true);
+				teleportCooldown = 40;
+			} else if(player != null && LankTerrain.isTarget(player)) {
+				getNavigator().clearPathEntity();
+				projectileAttacker = player;
+				defensiveUntil = ticksExisted + 60;
+				teleportCooldown = 40;
+			}
+		}
 		return false;
 	}
 
 	public boolean teleportUndergroundNearPlayer(EntityPlayer player) {
+		double y = Math.min(boundingBox.minY, player.boundingBox.minY - 6D);
+		return player.worldObj == worldObj && tryDefensiveTeleport(player.posX, y, player.posZ, 16, false);
+	}
 
-		int range = 32;
-
-		for (int i = 0; i < 32; i++) {
-
-			int x = (int)(player.posX + (rand.nextDouble() - 0.5) * range);
-			int z = (int)(player.posZ + (rand.nextDouble() - 0.5) * range);
-
-			int topY = worldObj.getTopSolidOrLiquidBlock(x, z);
-			int y = topY - (10 + rand.nextInt(20));
-			if (y < 5) y = 5;
-
-			if (isSafeTeleportSpot(x, y, z)) {
-				this.setPosition(x + 0.5, y, z + 0.5);
-				return true;
-			}
-
-			if (placeUnderground(x, y, z)) {
-				return true;
-			}
+	private boolean tryDefensiveTeleport(double centerX, double nearY, double centerZ, int radius, boolean surface) {
+		for(int i = 0; i < 12; i++) {
+			int x = MathHelper.floor_double(centerX + (rand.nextDouble() * 2D - 1D) * radius);
+			int z = MathHelper.floor_double(centerZ + (rand.nextDouble() * 2D - 1D) * radius);
+			ChunkCoordinates spot = LankTerrain.findFooting(this, x, MathHelper.floor_double(nearY), z, 5, surface);
+			if(spot == null || getDistanceSq(x + 0.5D, spot.posY, z + 0.5D) < 16D) continue;
+			getNavigator().clearPathEntity();
+			setPositionAndUpdate(x + 0.5D, spot.posY, z + 0.5D);
+			return true;
 		}
-
 		return false;
 	}
-
-	private boolean isSafeTeleportSpot(int x, int y, int z) {
-
-		if(y <= 0 || y >= worldObj.getHeight()) return false;
-
-		if(!worldObj.isAirBlock(x, y, z)) return false;
-		if(!worldObj.isAirBlock(x, y + 1, z)) return false;
-		if(!worldObj.isAirBlock(x, y + 2, z)) return false;
-
-		if(!worldObj.getBlock(x, y - 1, z).getMaterial().isSolid()) return false;
-
-		return true;
-	}
-
-	private boolean placeUnderground(int x, int y, int z) {
-
-		if (y <= 1 || y >= worldObj.getHeight() - 2) return false;
-
-		if (!worldObj.getBlock(x, y - 1, z).getMaterial().isSolid()) return false;
-
-		worldObj.setBlockToAir(x, y, z);
-		worldObj.setBlockToAir(x, y + 1, z);
-		worldObj.setBlockToAir(x, y + 2, z);
-
-		this.setPosition(x + 0.5, y, z + 0.5);
-		return true;
-	}
-
-
 
 	@Override
 	public boolean isEntityInvulnerable() {

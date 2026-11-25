@@ -1,13 +1,14 @@
 package com.hbm.entity.mob.ai;
 
+import com.hbm.config.EuropaLankConfig;
 import com.hbm.entity.mob.EntityFRIEND;
 import net.minecraft.block.Block;
-import net.minecraft.entity.EntityCreature;
 import net.minecraft.entity.ai.EntityAIBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
+import net.minecraft.util.MathHelper;
 import net.minecraft.util.Vec3;
 
 import java.util.HashMap;
@@ -15,7 +16,7 @@ import java.util.Map;
 
 public class EntityAIDigToPlayer extends EntityAIBase {
 
-	private final EntityCreature entity;
+	private final EntityFRIEND entity;
 	private final double speed;
 	private final double range;
 	private EntityPlayer target;
@@ -24,7 +25,7 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 	private int teleportDelay = 0;
 	private boolean wasWatched = false;
 
-	public EntityAIDigToPlayer(EntityCreature entity, double speed, double range) {
+	public EntityAIDigToPlayer(EntityFRIEND entity, double speed, double range) {
 		this.entity = entity;
 		this.speed = speed;
 		this.range = range;
@@ -33,24 +34,42 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 
 	@Override
 	public boolean shouldExecute() {
-		if (entity.worldObj.isRemote) return false;
+		if (EuropaLankConfig.settings.passiveStalking || entity.isDefending()) return false;
 
-		EntityPlayer player = entity.worldObj.getClosestPlayerToEntity(entity, range);
-		if (player == null || player.isDead) return false;
-
-		this.target = player;
-		return true;
+		target = entity.getObservedPlayer();
+		if(!validTarget(target)) {
+			target = null;
+			double closest = range * range;
+			for(Object entry : entity.worldObj.playerEntities) {
+				EntityPlayer player = (EntityPlayer) entry;
+				double distance = entity.getDistanceSqToEntity(player);
+				if(distance < closest && validTarget(player) && EntityFRIEND.isUnclaimed(player, entity)) {
+					target = player;
+					closest = distance;
+				}
+			}
+		}
+		return target != null;
 	}
 
 	@Override
 	public boolean continueExecuting() {
-		return target != null
-			&& !target.isDead
-			&& entity.getDistanceSqToEntity(target) <= range * range;
+		return !EuropaLankConfig.settings.passiveStalking && !entity.isDefending() && validTarget(target);
+	}
+
+	private boolean validTarget(EntityPlayer player) {
+		return player != null && player.worldObj == entity.worldObj && LankTerrain.isTarget(player)
+				&& entity.getDistanceSqToEntity(player) <= range * range;
+	}
+
+	@Override
+	public void startExecuting() {
+		entity.setObservedPlayer(target);
 	}
 
 	@Override
 	public void resetTask() {
+		if(!EuropaLankConfig.settings.passiveStalking && !entity.isDefending()) entity.setObservedPlayer(null);
 		this.target = null;
 		this.attackCooldown = 0;
 		this.teleportDelay = 0;
@@ -80,7 +99,7 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 		}
 
 		// Freeze only while the player is actually watching it.
-		if (watched && ((EntityFRIEND)entity).forcedAggroTime <= 0) {
+		if (watched) {
 			wasWatched = true;
 			entity.getNavigator().clearPathEntity();
 			entity.motionX = 0.0D;
@@ -109,7 +128,7 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 			if (teleportDelay > 0) {
 				teleportDelay--;
 				if (teleportDelay == 0) {
-					((EntityFRIEND) entity).teleportUndergroundNearPlayer(target);
+					entity.teleportUndergroundNearPlayer(target);
 				}
 			}
 		}
@@ -122,7 +141,7 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 		}
 
 		// Try pathfinding first
-		if (entity.getNavigator().tryMoveToEntityLiving(target, speed)) {
+		if (LankTerrain.canUseNavigator(entity) && entity.getNavigator().tryMoveToEntityLiving(target, speed)) {
 
 			// If not stuck, keep using path
 			if (stuckTime < 20) {
@@ -199,20 +218,10 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 		}
 	}
 
-	private boolean canEntitySeeTarget(EntityCreature entity, EntityPlayer target) {
-		Vec3 start = Vec3.createVectorHelper(
-			entity.posX,
-			entity.posY + entity.getEyeHeight(),
-			entity.posZ
-		);
-
-		Vec3 end = Vec3.createVectorHelper(
-			target.posX,
-			target.posY + target.getEyeHeight(),
-			target.posZ
-		);
-
-		return entity.worldObj.rayTraceBlocks(start, end) == null;
+	private boolean canEntitySeeTarget(EntityFRIEND entity, EntityPlayer target) {
+		return LankTerrain.loadedBetween(entity.worldObj, MathHelper.floor_double(entity.posX), MathHelper.floor_double(entity.posZ),
+				MathHelper.floor_double(target.posX), MathHelper.floor_double(target.posZ), 0)
+				&& !LankTerrain.occluded(target, entity.posX, entity.posY + entity.getEyeHeight(), entity.posZ);
 	}
 
 	private boolean isPlayerLookingAtEntity(EntityPlayer player) {
@@ -263,6 +272,7 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 					int y = by + yOff;
 					int z = bz + zOff;
 
+					if(!entity.worldObj.blockExists(x, y, z)) return false;
 					Block block = entity.worldObj.getBlock(x, y, z);
 
 					if (block != Blocks.air && block.getMaterial().blocksMovement()) {
@@ -290,6 +300,8 @@ public class EntityAIDigToPlayer extends EntityAIBase {
 						int y = by + yOff;
 						int z = bz + zOff;
 
+						if(y < 1 || y >= entity.worldObj.getActualHeight()
+								|| !LankTerrain.loadedBetween(entity.worldObj, x, z, x, z, 1)) continue;
 						Block block = entity.worldObj.getBlock(x, y, z);
 
 						if (block != Blocks.air &&

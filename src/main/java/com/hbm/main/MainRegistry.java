@@ -1114,6 +1114,7 @@ public class MainRegistry {
 		com.hbm.entity.mob.witherstorm.WitherStormEvents witherStormEvents = new com.hbm.entity.mob.witherstorm.WitherStormEvents();
 		MinecraftForge.EVENT_BUS.register(witherStormEvents);
 		MinecraftForge.EVENT_BUS.register(new com.hbm.world.progression.BossProgression.Events());
+		MinecraftForge.EVENT_BUS.register(new com.hbm.world.progression.EuropaExcavation());
 		MinecraftForge.EVENT_BUS.register(new com.hbm.entity.mob.giantghast.GiantGhastEncounters.Effects());
 		MinecraftForge.EVENT_BUS.register(new com.hbm.entity.mob.magmagolem.MagmaGolemTerrain.Explosions());
 		FMLCommonHandler.instance().bus().register(witherStormEvents);
@@ -1227,11 +1228,13 @@ public class MainRegistry {
         GeneralConfig.RuntimeValues general = GeneralConfig.parseRuntime(candidate);
         MobConfig.NaturalVillagerValues villagers = new MobConfig.NaturalVillagerValues(candidate);
         UAPConfig.Values uap = new UAPConfig.Values(candidate);
+        EuropaLankConfig.Values europaLank = new EuropaLankConfig.Values(candidate);
         // All parsing/validation finishes before these non-throwing field assignments.
         GeminiConfig.apply(gemini, false);
         GeneralConfig.applyRuntime(general);
         MobConfig.naturalVillagers = villagers;
         UAPConfig.settings = uap;
+        EuropaLankConfig.settings = europaLank;
     }
 
     private void loadConfig(FMLPreInitializationEvent event) {
@@ -1252,6 +1255,7 @@ public class MainRegistry {
 		WeaponConfig.loadFromConfig(config);
 		MobConfig.loadFromConfig(config);
 		UAPConfig.settings = new UAPConfig.Values(config);
+		EuropaLankConfig.settings = new EuropaLankConfig.Values(config);
 		com.hbm.config.WitherStormConfig.loadFromConfig(config);
 		com.hbm.config.ColossusConfig.loadFromConfig(config);
 		com.hbm.config.GiantGhastConfig.loadFromConfig(config);

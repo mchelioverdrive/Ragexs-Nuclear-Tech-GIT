@@ -652,7 +652,9 @@ public class TileEntityMachineExcavator extends TileEntityMachineBase implements
 			worldObj.spawnEntityInWorld(new EntityItem(worldObj, x + 0.5, y + 0.5, z + 0.5, item));
 		}
 
-		worldObj.func_147480_a(x, y, z, false);
+		if(worldObj.func_147480_a(x, y, z, false)) {
+			com.hbm.world.progression.EuropaExcavation.recordMachineRemoval(worldObj, x, y, z, b);
+		}
 	}
 
 	/** builds a wall along the specified ring, replacing fluid blocks. if wallEverything is set, it will also wall off replacable blocks like air or grass */

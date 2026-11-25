@@ -364,7 +364,9 @@ public class TileEntityMachineMiningLaser extends TileEntityMachineBase implemen
 		
 		if(doesBreak) {
 			if(normal) b.dropBlockAsItem(worldObj, targetX, targetY, targetZ, meta, fortune);
-			worldObj.func_147480_a(targetX, targetY, targetZ, false);
+			if(worldObj.func_147480_a(targetX, targetY, targetZ, false)) {
+				com.hbm.world.progression.EuropaExcavation.recordMachineRemoval(worldObj, targetX, targetY, targetZ, b);
+			}
 		}
 		
 		suckDrops();

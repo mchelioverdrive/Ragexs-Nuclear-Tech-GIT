@@ -4,10 +4,8 @@ import java.util.Random;
 
 import com.hbm.dim.BiomeGenBaseCelestial;
 
-import com.hbm.entity.mob.EntityFRIEND;
 import net.minecraft.block.Block;
 import net.minecraft.world.World;
-import net.minecraft.world.biome.BiomeGenBase;
 
 public class BiomeGenOrbit extends BiomeGenBaseCelestial {
 
@@ -15,8 +13,6 @@ public class BiomeGenOrbit extends BiomeGenBaseCelestial {
 		super(id);
 		this.setBiomeName("Space");
 		this.setDisableRain();
-		this.monsters.add(new BiomeGenBase.SpawnListEntry(EntityFRIEND.class, 50, 1, 1));
-		//why won't you spawn
 	}
 
 	//@Override

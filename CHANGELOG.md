@@ -990,3 +990,9 @@
 - Record the first Mun visit and qualifying Overworld nuclear weapon detonation in shared save data. Either milestone can come first. The initial delay and encounter cooldown survive server restarts.
 - Add rare, night-biased Overworld sightings near players in loaded, open air. Reuse the existing UAP flight and visuals and keep manual spawns independent of natural admission.
 - Add reloadable encounter settings for the enabled state, both prerequisites, initial delay, cooldown, active cap and nighttime preference.
+
+2026-11-25 00:35 — Gate Europa Lank sightings behind excavation
+
+- Unlock rare natural Europa encounters through shared, persistent excavation. Count manual mining and confirmed removals by the Excavator and Mining Laser. Track player-placed terrain in chunk data.
+- Make the Lank watch and follow from a distance, retreat on foot and leave only under cover. Preserve projectile defense and use existing open terrain for defensive teleports.
+- Add reloadable progression, cooldown, population and stalking settings. Keep operator summons independent of natural admission.

@@ -975,6 +975,7 @@ public class ModEventHandler {
 		if(event.phase == Phase.END && !event.world.isRemote) {
 			com.hbm.explosion.NuclearDropSuppression.tick(event.world);
 			com.hbm.world.progression.UAPEncounters.tick(event.world);
+			com.hbm.world.progression.EuropaLankEncounters.tick(event.world);
 		}
 
 

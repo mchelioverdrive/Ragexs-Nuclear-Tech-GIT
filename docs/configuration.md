@@ -12,7 +12,7 @@ Always stop the server before editing startup configuration unless a command exp
 
 `/rntconfig reload` (operator level 2, including the server console and integrated server) rereads `config/hbm.cfg` with the existing Forge configuration parser. It validates the file and supported values before applying anything. Invalid types, numbers, booleans or activation modes, unfinished categories/lists, and read failures retain the previous runtime configuration and report an error. Finite numeric values use the existing range clamps. The command does not rewrite the file.
 
-Supported live values are all `21_gemini` settings and subcategories **except `woodcrawlerSpawnWeight`**, the `12_mobs` natural villager and UAP settings below, and the `01_general` keys `1.18_enableExtendedLogging`, `1.45_enablePowerNetDiagnostics`, `1.46_enableMachineRuntimeDiagnostics`, `1.36_enableMOTD` and `1.37_enableGuideBook`. These general settings affect subsequent logging, diagnostics and login handling. All other common settings remain unchanged until restart, including registration, potion/dimension IDs, radiation implementation selection, sound initialization, blocks, items and startup recipe options. JSON machine/resource configuration remains startup-only for this command. Use the existing `/ntmreload` for supported recipe/item-pool JSON and `/ntmclient` for local `hbmClient.json` preferences.
+Supported live values are all `21_gemini` settings and subcategories **except `woodcrawlerSpawnWeight`**, the `12_mobs` natural villager, UAP and Europa Lank settings below, and the `01_general` keys `1.18_enableExtendedLogging`, `1.45_enablePowerNetDiagnostics`, `1.46_enableMachineRuntimeDiagnostics`, `1.36_enableMOTD` and `1.37_enableGuideBook`. These general settings affect subsequent logging, diagnostics and login handling. All other common settings remain unchanged until restart, including registration, potion/dimension IDs, radiation implementation selection, sound initialization, blocks, items and startup recipe options. JSON machine/resource configuration remains startup-only for this command. Use the existing `/ntmreload` for supported recipe/item-pool JSON and `/ntmclient` for local `hbmClient.json` preferences.
 
 Gemini admission limits apply to the next admission in every active world without deleting existing creatures, nests or cocoons. Loaded Woodcrawlers refresh their native detection-range attribute on their next server tick, including after loading an older saved entity. Existing infection/cocoon durations, conversion decisions, boss health attributes and event countdowns retain their saved snapshots; new instances use the new settings. In-flight AI timers continue and consult updated thresholds on subsequent ticks. Progression and world gamerules are never reset. Reload registers no listeners or entities. Supported settings govern server decisions; native entity metadata, attributes, disease state and sound packets already convey their results, so no additional client configuration packet is needed.
 
@@ -56,6 +56,30 @@ All keys are in `12_mobs.uap` and support `/rntconfig reload`.
 The initial delay and cooldown use saved Overworld game ticks. They continue while the world ticks with encounters disabled. Reloading keeps the existing initial deadline and applies the current requirements to future admissions. Downtime adds no ticks. A failed roll or placement does not start a cooldown.
 
 Sightings use already-loaded, collision-free air with open sky and a clear view from a living, awake player within 64 blocks. Further sightings start beyond observation range of any existing UAP in the area. The natural spawn pass respects difficulty, `doMobSpawning` and Gemini's automatic hostile-spawn rules. A natural sighting lasts up to 1,200 active entity ticks and ends on chunk unload or restart. `/summon UAP` and existing spawn items bypass the natural gates and retain their normal persistence.
+
+### Europa Lank encounters
+
+Natural encounters take place on Europa, which uses the Laythe dimension internally. Excavation is shared across the save and permanently unlocks encounters at the configured threshold. Mining eligible terrain by hand or removing it with the RTM Excavator or Mining Laser adds to the total. Eligible blocks include Europa's packed ice, snow blocks, stone, silt, oil ore, clay, netherrack, sulfur and asbestos. World generation, explosions, liquid removal, simulated players and machines that extract resources without removing blocks do not advance the total.
+
+Forge placement events record placed terrain in each chunk's save data. Mining tracked positions clears the mark. Saves cannot recover placement history from before this feature was installed. Blocks moved by pistons or gravity, set by commands, or placed by mods that omit Forge's placement events can lose or bypass provenance. Other excavation machines require their own integration.
+
+All keys are in `12_mobs.europaLank` and support `/rntconfig reload`.
+
+| Key | Default | Accepted values and behavior |
+| --- | --- | --- |
+| `enabled` | `true` | Boolean. Allows new natural encounters. Excavation tracking continues while disabled. |
+| `requireExcavation` | `true` | Boolean. Requires the shared unlock for natural encounters. |
+| `excavationThreshold` | `64` | At least 1 block. An earned unlock is permanent. |
+| `minimumCooldownTicks` | `48000` | Nonnegative game ticks. Starts or extends the cooldown when a natural encounter begins or ends. |
+| `maxActivePerDimension` | `1` | 0–64 simultaneous natural encounters. Zero prevents natural spawning. |
+| `minimumStalkingDistance` | `32` | 8–95 blocks. |
+| `maximumStalkingDistance` | `64` | Greater than the minimum, up to 96 blocks. |
+| `retreatDistance` | `12` | At least 1 block and below the minimum stalking distance. |
+| `passiveStalking` | `true` | Boolean. Turning it off restores legacy hunting. |
+
+Eligible spawn checks roll once every 200 ticks with a 1-in-12 chance. A spawn requires loaded, dry footing and enough room for the Lank, outside the visible forward view estimated from nearby players' server-side eye positions and facing. Only one Lank claims a given player for stalking. Passive Lanks face their target, wait when within observation range, follow on foot when the distance changes and retreat when approached. Natural encounters can end after the Lank has spent two to five minutes active and nearby players' sightlines are blocked. Natural visitors also end on chunk unload or restart. Summoned and previously saved Lanks retain normal entity persistence. Operator summons bypass natural spawn checks.
+
+The shared cooldown uses saved Overworld game ticks. A reload keeps the current deadline. Future encounter starts and ends use the current setting. Changes to the active cap and enablement apply to future admissions.
 
 ### Gemini-only mode and hostile spawn suppression
 
