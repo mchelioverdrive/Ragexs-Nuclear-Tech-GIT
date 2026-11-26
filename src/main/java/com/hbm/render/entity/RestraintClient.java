@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.Map;
 import com.hbm.blocks.machine.BlockRestraintDevice.Kind;
 import com.hbm.handler.restraint.RestraintState;
+import com.hbm.particle.ParticleSpark;
 import com.hbm.tileentity.machine.TileEntityRestraintDevice;
 import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
@@ -73,8 +74,23 @@ public final class RestraintClient {
     @SubscribeEvent public void entityTick(LivingUpdateEvent event) {
         if(!event.entity.worldObj.isRemote) return;
         EntityLivingBase entity = event.entityLiving;
-        if(rigid(RestraintState.get(entity))) anchored.put(entity.getEntityId(), entity);
+        RestraintState state = RestraintState.get(entity);
+        if(rigid(state)) anchored.put(entity.getEntityId(), entity);
         else anchored.remove(entity.getEntityId());
+        if(!state.stunned()) return;
+        if(state.stunTicks-- % 5 == 0 && entity.isEntityAlive()) {
+            Minecraft mc = Minecraft.getMinecraft();
+            if(mc.thePlayer == null || mc.thePlayer.getDistanceSqToEntity(entity) > 1024) return;
+            java.util.Random random = entity.worldObj.rand;
+            int count = 3 - mc.gameSettings.particleSetting;
+            for(int i = 0; i < count; i++) {
+                double x = entity.posX + (random.nextDouble() - 0.5) * entity.width;
+                double y = entity.boundingBox.minY + (0.2 + 0.6 * random.nextDouble()) * entity.height;
+                double z = entity.posZ + (random.nextDouble() - 0.5) * entity.width;
+                mc.effectRenderer.addEffect(new ParticleSpark(entity.worldObj, x, y, z,
+                        random.nextGaussian() * 0.08, 0.05, random.nextGaussian() * 0.08));
+            }
+        }
     }
     @SubscribeEvent public void clientTick(TickEvent.ClientTickEvent event) {
         if(event.phase != TickEvent.Phase.END) return;
@@ -105,10 +121,8 @@ public final class RestraintClient {
         // Arbitrary non-biped renderers retain their native model; no unsafe limb assumptions.
         if(!(model instanceof ModelBiped) && !(model instanceof ModelVillager)) return;
         Frame frame = new Frame(); frame.entity = event.entity; frame.limb = event.entity.limbSwingAmount;
-        if(state.cuffs || state.jacket || state.device || state.asleep > 0) {
-            frame.held = event.entity.getHeldItem();
-            if(frame.held != null) event.entity.setCurrentItemOrArmor(0, null);
-        }
+        frame.held = event.entity.getHeldItem();
+        if(frame.held != null) event.entity.setCurrentItemOrArmor(0, null);
         TileEntityRestraintDevice device = null;
         if(state.occupied()) {
             TileEntity tile = event.entity.worldObj.getTileEntity(state.x, state.y, state.z);
@@ -116,7 +130,7 @@ public final class RestraintClient {
         }
         frame.chair = device != null && device.kind() == Kind.CHAIR;
         GL11.glPushMatrix();
-        if(device != null && device.kind() == Kind.TABLE || state.asleep > 0 && device == null) {
+        if(device != null && device.kind() == Kind.TABLE || state.asleep > 0 && device == null || state.stunned() && !state.device) {
             GL11.glTranslated(event.x, event.y + (device == null ? 0.3 : 0.38), event.z);
             GL11.glRotatef(device == null ? -event.entity.renderYawOffset : device.yaw(), 0, 1, 0);
             GL11.glRotatef(-90, 1, 0, 0);
@@ -137,7 +151,7 @@ public final class RestraintClient {
             if(state.jacket) frame.villager.villagerArms.showModel = false;
             if(frame.chair) frame.villager.leftVillagerLeg.showModel = frame.villager.rightVillagerLeg.showModel = false;
         }
-        if(state.device || state.asleep > 0) event.entity.limbSwingAmount = 0;
+        if(state.device || state.incapacitated()) event.entity.limbSwingAmount = 0;
         frames.push(frame);
     }
     @SubscribeEvent(priority = EventPriority.HIGHEST)

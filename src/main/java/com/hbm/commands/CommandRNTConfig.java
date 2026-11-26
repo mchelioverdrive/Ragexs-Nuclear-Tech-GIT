@@ -26,7 +26,7 @@ public final class CommandRNTConfig extends CommandBase {
             throw new CommandException("[RNT] Configuration reload failed: " + ex.getMessage() + ". Previous runtime settings retained.");
         }
         sender.addChatMessage(new ChatComponentText("[RNT] Configuration reloaded successfully."));
-        sender.addChatMessage(new ChatComponentText("[RNT] Updated Gemini, UAP and Europa Lank encounters, natural villager spawning, and server logging/diagnostics/login settings."));
+        sender.addChatMessage(new ChatComponentText("[RNT] Updated Gemini, UAP and Europa Lank encounters, natural villager spawning, tasers, and server logging/diagnostics/login settings."));
         sender.addChatMessage(new ChatComponentText("[RNT] Restart-required settings were not applied (including Woodcrawler biome spawn weight). Existing world gamerules retained. See docs/configuration.md for the supported settings."));
     }
 

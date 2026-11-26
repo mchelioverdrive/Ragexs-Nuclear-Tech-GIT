@@ -17,6 +17,9 @@ public final class RestraintState implements IExtendedEntityProperties {
     public boolean cuffs, jacket, device;
     public UUID escort, deviceToken;
     public int dimension, x, y, z, onset, asleep, recovery, terminal, terminalElapsed;
+    public int stunTicks;
+    long nextTaserUse;
+    boolean correctStunPosition;
     public double anchorX, anchorY, anchorZ;
     public boolean anchored;
     // Server-only confirmation belongs to this held stack/session, never to saved or synchronized state.
@@ -37,9 +40,13 @@ public final class RestraintState implements IExtendedEntityProperties {
         return state;
     }
 
-    public boolean bound() { return cuffs || jacket || device || asleep > 0; }
+    public boolean stunned() { return stunTicks > 0; }
+    public boolean incapacitated() { return asleep > 0 || stunned(); }
+    public boolean bound() { return legacyBound() || stunned(); }
+    public boolean legacyBound() { return cuffs || jacket || device || asleep > 0; }
     public boolean occupied() { return device && deviceToken != null; }
-    public boolean active() { return bound() || onset > 0 || recovery > 0 || terminal > 0; }
+    public boolean legacyActive() { return legacyBound() || onset > 0 || recovery > 0 || terminal > 0; }
+    public boolean active() { return legacyActive() || stunned(); }
 
     /** Suspend original tasks, including zero-mutex mod tasks, and restore the exact same instances. */
     public void controlAI(EntityLivingBase entity, boolean block) {
@@ -106,9 +113,11 @@ public final class RestraintState implements IExtendedEntityProperties {
         try { return UUID.fromString(value); } catch(IllegalArgumentException ex) { return null; }
     }
 
-    @Override public void saveNBTData(NBTTagCompound n) { if(active()) n.setTag(KEY, write()); else n.removeTag(KEY); }
+    @Override public void saveNBTData(NBTTagCompound n) { if(legacyActive()) n.setTag(KEY, write()); else n.removeTag(KEY); }
     @Override public void loadNBTData(NBTTagCompound n) {
         read(n.getCompoundTag(KEY));
+        stunTicks = 0;
+        correctStunPosition = false;
         // Grabs belong to a live session; retain escort in network snapshots, never across entity reloads.
         escort = null;
         if(!device) anchored = false;

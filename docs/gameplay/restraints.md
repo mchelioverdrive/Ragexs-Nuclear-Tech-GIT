@@ -14,6 +14,28 @@ Unburned Fake Person bodies remain down until night, after at least three loaded
 
 A Ketamine Syringe works by direct use on an entity and returns an empty syringe. A Ketamine Dart is thrown using RNT's throwable projectile system. The inherited dart guns are unregistered legacy content, so these darts work without requiring one. Ketamine is represented as simplified anesthetic gameplay: both items apply slowing during a configurable onset, then temporary unconsciousness and a recovery interval with movement speed and ordinary melee damage reduced by half. Recovery uses separate attribute modifiers, preserving other effects. The defaults are 60 onset ticks, 1,200 unconscious ticks and 200 recovery ticks. There is no instant unconsciousness on impact. Further hits during onset, unconsciousness or recovery do not extend the duration. The timers count loaded simulation ticks and persist through saves. Existing tranquilizer item registry names are retained for inventory and save compatibility.
 
+## Taser
+
+Right-click a living target in reach and in sight with the Handheld Taser. Craft it in a 3×3 grid using `SCC / SBR / I__`, where `S` is Steel Plate, `C` is Copper Coil, `B` is a NiMH Battery, `R` is Redstone Dust, `I` is a Synthetic Rubber Bar, and `_` is an empty slot. It starts empty. Use a powered Charger while holding it or place it in a compatible machine's charging slot. Each accepted discharge costs 50 J (100 half-joule quanta). The default capacity is 800 J (16 discharges), with an input limit of 50 J per tick. The tooltip shows both energy and complete discharges remaining.
+
+A stun stops voluntary movement, jumping, standard AI, attacks and world interactions while gravity and knockback continue. An incapacitated target cannot be stunned again to refresh its duration. The timer is temporary and clears on death, entity reload, player logout or player dimension transfer. Expiration leaves equipment, sedation and device captivity in effect according to their own rules. A target killed by the activation damage still consumes the discharge.
+
+With restraints enabled, use an empty hand or lead to grab an eligible stunned target. Compatible humanoids can receive Handcuffs or a Straight Jacket and can be escorted into the Guillotine, Brazen Bull, Electric Chair, Injection Table or Hanging Station. Their existing size, equipment and activation rules apply. Player stuns respect PvP and Faraday protection. Escorting, equipping or loading a player into a device still requires `allowPlayerRestraint`. Mounts, occupied riders, known mechanical entities and entity types listed in `excludedEntityTypes` resist the taser. The vanilla Wither is eligible when bosses and hostile mobs are both enabled. Bosses with independent movement, including the Ender Dragon, remain excluded.
+
+All eight keys are in `27_restraints` and support `/rntconfig reload`. Reloaded values apply to future activations. A cooldown or stun already in progress keeps its original duration. A lowered capacity caps existing stacks, with the tooltip updated when the server next processes the stack in an inventory or charger.
+
+| Key | Default | Accepted values |
+| --- | --- | --- |
+| `enableTaser` | `true` | Boolean |
+| `taserDurationTicks` | `100` | 1–1,200 ticks |
+| `taserCooldownTicks` | `40` | 1–1,200 ticks per user across tasers |
+| `taserMaxActivations` | `16` | 1–1,024 discharges |
+| `taserDamage` | `1` | 0–100 HP. Zero applies the stun alone. |
+| `taserAllowPlayers` | `true` | Boolean |
+| `taserAllowHostileMobs` | `true` | Boolean |
+| `taserAllowPassiveMobs` | `true` | Boolean |
+| `taserAllowBosses` | `false` | Boolean |
+
 ## Pharmaceutical crafting
 
 Use the existing Chemical Reactor and Assembler, with their chemistry/assembly templates and normal power supply. Ketamine and potassium chloride use their real chemical names; processing recipes and quantities are abstract game progression, without real synthesis or dosage calculations. The existing clean Rag supplies the cloth/filter material; no separate sterile material is required.
@@ -33,7 +55,7 @@ Saved Pharmaceutical Base items now represent Ketamine under the same item regis
 
 ## Devices
 
-Place devices on clear ground with room for their full structure. All four retain the original entity; they do not create captive copies. Empty-hand use releases an inactive, unlocked captive when a clear supported exit exists. Sneak-use controls the device. To activate, sneak-use once to arm, **stand up**, then sneak-use again within three seconds. The same player must confirm, and holding use cannot activate it. Ordinary use cancels the pending confirmation. Redstone never activates these devices.
+Place devices on clear ground with room for their full structure. Each device retains the original captive. Empty-hand use releases an inactive, unlocked captive when a clear supported exit exists. Sneak-use controls the device. To activate, sneak-use once to arm, **stand up**, then sneak-use again within three seconds. The same player must confirm, and holding use cannot activate it. Ordinary use cancels the pending confirmation. Redstone never activates these devices.
 
 | Device | Operation |
 | --- | --- |
@@ -41,6 +63,7 @@ Place devices on clear ground with room for their full structure. All four retai
 | Brazen Bull | Insert solid furnace fuel, load a captive and sneak-use to close and lock the hatch. Sneak-use twice more to begin heating. Sneak-use during heating stops it. Empty-hand use unlocks the hatch after cooling; use again to release. Residual heat continues to harm the captive until the chamber cools. Fuel remains saved when heating is stopped. |
 | Electric Chair | Connect an RNT power cable directly to the base. At the default setting, activation requires 20,000 J stored and discharge consumes 1,000 J per tick. Confirm to start; sneak-use again to stop. Losing power stops the discharge. Electrical damage affects only the captive. |
 | Injection Table | Insert one Terminal Injection, load a captive and confirm. Confirmation consumes one item; the potassium chloride damage-over-time effect begins at the needle stroke, 15 ticks into the existing animation. After injection, unloading or releasing the captive does not cancel that effect. Release before confirmation avoids activation. |
+| Hanging Station | Insert a Noose before loading a captive. Then confirm using the normal two-step activation. |
 
 Insert fuel or injections by using the held item on the device, or automate the core inventory with RNT inventory tools. Use an empty hand on an empty, inactive device to recover its stored items. Breaking a device clears captivity and drops its inventory; any still-loaded captive is moved to a clear exit when available. Captives whose device chunk is unloaded remain anchored without forcing the chunk to load, then validate their UUID and device token when it returns.
 

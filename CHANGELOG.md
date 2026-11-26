@@ -1003,3 +1003,9 @@
 - Fabrication machines and chemical reactors read the selected template using their existing recipe rules. Fabrication template crates move the complete bundle during automated template switches.
 - Removing a template spends one durability and returns the original stack. At zero durability, the bundle separates and returns every remaining template. Configure capacity, starting durability and staple cost under Tools. Existing bundles keep their contents and original durability.
 - Closing the stapler returns any work items. Logout and normal server shutdown return them before saving the player inventory.
+
+2026-11-25 19:01 — Add rechargeable tasers and temporary incapacitation
+
+- Craft and recharge a handheld taser that spends stored electrical energy to stun eligible living targets. The server controls stun duration, movement and cooldown, with synchronized sparks and compatible entity poses.
+- Use existing restraints, escorts and execution devices with eligible stunned captives. Stun expiry leaves equipment, device occupancy and tranquilizer timers in effect.
+- Configure taser availability, timing, damage, capacity and target types through `27_restraints` and `/rntconfig reload`. Player restraint and device captivity keep their existing opt-in.

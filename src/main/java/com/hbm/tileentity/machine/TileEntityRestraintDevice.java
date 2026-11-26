@@ -113,7 +113,7 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
                 || !Restraints.compatible(e) || e.worldObj != worldObj || e.ridingEntity != null || e.riddenByEntity != null
                 || e.getDistanceSq(xCoord + 0.5, yCoord + 0.5, zCoord + 0.5) > 36) return false;
         RestraintState s = RestraintState.get(e);
-        if(s.occupied() || !(s.cuffs || s.jacket || s.asleep > 0) || kind() == Kind.HANGING && !hasNoose()
+        if(s.occupied() || !(s.cuffs || s.jacket || s.incapacitated()) || kind() == Kind.HANGING && !hasNoose()
                 || kind() == Kind.BULL && (temperature > RestraintConfig.bullSafeTemperature || e.height > 2.1F)) return false;
         captive = e.getUniqueID(); cachedEntity = e.getEntityId(); missingTicks = 0;
         captiveHeight = e.height;
@@ -363,7 +363,7 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
 
     private void updateBullSounds(EntityLivingBase occupant, boolean heating, boolean hurt) {
         // Restraints hold captives still. An awake captive behind the locked hatch can rattle it.
-        setBullSoundState(heating && occupant != null, locked && occupant != null && RestraintState.get(occupant).asleep <= 0);
+        setBullSoundState(heating && occupant != null, locked && occupant != null && !RestraintState.get(occupant).incapacitated());
         if(bullHeating) {
             int healthDelay = Math.round(32F * MathHelper.clamp_float(occupant.getHealth() / occupant.getMaxHealth(), 0F, 1F));
             if(hurt) bullScreamDelay = Math.min(bullScreamDelay, 18 + healthDelay);

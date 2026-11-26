@@ -1239,12 +1239,14 @@ public class MainRegistry {
         MobConfig.NaturalVillagerValues villagers = new MobConfig.NaturalVillagerValues(candidate);
         UAPConfig.Values uap = new UAPConfig.Values(candidate);
         EuropaLankConfig.Values europaLank = new EuropaLankConfig.Values(candidate);
+        com.hbm.config.RestraintConfig.TaserValues taser = new com.hbm.config.RestraintConfig.TaserValues(candidate);
         // All parsing/validation finishes before these non-throwing field assignments.
         GeminiConfig.apply(gemini, false);
         GeneralConfig.applyRuntime(general);
         MobConfig.naturalVillagers = villagers;
         UAPConfig.settings = uap;
         EuropaLankConfig.settings = europaLank;
+        com.hbm.config.RestraintConfig.taser = taser;
     }
 
     private void loadConfig(FMLPreInitializationEvent event) {

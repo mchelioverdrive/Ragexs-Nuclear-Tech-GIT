@@ -6,11 +6,20 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.WeakHashMap;
 import com.hbm.config.RestraintConfig;
+import com.hbm.config.RestraintConfig.TaserValues;
+import com.hbm.entity.mob.EntityCyberCrab;
+import com.hbm.entity.mob.EntityUAP;
+import com.hbm.entity.mob.EntityUFO;
+import com.hbm.entity.mob.EntityUFOBase;
+import com.hbm.entity.mob.botprime.EntityBOTPrimeBase;
 import com.hbm.entity.mob.gemini.EntityFakePerson;
+import com.hbm.handler.GeminiCaptures;
 import com.hbm.items.ModItems;
+import com.hbm.items.weapon.ItemTaser;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.RestraintPacket;
 import com.hbm.tileentity.machine.TileEntityRestraintDevice;
+import com.hbm.util.ArmorUtil;
 import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
@@ -23,19 +32,30 @@ import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.attributes.AttributeModifier;
 import net.minecraft.entity.ai.attributes.IAttributeInstance;
 import net.minecraft.entity.boss.IBossDisplayData;
+import net.minecraft.entity.boss.EntityWither;
 import net.minecraft.entity.monster.EntitySkeleton;
 import net.minecraft.entity.monster.EntityZombie;
 import net.minecraft.entity.monster.EntityBlaze;
 import net.minecraft.entity.monster.EntityCreeper;
+import net.minecraft.entity.monster.EntityIronGolem;
+import net.minecraft.entity.monster.IMob;
+import net.minecraft.entity.passive.EntityHorse;
+import net.minecraft.entity.passive.EntityPig;
 import net.minecraft.entity.passive.EntityVillager;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
+import net.minecraft.network.NetHandlerPlayServer;
+import net.minecraft.network.play.client.C03PacketPlayer;
+import net.minecraft.network.play.server.S12PacketEntityVelocity;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ChatComponentTranslation;
 import net.minecraft.util.DamageSource;
+import net.minecraft.util.EntityDamageSource;
 import net.minecraft.world.World;
+import net.minecraftforge.common.ForgeHooks;
 import net.minecraftforge.event.entity.EntityEvent.EntityConstructing;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
@@ -66,6 +86,115 @@ public final class Restraints {
                 || e instanceof EntityCreature && !(e instanceof EntityCreeper) && !(e instanceof EntityBlaze) && e.height / e.width >= 2.4F;
     }
 
+    private static boolean legacyEnabled(EntityLivingBase e) {
+        return RestraintConfig.enabled && (!(e instanceof EntityPlayer) || RestraintConfig.players);
+    }
+
+    private static boolean canStun(EntityPlayer player, EntityLivingBase target, TaserValues settings) {
+        if(!settings.enabled || target == player || target.worldObj != player.worldObj || !target.isEntityAlive()
+                || target.isEntityInvulnerable() || !target.canAttackWithItem() || !GeminiCaptures.available(target)
+                || target.ridingEntity != null || target.riddenByEntity != null || target instanceof EntityHorse
+                || target instanceof EntityPig && ((EntityPig) target).getSaddled()
+                || target instanceof EntityCyberCrab || target instanceof EntityBOTPrimeBase || target instanceof EntityIronGolem
+                || target instanceof EntityUFO || target instanceof EntityUFOBase || target instanceof EntityUAP
+                || RestraintConfig.excluded.contains(EntityList.getEntityString(target))) return false;
+        if(target instanceof EntityPlayer) {
+            EntityPlayer other = (EntityPlayer) target;
+            return settings.players && !other.capabilities.disableDamage && !other.isPlayerSleeping()
+                    && other.canAttackPlayer(player) && !ArmorUtil.checkForFaraday(other);
+        }
+        // The vanilla Wither uses the normal AI entry point. Other bosses can own movement outside it.
+        if(target instanceof IBossDisplayData && !(settings.bosses && target.getClass() == EntityWither.class
+                && ((EntityWither) target).func_82212_n() == 0)) return false;
+        return target instanceof EntityLiving && (target instanceof IMob ? settings.hostile : settings.passive);
+    }
+
+    private static void useTaser(EntityPlayer player, EntityLivingBase target, ItemStack held) {
+        if(player.worldObj.isRemote || !player.isEntityAlive() || player.isUsingItem()
+                || player.getDistanceSqToEntity(target) >= 36 || !player.canEntityBeSeen(target)) return;
+        TaserValues settings = RestraintConfig.taser;
+        RestraintState victim = RestraintState.get(target);
+        if(!canStun(player, target, settings) || victim.incapacitated() || victim.device) return;
+        RestraintState user = RestraintState.get(player);
+        long now = MinecraftServer.getServer().worldServerForDimension(0).getTotalWorldTime();
+        if(now < user.nextTaserUse) return;
+        ItemTaser taser = (ItemTaser) held.getItem();
+        if(taser.getStoredEnergyQuanta(held) < ItemTaser.DISCHARGE_QUANTA) {
+            message(player, "item.taser.empty");
+            return;
+        }
+        DamageSource discharge = new EntityDamageSource("electricity", player).setDamageBypassesArmor();
+        if(settings.damage > 0 ? !target.attackEntityFrom(discharge, settings.damage) : ForgeHooks.onLivingAttack(target, discharge, 0)) return;
+
+        user.nextTaserUse = now + settings.cooldown;
+        taser.extractEnergyQuanta(held, ItemTaser.DISCHARGE_QUANTA);
+        player.inventory.markDirty();
+        player.openContainer.detectAndSendChanges();
+        target.worldObj.playSoundAtEntity(target, "hbm:weapon.sparkShoot", 0.6F, 1.1F);
+        if(!target.isEntityAlive()) return;
+        victim.stunTicks = settings.duration;
+        target.setSprinting(false);
+        if(target instanceof EntityLiving) ((EntityLiving) target).getNavigator().clearPathEntity();
+        if(target instanceof EntityWither) {
+            // Wither flight reads the watched targets before it enters native living travel.
+            EntityWither wither = (EntityWither) target;
+            for(int head = 0; head < 3; head++) wither.func_82211_c(head, 0);
+        }
+        if(target instanceof EntityPlayerMP) {
+            EntityPlayerMP stunned = (EntityPlayerMP) target;
+            stunned.setSneaking(false);
+            stunned.clearItemInUse();
+            stunned.theItemInWorldManager.cancelDestroyingBlock(0, 0, 0);
+            if(stunned.openContainer != stunned.inventoryContainer) stunned.closeScreen();
+        }
+        changed(target);
+    }
+
+    /** Hook inside native living travel. Both AI modes and the jump branch are skipped, while physics still runs. */
+    public static boolean stunBlocksMovement(Object entity) {
+        return RestraintState.get((EntityLivingBase) entity).stunned();
+    }
+
+    /** C03 supplies absolute positions. During a stun only take the player's look from the packet. */
+    public static boolean handleStunnedPosition(Object handler, Object message) {
+        EntityPlayerMP player = ((NetHandlerPlayServer) handler).playerEntity;
+        RestraintState s = RestraintState.get(player);
+        if(!s.stunned() || player.playerConqueredTheEnd) return false;
+        C03PacketPlayer packet = (C03PacketPlayer) message;
+        if(packet.func_149463_k() && Float.isFinite(packet.func_149462_g()) && Float.isFinite(packet.func_149470_h())) {
+            player.rotationYaw = packet.func_149462_g();
+            player.rotationPitch = packet.func_149470_h();
+        }
+        if(packet.func_149466_j() && !(player.getDistanceSq(packet.func_149464_c(), packet.func_149467_d(), packet.func_149472_e()) <= 0.0625D))
+            s.correctStunPosition = true;
+        return true;
+    }
+
+    /** The connection ticks once on the server after packet dispatch, regardless of C03 frequency. */
+    public static void tickStunnedPlayer(Object handler) {
+        EntityPlayerMP player = ((NetHandlerPlayServer) handler).playerEntity;
+        RestraintState s = RestraintState.get(player);
+        if(!s.stunned() || !player.isEntityAlive() || player.playerConqueredTheEnd) return;
+        World world = player.worldObj;
+        double oldY = player.posY;
+        player.onUpdateEntity();
+        if(!s.stunned() || !player.isEntityAlive() || player.worldObj != world) return;
+        if(!s.device) player.handleFalling(player.posY - oldY, player.onGround);
+        if(!s.stunned() || !player.isEntityAlive()) return;
+        MinecraftServer.getServer().getConfigurationManager().updatePlayerPertinentChunks(player);
+        if(--s.stunTicks == 0 || s.correctStunPosition) {
+            s.correctStunPosition = false;
+            player.setPositionAndUpdate(player.posX, player.posY, player.posZ);
+            if(player.motionX != 0 || player.motionY != 0 || player.motionZ != 0)
+                player.playerNetServerHandler.sendPacket(new S12PacketEntityVelocity(player));
+        }
+        if(!s.stunned()) changed(player);
+    }
+
+    public static boolean stunnedPlayerInteraction(Object handler) {
+        return RestraintState.get(((NetHandlerPlayServer) handler).playerEntity).stunned();
+    }
+
     public static boolean sedate(EntityLivingBase e) {
         if(e.worldObj.isRemote || !compatible(e)) return false;
         RestraintState s = RestraintState.get(e);
@@ -79,7 +208,7 @@ public final class Restraints {
     public static void changed(EntityLivingBase e) {
         if(e.worldObj.isRemote) return;
         RestraintState s = RestraintState.get(e);
-        s.controlAI(e, RestraintConfig.enabled && s.bound());
+        s.controlAI(e, legacyEnabled(e) && s.legacyBound());
         updateModifiers(e, s);
         ((net.minecraft.world.WorldServer) e.worldObj).getEntityTracker().func_151247_a(e, PacketDispatcher.wrapper.getPacketFrom(new RestraintPacket(e)));
         if(e instanceof EntityPlayerMP) PacketDispatcher.wrapper.sendTo(new RestraintPacket(e), (EntityPlayerMP) e);
@@ -97,9 +226,9 @@ public final class Restraints {
     }
 
     private static void updateModifiers(EntityLivingBase e, RestraintState s) {
-        boolean enabled = RestraintConfig.enabled && (!(e instanceof EntityPlayer) || RestraintConfig.players);
+        boolean enabled = legacyEnabled(e);
         // Stop voluntary travel without cancelling collision impulses, gravity or native forced movement.
-        double amount = !enabled ? 0 : s.bound() ? -1 : s.onset > 0 ? -0.75 : s.recovery > 0 ? -0.5 : 0;
+        double amount = s.stunned() || enabled && s.legacyBound() ? -1 : !enabled ? 0 : s.onset > 0 ? -0.75 : s.recovery > 0 ? -0.5 : 0;
         updateModifier(e.getEntityAttribute(SharedMonsterAttributes.movementSpeed), SPEED, "RNT restraint slowing", amount);
         // An independent modifier avoids replacing or removing weakness from other gameplay sources.
         updateModifier(e.getEntityAttribute(SharedMonsterAttributes.attackDamage), RECOVERY_WEAKNESS,
@@ -129,12 +258,14 @@ public final class Restraints {
         if(e.worldObj.isRemote || !e.isEntityAlive()) return;
         RestraintState s = RestraintState.get(e);
         if(!s.active() && s.escort == null) return;
-        if(!RestraintConfig.enabled || e instanceof EntityPlayer && !RestraintConfig.players) {
+        boolean sync = e.ticksExisted % 20 == 0;
+        if(!legacyEnabled(e) && (s.legacyActive() || s.escort != null)) {
             if(s.cuffs) e.entityDropItem(new ItemStack(ModItems.handcuffs), 0);
             if(s.jacket) e.entityDropItem(new ItemStack(ModItems.straight_jacket), 0);
-            clear(e); return;
+            clearLegacy(s);
+            sync = true;
         }
-        boolean sync = e.ticksExisted % 20 == 0;
+        if(!(e instanceof EntityPlayerMP) && s.stunned() && --s.stunTicks == 0) sync = true;
         if(s.recovery > 0 && --s.recovery == 0) sync = true;
         if(s.onset > 0 && --s.onset == 0) {
             s.asleep = RestraintConfig.sedationTicks;
@@ -161,7 +292,7 @@ public final class Restraints {
                 hold(e, s);
             }
         }
-        s.controlAI(e, s.bound());
+        s.controlAI(e, s.legacyBound());
         updateModifiers(e, s);
         EntityPlayer leader = escort(e, s);
         if(s.escort != null && leader == null) { s.escort = null; sync = true; }
@@ -183,7 +314,7 @@ public final class Restraints {
     }
 
     private static boolean dragTarget(EntityLivingBase e, RestraintState s) {
-        return s.bound() || fakePersonBody(e);
+        return legacyEnabled(e) && (s.bound() || fakePersonBody(e));
     }
 
     private static EntityPlayer escort(EntityLivingBase e, RestraintState s) {
@@ -242,9 +373,16 @@ public final class Restraints {
         }
     }
     @SubscribeEvent public void logout(cpw.mods.fml.common.gameevent.PlayerEvent.PlayerLoggedOutEvent event) {
+        RestraintState.get(event.player).stunTicks = 0;
         releaseOwned(event.player, event.player.worldObj);
     }
     @SubscribeEvent public void dimension(cpw.mods.fml.common.gameevent.PlayerEvent.PlayerChangedDimensionEvent event) {
+        RestraintState state = RestraintState.get(event.player);
+        if(state.stunned()) {
+            state.stunTicks = 0;
+            state.correctStunPosition = false;
+            changed(event.player);
+        }
         releaseOwned(event.player, net.minecraftforge.common.DimensionManager.getWorld(event.fromDim));
     }
 
@@ -254,8 +392,8 @@ public final class Restraints {
     }
 
     public static boolean blocked(EntityLivingBase e) {
-        if(!RestraintConfig.enabled || e instanceof EntityPlayer && !RestraintConfig.players) return false;
-        return RestraintState.get(e).bound();
+        RestraintState s = RestraintState.get(e);
+        return s.stunned() || (e.worldObj.isRemote || legacyEnabled(e)) && s.legacyBound();
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST) public void attack(LivingAttackEvent event) {
@@ -272,6 +410,14 @@ public final class Restraints {
         if(blocked(event.entityPlayer)) event.setCanceled(true);
     }
 
+    @SubscribeEvent(priority = EventPriority.LOWEST) public void taserInteract(EntityInteractEvent event) {
+        EntityPlayer player = event.entityPlayer;
+        ItemStack held = player.getHeldItem();
+        if(held == null || held.getItem() != ModItems.taser || !(event.target instanceof EntityLivingBase)) return;
+        event.setCanceled(true);
+        if(!blocked(player)) useTaser(player, (EntityLivingBase) event.target, held);
+    }
+
     @SubscribeEvent(priority = EventPriority.HIGHEST) public void interact(EntityInteractEvent event) {
         EntityPlayer player = event.entityPlayer;
         if(blocked(player)) { event.setCanceled(true); return; }
@@ -279,6 +425,7 @@ public final class Restraints {
         EntityLivingBase e = (EntityLivingBase) event.target;
         RestraintState s = RestraintState.get(e);
         ItemStack held = player.getHeldItem();
+        if(held != null && held.getItem() == ModItems.taser) return;
         boolean tool = held != null && (held.getItem() == ModItems.handcuffs || held.getItem() == ModItems.straight_jacket
                 || held.getItem() == ModItems.tranquilizer_syringe || held.getItem() == Items.lead);
         boolean draggable = dragTarget(e, s);
@@ -288,7 +435,9 @@ public final class Restraints {
         if(!draggable && (held != null && held.getItem() == Items.lead || !compatible(e))) return;
         if(!tool && !draggable) return;
         event.setCanceled(true);
-        if(player.worldObj.isRemote || player.getDistanceSqToEntity(e) > 36 || !compatible(e) && !bodyDrag) return;
+        if(player.worldObj.isRemote || player.getDistanceSqToEntity(e) > 36) return;
+        boolean stunDrag = s.stunned() && draggable && !player.isSneaking() && (held == null || held.getItem() == Items.lead);
+        if(!compatible(e) && !bodyDrag && !stunDrag) return;
         if(s.occupied()) { message(player, "restraint.in_device"); return; }
         EntityPlayer owner = escort(e, s);
         if(owner != null && owner != player) { message(player, "restraint.escort_busy"); return; }
@@ -307,7 +456,7 @@ public final class Restraints {
         if(player.isSneaking()) return;
         if(held.getItem() == ModItems.handcuffs && !s.cuffs) {
             s.cuffs = true; s.anchored = false; consume(player, held); changed(e);
-        } else if(held.getItem() == ModItems.straight_jacket && !s.jacket && (s.cuffs || s.asleep > 0)) {
+        } else if(held.getItem() == ModItems.straight_jacket && !s.jacket && (s.cuffs || s.incapacitated())) {
             s.jacket = true; consume(player, held); changed(e);
         } else if(held.getItem() == ModItems.tranquilizer_syringe && sedate(e)) {
             consume(player, held); give(player, new ItemStack(ModItems.syringe_empty));
@@ -335,13 +484,11 @@ public final class Restraints {
         e.motionX = e.motionY = e.motionZ = 0;
         changed(e);
     }
-    private static void clear(EntityLivingBase e) {
-        RestraintState s = RestraintState.get(e);
+    private static void clearLegacy(RestraintState s) {
         s.device = false; s.deviceToken = null; s.escort = null;
         s.cuffs = s.jacket = s.anchored = false;
         s.onset = s.asleep = s.recovery = s.terminal = s.terminalElapsed = 0;
         s.injectionConfirmStack = null;
-        changed(e);
     }
     @SubscribeEvent(priority = EventPriority.LOWEST) public void death(LivingDeathEvent event) {
         EntityLivingBase e = event.entityLiving;
@@ -354,6 +501,9 @@ public final class Restraints {
         }
         if(s.cuffs) e.entityDropItem(new ItemStack(ModItems.handcuffs), 0);
         if(s.jacket) e.entityDropItem(new ItemStack(ModItems.straight_jacket), 0);
-        clear(e);
+        s.stunTicks = 0;
+        s.correctStunPosition = false;
+        clearLegacy(s);
+        changed(e);
     }
 }

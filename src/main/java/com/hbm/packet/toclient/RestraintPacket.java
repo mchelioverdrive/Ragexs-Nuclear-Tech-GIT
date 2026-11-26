@@ -11,6 +11,7 @@ import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.World;
 
@@ -20,7 +21,13 @@ public final class RestraintPacket implements IMessage {
     private String type;
     private NBTTagCompound state;
     public RestraintPacket() { }
-    public RestraintPacket(EntityLivingBase e) { id = e.getEntityId(); dimension = e.worldObj.provider.dimensionId; type = e.getClass().getName(); state = RestraintState.get(e).write(); }
+    public RestraintPacket(EntityLivingBase e) {
+        id = e.getEntityId(); dimension = e.worldObj.provider.dimensionId;
+        type = e instanceof EntityPlayer ? EntityPlayer.class.getName() : e.getClass().getName();
+        RestraintState restraint = RestraintState.get(e);
+        state = restraint.write();
+        state.setInteger("stunTicks", restraint.stunTicks);
+    }
     @Override public void toBytes(ByteBuf b) { b.writeInt(id); b.writeInt(dimension); ByteBufUtils.writeUTF8String(b, type); ByteBufUtils.writeTag(b, state); }
     @Override public void fromBytes(ByteBuf b) { id = b.readInt(); dimension = b.readInt(); type = ByteBufUtils.readUTF8String(b); state = ByteBufUtils.readTag(b); }
     public static final class Handler implements IMessageHandler<RestraintPacket, IMessage> {
@@ -29,8 +36,12 @@ public final class RestraintPacket implements IMessage {
             mc.func_152344_a(new Runnable() { @Override public void run() {
                 if(world == null || mc.theWorld != world || mc.getNetHandler() != context.getClientHandler() || p.state == null) return;
                 Entity e = world.getEntityByID(p.id);
-                if(world.provider.dimensionId == p.dimension && e instanceof EntityLivingBase && e.getClass().getName().equals(p.type))
-                    RestraintState.get((EntityLivingBase) e).read(p.state);
+                if(world.provider.dimensionId == p.dimension && e instanceof EntityLivingBase
+                        && (e instanceof EntityPlayer ? EntityPlayer.class.getName() : e.getClass().getName()).equals(p.type)) {
+                    RestraintState restraint = RestraintState.get((EntityLivingBase) e);
+                    restraint.read(p.state);
+                    restraint.stunTicks = Math.max(0, p.state.getInteger("stunTicks"));
+                }
             }});
             return null;
         }

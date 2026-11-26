@@ -68,7 +68,7 @@ import net.minecraftforge.fluids.FluidStack;
 
 public class ModItems {
 	public static Item flashlight;
-	public static Item handcuffs, straight_jacket, tranquilizer_syringe, tranquilizer_dart, injection_terminal;
+	public static Item handcuffs, straight_jacket, tranquilizer_syringe, tranquilizer_dart, injection_terminal, taser;
 	public static Item ketamine;
 	/** Saved item/API identity retained for worlds made before the chemical was named. */
 	@Deprecated public static Item pharmaceutical_base;
@@ -3035,6 +3035,7 @@ public class ModItems {
 		straight_jacket = new com.hbm.items.special.ItemRestraint(true).setUnlocalizedName("straight_jacket").setCreativeTab(MainRegistry.controlTab).setTextureName("hbm:straight_jacket");
 		tranquilizer_syringe = new com.hbm.items.special.ItemRestraint(false).setUnlocalizedName("tranquilizer_syringe").setCreativeTab(MainRegistry.consumableTab).setTextureName("hbm:tranquilizer_syringe");
 		tranquilizer_dart = new com.hbm.items.weapon.ItemTranquilizerDart().setUnlocalizedName("tranquilizer_dart").setCreativeTab(MainRegistry.weaponTab).setTextureName("hbm:tranquilizer_dart");
+		taser = new com.hbm.items.weapon.ItemTaser().setUnlocalizedName("taser").setCreativeTab(MainRegistry.weaponTab).setTextureName("hbm:gun_spark");
 		injection_terminal = new com.hbm.items.special.ItemRestraint(false).setUnlocalizedName("injection_terminal").setCreativeTab(MainRegistry.consumableTab).setTextureName("hbm:injection_terminal");
 		ketamine = new ItemCustomLore().setUnlocalizedName("pharmaceutical_base").setCreativeTab(MainRegistry.partsTab).setTextureName("hbm:powder_sodium");
 		pharmaceutical_base = ketamine;
@@ -7385,6 +7386,7 @@ public class ModItems {
 		GameRegistry.registerItem(straight_jacket, straight_jacket.getUnlocalizedName());
 		GameRegistry.registerItem(tranquilizer_syringe, tranquilizer_syringe.getUnlocalizedName());
 		GameRegistry.registerItem(tranquilizer_dart, tranquilizer_dart.getUnlocalizedName());
+		GameRegistry.registerItem(taser, taser.getUnlocalizedName());
 		GameRegistry.registerItem(injection_terminal, injection_terminal.getUnlocalizedName());
 		GameRegistry.registerItem(ketamine, ketamine.getUnlocalizedName());
 	}

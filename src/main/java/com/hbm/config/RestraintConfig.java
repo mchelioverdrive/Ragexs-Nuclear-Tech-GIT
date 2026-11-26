@@ -7,18 +7,21 @@ import net.minecraftforge.common.config.Configuration;
 
 /** Gameplay values only; simplified ketamine sedation and potassium chloride damage over time. */
 public final class RestraintConfig {
+    private static final String CATEGORY = "27_restraints";
     public static boolean enabled = true, players = false, devices = true;
     public static int sedationTicks = 1200, onsetTicks = 60, recoveryTicks = 200;
     public static int injectionTicks = 200, bullMaxTemperature = 600, bullSafeTemperature = 60;
     public static float bladeDamage = 10000F, electricDamage = 12F, bullDamage = 2F, injectionDamage = 4F;
     public static long chairQuantaPerTick = 2000L;
     public static final Set<String> humanoids = new HashSet<String>(), excluded = new HashSet<String>();
+    public static volatile TaserValues taser = new TaserValues(new Configuration());
 
     private RestraintConfig() { }
 
     public static void loadFromConfig(Configuration c) {
-        String category = "27_restraints";
-        c.setCategoryComment(category, "Restraints, simplified ketamine sedation and potassium chloride terminal injection. Durations are loaded simulation ticks (20/second); reload/repeated hits do not extend sedation. Restart to apply.");
+        String category = CATEGORY;
+        c.setCategoryComment(category, "Restraints, taser incapacitation, simplified ketamine sedation and terminal injection. Durations are simulation ticks (20/second). Taser values support /rntconfig reload. Other values require a restart.");
+        taser = new TaserValues(c);
         enabled = c.get(category, "enabled", true).getBoolean(true);
         players = c.get(category, "allowPlayerRestraint", false, "Explicitly opt in to player restraint, sedation and device captivity.").getBoolean(false);
         devices = c.get(category, "enableDevices", true).getBoolean(true);
@@ -37,5 +40,24 @@ public final class RestraintConfig {
         humanoids.addAll(Arrays.asList(c.get(category, "additionalHumanoidTypes", new String[0], "Entity registry names for other bipedal mobs. Zombie/skeleton/villager subclasses and tall, narrow EntityCreature shapes are detected automatically; creepers and blazes are excluded from shape detection. Size and boss exclusions always apply.").getStringList()));
         excluded.clear();
         excluded.addAll(Arrays.asList(c.get(category, "excludedEntityTypes", new String[0], "Entity registry names to exclude, in addition to bosses and oversized entities.").getStringList()));
+    }
+
+    public static final class TaserValues {
+        public final boolean enabled, players, hostile, passive, bosses;
+        public final int duration, cooldown, capacity;
+        public final float damage;
+
+        public TaserValues(Configuration c) {
+            enabled = c.get(CATEGORY, "enableTaser", true).getBoolean(true);
+            duration = c.getInt("taserDurationTicks", CATEGORY, 100, 1, 1200, "Duration of a successful taser stun.");
+            cooldown = c.getInt("taserCooldownTicks", CATEGORY, 40, 1, 1200, "Cooldown shared by all tasers used by the same player.");
+            capacity = c.getInt("taserMaxActivations", CATEGORY, 16, 1, 1024, "Maximum full discharges stored in one taser.");
+            double configuredDamage = c.get(CATEGORY, "taserDamage", 1D, "Damage in HP per accepted discharge. Zero applies only the stun.", 0D, 100D).getDouble(1D);
+            damage = Double.isFinite(configuredDamage) ? (float) Math.max(0D, Math.min(100D, configuredDamage)) : 1F;
+            players = c.get(CATEGORY, "taserAllowPlayers", true, "Allow player stuns where PvP is permitted.").getBoolean(true);
+            hostile = c.get(CATEGORY, "taserAllowHostileMobs", true).getBoolean(true);
+            passive = c.get(CATEGORY, "taserAllowPassiveMobs", true, "Allow non-hostile living mobs, including villagers.").getBoolean(true);
+            bosses = c.get(CATEGORY, "taserAllowBosses", false, "Allow compatible bosses. Mechanical entities and bosses with independent movement remain excluded.").getBoolean(false);
+        }
     }
 }
