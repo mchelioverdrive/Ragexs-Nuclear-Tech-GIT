@@ -304,19 +304,20 @@ Operators can use `/gemini lights start|stop|status` and `/gemini harvest start|
 
 ### Gemini invasion progression
 
-Set `S:geminiActivationMode=MARS` in the `21_gemini` category of `config/hbm.cfg`. The existing `enabled` master switch defaults to `true` and can pause natural activity in either active mode.
+Set `S:geminiActivationMode` in the `21_gemini` category of `config/hbm.cfg`. The `enabled` master switch defaults to `true` and can pause natural invasion activity in any mode.
 
 | Mode | Natural invasion behavior |
 | --- | --- |
-| `MARS` (default) | Start Phase 1 when a server player reaches the planet Mars (Duna). The arrival check requires the planetary dimension on transfer, login, or respawn. A recorded milestone applies to the entire world, including visits made while another mode was selected. |
+| `DEEP_SPACE_PROBE` (default) | Start Phase 1 after a probe discovers the Iris beyond Neptune, loses signal, and the configured activation delay elapses. |
+| `MARS` | Start Phase 1 when a server player reaches the planet Mars (Duna). The arrival check requires the planetary dimension on transfer, login, or respawn. A recorded milestone applies to the entire world, including visits made while another mode was selected. |
 | `IMMEDIATE` | Start Phase 1 on the next invasion update with a player in the Overworld. Planetary travel is optional. |
 | `DISABLED` | Pause natural phase advancement, new GHE spawns, and natural construction. Existing creatures and structures are retained. In-flight Lights finish their normal encounter lifecycle. |
 
-Use `/rntconfig reload` to apply mode changes. If the new mode permits activity, the invasion resumes from its saved phase and countdowns. Switching to `MARS` with no saved milestone pauses existing progress until a qualifying arrival. Invalid values are rejected on reload. Startup logs an invalid value and restores the default.
+Use `/rntconfig reload` to apply mode changes. Explicitly configured modes remain in effect after an upgrade. A started invasion retains its saved phase and countdowns. Switching to `DEEP_SPACE_PROBE` keeps a started invasion active. Switching to `MARS` with no saved milestone pauses progress until a qualifying arrival. Invalid modes are rejected on reload. Startup logs an invalid mode and restores the default.
 
-The Overworld stores the shared phase, timers, and `geminiMarsVisited` milestone in `data/GeminiInvasion.dat`. Phase 0 means the invasion has never initialized. Older saves with only the Mars milestone enter Phase 1. Older saves with no recorded milestone require a new qualifying arrival or a command override in `MARS` mode. Player joins and server restarts retain saved progress. One Minecraft day means 24,000 active Overworld ticks with players present. Shutdown, an empty Overworld, and a closed activation gate pause progression.
+The Overworld stores the shared phase, timers, Mars milestone, probe missions, and first Iris discovery in `data/GeminiInvasion.dat`. Phase 0 means the invasion has never initialized. Older saves with only the Mars milestone enter Phase 1. Older saves with no recorded milestone require a qualifying arrival or command override in `MARS` mode. One Minecraft day of invasion progression means 24,000 active Overworld ticks with players present. Shutdown, an empty Overworld, and a closed activation gate pause phase advancement.
 
-Operators can use `/visitedmars true` and `/visitedmars false` from any dimension to set the saved milestone. In `MARS` mode this also unlocks or pauses the invasion and controls manual egg admission. Manual eggs in `IMMEDIATE` and `DISABLED` work without the Mars milestone. The `/gemini` phase, timer, and encounter debug commands remain available.
+Operators can use `/visitedmars true` and `/visitedmars false` from any dimension to set the saved milestone. In `MARS` mode this also unlocks or pauses the invasion and controls manual egg admission. Manual eggs in `IMMEDIATE` and `DISABLED` work without the Mars milestone. In `DEEP_SPACE_PROBE`, the probe requirement also gates manual eggs before Phase 1. The `/gemini` phase, timer, and encounter debug commands remain available.
 
 | Phase | Additional delay | Enabled content | Encounter percent |
 | --- | --- | --- | --- |
@@ -326,6 +327,24 @@ Operators can use `/visitedmars true` and `/visitedmars false` from any dimensio
 | 4 | `phase4DelayDays=7` | Rare Wretches at automatically scheduled abandoned camps | `phase4EncounterPercent=100` |
 
 Delays accept 1-10000 days and measure time spent in the preceding phase; default phase 4 begins after 15 active days. Encounter percentages accept 1-100 and still thin ordinary natural Woodcrawler attempts and Ocean Gardener discovery. They do not scale or reject scripted Woodcrawler encounters or automatic structure scheduling. Ocean Gardeners retain their separate bounded minute opportunity from phase 3; camps and underground nests use independent saved active-time schedules.
+
+#### Deep Space Probe
+
+Assemble one Deep Space Probe from one Satellite Base, one Radar Dish, four Advanced Control Units, four Military Grade Circuit Boards, and eight Magnetrons. Put the probe in the first slot of a Satellite ID-Linker and a Satellite Control Interface in the second slot. The linker assigns one mission ID. Use a separate interface for each probe you want to access without retuning.
+
+Load the linked probe into the satellite slot of an Overworld Soyuz Launch Platform in satellite mode. The launch requires a Soyuz-FG, 128,000 mB each of kerosene and oxygen, and the platform's usual 75% power charge. The flight clock starts at liftoff. The server estimates distance from Earth's orbit to a survey point at 105% of Neptune's orbital radius. Travel time uses the fallback setting because the navigation computer requires a registered destination for transfer timing. The probe has no waypoint or destination dimension, and the Soyuz carrier's chunk can unload during the mission.
+
+Right-click the linked Control Interface for mission status, distance, travel ETA, signal strength, anomaly status, and the last received packet in chat. Sneak-right-click for the transmission log, including after signal loss. A linked interface works in any dimension. Use the linker to copy a linked interface to another or retune the interface for a new probe. Copy a regular satellite frequency to the interface to return it to normal orbital operation.
+
+The following settings live under `21_gemini.probe` and reload through `/rntconfig reload`. Durations are bounded server ticks and are captured at launch along with the transmission setting. Missions already launched keep running if new probe launches are disabled. The timers count loaded Overworld ticks, even with players in other dimensions, and resume after restart. The first completed encounter saves the discovery and its activation delay for the entire world.
+
+| Key | Default | Behavior |
+| --- | --- | --- |
+| `enabled` | `true` | Allow new probe registrations and launches. |
+| `travelTicks` | `168000` | Fallback outbound travel duration (20–240,000,000 ticks). |
+| `anomalyTicks` | `6000` | Time from arrival in the outer solar system to signal loss (160–240,000,000 ticks). |
+| `activationDelayTicks` | `24000` | Time after the first signal loss before Phase 1 can activate (0–240,000,000 ticks). |
+| `anomalousTransmissions` | `true` | Show the staged anomalous transmissions. Discovery and signal loss also happen with the messages disabled. |
 
 Scripted forest encounters use these `21_gemini` defaults (20 ticks per active second):
 

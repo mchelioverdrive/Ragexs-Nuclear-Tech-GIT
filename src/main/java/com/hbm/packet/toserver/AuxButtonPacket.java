@@ -168,7 +168,7 @@ public class AuxButtonPacket implements IMessage {
 					if(m.id == 0)
 						launcher.mode = (byte) m.value;
 					if(m.id == 1)
-						launcher.startCountdown();
+						launcher.startCountdown(p);
 				}
 
 				if (te instanceof TileEntityMachineMiningLaser) {

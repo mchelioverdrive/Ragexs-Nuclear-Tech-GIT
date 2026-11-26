@@ -2742,6 +2742,15 @@ public class AssemblerRecipes extends SerializableRecipe {
 										   EnumCircuitType.ADVANCED.ordinal())
 				   },
 				   400);
+		makeRecipe(new ComparableStack(ModItems.sat_deep_space_probe),
+				   new AStack[]{
+					   new ComparableStack(ModItems.sat_base),
+					   new ComparableStack(ModItems.sat_head_radar),
+					   new ComparableStack(ModItems.circuit, 4, EnumCircuitType.CONTROLLER_ADVANCED),
+					   new ComparableStack(ModItems.circuit, 4, EnumCircuitType.ADVANCED),
+					   new ComparableStack(ModItems.magnetron, 8)
+				   },
+				   600);
 		makeRecipe(new ComparableStack(ModItems.sat_foeq,
 									   1),
 				   new AStack[]{

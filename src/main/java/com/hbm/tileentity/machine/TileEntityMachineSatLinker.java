@@ -3,11 +3,14 @@ package com.hbm.tileentity.machine;
 import com.hbm.inventory.container.ContainerMachineSatLinker;
 import com.hbm.inventory.gui.GUIMachineSatLinker;
 import com.hbm.items.ISatChip;
+import com.hbm.items.ModItems;
+import com.hbm.items.machine.ItemDeepSpaceProbe;
 import com.hbm.machine.MachineDirtyCause;
 import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.saveddata.SatelliteSavedData;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityLoadedBase;
+import com.hbm.world.gemini.GeminiProbeMissions;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -200,7 +203,9 @@ public class TileEntityMachineSatLinker extends TileEntityLoadedBase implements 
 	}
 
 	private boolean hasTransferPair() {
-		return slots[0] != null && slots[1] != null && slots[0].getItem() instanceof ISatChip && slots[1].getItem() instanceof ISatChip;
+		if(slots[0] == null || slots[1] == null) return false;
+		if(slots[0].getItem() == ModItems.sat_deep_space_probe) return slots[1].getItem() == ModItems.sat_interface;
+		return slots[0].getItem() instanceof ISatChip && slots[1].getItem() instanceof ISatChip;
 	}
 
 	private boolean hasContinuousWork() {
@@ -247,7 +252,17 @@ public class TileEntityMachineSatLinker extends TileEntityLoadedBase implements 
 	private void runLinkerStep() {
 		if(!worldObj.isRemote) {
 			if(hasTransferPair()) {
-				ISatChip.setFreqS(slots[1], ISatChip.getFreqS(slots[0]));
+				if(slots[0].getItem() == ModItems.sat_deep_space_probe) {
+					int id = GeminiProbeMissions.register(worldObj, ItemDeepSpaceProbe.getMissionId(slots[0]));
+					if(id > 0) {
+						ItemDeepSpaceProbe.setMissionId(slots[0], id);
+						ItemDeepSpaceProbe.setMissionId(slots[1], id);
+					}
+				} else {
+					ISatChip.setFreqS(slots[1], ISatChip.getFreqS(slots[0]));
+					if(slots[1].getItem() == ModItems.sat_interface)
+						ItemDeepSpaceProbe.setMissionId(slots[1], ItemDeepSpaceProbe.getMissionId(slots[0]));
+				}
 			}
 			
 			if(slots[2] != null && slots[2].getItem() instanceof ISatChip) {
@@ -255,6 +270,7 @@ public class TileEntityMachineSatLinker extends TileEntityLoadedBase implements 
 				int newId = worldObj.rand.nextInt(100000);
 				if(!satelliteData.isFreqTaken(newId)) {
 					ISatChip.setFreqS(slots[2], newId);
+					if(slots[2].getItem() == ModItems.sat_interface) ItemDeepSpaceProbe.setMissionId(slots[2], 0);
 				}
 			}
 		}

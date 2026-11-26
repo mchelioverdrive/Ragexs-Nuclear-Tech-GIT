@@ -7,7 +7,7 @@ import com.hbm.main.MainRegistry;
 import net.minecraftforge.common.config.Configuration;
 
 public final class GeminiConfig {
-	public enum ActivationMode { DISABLED, IMMEDIATE, MARS }
+	public enum ActivationMode { DISABLED, IMMEDIATE, MARS, DEEP_SPACE_PROBE }
 
     public static boolean irisRendering = true;
     public static boolean irisEffects = true;
@@ -27,8 +27,9 @@ public final class GeminiConfig {
 
 	public static final String CATEGORY = "21_gemini";
 	private static final String ACTIVATION_MODE_KEY = "geminiActivationMode";
-	private static final ActivationMode DEFAULT_ACTIVATION_MODE = ActivationMode.MARS;
+	private static final ActivationMode DEFAULT_ACTIVATION_MODE = ActivationMode.DEEP_SPACE_PROBE;
 	public static ActivationMode geminiActivationMode = DEFAULT_ACTIVATION_MODE;
+	public static ProbeSettings probeSettings = new ProbeSettings();
 	public static boolean enabled = true;
 	public static boolean geminiOnly = false, geminiStageSpawnSuppression = true;
 	public static float geminiFinalStageHostileSpawnMultiplier = 0F;
@@ -103,6 +104,37 @@ public final class GeminiConfig {
 
 	private GeminiConfig() { }
 
+	public static final class ProbeSettings {
+		public static final int MIN_ANOMALY_TICKS = 160;
+		private static final int MAX_DURATION_TICKS = 24000 * 10000;
+		private static final int DEFAULT_TRAVEL_TICKS = 168000;
+		private static final int DEFAULT_ANOMALY_TICKS = 6000;
+		private static final int DEFAULT_ACTIVATION_DELAY_TICKS = 24000;
+
+		public final boolean enabled, anomalousTransmissions;
+		public final int travelTicks, anomalyTicks, activationDelayTicks;
+
+		private ProbeSettings() {
+			enabled = anomalousTransmissions = true;
+			travelTicks = DEFAULT_TRAVEL_TICKS;
+			anomalyTicks = DEFAULT_ANOMALY_TICKS;
+			activationDelayTicks = DEFAULT_ACTIVATION_DELAY_TICKS;
+		}
+
+		private ProbeSettings(Configuration config) {
+			String category = CATEGORY + ".probe";
+			enabled = config.getBoolean("enabled", category, true, "Allow new deep space probe registrations and Soyuz launches. Missions already launched continue.");
+			travelTicks = config.getInt("travelTicks", category, DEFAULT_TRAVEL_TICKS, 20, MAX_DURATION_TICKS,
+					"Outbound travel time in server ticks when navigation cannot provide a deep space route ETA. Saved when the probe launches.");
+			anomalyTicks = config.getInt("anomalyTicks", category, DEFAULT_ANOMALY_TICKS, MIN_ANOMALY_TICKS, MAX_DURATION_TICKS,
+					"Time from the outer solar system milestone to signal loss. Saved when the probe launches.");
+			activationDelayTicks = config.getInt("activationDelayTicks", category, DEFAULT_ACTIVATION_DELAY_TICKS, 0, MAX_DURATION_TICKS,
+					"Time after the first probe loses signal before its Iris discovery can activate the invasion. Saved when that probe launches.");
+			anomalousTransmissions = config.getBoolean("anomalousTransmissions", category, true,
+					"Show the probe's anomalous transmissions. Disabling only the messages preserves the discovery and signal loss. Saved when the probe launches.");
+		}
+	}
+
     /** Allows loaded Woodcrawlers to refresh their native attribute on their next server tick. */
     public static int revision;
 
@@ -152,7 +184,7 @@ public final class GeminiConfig {
 		values.enabled = config.getBoolean("enabled", CATEGORY, true,
 				"Master switch for natural Gemini activity. Disabling pauses scheduling and retains world progress. Manual spawn eggs bypass this setting.");
 		String activationMode = config.getString(ACTIVATION_MODE_KEY, CATEGORY, DEFAULT_ACTIVATION_MODE.name(),
-				"Natural invasion activation: DISABLED pauses the invasion, IMMEDIATE requires no travel, and MARS requires an arrival on Mars (Duna).",
+				"Natural invasion activation: DISABLED pauses activity, IMMEDIATE requires no travel, MARS requires a visit to Mars (Duna), and DEEP_SPACE_PROBE requires an Iris discovery beyond Neptune before Phase 1.",
 				Arrays.stream(ActivationMode.values()).map(ActivationMode::name).toArray(String[]::new));
 		try {
 			values.geminiActivationMode = ActivationMode.valueOf(activationMode);
@@ -162,6 +194,7 @@ public final class GeminiConfig {
 			MainRegistry.logger.warn("Invalid {}.{} value '{}'. Using {}.", CATEGORY, ACTIVATION_MODE_KEY,
 					activationMode, DEFAULT_ACTIVATION_MODE);
 		}
+		values.probeSettings = new ProbeSettings(config);
 		values.phase2DelayDays = config.getInt("phase2DelayDays", CATEGORY, 3, 1, 10000,
 				"Minecraft days in phase 1 before infection unlocks. One day is 24000 enabled Overworld ticks with players present.");
 		values.phase3DelayDays = config.getInt("phase3DelayDays", CATEGORY, 5, 1, 10000,
@@ -379,6 +412,7 @@ public final class GeminiConfig {
         lightsMovementSpeed = values.lightsMovementSpeed;
         enabled = values.enabled;
         geminiActivationMode = values.geminiActivationMode;
+        probeSettings = values.probeSettings;
         geminiOnly = values.geminiOnly;
         geminiStageSpawnSuppression = values.geminiStageSpawnSuppression;
         geminiFinalStageHostileSpawnMultiplier = values.geminiFinalStageHostileSpawnMultiplier;
@@ -499,6 +533,7 @@ public final class GeminiConfig {
         public float lightsHarvestDamage = 10F, lightsMovementSpeed = 0.38F;
         public boolean enabled = true;
         public ActivationMode geminiActivationMode = DEFAULT_ACTIVATION_MODE;
+        public ProbeSettings probeSettings = new ProbeSettings();
         public boolean geminiOnly = false, geminiStageSpawnSuppression = true;
         public float geminiFinalStageHostileSpawnMultiplier = 0F;
         public final float[] geminiIntermediateStageHostileSpawnMultipliers = {0.75F, 0.5F, 0.25F};

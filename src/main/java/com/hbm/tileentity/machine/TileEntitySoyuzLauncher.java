@@ -12,6 +12,7 @@ import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTank;
 import com.hbm.inventory.gui.GUISoyuzLauncher;
 import com.hbm.items.ModItems;
+import com.hbm.items.machine.ItemDeepSpaceProbe;
 import com.hbm.lib.Library;
 import com.hbm.main.MainRegistry;
 import com.hbm.sound.AudioWrapper;
@@ -19,6 +20,7 @@ import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
 import com.hbm.util.fauxpointtwelve.DirPos;
+import com.hbm.world.gemini.GeminiProbeMissions;
 
 import api.hbm.energymk2.IEnergyReceiverMK2;
 import api.hbm.fluid.IFluidStandardReceiver;
@@ -33,6 +35,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
@@ -204,14 +207,36 @@ public class TileEntitySoyuzLauncher extends TileEntityMachineBase implements IS
 	}
 
 	public void startCountdown() {
+		startCountdown(null);
+	}
 
+	public void startCountdown(EntityPlayer player) {
+		if(hasDeepSpaceProbe() && player != null) {
+			if(!isUseableByPlayer(player)) return;
+			String blocker = probeLaunchBlocker();
+			if(blocker != null) {
+				player.addChatMessage(new ChatComponentText(blocker));
+				return;
+			}
+		}
 		if(canLaunch())
 			starting = true;
+	}
+
+	private boolean hasDeepSpaceProbe() {
+		return mode == 0 && slots[2] != null && slots[2].getItem() == ModItems.sat_deep_space_probe;
+	}
+
+	private String probeLaunchBlocker() {
+		if(!hasOxy()) return "The Soyuz needs a full oxygen tank to launch this probe.";
+		return GeminiProbeMissions.launchBlocker(worldObj, ItemDeepSpaceProbe.getMissionId(slots[2]));
 	}
 
 	public void liftOff() {
 
 		this.starting = false;
+		boolean probe = hasDeepSpaceProbe();
+		if(probe && (worldObj.isRemote || !canLaunch())) return;
 
 		int req = this.getFuelRequired();
 		int pow = this.getPowerRequired();
@@ -220,7 +245,17 @@ public class TileEntitySoyuzLauncher extends TileEntityMachineBase implements IS
 		soyuz.setSkin(this.getType());
 		soyuz.mode = this.mode;
 		soyuz.setLocationAndAngles(xCoord + 0.5, yCoord + 1, zCoord + 0.5, 0, 0);
-		worldObj.spawnEntityInWorld(soyuz);
+		if(probe) {
+			soyuz.setSat(slots[2]);
+			if(!worldObj.spawnEntityInWorld(soyuz)) return;
+			// Hand off at liftoff so the probe's outbound leg survives a carrier chunk unload.
+			if(!GeminiProbeMissions.launch(worldObj, ItemDeepSpaceProbe.getMissionId(slots[2]))) {
+				soyuz.setDead();
+				return;
+			}
+		} else {
+			worldObj.spawnEntityInWorld(soyuz);
+		}
 
 		worldObj.playSoundEffect(xCoord, yCoord, zCoord, "hbm:entity.soyuzTakeoff", 100F, 1.1F);
 
@@ -229,7 +264,7 @@ public class TileEntitySoyuzLauncher extends TileEntityMachineBase implements IS
 		this.setStoredEnergyQuanta(this.energyQuanta - pow);
 
 		if(mode == 0) {
-			soyuz.setSat(slots[2]);
+			if(!probe) soyuz.setSat(slots[2]);
 
 			if(this.orbital() == 2)
 				slots[3] = null;
@@ -251,11 +286,13 @@ public class TileEntitySoyuzLauncher extends TileEntityMachineBase implements IS
 		}
 
 		slots[0] = null;
+		if(probe) markDirty();
 	}
 
 	public boolean canLaunch() {
 
-		return hasRocket() && hasFuel() && hasRocket() && hasPower() && designator() != 1 && orbital() != 1 && satellite() != 1;
+		return hasRocket() && hasFuel() && hasPower() && designator() != 1 && orbital() != 1 && satellite() != 1
+				&& (!hasDeepSpaceProbe() || (worldObj.isRemote ? hasOxy() : probeLaunchBlocker() == null));
 	}
 
 	public boolean hasFuel() {

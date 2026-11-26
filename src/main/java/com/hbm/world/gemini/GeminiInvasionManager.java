@@ -74,7 +74,7 @@ public final class GeminiInvasionManager {
 	public static void reset(World world) {
 		GeminiWorldSavedData data = requireData(world);
 		data.reset(world, controlPhase(data));
-		debug(world, "timer", "Invasion progression reset. Mars milestone and existing structures retained.");
+		debug(world, "timer", "Invasion progression reset. Exploration milestones and existing structures retained.");
 	}
 	public static void setElapsedTicks(World world, long ticks) {
 		if(ticks < 0) throw new net.minecraft.command.CommandException("Ticks must be nonnegative.");
@@ -169,6 +169,17 @@ public final class GeminiInvasionManager {
 			case DISABLED: return "geminiActivationMode is DISABLED";
 			case IMMEDIATE: return null;
 			case MARS: return data.hasMarsVisited() ? null : "waiting for a player to reach Mars (Duna)";
+			case DEEP_SPACE_PROBE: return data.getPhase() > 0 ? null : data.probes.activationBlocker();
+			default: throw new IllegalStateException("Unknown Gemini activation mode");
+		}
+	}
+
+	public static String activationRequirement() {
+		switch(GeminiConfig.geminiActivationMode) {
+			case DISABLED: return "natural activation disabled";
+			case IMMEDIATE: return "no exploration requirement";
+			case MARS: return "a player reaches Mars (Duna)";
+			case DEEP_SPACE_PROBE: return "a probe discovers the Iris beyond Neptune and the post-signal-loss delay elapses before first activation";
 			default: throw new IllegalStateException("Unknown Gemini activation mode");
 		}
 	}
@@ -302,8 +313,10 @@ public final class GeminiInvasionManager {
 		WorldServer overworld = (WorldServer) event.world;
 		GeminiWorldSavedData data = GeminiWorldSavedData.get(overworld);
 		if(data == null) return;
+		data.probes.tick(data, overworld.getTotalWorldTime());
 		boolean initialized = GeminiConfig.enabled && !com.hbm.world.squirrelstapler.StaplerWorldType.suppressGemini(overworld)
-				&& !overworld.playerEntities.isEmpty() && activateIfReady(overworld, data);
+				&& (!overworld.playerEntities.isEmpty() || GeminiConfig.geminiActivationMode == ActivationMode.DEEP_SPACE_PROBE)
+				&& activateIfReady(overworld, data);
 		// Debug controls and existing encounters still need their updates when natural scheduling is paused.
 		GeminiIris.tick(overworld, data);
 		data.lights.tick(overworld);

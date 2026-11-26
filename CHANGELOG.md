@@ -1045,3 +1045,9 @@
 - Unlock the extrasolar desert planet Sirocco by obtaining Alien Steel. New Mars deposits supply the existing Alien Steel production chain. Chart a tier-3 destination drive and use an advanced crewed Hydrolox rocket with a return stage.
 - Explore dunes, plateaus and expedition remains under periodic sandstorms. Sustained activity on sand attracts an underground Sandworm after arrival grace. Surface tremors give players time to leave the sand.
 - Defeat the Brain and Heart for a separate saved boss milestone, Sandworm Tumors, Steel Alloy and a targeting circuit. Reload natural encounter limits, cooldown, arrival grace and structure generation under `12_mobs.sandworm`.
+
+2026-11-26 00:41 — Discover the Iris by deep space probe
+
+- Assemble a Deep Space Probe, pair it with a Satellite Control Interface in the ID-Linker, and launch it from an Overworld Soyuz platform. The saved mission follows an outbound course beyond Neptune and retains its telemetry and transmission log after loss of signal.
+- Default new configurations to `DEEP_SPACE_PROBE`. The first discovery opens the existing Phase 1 activation gate after the saved post-loss delay. Keep the `MARS`, `IMMEDIATE`, and `DISABLED` settings and existing invasion progress.
+- Reload probe settings under `21_gemini.probe` and inspect or advance missions with `/gemini probe`.

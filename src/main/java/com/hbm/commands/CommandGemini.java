@@ -9,6 +9,7 @@ import com.hbm.world.gemini.GeminiHostileSpawning;
 import com.hbm.world.gemini.GeminiInvasionManager;
 import com.hbm.world.gemini.GeminiIris;
 import com.hbm.world.gemini.GeminiLights;
+import com.hbm.world.gemini.GeminiProbeMissions;
 import com.hbm.world.gemini.GeminiInvasionManager.StructureInfo;
 import com.hbm.world.gemini.WretchCamps;
 
@@ -30,7 +31,7 @@ public final class CommandGemini extends CommandBase {
     private static final int PAGE_SIZE = 8;
     @Override public String getCommandName() { return "gemini"; }
     @Override public int getRequiredPermissionLevel() { return 2; }
-    @Override public String getCommandUsage(ICommandSender sender) { return "/gemini help|status|phase|time|nest|camp|iris|lights|harvest|debug"; }
+    @Override public String getCommandUsage(ICommandSender sender) { return "/gemini help|status|phase|time|nest|camp|iris|lights|harvest|probe|debug"; }
 
     private static void reply(ICommandSender sender, String message) {
         sender.addChatMessage(new ChatComponentText("[Gemini] " + message));
@@ -82,11 +83,16 @@ public final class CommandGemini extends CommandBase {
             reply(sender, "/gemini time <add|set> <ticks>");
             reply(sender, "/gemini iris status|show|hide|stage <1..4>|observe|reset");
             reply(sender, "/gemini <lights|harvest> <start|stop|status>");
+            reply(sender, "/gemini probe <status|launch|advance|discover|signallost> [id]");
             reply(sender, "/gemini nest spawn [x y z] [force] | nest locate | nest list [page]");
             reply(sender, "/gemini camp spawn [" + WretchCamps.TYPE + "] [x y z] [force] | camp locate | camp list [page]");
             return;
         }
         WorldServer world = world(sender);
+        if("probe".equals(args[0])) {
+            probe(sender, world, args);
+            return;
+        }
         if("lights".equals(args[0]) || "harvest".equals(args[0])) {
             GeminiLights.Kind kind = "harvest".equals(args[0]) ? GeminiLights.Kind.HARVEST : GeminiLights.Kind.LIGHTS;
             if(args.length != 2) throw new WrongUsageException("/gemini " + args[0] + " <start|stop|status>");
@@ -196,6 +202,25 @@ public final class CommandGemini extends CommandBase {
         throw new WrongUsageException(getCommandUsage(sender));
     }
 
+    private static void probe(ICommandSender sender, WorldServer world, String[] args) {
+        String usage = "/gemini probe <status|launch|advance|discover|signallost> [id]";
+        if(args.length < 2 || args.length > 3) throw new WrongUsageException(usage);
+        int id = args.length == 3 ? parseIntBounded(sender, args[2], 1, Integer.MAX_VALUE) : 0;
+        switch(args[1]) {
+            case "status":
+                break;
+            case "launch":
+            case "advance":
+            case "discover":
+            case "signallost":
+                id = GeminiProbeMissions.debugControl(world, args[1], id);
+                break;
+            default:
+                throw new WrongUsageException(usage);
+        }
+        for(String line : GeminiProbeMissions.telemetry(world, id, false)) reply(sender, line);
+    }
+
     private static void status(ICommandSender sender, WorldServer world) {
         int phase = GeminiInvasionManager.getSavedPhase(world);
         String blocker = GeminiInvasionManager.progressionBlocker(world);
@@ -203,6 +228,8 @@ public final class CommandGemini extends CommandBase {
         reply(sender, "geminiActivationMode=" + GeminiConfig.geminiActivationMode
                 + ", activation condition satisfied=" + GeminiInvasionManager.activationConditionSatisfied(world)
                 + ", visitedMars=" + GeminiInvasionManager.hasMarsVisited(world) + ", enabled=" + GeminiConfig.enabled + ".");
+        reply(sender, "Activation requirement: " + GeminiInvasionManager.activationRequirement() + ".");
+        reply(sender, GeminiProbeMissions.summary(world));
         reply(sender, "Invasion " + (phase == 0 ? "has not started" : blocker == null ? "is progressing" : "is paused")
                 + (blocker == null ? "." : " (" + blocker + ")."));
         reply(sender, "geminionly=" + world.getGameRules().getGameRuleBooleanValue(GeminiHostileSpawning.RULE)
@@ -249,8 +276,9 @@ public final class CommandGemini extends CommandBase {
     }
 
     @Override public List addTabCompletionOptions(ICommandSender sender, String[] args) {
-        if(args.length == 1) return getListOfStringsMatchingLastWord(args, "help", "status", "phase", "time", "nest", "camp", "iris", "lights", "harvest", "debug");
+        if(args.length == 1) return getListOfStringsMatchingLastWord(args, "help", "status", "phase", "time", "nest", "camp", "iris", "lights", "harvest", "probe", "debug");
         if(args.length == 2) {
+            if("probe".equals(args[0])) return getListOfStringsMatchingLastWord(args, "status", "launch", "advance", "discover", "signallost");
             if("lights".equals(args[0]) || "harvest".equals(args[0])) return getListOfStringsMatchingLastWord(args, "start", "stop", "status");
             if("iris".equals(args[0])) return getListOfStringsMatchingLastWord(args, "status", "show", "hide", "stage", "observe", "reset");
             if("phase".equals(args[0])) return getListOfStringsMatchingLastWord(args, "set", "next", "reset");
