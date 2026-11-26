@@ -309,7 +309,7 @@ public class WorldProviderOrbit extends WorldProvider {
 
 		double alignment = toSun.normalize().dotProduct(toBody.normalize());
 		double angularSeparation = Math.acos(MathHelper.clamp_double(alignment, -1.0D, 1.0D));
-		double sunAngularRadius = Math.atan(SolarSystem.kerbol.radiusKm / sunDistance);
+		double sunAngularRadius = Math.atan(body.getStar().radiusKm / sunDistance);
 		double bodyAngularRadius = Math.atan(body.radiusKm / bodyDistance);
 
 		return angularSeparation < bodyAngularRadius + sunAngularRadius;

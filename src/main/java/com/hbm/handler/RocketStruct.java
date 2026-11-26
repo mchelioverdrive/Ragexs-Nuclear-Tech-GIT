@@ -184,6 +184,13 @@ public class RocketStruct {
 	}
 
 	public boolean hasSufficientFuel(CelestialBody from, CelestialBody to, boolean fromOrbit, boolean toOrbit) {
+		if(from == null || to == null) return false;
+		if(from.getStar() != to.getStar()) {
+			if(!SolarSystem.isSiroccoRoute(from, to, fromOrbit, toOrbit) || capsule == null
+					|| capsule.part != ModItems.rp_capsule_20 || stages.isEmpty()) return false;
+			RocketStage stage = stages.get(0);
+			if(stage.thruster == null || stage.thruster.part != ModItems.mp_thruster_20_hydrogen_triple || getFuelCapacity(0) < 32_000) return false;
+		}
 		if(capsule.part == ModItems.rp_pod_20) {
 			return from == to && (fromOrbit || toOrbit); // Pods can transfer, fall to orbited body, and return to station, but NOT hop on the surface
 		}
@@ -220,6 +227,8 @@ public class RocketStruct {
 		int thrust = getThrust(stage);
 		int isp = getISP(stage);
 
+		if(SolarSystem.isSiroccoRoute(from, to, fromOrbit, toOrbit))
+			return SolarSystem.getSiroccoFuelCost(from, to, rocketMass, thrust, isp);
 		return SolarSystem.getCostBetween(from, to, rocketMass, thrust, isp, fromOrbit, toOrbit);
 	}
 

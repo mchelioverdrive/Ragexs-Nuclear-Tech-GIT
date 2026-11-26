@@ -23,6 +23,17 @@ Space systems in RNTM are late-game infrastructure. Before attempting launch, es
 
 Space and planetary bodies can differ in atmosphere, pressure, water-table behavior, radiation, and environmental hazards. Wear sealable armor with PLSS support where required, carry oxygen and power reserves, and scout a destination before placing expensive infrastructure.
 
+## Sirocco and the Sandworm
+
+Sirocco is a desert planet orbiting Khepri, outside the solar system. It has wide sand flats, wind-shaped dunes, rocky plateaus, deep sand deposits and periodic sandstorms. Expeditions left mining outposts, research ruins, survey wrecks and partially exposed excavations. Signs warn about tremors, and winding surface scars mark previous emergence sites.
+
+1. Obtain an Alien Steel ingot, plate or storage block. On newly generated Mars (Duna) terrain, look in the rock around Y24–43 for Alien Ore. Shred nine Alien Fragments into tiny powders, combine them into Alien Steel Powder, then smelt the powder. Existing loot and production routes also count. The first qualifying acquisition in survival unlocks Sirocco for the whole save. Players carrying the material when they join an existing save can unlock it immediately.
+2. From Earth, chart a Sirocco landing site in the Stardar and process the drive with a tier-3 Drive Processor. Program an Earth return drive at your launch site before you leave.
+3. Launch from Earth's surface with a crew capsule and a stage using Size 20 Hydrolox Triple Thrusters and at least 32,000 mB of tank capacity per propellant. The interstellar transfer uses the existing fuel and staging rules with an added fixed transfer burn. Bring a second fueled stage that meets the same requirements for the return and fit landing legs. The Sirocco route connects Earth's surface and Sirocco's surface. Orbital stations, uncrewed rockets and cargo transporters do not make this crossing.
+4. Once the arrival grace period expires, extended surface activity on sand can attract a Sandworm. Running raises the chance faster, while rocky ground gives you a path out of the sand. Watch for sand eruptions before the worm surfaces. To defeat it, survive being swallowed and kill both its Brain and Heart, then take the glowing floor exit at the entrance.
+
+The second organ drops two Sandworm Tumors, four Steel Alloy ingots and one tier-6 targeting circuit when mob loot is enabled. Each tumor crafts into four Compressed Biomass. Defeating both organs records the independent Sandworm world milestone. See [Sandworm configuration](configuration.md#sandworm) for server controls.
+
 ## Orbit, stations, and satellites
 
 Orbit is useful for staging transfers, deploying satellites, and creating orbital stations. Station drives can revisit known stations, so name stations clearly and keep spare programmed drives. Satellite payloads should be tracked by frequency; server operators can use station and satellite commands for recovery or cleanup.

@@ -800,12 +800,21 @@ The implementation uses [The Engender Mod's Wither Storm sources](https://github
 
 ## Sandworm
 
-Startup category `12_mobs.sandworm` in `hbm.cfg` isolates the encounter from all existing RNT bosses, fluids, dimensions and packets. Natural spawning is disabled by default; `/rntsandworm spawn` remains available to operators.
+The surface settings in `12_mobs.sandworm` in `hbm.cfg` support `/rntconfig reload`. The interior and combat settings below them are startup settings. Operator spawning remains available throughout the save. Existing explicit values for `naturalSpawning` and `naturalSpawnInterval` carry over, including the old generated `false` and `24000` values. The world keeps Alien Steel acquisition, active encounter records and cooldown history when settings change.
 
 | Settings | Defaults | Behavior |
 | --- | --- | --- |
-| `dimensionID` | -38 | Must be unused. A conflict fails startup with a diagnostic instead of replacing another provider. Keep this ID for the lifetime of a save; the ledger rejects changing it. Interior terrain uses its own `DIM_RNT_Sandworm` folder. |
-| `naturalSpawning`, `naturalSpawnInterval` | false, 24000 ticks | One bounded overworld desert attempt near a non-Creative player; loaded terrain only. |
+| `naturalSpawning` | true | Enable new natural surface encounters. |
+| `requireAlienSteel` | true | Require the world-wide Alien Steel milestone for new natural encounters and departures to Sirocco. |
+| `restrictNaturalToExtrasolar` | true | Setting false additionally allows Overworld desert encounters. |
+| `movementDetection` | true | Movement builds encounter activity faster and makes players easier for a worm to detect. Sneaking reduces the effect. |
+| `planetaryStructures` | true | Generate expedition sites and emergence scars in new Sirocco terrain with world structures enabled. |
+| `maxActivePerDimension` | 1 | Count active loaded and unloaded encounters before natural spawning. Range 1–64. |
+| `encounterCooldownTicks` | 48000 | Minimum time between successful natural spawns per dimension. Range 0–24000000 ticks. |
+| `arrivalGraceTicks` | 6000 | Grace for login, respawn or arrival. A rocket landing keeps its passenger protected and resets the timer while mounted. Range 0–24000000 ticks. |
+| `naturalSpawnInterval` | 200 | Time between surface encounter checks. Range 20–24000000 ticks. |
+| `17_dims.17.16_siroccoDimension` | 109 | Startup-only surface ID. Choose an unused ID before creating the planet and keep it for the save. |
+| `dimensionID` | -38 | Startup-only interior ID. A conflict fails startup with a diagnostic. Keep this ID for the lifetime of a save. Interior terrain uses `DIM_RNT_Sandworm`. |
 | `maxActiveEncounters` | 8 | Saved unloaded and generating encounters count too; maximum 64. |
 | `movementSpeed`, `targetRange`, `mouthRadius`, `swallowCreativePlayers` | 0.7, 128, 6, false | Server-controlled movement, attraction and mouth swallowing. Eleven connected native multipart components share one entity registration. No segment entities or chunk tickets. |
 | `returnSwallowCooldownTicks` | 200 | Saved grace after returning or respawning, giving players time to move away from the original mouth. |

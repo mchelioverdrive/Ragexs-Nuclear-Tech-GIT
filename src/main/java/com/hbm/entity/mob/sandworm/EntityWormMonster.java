@@ -48,7 +48,7 @@ public abstract class EntityWormMonster extends EntityMob {
     }
     @Override public void onDeath(DamageSource source) {
         super.onDeath(source);
-        if(!worldObj.isRemote && encounter != null) WormEncounters.get(worldObj).organDied(this);
+        if(!worldObj.isRemote && dead && encounter != null) WormEncounters.get(worldObj).organDied(this);
     }
     @Override protected boolean canDespawn() { return false; }
     @Override protected boolean isAIEnabled() { return true; }

@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.hbm.config.SpaceConfig;
 import com.hbm.dim.CelestialBody;
+import com.hbm.dim.SolarSystem;
 import com.hbm.dim.SolarSystemWorldSavedData;
 import com.hbm.dim.orbit.OrbitalStation;
 import com.hbm.handler.CompatHandler;
@@ -18,6 +19,7 @@ import com.hbm.machine.MachineDirtyCause;
 import com.hbm.machine.MachineExecutionStrategy;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
+import com.hbm.world.progression.BossProgression;
 
 import cpw.mods.fml.common.Optional;
 import cpw.mods.fml.relauncher.Side;
@@ -55,6 +57,7 @@ public class TileEntityMachineStardar extends TileEntityMachineBase implements I
 
 	public int[] heightmap;
 	public boolean updateHeightmap = false;
+	public boolean siroccoUnlocked;
 	private ItemStack previousStack;
 
 	public TileEntityMachineStardar() {
@@ -97,6 +100,11 @@ public class TileEntityMachineStardar extends TileEntityMachineBase implements I
 					|| (fullDrive && (heightmap == null || !slots[0].isItemEqual(previousStack))))
 				markMachineDirty(MachineDirtyCause.INVENTORY);
 		} else if(cadence == 20) {
+			boolean unlocked = BossProgression.canVisitSirocco(worldObj);
+			if(unlocked != siroccoUnlocked) {
+				siroccoUnlocked = unlocked;
+				markMachineDirty(MachineDirtyCause.CONFIGURATION);
+			}
 			if(worldObj.getTotalWorldTime() >= pointAtTime) {
 				pointAtTime = worldObj.getTotalWorldTime() + worldObj.rand.nextInt(300) + 300;
 				targetYaw = MathHelper.wrapAngleTo180_float(worldObj.rand.nextFloat() * 360);
@@ -109,6 +117,13 @@ public class TileEntityMachineStardar extends TileEntityMachineBase implements I
 
 	private void refreshHeightmap() {
 		if(slots[0] != null && slots[0].getItem() == ModItems.full_drive) {
+			if(slots[0].getItemDamage() == SolarSystem.Body.SIROCCO.ordinal() && !BossProgression.canVisitSirocco(worldObj)) {
+				if(heightmap != null) {
+					heightmap = null;
+					updateHeightmap = true;
+				}
+				return;
+			}
 			if(heightmap == null || !slots[0].isItemEqual(previousStack)) {
 				previousStack = slots[0];
 				Destination destination = ItemVOTVdrive.getApproximateDestination(slots[0]);
@@ -185,6 +200,7 @@ public class TileEntityMachineStardar extends TileEntityMachineBase implements I
 		super.serialize(buf);
 		buf.writeFloat(targetYaw);
 		buf.writeFloat(targetPitch);
+		buf.writeBoolean(siroccoUnlocked);
 
 		buf.writeBoolean(updateHeightmap);
 		if(updateHeightmap) {
@@ -204,6 +220,7 @@ public class TileEntityMachineStardar extends TileEntityMachineBase implements I
 		super.deserialize(buf);
 		targetYaw = buf.readFloat();
 		targetPitch = buf.readFloat();
+		siroccoUnlocked = buf.readBoolean();
 
 		if(buf.readBoolean()) {
 			updateHeightmap = true;
@@ -222,13 +239,16 @@ public class TileEntityMachineStardar extends TileEntityMachineBase implements I
 	private void processDrive(int targetDimensionId, int ix, int iz) {
 		CelestialBody body = CelestialBody.getBodyOrNull(targetDimensionId);
 		if(body == null && targetDimensionId != SpaceConfig.orbitDimension) return;
+		if(body != null && body.type == SolarSystem.Body.SIROCCO
+				&& !BossProgression.canVisitSirocco(worldObj)) return;
 
 		if(slots[0] == null || slots[0].getItem() != ModItems.hard_drive) return;
 		int meta = body != null ? body.getEnum().ordinal() : 0;
 
 		slots[0] = new ItemStack(ModItems.full_drive, 1, meta);
 
-		if((ix != 0 || iz != 0) && worldObj.provider.dimensionId != SpaceConfig.orbitDimension) {
+		if((ix != 0 || iz != 0) && worldObj.provider.dimensionId != SpaceConfig.orbitDimension
+				&& targetDimensionId != SpaceConfig.siroccoDimension) {
 			slots[0].stackTagCompound = new NBTTagCompound();
 			slots[0].stackTagCompound.setInteger("ax", ix);
 			slots[0].stackTagCompound.setInteger("az", iz);

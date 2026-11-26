@@ -87,6 +87,7 @@ public class TileEntityTransporterRocket extends TileEntityTransporterBase {
 
 		Target from = CelestialBody.getTarget(worldObj, xCoord, zCoord);
 		Target to = CelestialBody.getTarget(linkedTransporter.getWorldObj(), linkedTransporter.xCoord, linkedTransporter.zCoord);
+		if(from.body.getStar() != to.body.getStar()) return false;
 
 		int sendCost = Math.min(64_000, SolarSystem.getCostBetween(from.body, to.body, mass * MASS_MULT, (int)fuelStats.getThrust(), fuelStats.getISP(), from.inOrbit, to.inOrbit));
 

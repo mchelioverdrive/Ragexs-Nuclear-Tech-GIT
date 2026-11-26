@@ -177,7 +177,11 @@ public class EntityRideableRocket extends EntityMissileBaseNT implements ILookOv
 				targetZ = (int)posZ;
 
 				// To another body
-				if(getRocket().hasSufficientFuel(from.body, to.body, from.inOrbit, to.inOrbit)) {
+				if(to.body != null && to.body.type == SolarSystem.Body.SIROCCO && from.body != to.body
+						&& !com.hbm.world.progression.BossProgression.canVisitSirocco(worldObj)) {
+					if(rider != null && ticksExisted % 20 == 0)
+						rider.addChatMessage(new net.minecraft.util.ChatComponentTranslation("sandworm.alienSteelRequired"));
+				} else if(getRocket().hasSufficientFuel(from.body, to.body, from.inOrbit, to.inOrbit)) {
 					setState(transitionTo);
 				}
 			}

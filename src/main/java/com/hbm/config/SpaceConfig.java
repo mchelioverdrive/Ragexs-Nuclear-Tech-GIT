@@ -33,6 +33,7 @@ public class SpaceConfig {
 	public static int saturnDimension = 102;
 	public static int uranusDimension = 107;
 	public static int neptuneDimension = 108;
+	public static int siroccoDimension = 109;
 
 
 	//BIOME:
@@ -132,6 +133,10 @@ public class SpaceConfig {
 			"Neptune dimension ID",
 			neptuneDimension
 		);
+		siroccoDimension = CommonConfig.createConfigInt(config, CATEGORY_DIM, "17.16_siroccoDimension",
+			"Sirocco dimension ID. Choose an unused ID before creating a save.", 109);
+		if(siroccoDimension < -4096 || siroccoDimension > 4096 || siroccoDimension == -1 || siroccoDimension == 0 || siroccoDimension == 1)
+			throw new IllegalArgumentException("17.16_siroccoDimension must be in -4096..4096 and cannot replace a vanilla dimension");
 
 		final String CATEGORY_GENERAL = CommonConfig.CATEGORY_GENERAL;
 		maxProbeDistance = CommonConfig.createConfigInt(config, CATEGORY_GENERAL, "1.90_maxProbeDistance", "How far from the center of the dimension can probes generate landing coordinates", maxProbeDistance);

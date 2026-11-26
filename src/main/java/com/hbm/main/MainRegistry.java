@@ -1250,6 +1250,7 @@ public class MainRegistry {
         MaceConfig.Values mace = new MaceConfig.Values(candidate);
         WoodchipperConfig.Values woodchipper = new WoodchipperConfig.Values(candidate);
         ExecutionEffectsConfig.Values executionEffects = new ExecutionEffectsConfig.Values(candidate);
+        com.hbm.config.SandwormConfig.SurfaceValues sandworm = new com.hbm.config.SandwormConfig.SurfaceValues(candidate);
         // All parsing/validation finishes before these non-throwing field assignments.
         GeminiConfig.apply(gemini, false);
         GeneralConfig.applyRuntime(general);
@@ -1262,6 +1263,7 @@ public class MainRegistry {
         MaceConfig.settings = mace;
         WoodchipperConfig.settings = woodchipper;
         ExecutionEffectsConfig.settings = executionEffects;
+        com.hbm.config.SandwormConfig.surface = sandworm;
     }
 
     private void loadConfig(FMLPreInitializationEvent event) {

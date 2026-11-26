@@ -448,6 +448,20 @@ public class SolarSystem {
 
 			);
 
+		new CelestialBody("khepri")
+			.withMassRadius(1.55e30F, 560_000)
+			.withTexture("textures/environment/sun.png")
+			.withSatellites(new CelestialBody("sirocco", SpaceConfig.siroccoDimension, Body.SIROCCO)
+				.withMassRadius(2.1e24F, 5_200)
+				.withSemiMajorAxis(118_000_000)
+				.withRotationalPeriod(93_600)
+				.withAxialTilt(11)
+				.withProcessingLevel(3)
+				.withTexture(RefStrings.MODID + ":textures/misc/space/duna.png")
+				.withBlockTextures(RefStrings.MODID + ":textures/blocks/duna_rock.png", RefStrings.MODID + ":textures/blocks/duna_sands.png")
+				.withColor(0.72F, 0.43F, 0.23F)
+				.withTraits(new CBT_Atmosphere(Fluids.DUNAAIR, 0.28D), new CBT_Temperature(41)));
+
 		runTests();
 	}
 
@@ -467,7 +481,8 @@ public class SolarSystem {
 		JOOL("jool"), //pain
 		SARNUS("sarnus"),
 		URANUS("uranus"),
-		NEPTUNE("neptune");
+		NEPTUNE("neptune"),
+		SIROCCO("sirocco");
 		// TEKTO("tekto");
 
 		public String name;
@@ -847,7 +862,7 @@ public class SolarSystem {
 
 				double sunAngularRadius =
 					Math.atan(
-						SolarSystem.kerbol.radiusKm /
+						metric.body.getStar().radiusKm /
 							sunDistance
 					);
 
@@ -1016,12 +1031,27 @@ public class SolarSystem {
 
 	// Get a number of buckets of fuel required to travel somewhere, (halved, since we're assuming bipropellant)
 	public static int getCostBetween(CelestialBody from, CelestialBody to, int mass, int thrust, int isp, boolean fromOrbit, boolean toOrbit) {
+		return getCostBetween(from, to, mass, thrust, isp, fromOrbit, toOrbit, getDeltaVBetween(from, to));
+	}
+
+	public static boolean isSiroccoRoute(CelestialBody from, CelestialBody to, boolean fromOrbit, boolean toOrbit) {
+		if(from == null || to == null || fromOrbit || toOrbit) return false;
+		return from.type == Body.KERBIN && to.type == Body.SIROCCO || from.type == Body.SIROCCO && to.type == Body.KERBIN;
+	}
+
+	public static int getSiroccoFuelCost(CelestialBody from, CelestialBody to, int mass, int thrust, int isp) {
+		// The existing flight sequence abstracts cruise. Budget a fixed transfer burn for this route only.
+		return getCostBetween(from, to, mass, thrust, isp, false, false, 45_000);
+	}
+
+	private static int getCostBetween(CelestialBody from, CelestialBody to, int mass, int thrust, int isp,
+			boolean fromOrbit, boolean toOrbit, double transferDeltaV) {
 		double fromDrag = getAtmosphericDrag(from.getTrait(CBT_Atmosphere.class));
 		double toDrag = getAtmosphericDrag(to.getTrait(CBT_Atmosphere.class));
 
 		// Scale deltaV to gameplay-friendly numbers
 		double launchDV = fromOrbit ? 0 : SolarSystem.getLiftoffDeltaV(from, mass, thrust, fromDrag) * 0.4;
-		double travelDV = SolarSystem.getDeltaVBetween(from, to) * 0.4;
+		double travelDV = transferDeltaV * 0.4;
 		double landerDV = toOrbit ? 0 : SolarSystem.getLandingDeltaV(to, mass, thrust, toDrag) * 0.4;
 
 		double totalDV = launchDV + travelDV + landerDV;
@@ -1091,6 +1121,7 @@ public class SolarSystem {
 	// Does not currently support travelling to the main body (Sol)
 	// Our structure doesn't currently require this, but if it does, go annoy Mellow to add it lmao
 	public static double getDeltaVBetween(CelestialBody start, CelestialBody end) {
+		if(start.getStar() != end.getStar()) return Double.POSITIVE_INFINITY;
 		return calculateHohmannTransfer(start, end);
 	}
 

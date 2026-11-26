@@ -2,6 +2,7 @@ package com.hbm.world.progression;
 
 import java.io.File;
 import java.util.EnumSet;
+import com.hbm.config.SandwormConfig;
 import net.minecraft.entity.boss.EntityDragon;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.World;
@@ -18,7 +19,8 @@ public final class BossProgression extends WorldSavedData {
     public enum Boss {
         ENDER_DRAGON("EnderDragon", null),
         WITHER_STORM("WitherStorm", ENDER_DRAGON),
-        PRISMARINE_COLOSSUS("PrismarineColossus", WITHER_STORM);
+        PRISMARINE_COLOSSUS("PrismarineColossus", WITHER_STORM),
+        SANDWORM("Sandworm", null);
 
         private final String saveKey;
         private final Boss prerequisite;
@@ -32,6 +34,7 @@ public final class BossProgression extends WorldSavedData {
     private final EnumSet<Boss> defeated = EnumSet.noneOf(Boss.class);
     private boolean witherStormBypass;
     private boolean legacyEndChecked;
+    private boolean alienSteelAcquired;
 
     public BossProgression(String name) {
         super(name);
@@ -59,6 +62,20 @@ public final class BossProgression extends WorldSavedData {
 
     public void recordDefeat(Boss boss) {
         if(defeated.add(boss)) markDirty();
+    }
+
+    public boolean hasAlienSteel() {
+        return alienSteelAcquired;
+    }
+
+    public static boolean canVisitSirocco(World world) {
+        return !SandwormConfig.surface.requireAlienSteel || get(world).hasAlienSteel();
+    }
+
+    public void recordAlienSteel() {
+        if(alienSteelAcquired) return;
+        alienSteelAcquired = true;
+        markDirty();
     }
 
     public boolean isWitherStormBypassEnabled() {
@@ -91,6 +108,7 @@ public final class BossProgression extends WorldSavedData {
         }
         witherStormBypass = tag.getBoolean("WitherStormBypass");
         legacyEndChecked = tag.getBoolean("LegacyEndChecked");
+        alienSteelAcquired = tag.getBoolean("AlienSteelAcquired");
     }
 
     @Override public void writeToNBT(NBTTagCompound tag) {
@@ -99,6 +117,7 @@ public final class BossProgression extends WorldSavedData {
         tag.setTag("Defeated", milestones);
         tag.setBoolean("WitherStormBypass", witherStormBypass);
         tag.setBoolean("LegacyEndChecked", legacyEndChecked);
+        tag.setBoolean("AlienSteelAcquired", alienSteelAcquired);
     }
 
     public static final class Events {

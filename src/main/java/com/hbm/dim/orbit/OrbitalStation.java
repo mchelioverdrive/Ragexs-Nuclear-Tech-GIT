@@ -128,7 +128,7 @@ public class OrbitalStation {
 	}
 
 	private boolean canTravel(CelestialBody from, CelestialBody to) {
-		if(engines.size() == 0) return false;
+		if(engines.size() == 0 || from.getStar() != to.getStar()) return false;
 
 		double deltaV = SolarSystem.getDeltaVBetween(from, to) /10; //ksp vs irl scaling
 		int shipMass = 200_000; // Always static, to not punish building big cool stations

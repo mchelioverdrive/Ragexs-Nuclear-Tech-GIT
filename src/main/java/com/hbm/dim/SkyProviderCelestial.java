@@ -198,7 +198,7 @@ public class SkyProviderCelestial extends IRenderHandler {
 			double sunSize = SolarSystem.calculateSunSize(body);
 			double coronaSize = sunSize * (3 - MathHelper.clamp_float(pressure, 0.0F, 1.0F));
 
-			renderSun(partialTicks, world, mc, SolarSystem.kerbol, sunSize, coronaSize, visibility, pressure);
+			renderSun(partialTicks, world, mc, body.getStar(), sunSize, coronaSize, visibility, pressure);
 
 			float blendAmount = hasAtmosphere ? MathHelper.clamp_float(1 - world.getSunBrightnessFactor(partialTicks), 0.25F, 1F) : 1F;
 

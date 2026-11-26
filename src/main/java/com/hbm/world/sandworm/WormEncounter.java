@@ -14,7 +14,7 @@ public final class WormEncounter {
     public double sourceX, sourceY, sourceZ;
     public int[] doors, rotations;
     public final java.util.Set<UUID> sparks = new java.util.HashSet<UUID>();
-    public boolean brainDead, heartDead, canceled, cleaned, exteriorRetired;
+    public boolean brainDead, heartDead, canceled, cleaned, exteriorRetired, natural;
     public long lastActive, completedAt;
     public transient int brainMissing, heartMissing;
     public boolean complete() { return brainDead && heartDead; }
@@ -66,6 +66,7 @@ public final class WormEncounter {
         n.setInteger("build", buildCursor); n.setInteger("cleanup", cleanupCursor); n.setLong("spawns", roomSpawns);
         n.setBoolean("brainDead", brainDead); n.setBoolean("heartDead", heartDead); n.setBoolean("canceled", canceled);
         n.setBoolean("cleaned", cleaned); n.setBoolean("exteriorRetired", exteriorRetired);
+        n.setBoolean("natural", natural);
         n.setLong("lastActive", lastActive); n.setLong("completedAt", completedAt); return n;
     }
     public static WormEncounter read(NBTTagCompound n) {
@@ -82,6 +83,7 @@ public final class WormEncounter {
         e.cleanupCursor = Math.max(0, Math.min(e.volume(), n.getInteger("cleanup")));
         e.roomSpawns = n.getLong("spawns"); e.brainDead = n.getBoolean("brainDead"); e.heartDead = n.getBoolean("heartDead");
         e.canceled = n.getBoolean("canceled"); e.cleaned = n.getBoolean("cleaned"); e.exteriorRetired = n.getBoolean("exteriorRetired");
+        e.natural = n.getBoolean("natural");
         e.lastActive = n.getLong("lastActive"); e.completedAt = n.getLong("completedAt"); return e;
     }
 }

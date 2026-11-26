@@ -10,6 +10,7 @@ import java.util.Map.Entry;
 
 import com.hbm.blocks.BlockDummyable;
 import com.hbm.blocks.ModBlocks;
+import com.hbm.config.SpaceConfig;
 import com.hbm.dim.CelestialBody;
 import com.hbm.dim.SolarSystem;
 import com.hbm.entity.missile.EntityRideableRocket;
@@ -30,6 +31,7 @@ import com.hbm.lib.Library;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
 import com.hbm.util.fauxpointtwelve.DirPos;
+import com.hbm.world.progression.BossProgression;
 
 import api.hbm.energymk2.IBatteryItem;
 import api.hbm.energymk2.IEnergyReceiverMK2;
@@ -46,6 +48,7 @@ import net.minecraft.inventory.Container;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.util.ChatComponentTranslation;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
@@ -260,6 +263,12 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 	}
 
 	public void launch(EntityPlayer player) {
+		if(hasDrive() && ItemVOTVdrive.getDestination(slots[1]).body == SolarSystem.Body.SIROCCO
+				&& worldObj.provider.dimensionId != SpaceConfig.siroccoDimension
+				&& !BossProgression.canVisitSirocco(worldObj)) {
+			if(player != null) player.addChatMessage(new ChatComponentTranslation("sandworm.alienSteelRequired"));
+			return;
+		}
 		if(!canLaunch()) return;
 
 		EntityRideableRocket rocket = new EntityRideableRocket(worldObj, xCoord + 0.5F, yCoord + 3.0F, zCoord + 0.5F, slots[0]).withProgram(slots[1]).launchedBy(player);
@@ -303,6 +312,8 @@ public class TileEntityLaunchPadRocket extends TileEntityMachineBase implements 
 		}
 
 		SolarSystem.Body target = ItemVOTVdrive.getDestination(slots[1]).body;
+		if(!worldObj.isRemote && target == SolarSystem.Body.SIROCCO && worldObj.provider.dimensionId != SpaceConfig.siroccoDimension
+				&& !BossProgression.canVisitSirocco(worldObj)) return false;
 		if(target == SolarSystem.Body.ORBIT && rocket.capsule.part != ModItems.rp_capsule_20 && rocket.capsule.part != ModItems.rp_station_core_20)
 			return false;
 

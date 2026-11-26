@@ -19,6 +19,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
+import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.server.MinecraftServer;
@@ -38,6 +39,8 @@ public final class WormEncounters extends WorldSavedData {
     private final Map<UUID, Long> reentryAfter = new HashMap<UUID, Long>();
     private final Map<UUID, Entity> loaded = new HashMap<UUID, Entity>();
     private final Map<UUID, Boolean> transfers = new LinkedHashMap<UUID, Boolean>();
+    private final Map<Integer, Long> lastNaturalSpawn = new HashMap<Integer, Long>();
+    public final WormSurfaceEncounters surface = new WormSurfaceEncounters();
     private int nextSlot, turn;
     private int savedDimension = SandwormConfig.dimension;
     public WormEncounters() { super(NAME); }
@@ -79,6 +82,19 @@ public final class WormEncounters extends WorldSavedData {
         for(WormEncounter e : records.values()) if(!e.retired()) active++;
         return active < SandwormConfig.maxEncounters && nextSlot < 1000000;
     }
+    boolean hasNaturalRoom(int dimension, long now) {
+        Long last = lastNaturalSpawn.get(dimension);
+        if(last != null && now - last < SandwormConfig.surface.cooldown) return false;
+        int active = 0;
+        for(WormEncounter e : records.values()) {
+            if(e.sourceDimension == dimension && !e.retired() && ++active >= SandwormConfig.surface.maxPerDimension) return false;
+        }
+        return room();
+    }
+    void recordNaturalSpawn(int dimension, long now) {
+        lastNaturalSpawn.put(dimension, now);
+        markDirty();
+    }
     public WormEncounter admit(EntitySandworm worm) {
         WormEncounter e = find(worm.getUniqueID());
         if(e == null) {
@@ -86,6 +102,7 @@ public final class WormEncounters extends WorldSavedData {
             if(!room() || worm.dimension == SandwormConfig.dimension) return null;
             e = new WormEncounter(); e.id = worm.getUniqueID(); e.slot = nextSlot++;
             e.sourceDimension = worm.dimension; e.sourceX = worm.posX; e.sourceY = worm.posY; e.sourceZ = worm.posZ;
+            e.natural = worm.naturalSpawn;
             e.rows = SandwormConfig.rows; e.lastActive = time(); e.generateLayout(); records.put(e.id, e); slots.put(e.slot, e); markDirty();
         }
         if(!track(worm)) return null;
@@ -106,10 +123,18 @@ public final class WormEncounters extends WorldSavedData {
         WormEncounter e = find(organ.encounter);
         if(e != null && organ instanceof EntitySpark && e.sparks.remove(organ.getUniqueID())) markDirty();
         if(e == null || e.retired()) return;
-        if(organ instanceof EntityBrain && e.spawnId("brain").equals(organ.getUniqueID())) e.brainDead = true;
-        if(organ instanceof EntityHeart && e.spawnId("heart").equals(organ.getUniqueID())) e.heartDead = true;
+        if(organ instanceof EntityBrain && e.spawnId("brain").equals(organ.getUniqueID()) && !e.brainDead) e.brainDead = true;
+        else if(organ instanceof EntityHeart && e.spawnId("heart").equals(organ.getUniqueID()) && !e.heartDead) e.heartDead = true;
+        else return;
         if(e.complete()) {
             e.completedAt = time();
+            com.hbm.world.progression.BossProgression.get(organ.worldObj)
+                    .recordDefeat(com.hbm.world.progression.BossProgression.Boss.SANDWORM);
+            if(organ.worldObj.getGameRules().getGameRuleBooleanValue("doMobLoot")) {
+                organ.entityDropItem(new ItemStack(WormContent.tumor, 2), 0.5F);
+                organ.entityDropItem(new ItemStack(com.hbm.items.ModItems.ingot_saturnite, 4), 0.5F);
+                organ.entityDropItem(new ItemStack(com.hbm.items.ModItems.circuit_targeting_tier6), 0.5F);
+            }
             for(Object o : MinecraftServer.getServer().getConfigurationManager().playerEntityList) {
                 EntityPlayerMP p = (EntityPlayerMP)o;
                 Return r = players.get(p.getUniqueID());
@@ -329,6 +354,14 @@ public final class WormEncounters extends WorldSavedData {
             NBTTagCompound g = new NBTTagCompound(); g.setString("player", entry.getKey().toString()); g.setLong("until", entry.getValue()); grace.appendTag(g);
         }
         n.setTag("returnGrace", grace);
+        NBTTagList naturalSpawns = new NBTTagList();
+        for(Map.Entry<Integer, Long> entry : lastNaturalSpawn.entrySet()) {
+            NBTTagCompound spawn = new NBTTagCompound();
+            spawn.setInteger("dimension", entry.getKey());
+            spawn.setLong("time", entry.getValue());
+            naturalSpawns.appendTag(spawn);
+        }
+        n.setTag("lastNaturalSpawn", naturalSpawns);
     }
     @Override public void readFromNBT(NBTTagCompound n) {
         savedDimension = n.getInteger("dimension");
@@ -336,6 +369,12 @@ public final class WormEncounters extends WorldSavedData {
         records.clear(); slots.clear(); players.clear(); reentryAfter.clear(); loaded.clear(); transfers.clear(); nextSlot = n.getInteger("nextSlot");
         NBTTagList encounters = n.getTagList("encounters", 10);
         for(int i = 0; i < encounters.tagCount(); i++) { WormEncounter e = WormEncounter.read(encounters.getCompoundTagAt(i)); records.put(e.id, e); slots.put(e.slot, e); nextSlot = Math.max(nextSlot, e.slot + 1); }
+        lastNaturalSpawn.clear();
+        NBTTagList naturalSpawns = n.getTagList("lastNaturalSpawn", 10);
+        for(int i = 0; i < naturalSpawns.tagCount(); i++) {
+            NBTTagCompound spawn = naturalSpawns.getCompoundTagAt(i);
+            lastNaturalSpawn.put(spawn.getInteger("dimension"), spawn.getLong("time"));
+        }
         NBTTagList returns = n.getTagList("returns", 10);
         for(int i = 0; i < returns.tagCount(); i++) {
             NBTTagCompound p = returns.getCompoundTagAt(i); Return r = new Return();

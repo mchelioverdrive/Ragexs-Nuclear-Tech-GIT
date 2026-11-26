@@ -8,6 +8,8 @@ import com.hbm.dim.Ike.WorldProviderIke;
 import com.hbm.dim.dres.WorldProviderDres;
 import com.hbm.dim.duna.WorldGeneratorDuna;
 import com.hbm.dim.duna.WorldProviderDuna;
+import com.hbm.dim.sirocco.WorldProviderSirocco;
+import com.hbm.dim.sirocco.WorldGeneratorSirocco;
 import com.hbm.dim.eve.WorldGeneratorEve;
 import com.hbm.dim.eve.WorldProviderEve;
 import com.hbm.dim.jupiter.WorldProviderJupiter;
@@ -49,6 +51,7 @@ public class PlanetGen {
 		GameRegistry.registerWorldGenerator(new WorldGeneratorLaythe(), 1);
 		GameRegistry.registerWorldGenerator(new WorldGeneratorTekto(), 1);
 		GameRegistry.registerWorldGenerator(new WorldGeneratorSun(), 1);
+		GameRegistry.registerWorldGenerator(new WorldGeneratorSirocco(), 1);
 
 		registerDimension(SpaceConfig.moonDimension, WorldProviderMoon.class);
 		registerDimension(SpaceConfig.dunaDimension, WorldProviderDuna.class);
@@ -65,6 +68,11 @@ public class PlanetGen {
 		registerDimension(SpaceConfig.saturnDimension, WorldProviderSaturn.class);
 		registerDimension(SpaceConfig.uranusDimension, WorldProviderUranus.class);
 		registerDimension(SpaceConfig.neptuneDimension, WorldProviderNeptune.class);
+		int sirocco = SpaceConfig.siroccoDimension;
+		if(DimensionManager.isDimensionRegistered(sirocco)
+				|| !DimensionManager.registerProviderType(sirocco, WorldProviderSirocco.class, false))
+			throw new IllegalStateException("Sirocco dimension ID " + sirocco + " is occupied. Choose an unused 17.16_siroccoDimension.");
+		DimensionManager.registerDimension(sirocco, sirocco);
 
     }
 

@@ -2,11 +2,12 @@ package com.hbm.config;
 
 import net.minecraftforge.common.config.Configuration;
 
-/** Startup configuration, deliberately isolated from RNT's other fluids and bosses. */
+/** Interior configuration and reloadable surface encounter settings. */
 public final class SandwormConfig {
     private SandwormConfig() { }
-    public static int dimension = -38, maxEncounters = 8, naturalInterval = 24000;
-    public static boolean natural = false, swallowCreative = false;
+    public static int dimension = -38, maxEncounters = 8;
+    public static boolean swallowCreative = false;
+    public static volatile SurfaceValues surface = new SurfaceValues(new Configuration());
     public static int returnGrace = 200;
     public static double speed = 0.7, targetRange = 128, swallowRadius = 6;
     public static int brainHealth = 200, brainDamage = 10, brainInterval = 100;
@@ -22,8 +23,7 @@ public final class SandwormConfig {
     public static void loadFromConfig(Configuration c) {
         dimension = integer(c, "dimensionID", -38, -4096, 4096, "Dedicated interior dimension. Must be unused; never change for an existing save.");
         if(dimension == 0 || dimension == 1 || dimension == -1) throw new IllegalArgumentException("Sandworm dimension must not replace a vanilla dimension");
-        natural = c.get(category(), "naturalSpawning", false, "Enable rare desert encounters in the overworld. Manual summoning is independent.").getBoolean(false);
-        naturalInterval = integer(c, "naturalSpawnInterval", 24000, 1200, 24000000, "Ticks between one bounded natural spawn attempt.");
+        surface = new SurfaceValues(c);
         maxEncounters = integer(c, "maxActiveEncounters", 8, 1, 64, "Includes unloaded and generating encounters.");
         speed = decimal(c, "movementSpeed", 0.7, 0.1, 1.5, "Blocks per tick; turn rate preserves continuous body curves.");
         targetRange = decimal(c, "targetRange", 128, 24, 192, "Player and dropped worm bait attraction range.");
@@ -58,6 +58,23 @@ public final class SandwormConfig {
         abandonTicks = integer(c, "abandonedTicks", 1728000, 12000, 24000000, "Idle empty encounter expiration; saved return dependencies prevent expiration. All progress is always saved.");
     }
     private static String category() { return CommonConfig.CATEGORY_MOBS + ".sandworm"; }
+
+    public static final class SurfaceValues {
+        public final boolean natural, requireAlienSteel, extrasolarOnly, movementDetection, structures;
+        public final int maxPerDimension, cooldown, arrivalGrace, checkInterval;
+
+        public SurfaceValues(Configuration config) {
+            natural = config.get(category(), "naturalSpawning", true, "Enable natural Sandworm encounters. Existing saves can keep their previous opt-out.").getBoolean(true);
+            requireAlienSteel = config.get(category(), "requireAlienSteel", true, "Require the world's alien steel milestone for extrasolar departure and natural encounters.").getBoolean(true);
+            extrasolarOnly = config.get(category(), "restrictNaturalToExtrasolar", true, "Allow natural encounters only on Sirocco. Disable to also allow Overworld deserts.").getBoolean(true);
+            movementDetection = config.get(category(), "movementDetection", true, "Surface movement builds encounter activity faster and attracts pursuing Sandworms.").getBoolean(true);
+            structures = config.get(category(), "planetaryStructures", true, "Generate expedition ruins and emergence scars in new Sirocco chunks.").getBoolean(true);
+            maxPerDimension = integer(config, "maxActivePerDimension", 1, 1, 64, "Natural spawning counts active loaded and unloaded encounters in the dimension.");
+            cooldown = integer(config, "encounterCooldownTicks", 48000, 0, 24000000, "Minimum time between successful natural spawns in one dimension.");
+            arrivalGrace = integer(config, "arrivalGraceTicks", 6000, 0, 24000000, "Grace on arrival or login before a natural Sandworm can pursue this player.");
+            checkInterval = integer(config, "naturalSpawnInterval", 200, 20, 24000000, "Ticks between natural encounter checks.");
+        }
+    }
     private static int integer(Configuration c, String k, int d, int min, int max, String help) {
         return Math.max(min, Math.min(max, c.get(category(), k, d, help).getInt(d)));
     }

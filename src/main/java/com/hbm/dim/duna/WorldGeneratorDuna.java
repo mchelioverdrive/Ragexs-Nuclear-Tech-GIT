@@ -18,6 +18,7 @@ import com.hbm.world.generator.DungeonToolbox;
 import cpw.mods.fml.common.IWorldGenerator;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.IChunkProvider;
+import net.minecraft.world.gen.feature.WorldGenMinable;
 import net.minecraft.util.ResourceLocation;
 
 public class WorldGeneratorDuna implements IWorldGenerator {
@@ -82,8 +83,10 @@ public class WorldGeneratorDuna implements IWorldGenerator {
 		//DungeonToolbox.generateOre(world, rand, i, j, 8, 9, 0, 16, ModBlocks.ore_basalt, 2, ModBlocks.basalt);
 		DungeonToolbox.generateOre(world, rand, i, j, 2, 4, 0, 16, ModBlocks.ore_basalt, 3, ModBlocks.basalt);
 		DungeonToolbox.generateOre(world, rand, i, j, 6, 10, 0, 16, ModBlocks.ore_basalt, 4, ModBlocks.basalt);
-
-
+		// WorldGenMinable offsets its center by eight. Keep the deposit inside this chunk.
+		if(rand.nextInt(10) == 0)
+			new WorldGenMinable(ModBlocks.ore_alien, meta, 24, ModBlocks.duna_rock)
+				.generate(world, rand, i, 24 + rand.nextInt(20), j);
 	}
 
 }

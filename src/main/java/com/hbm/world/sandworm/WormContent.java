@@ -68,6 +68,7 @@ public final class WormContent {
         }.setUnlocalizedName("worm_bait").setTextureName("hbm:worm_bait").setCreativeTab(CreativeTabs.tabMisc);
         GameRegistry.registerItem(bait, "worm_bait");
         GameRegistry.addShapelessRecipe(new ItemStack(bait, 2), Items.rotten_flesh, Items.slime_ball);
+        GameRegistry.addShapelessRecipe(new ItemStack(com.hbm.items.ModItems.biomass_compressed, 4), tumor);
     }
     private static Block solid(String name) {
         Block b = new Block(Material.clay) { };

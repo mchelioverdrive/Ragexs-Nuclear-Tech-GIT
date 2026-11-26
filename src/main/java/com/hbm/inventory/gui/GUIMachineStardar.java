@@ -174,7 +174,9 @@ public class GUIMachineStardar extends GuiInfoContainer {
 					int py = (int) (starY + poi.offsetY);
 		
 					// Has a small buffer area around the POI to improve click targeting
-					drawCustomInfoStat(mx - guiLeft, my - guiTop, px - 2, py - 2, 12, 12, px + 8, py + 10, I18nUtil.resolveKey("body." + poi.body.name), "Processing Tier: " + poi.body.processingLevel);
+					String detail = poi.body.type == SolarSystem.Body.SIROCCO && !star.siroccoUnlocked
+							? I18nUtil.resolveKey("sandworm.alienSteelRequired") : "Processing Tier: " + poi.body.processingLevel;
+					drawCustomInfoStat(mx - guiLeft, my - guiTop, px - 2, py - 2, 12, 12, px + 8, py + 10, I18nUtil.resolveKey("body." + poi.body.name), detail);
 				}
 			} else {
 				pushScissor(9, 9, 158, 108);
@@ -209,6 +211,8 @@ public class GUIMachineStardar extends GuiInfoContainer {
 				if(slotStack.getItem() == ModItems.full_drive) {
 					if(ItemVOTVdrive.getDestination(slotStack).body == SolarSystem.Body.ORBIT) {
 						fontRendererObj.drawString("Orbital station ready", 10, 128, 0x00FF00);
+					} else if(ItemVOTVdrive.getDestination(slotStack).body == SolarSystem.Body.SIROCCO && !star.siroccoUnlocked) {
+						fontRendererObj.drawString(I18nUtil.resolveKey("sandworm.siroccoLocked"), 10, 128, 0xFF5555);
 					} else {
 						fontRendererObj.drawString("Loading heightmap...", 10, 128, 0x00FF00);
 						fontRendererObj.drawString("Please wait", 10, 148, 0x00FF00);

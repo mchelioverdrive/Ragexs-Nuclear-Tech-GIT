@@ -10,6 +10,8 @@ import com.hbm.world.sandworm.WormEncounters;
 import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint;
 import cpw.mods.fml.common.registry.IEntityAdditionalSpawnData;
 import io.netty.buffer.ByteBuf;
+import net.minecraft.block.Block;
+import net.minecraft.block.material.Material;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.IEntityMultiPart;
 import net.minecraft.entity.boss.EntityDragonPart;
@@ -21,6 +23,7 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
+import net.minecraft.world.WorldServer;
 
 /** One tracked entity; eleven native multipart hitboxes and one server-owned articulated pose. */
 public final class EntitySandworm extends Entity implements IEntityMultiPart, IEntityAdditionalSpawnData {
@@ -36,6 +39,9 @@ public final class EntitySandworm extends Entity implements IEntityMultiPart, IE
     private double homeX, homeY, homeZ;
     private boolean homeSet, surface;
     public boolean registered;
+    public boolean naturalSpawn;
+    private int emergenceTick = -1, retreatUntil;
+    private int emergenceX, emergenceY, emergenceZ;
     public EntitySandworm(World w) {
         super(w); setSize(16, 16); noClip = true; isImmuneToFire = true; ignoreFrustumCheck = true;
         for(int i = 0; i < SEGMENTS; i++) parts[i] = new EntityDragonPart(this, i == 0 ? "mouth" : i == SEGMENTS - 1 ? "tail" : "body" + i, i == SEGMENTS - 1 ? 10 : 16, i == SEGMENTS - 1 ? 10 : 16);
@@ -79,8 +85,14 @@ public final class EntitySandworm extends Entity implements IEntityMultiPart, IE
                 if(record != null) { record.exteriorRetired = true; data.markDirty(); }
                 setDead(); return;
             }
-            if(!homeSet) { homeSet = true; homeX = posX; homeY = posY; homeZ = posZ; chooseTarget(); }
-            if(ticksExisted % 20 == 0 || getDistanceSq(targetX, targetY, targetZ) < 100) chooseTarget();
+            boolean newHome = !homeSet;
+            if(newHome) {
+                homeSet = true; homeX = posX; homeY = posY; homeZ = posZ;
+                if(record.natural) { targetX = homeX; targetY = homeY; targetZ = homeZ; }
+            }
+            if(record.natural) {
+                if(newHome || ticksExisted % 20 == 0) chooseNaturalTarget(record, data);
+            } else if(newHome || ticksExisted % 20 == 0 || getDistanceSq(targetX, targetY, targetZ) < 100) chooseTarget();
             float desiredYaw = (float)(Math.atan2(targetZ - posZ, targetX - posX) * 180 / Math.PI) - 90;
             double horizontal = Math.hypot(targetX - posX, targetZ - posZ);
             float desiredPitch = (float)(-Math.atan2(targetY - posY, horizontal) * 180 / Math.PI);
@@ -107,7 +119,7 @@ public final class EntitySandworm extends Entity implements IEntityMultiPart, IE
                 pose[i][4] = -Math.atan2(dy, Math.hypot(dx, dz)) * 180 / Math.PI;
             }
             if(ticksExisted % 5 == 0) {
-                mouth(record, data);
+                if(!record.natural || emergenceTick >= 0 && ticksExisted >= emergenceTick) mouth(record, data);
                 PacketDispatcher.wrapper.sendToAllAround(new SandwormPosePacket(this), new TargetPoint(dimension, posX, posY, posZ, 384));
             }
         }
@@ -120,6 +132,7 @@ public final class EntitySandworm extends Entity implements IEntityMultiPart, IE
         for(Object o : worldObj.playerEntities) {
             if(!(o instanceof EntityPlayerMP)) continue;
             EntityPlayerMP p = (EntityPlayerMP)o;
+            if(e.natural && !data.surface.mayPursue(p, data.time())) continue;
             if(p.getDistanceSq(x, y - 1, z) <= radius * radius) data.swallow(p, e);
             else if(p.ticksExisted % 20 == 0) {
                 // Native body parts are not independently ticking entities; collision effects stay on the server.
@@ -135,11 +148,81 @@ public final class EntitySandworm extends Entity implements IEntityMultiPart, IE
         List<EntityItem> bait = worldObj.getEntitiesWithinAABB(EntityItem.class, AxisAlignedBB.getBoundingBox(x - radius, y - radius, z - radius, x + radius, y + radius, z + radius));
         for(EntityItem item : bait) if(item.getEntityItem() != null && item.getEntityItem().getItem() == WormContent.bait) item.setDead();
     }
+    private EntityItem nearestBait(double range) {
+        List<EntityItem> bait = worldObj.getEntitiesWithinAABB(EntityItem.class, boundingBox.expand(range, range, range));
+        EntityItem nearest = null; double best = range * range;
+        for(EntityItem item : bait) if(item.getEntityItem() != null && item.getEntityItem().getItem() == WormContent.bait && getDistanceSqToEntity(item) < best) { best = getDistanceSqToEntity(item); nearest = item; }
+        return nearest;
+    }
+
+    private void chooseNaturalTarget(WormEncounter record, WormEncounters data) {
+        if(emergenceTick >= 0) {
+            if(ticksExisted >= emergenceTick + 120 || !loaded(emergenceX, emergenceZ, 2)) {
+                emergenceTick = -1;
+                retreatUntil = ticksExisted + 120;
+            } else {
+                targetX = emergenceX + 0.5;
+                targetZ = emergenceZ + 0.5;
+                targetY = emergenceY + (ticksExisted < emergenceTick ? -10 : ticksExisted - emergenceTick < 80 ? 4 : -15);
+                if(ticksExisted <= emergenceTick) {
+                    Block sand = worldObj.getBlock(emergenceX, emergenceY - 1, emergenceZ);
+                    ((WorldServer)worldObj).func_147487_a("blockcrack_" + Block.getIdFromBlock(sand) + "_0",
+                            targetX, emergenceY + 0.15, targetZ, 18, 2.2, 0.12, 2.2, 0.15);
+                    if(ticksExisted == emergenceTick - 60 || ticksExisted == emergenceTick)
+                        worldObj.playSoundEffect(targetX, emergenceY, targetZ, "step.sand", 3F, 0.5F);
+                }
+                return;
+            }
+        }
+
+        double range = SandwormConfig.targetRange;
+        Entity nearest = nearestBait(range);
+        if(nearest == null && ticksExisted >= retreatUntil) {
+            double best = range * range;
+            for(Object entity : worldObj.playerEntities) {
+                if(!(entity instanceof EntityPlayerMP)) continue;
+                EntityPlayerMP player = (EntityPlayerMP)entity;
+                if(!data.surface.mayPursue(player, data.time()) || !data.surface.isOnSand(player)) continue;
+                double dx = player.posX - posX, dz = player.posZ - posZ;
+                double score = (dx * dx + dz * dz) * (SandwormConfig.surface.movementDetection && data.surface.vibrates(player) ? 0.55 : 1);
+                if(score < best) { best = score; nearest = player; }
+            }
+        }
+        if(nearest != null && loaded(nearest.posX, nearest.posZ, 2)) {
+            int x = MathHelper.floor_double(nearest.posX), z = MathHelper.floor_double(nearest.posZ);
+            int ground = worldObj.getHeightValue(x, z);
+            if(ground > 8 && Math.abs(nearest.posY - ground) <= 2.5
+                    && worldObj.getBlock(x, ground - 1, z).getMaterial() == Material.sand) {
+                targetX = nearest.posX;
+                targetZ = nearest.posZ;
+                targetY = Math.max(8, ground - 20);
+                if(record.ready() && ticksExisted >= retreatUntil && Math.hypot(posX - targetX, posZ - targetZ) < 22) {
+                    emergenceX = x;
+                    emergenceY = ground;
+                    emergenceZ = z;
+                    emergenceTick = (ticksExisted / 20 + 4) * 20;
+                }
+                return;
+            }
+        }
+
+        if(getDistanceSq(targetX, targetY, targetZ) < 100 || targetY > posY - 8 && ticksExisted < retreatUntil) {
+            for(int attempt = 0; attempt < 4; attempt++) {
+                double angle = rand.nextDouble() * Math.PI * 2;
+                double x = homeX + Math.sin(angle) * 48, z = homeZ + Math.cos(angle) * 48;
+                if(!loaded(x, z, 10)) continue;
+                targetX = x;
+                targetZ = z;
+                targetY = Math.max(8, worldObj.getHeightValue(MathHelper.floor_double(x), MathHelper.floor_double(z)) - 30);
+                return;
+            }
+        }
+    }
+
     private void chooseTarget() {
         double range = SandwormConfig.targetRange;
-        List<EntityItem> bait = worldObj.getEntitiesWithinAABB(EntityItem.class, boundingBox.expand(range, range, range));
-        Entity nearest = null; double best = range * range;
-        for(EntityItem item : bait) if(item.getEntityItem() != null && item.getEntityItem().getItem() == WormContent.bait && getDistanceSqToEntity(item) < best) { best = getDistanceSqToEntity(item); nearest = item; }
+        Entity nearest = nearestBait(range);
+        double best = range * range;
         if(nearest == null) for(Object o : worldObj.playerEntities) {
             EntityPlayerMP p = (EntityPlayerMP)o;
             if(p.isEntityAlive() && (SandwormConfig.swallowCreative || !p.capabilities.isCreativeMode) && getDistanceSqToEntity(p) < best) { best = getDistanceSqToEntity(p); nearest = p; }

@@ -1039,3 +1039,9 @@
 - Select Squirrel Stapler at world creation or use `level-type=squirrelstapler` on a dedicated server. Follow the trail east from spawn to the cabin for a survey map, an RTM bolt-action rifle, ammunition and a stapler.
 - Hunt each day's quota, then sneak-use the stapler on the cabin's log rack with today's trophies and staples in inventory. The world saves the shared tally, unlocks cabin sleep between days and progresses through a scripted finale after the last deposit.
 - Later days add darker fog, distant sounds, silhouettes, ghost squirrels and squirrel bears. Reload the mode settings under `12_mobs.squirrelstapler` and use `/squirrelstapler` for operator controls.
+
+2026-11-26 00:09 — Add Sirocco and late-game Sandworm encounters
+
+- Unlock the extrasolar desert planet Sirocco by obtaining Alien Steel. New Mars deposits supply the existing Alien Steel production chain. Chart a tier-3 destination drive and use an advanced crewed Hydrolox rocket with a return stage.
+- Explore dunes, plateaus and expedition remains under periodic sandstorms. Sustained activity on sand attracts an underground Sandworm after arrival grace. Surface tremors give players time to leave the sand.
+- Defeat the Brain and Heart for a separate saved boss milestone, Sandworm Tumors, Steel Alloy and a targeting circuit. Reload natural encounter limits, cooldown, arrival grace and structure generation under `12_mobs.sandworm`.
