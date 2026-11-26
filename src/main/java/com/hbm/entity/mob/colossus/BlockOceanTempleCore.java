@@ -2,6 +2,7 @@ package com.hbm.entity.mob.colossus;
 
 import com.hbm.config.ColossusConfig;
 import com.hbm.world.gen.structure.OceanTempleGenerator;
+import com.hbm.world.progression.BossProgression.Boss;
 
 import net.minecraft.block.BlockContainer;
 import net.minecraft.block.material.Material;
@@ -49,7 +50,7 @@ public final class BlockOceanTempleCore extends BlockContainer {
         @Override
         public void updateEntity() {
             if(worldObj.isRemote || activated || ColossusConfig.requireTempleInteraction
-                || !ColossusConfig.enabled || worldObj.getTotalWorldTime() % 20 != 0) return;
+                || !Boss.PRISMARINE_COLOSSUS.isEnabled() || worldObj.getTotalWorldTime() % 20 != 0) return;
             EntityPlayer player = worldObj.getClosestPlayer(xCoord + 0.5, yCoord + 1, zCoord + 0.5, 5);
             if(player != null) activate(player, false);
         }
@@ -61,7 +62,7 @@ public final class BlockOceanTempleCore extends BlockContainer {
                 return;
             }
             if(!EntityPrismarineColossus.progressionAllowsActivation(worldObj)) {
-                message(player, notify, "colossus.activation.locked");
+                if(notify) EntityPrismarineColossus.notifyProgressionBlock(player);
                 return;
             }
             if(!ColossusEncounters.get(worldObj).room()) {

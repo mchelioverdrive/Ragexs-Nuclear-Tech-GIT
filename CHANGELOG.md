@@ -1051,3 +1051,8 @@
 - Assemble a Deep Space Probe, pair it with a Satellite Control Interface in the ID-Linker, and launch it from an Overworld Soyuz platform. The saved mission follows an outbound course beyond Neptune and retains its telemetry and transmission log after loss of signal.
 - Default new configurations to `DEEP_SPACE_PROBE`. The first discovery opens the existing Phase 1 activation gate after the saved post-loss delay. Keep the `MARS`, `IMMEDIATE`, and `DISABLED` settings and existing invasion progress.
 - Reload probe settings under `21_gemini.probe` and inspect or advance missions with `/gemini probe`.
+
+2026-11-26 01:35 — Complete the Story Mode boss progression
+
+- Add Nether Bastions for the Giant Ghast, underground Basalt Crucibles for the Giant Magma Golem, and Hollow Spires ruins for the Giant Enderman. The arena cores check the shared world milestones, cap active fights across saves and use the existing combat mechanics. Enderman teleports at Hollow Spires stay within the court.
+- Fix Dragon defeat detection and legacy fountain import for the vanilla End. Preserve Wither Storm challenge mode, Ocean Temple activation, and the existing boss commands. Add player surveys, operator milestone controls, reloadable encounter settings, and first-defeat loot using existing items and industrial recipes.

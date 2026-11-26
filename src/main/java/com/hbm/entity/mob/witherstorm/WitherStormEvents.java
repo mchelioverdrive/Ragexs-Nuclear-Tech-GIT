@@ -112,8 +112,13 @@ public final class WitherStormEvents {
         return tile instanceof TileEntitySkull && ((TileEntitySkull)tile).func_145904_a() == 1;
     }
     private static boolean spawnFromRitual(World world, EntityPlayer player, double x, double y, double z, float yaw) {
-        if(!BossProgression.get(world).canSummon(Boss.WITHER_STORM)) {
-            player.addChatMessage(new ChatComponentText("An ancient power prevents the Command Block from activating. Defeat the Ender Dragon first."));
+        if(!Boss.WITHER_STORM.isEnabled()) {
+            player.addChatMessage(new ChatComponentText("Wither Storm rituals are disabled."));
+            return false;
+        }
+        Boss missing = BossProgression.get(world).missingPrerequisite(Boss.WITHER_STORM);
+        if(missing != null) {
+            player.addChatMessage(new ChatComponentText("An ancient power prevents the Command Block from activating. Defeat the " + missing.displayName + " first."));
             return false;
         }
         return WitherStormEncounters.get(world).room() && spawnInitial(world, x, y, z, yaw, false);

@@ -8,6 +8,9 @@ import java.util.UUID;
 
 import api.hbm.entity.IRadiationImmune;
 import com.hbm.config.GiantEndermanConfig;
+import com.hbm.world.progression.BossProgression;
+import com.hbm.world.progression.BossProgression.Arena;
+import com.hbm.world.progression.BossProgression.Boss;
 import com.hbm.entity.mob.colossus.EntityColossusPart;
 import com.hbm.entity.mob.colossus.EntityPrismarineColossus;
 import com.hbm.entity.mob.giantenderman.GiantEndermanPose.Action;
@@ -58,6 +61,7 @@ public final class EntityGiantEnderman extends EntityLiving implements IBossDisp
     private EntityPrismarineColossus finishing;
     private UUID provoker, lastStaring;
     private Vec3 destination, obstruction;
+    private Arena arena;
     private int recovery, teleportCooldown, throwCooldown, blockedTicks, sequence, stareTicks, targetMemory, searchDelay;
     private int localFrame, seenStart, seenAction = -1, blinkLock;
     private boolean activated, pendingRage, flankingGrab, dodgeRequested;
@@ -153,6 +157,13 @@ public final class EntityGiantEnderman extends EntityLiving implements IBossDisp
     }
 
     @Override public void onUpdate() {
+        if (!worldObj.isRemote && BossProgression.hasArenaOrigin(this)) {
+            arena = BossProgression.activeArena(this);
+            if (arena == null) {
+                setDead();
+                return;
+            }
+        }
         previousStride = stride;
         previousMoving = moving;
         previousLookYaw = watch(LOOK_YAW);
@@ -294,7 +305,10 @@ public final class EntityGiantEnderman extends EntityLiving implements IBossDisp
     }
 
     private boolean validTarget(EntityLivingBase candidate) {
-        return canHarm(candidate) && candidate.addedToChunk && getDistanceSqToEntity(candidate) <= GiantEndermanConfig.range * GiantEndermanConfig.range;
+        return canHarm(candidate) && candidate.addedToChunk
+            && (arena == null || arena.contains(candidate.posX, candidate.posZ, 30)
+                && candidate.posY >= arena.boss.floor - 1 && candidate.posY <= arena.boss.floor + 48)
+            && getDistanceSqToEntity(candidate) <= GiantEndermanConfig.range * GiantEndermanConfig.range;
     }
 
     boolean canHarm(EntityLivingBase candidate) {
@@ -345,6 +359,7 @@ public final class EntityGiantEnderman extends EntityLiving implements IBossDisp
         obstruction = null;
         for (double offset : STEERING) {
             double x = Math.sin(direction + offset) * speed, z = Math.cos(direction + offset) * speed;
+            if (arena != null && !arena.contains(posX + x, posZ + z, 23)) continue;
             AxisAlignedBB sweep = boundingBox.copy().contract(0.02, 0.04, 0.02).addCoord(x, 0, z);
             if (!GiantEndermanTerrain.loaded(worldObj, sweep)) continue;
             List<?> obstacles = worldObj.func_147461_a(sweep);
@@ -787,6 +802,7 @@ public final class EntityGiantEnderman extends EntityLiving implements IBossDisp
     public boolean safePosition(double x, double y, double z) {
         if (!Double.isFinite(x) || !Double.isFinite(y) || !Double.isFinite(z) || Math.abs(x) > 29999980
             || Math.abs(z) > 29999980 || y < 1 || y + HEIGHT + 2 >= worldObj.getActualHeight()) return false;
+        if (arena != null && (!arena.contains(x, z, 22) || y < arena.boss.floor + 1 || y > arena.boss.floor + 8)) return false;
         // Fit the standing arms and shoulders at any heading, as well as the full 30-block height.
         AxisAlignedBB box = AxisAlignedBB.getBoundingBox(x - 7, y, z - 7, x + 7, y + HEIGHT + 1.5, z + 7);
         return GiantEndermanTerrain.loaded(worldObj, box.expand(2, 0, 2)) && worldObj.func_147461_a(box).isEmpty()
@@ -919,12 +935,14 @@ public final class EntityGiantEnderman extends EntityLiving implements IBossDisp
 
     @Override public void setDead() {
         if (!worldObj.isRemote) unload();
+        BossProgression.releaseArena(this);
         super.setDead();
     }
 
     @Override public void onDeath(DamageSource source) {
         super.onDeath(source);
         if (!worldObj.isRemote && dead) {
+            if (source != DamageSource.outOfWorld) BossProgression.acceptCombatDeath(this);
             unload();
             begin(Action.DEATH);
         }
@@ -937,6 +955,7 @@ public final class EntityGiantEnderman extends EntityLiving implements IBossDisp
         }
         if (action() != Action.DEATH) begin(Action.DEATH);
         if (frame(0) >= Action.DEATH.length) {
+            BossProgression.finishCombatDeath(Boss.GIANT_ENDERMAN, this);
             deathTime = 19;
             super.onDeathUpdate();
         }

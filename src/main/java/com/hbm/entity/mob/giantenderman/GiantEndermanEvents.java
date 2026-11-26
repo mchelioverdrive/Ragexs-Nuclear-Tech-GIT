@@ -3,6 +3,8 @@ package com.hbm.entity.mob.giantenderman;
 import java.util.List;
 
 import com.hbm.config.GiantEndermanConfig;
+import com.hbm.world.progression.BossProgression;
+import com.hbm.world.progression.BossProgression.Boss;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
 import cpw.mods.fml.common.registry.GameRegistry;
@@ -74,6 +76,7 @@ public final class GiantEndermanEvents {
         World world = event.world;
         if (event.phase != TickEvent.Phase.END || world.isRemote || world.provider.dimensionId != 1 || !GiantEndermanConfig.natural
             || world.getTotalWorldTime() % 12000 != 0 || world.difficultySetting == EnumDifficulty.PEACEFUL || world.playerEntities.isEmpty()) return;
+        if (!BossProgression.allowsAmbientSpawns(Boss.GIANT_ENDERMAN)) return;
         EntityPlayer player = (EntityPlayer)world.playerEntities.get(world.rand.nextInt(world.playerEntities.size()));
         if (!player.isEntityAlive() || player.capabilities.disableDamage) return;
         if (!world.getEntitiesWithinAABB(EntityGiantEnderman.class, player.boundingBox.expand(112, 128, 112)).isEmpty()) return;

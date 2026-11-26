@@ -11,6 +11,7 @@ import com.hbm.world.gen.component.RuinFeatures;
 import com.hbm.world.gen.component.SiloComponent;
 import com.hbm.world.gen.terrain.OverworldLargeTerrain;
 import com.hbm.world.gen.terrain.BedrockOilSurface;
+import com.hbm.world.gen.structure.BossArenaGenerator;
 import com.hbm.world.gen.structure.LegacyStructureGenerator;
 import com.hbm.world.gen.structure.OceanTempleGenerator;
 
@@ -43,6 +44,7 @@ public class HbmWorld {
 		registerWorldGen(new BedrockOilSurface(), 1);
 		registerWorldGen(new com.hbm.world.gen.FakeCommandBlockGenerator(), 2);
 		registerWorldGen(new OceanTempleGenerator(), 3);
+		registerWorldGen(new BossArenaGenerator(), 4);
 		MinecraftForge.EVENT_BUS.register(new OverworldLargeTerrain());
 		
 		worldGenerator = new NTMWorldGenerator();

@@ -848,6 +848,26 @@ The surface settings in `12_mobs.sandworm` in `hbm.cfg` support `/rntconfig relo
 
 The implementation uses [ModularBosses 1.8](https://github.com/gummby8/ModularBosses/tree/1.8) as a gameplay reference. All distributed Java, model geometry, textures, room schematics and synthesized heartbeat sounds are original RNT implementations; no ModularBosses code, models or resources are included and the mod is not a dependency. Bundled classic Alpha schematics use registry-name palettes, validated fixed dimensions, saved rotations and reciprocal door masks. A finite spanning tree connects every room and both organ chambers. Construction resumes from its saved cursor without rebuilding finished rooms. Return records and organ deaths are server-owned overworld saved data; only exterior pose and visual combat state are synchronized to clients.
 
+## Story Mode boss progression
+
+Category `12_mobs.bossProgression` in `config/hbm.cfg`. All settings in this category support `/rntconfig reload`. Existing boss combat settings retain their own reload rules. Changing progression settings preserves recorded milestones and locations.
+
+| Setting | Default | Behavior |
+| --- | --- | --- |
+| `enabled` | true | Enable the shared prerequisite gates, player survey and giant arena activation. With this off, the giants' opt-in legacy ambient spawn settings can take effect. |
+| `requirePrecedingBoss` | true | Require the saved defeat of the previous enabled boss. |
+| `enableStructures` | true | Reserve new giant arenas during chunk population. Partially generated arenas can finish. Existing cores remain usable if progression and the corresponding boss are enabled. This respects RTM's general structure switch and the vanilla map features flag when RTM is configured to follow it. |
+| `locationRewards` | true | Allow survey journals as first-defeat loot. Players can use `/bossprogression next` either way. |
+| `repeatEncounters` | false | Permit arena activation after a giant's world milestone has been recorded. Repeat kills keep normal drops. |
+| `maximumActive` | 1 | World-wide simultaneous arena fights per giant, including unloaded fights (0–16). Zero pauses giant activation. Wither Storm and Colossus retain their existing caps. |
+| `minimumSeparation` | 2048 | Minimum distance in blocks between new giant arena centers in the same dimension (128–65536). Existing sites are respected. Ocean Temples keep their own spacing setting. |
+| `enderDragon` | true | Include the Dragon in the chain. Vanilla spawning is unaffected. |
+| `witherStorm` | true | Enable ordinary Storm rituals in the chain. Also observes the existing survival summon setting. Challenge mode has its own control. |
+| `prismarineColossus` | true | Enable ordinary Colossus activation in the chain. Also observes the existing Colossus enable setting. |
+| `giantGhast`, `giantMagmaGolem`, `giantEnderman` | true | Independently enable each giant in the chain. The next encounter skips disabled predecessors. |
+
+The giant arenas generate in new population windows, including before their milestones unlock. They occupy 64×64 placement footprints. The Nether Bastion and Basalt Crucible use fixed floor elevations with access shafts. Hollow Spires uses a raised Overworld court. Places with terrain already populated by an earlier save remain unmodified. Peaceful difficulty, a zero active cap or disabling all eligible structure generation can require operator intervention or a settings change to continue a survival run.
+
 ## Prismarine Colossus
 
 Startup category `12_mobs.prismarineColossus` in `hbm.cfg`.
@@ -887,7 +907,7 @@ Startup category `12_mobs.giantGhast` in `config/hbm.cfg`. Each Giant Ghast has 
 | `maxActiveFireballs`, `maxSummonedGhasts`, `summonCooldownTicks` | 32, 12, 480 ticks | Per-encounter limits and time between summon waves. Reflected and minion fireballs count toward the same projectile limit. |
 | `weakPointStrikes` | 8 | Direct melee hits needed once the boss settles and the top core is exposed. The core accepts one strike per 10 ticks. |
 | `bossGriefing`, `fireballExplosionBlockDamage` | false, false | Both settings and vanilla `mobGriefing` must be enabled for the encounter's explosions to break blocks. |
-| `naturalSpawning` | false | Allows rare natural spawns in the Nether when a clear area is available. |
+| `naturalSpawning` | false | Allows rare natural spawns in clear Nether terrain when Story Mode progression is off. |
 
 Attack phases begin at 75%, 50%, 25%, and 10% health. Ordinary body hits deal 28% of normal damage, while direct reflected fireballs deal at least 12% of maximum health before the final phase. See [Giant Ghast commands](commands.md#rntgiantghast).
 
@@ -902,7 +922,7 @@ Startup category `12_mobs.magmaGolem` in `config/hbm.cfg`. The golem saves its h
 | `summonCooldownTicks`, `maxSummonedCubes` | 360 ticks, 8 | Base wave delay and per-boss cap. Set the cap to zero to disable summons. |
 | `waterCoolingTicks`, `armDurability` | 20 ticks, 24 | Cumulative water contact needed per arm and mining work per cooled arm. Better pickaxes remove more work per hit. |
 | `bossGriefing` | true | Terrain damage and ignition also require vanilla `mobGriefing`. |
-| `naturalSpawning` | false | Allows rare natural spawns in clear Overworld plains and deserts. |
+| `naturalSpawning` | false | Allows rare natural spawns in clear Overworld plains and deserts when Story Mode progression is off. |
 
 Combat changes at 70% and below 35% health. Lethal damage or the cooled arms, TNT, and water sequence can end the fight. See [Giant Magma Golem commands](commands.md#rntmagmagolem).
 
@@ -928,7 +948,7 @@ Startup category `12_mobs.giantenderman` in `config/hbm.cfg`.
 | `teleportCooldownTicks` | 160 | Base interval between teleports. Later phases shorten it. |
 | `terrainDestruction`, `terrainDestructionRadius` | true, 5 blocks | Control the maximum size of terrain contacts. The boss also observes `mobGriefing`, spawn and Forge break protection, and the Colossus block protection list. |
 | `terrainBudgetPerTick` | 24 | Shared limit on terrain coordinates examined per dimension each tick. |
-| `naturalSpawning` | false | Allows rare neutral encounters near players in the End. |
+| `naturalSpawning` | false | Allows rare neutral encounters near players in the End when Story Mode progression is off. |
 | `bossCombat` | true | Enables combat with other hostile bosses and the Prismarine Colossus duel. |
 | `playerGrabbing` | true | Allows player grabs. Small mobs remain eligible when disabled. |
 

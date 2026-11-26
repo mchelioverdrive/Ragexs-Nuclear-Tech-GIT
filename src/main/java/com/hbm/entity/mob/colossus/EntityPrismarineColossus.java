@@ -130,7 +130,16 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
     }
     public void setVariant(int variant) { dataWatcher.updateObject(20,(byte)MathHelper.clamp_int(variant,0,3)); }
     public static boolean progressionAllowsActivation(World world) {
-        return !ColossusConfig.requireWitherStormDefeat || BossProgression.get(world).canSummon(Boss.PRISMARINE_COLOSSUS);
+        return BossProgression.get(world).canSummon(Boss.PRISMARINE_COLOSSUS);
+    }
+
+    static void notifyProgressionBlock(EntityPlayer player) {
+        Boss missing = BossProgression.get(player.worldObj).missingPrerequisite(Boss.PRISMARINE_COLOSSUS);
+        if(Boss.PRISMARINE_COLOSSUS.isEnabled() && missing != null) {
+            player.addChatMessage(new ChatComponentTranslation("colossus.activation.requires", missing.displayName));
+        } else {
+            player.addChatMessage(new ChatComponentTranslation("colossus.activation.unavailable"));
+        }
     }
 
     /** Explicit activation, including the administrative command. */
@@ -784,7 +793,7 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
     @Override protected boolean interact(EntityPlayer p) {
         if(worldObj.isRemote) return true;
         if(p.isSneaking() && dormant()) {
-            if(!tryWake()) p.addChatMessage(new ChatComponentTranslation("colossus.activation.locked"));
+            if(!tryWake()) notifyProgressionBlock(p);
             return true;
         }
         if(!ColossusConfig.climbing || !isEntityAlive() || !p.isEntityAlive() || p.ridingEntity!=null || grips.size()>=4 || p==grabbed || p instanceof net.minecraftforge.common.util.FakePlayer) return false;
@@ -905,7 +914,7 @@ public final class EntityPrismarineColossus extends EntityLiving implements IBos
         super.onDeath(source);
         if(!dead) return;
         if(!worldObj.isRemote && getHealth() <= 0F && source != DamageSource.outOfWorld)
-            BossProgression.get(worldObj).recordDefeat(Boss.PRISMARINE_COLOSSUS);
+            BossProgression.get(worldObj).recordCombatDefeat(Boss.PRISMARINE_COLOSSUS, this);
         releaseAll(); terrain.clear(); begin(ColossusPose.DEATH); restoreClock(); sound("mob.irongolem.death",0.5F);
     }
     @Override protected void dropFewItems(boolean player,int looting) { }

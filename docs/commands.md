@@ -390,6 +390,37 @@ With no argument the command reports the current setting. `true` allows either r
 
 The server records Dragon deaths in the End and imports older defeats from the saved vanilla End exit fountain on first startup with this feature. An existing save needs surviving portal blocks and the fountain's central bedrock pillar for automatic recognition. Defeating the Wither Storm after its Stage D transition finishes records the next milestone. In older saves that already used the challenge spawn, previously saved Storms lack the origin data needed to award that milestone.
 
+### `/bossprogression`
+
+`/bossprogression next` is available to everyone. It points to the next available milestone and gives directions to a recorded arena or an ungenerated survey site. Explore new terrain around a survey marker to finish the arena, then use the core while its surrounding chunks are loaded.
+
+The default world-wide order is Ender Dragon → Wither Storm → Prismarine Colossus → Giant Ghast → Giant Magma Golem → Giant Enderman.
+
+| Boss | Encounter | Rewards and progression |
+| --- | --- | --- |
+| Ender Dragon | Find a stronghold with Eyes of Ender and enter the End. | Vanilla XP, exit fountain and egg. An End defeat unlocks the normal Wither Storm rituals. |
+| Wither Storm | Use either existing summoning ritual after defeating the Dragon. | Existing Nether Star. Defeat a non-challenge Storm after its Stage D transition for the milestone and an Ocean Temple survey journal. |
+| Prismarine Colossus | Use the Ocean Temple core after defeating the Wither Storm. Find a Prismarine Gauntlet in the temple or craft one. | Existing shard drops by variant and a Nether Bastion survey journal. Shards still craft into quartz with sand. |
+| Giant Ghast | Right-click the core of a Nether Bastion after defeating the Colossus. Fight in the open fortress chamber and use the raised galleries or build up to the exposed top core. | Existing tears and gunpowder. The first defeat adds four blaze rods and a Basalt Crucible survey journal. RTM's centrifuge yields red phosphorus and blaze powder from blaze rods. |
+| Giant Magma Golem | Right-click the core of a Basalt Crucible under the Overworld after defeating the Giant Ghast. The shaft reaches the open basalt deck and crossings above lava. Bring a pickaxe, TNT and a bucket for the existing arm and water sequence. | Existing magma cream and cobblestone. When the final death animation ends, the first defeat adds eight basaltic crystals for centrifuging and a Hollow Spires survey journal. |
+| Giant Enderman | Right-click the core at Hollow Spires in the Overworld after defeating the Giant Magma Golem. The ruined towers frame an open court. The boss can teleport within the court. | The first defeat adds eight ender pearls and four Desh ingots for existing tool and machine recipes. |
+
+All milestones belong to the save and survive restarts and player changes. Site activation is saved per arena, including fights in unloaded chunks. Survey journals and the listed bonus materials are one-time combat loot governed by `doMobLoot`. The location reward setting controls journals. Trading or copying a journal or any loot has no effect on milestones. A legitimate kill of an operator-spawned giant can advance progression if that boss is unlocked. Existing admin spawn commands, Wither Storm challenge mode and Sandworm progression retain their separate behavior.
+
+These subcommands require operator level 2. Boss IDs are `ender_dragon`, `wither_storm`, `prismarine_colossus`, `giant_ghast`, `giant_magma_golem` and `giant_enderman`.
+
+| Command | Behavior |
+| --- | --- |
+| `/bossprogression list` | List bosses, their preceding enabled bosses and milestone state. |
+| `/bossprogression status` | Also show the current giant arena fight counts and limits. |
+| `/bossprogression unlock <boss>` | Save a prerequisite waiver for one boss. |
+| `/bossprogression complete <boss>` | Set a milestone when its prerequisite is met or waived. Grants no loot. |
+| `/bossprogression reset <boss>` | Clear the selected and downstream milestones and waivers. Release their giant arena slots, retiring those boss entities when they tick. Structures and one-time loot records are kept. |
+| `/bossprogression bypass <true\|false>` | Save a global Story Mode prerequisite waiver. `/witherstormbypass` still controls the separate Wither Storm waiver. |
+| `/bossprogression locate <boss>` | Report a recorded Ocean Temple or giant arena. This does not load chunks or generate terrain. The Dragon and Wither Storm use their existing portal and ritual methods. |
+
+If no survey site is available, check that structure generation and the relevant encounter are enabled, then try again from new terrain. On worlds with no eligible terrain or a missing saved boss entity, operators can recover using `unlock`, `complete`, or `reset`. See [boss progression settings](configuration.md#story-mode-boss-progression).
+
 ### `/rntsandworm`
 
 Operator level 2 controls the Sandworm and individual interior monsters:

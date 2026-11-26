@@ -8,6 +8,8 @@ import java.util.Set;
 import java.util.UUID;
 
 import com.hbm.config.MagmaGolemConfig;
+import com.hbm.world.progression.BossProgression;
+import com.hbm.world.progression.BossProgression.Boss;
 import com.hbm.entity.mob.magmagolem.MagmaGolemPose.Action;
 import cpw.mods.fml.common.registry.IEntityAdditionalSpawnData;
 import io.netty.buffer.ByteBuf;
@@ -116,7 +118,8 @@ public final class EntityGiantMagmaGolem extends EntityMob implements IBossDispl
     }
 
     @Override public boolean getCanSpawnHere() {
-        return MagmaGolemConfig.natural && worldObj.provider.dimensionId == 0 && rand.nextInt(24) == 0
+        return MagmaGolemConfig.natural && worldObj.provider.dimensionId == 0
+            && BossProgression.allowsAmbientSpawns(Boss.GIANT_MAGMA_GOLEM) && rand.nextInt(24) == 0
             && hasSpawnClearance() && !worldObj.isAnyLiquid(boundingBox) && super.getCanSpawnHere()
             && worldObj.getEntitiesWithinAABB(EntityGiantMagmaGolem.class, boundingBox.expand(96, 64, 96)).isEmpty();
     }
@@ -203,6 +206,19 @@ public final class EntityGiantMagmaGolem extends EntityMob implements IBossDispl
         faceTarget(8);
         if (recovery == 0 && onGround && selectAttack()) return;
         pursue();
+    }
+
+    @Override public void onUpdate() {
+        if (!worldObj.isRemote && BossProgression.hasArenaOrigin(this) && BossProgression.activeArena(this) == null) {
+            setDead();
+            return;
+        }
+        super.onUpdate();
+    }
+
+    @Override public void setDead() {
+        BossProgression.releaseArena(this);
+        super.setDead();
     }
 
     @Override protected void updateAITasks() {
@@ -901,6 +917,7 @@ public final class EntityGiantMagmaGolem extends EntityMob implements IBossDispl
             return;
         }
         if (source.getEntity() instanceof EntityPlayer) finisher = source.getEntity().getUniqueID();
+        if (source != DamageSource.outOfWorld) BossProgression.acceptCombatDeath(this);
         begin(Action.DYING);
         updateStance();
         retireLoadedSummons();
@@ -913,6 +930,7 @@ public final class EntityGiantMagmaGolem extends EntityMob implements IBossDispl
             age++;
             syncAction();
             if (age < Action.DYING.length) return;
+            BossProgression.finishCombatDeath(Boss.GIANT_MAGMA_GOLEM, this);
             if (finisher != null) recentlyHit = 1;
         } else if (action() != Action.DYING || animationAge() < Action.DYING.length - 1) {
             return;

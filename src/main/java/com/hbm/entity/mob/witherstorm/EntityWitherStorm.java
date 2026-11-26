@@ -832,7 +832,7 @@ public class EntityWitherStorm extends EntityFlying implements IBossDisplayData,
             encounters.remove(getUniqueID());
         }
         super.onDeath(source);
-        if(finalDefeat && dead) BossProgression.get(worldObj).recordDefeat(Boss.WITHER_STORM);
+        if(finalDefeat && dead) BossProgression.get(worldObj).recordCombatDefeat(Boss.WITHER_STORM, this);
     }
     @Override protected void dropFewItems(boolean player, int looting) { entityDropItem(new ItemStack(Items.nether_star), 0); }
     @Override public void setDead() {

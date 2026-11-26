@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.hbm.config.GiantGhastConfig;
+import com.hbm.world.progression.BossProgression;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
@@ -62,6 +63,7 @@ public final class GiantGhastEncounters extends WorldSavedData {
     }
 
     boolean isEmpty() { return fights.isEmpty(); }
+    boolean contains(UUID boss) { return fights.containsKey(boss); }
 
     Fight find(UUID boss) { return fights.get(boss); }
 
@@ -160,6 +162,7 @@ public final class GiantGhastEncounters extends WorldSavedData {
         for (UUID id : new ArrayList<>(fights.keySet())) {
             EntityGiantGhast boss = boss(world, id);
             retire(world, id);
+            BossProgression.get(world).release(id);
             if (boss != null) boss.setDead();
         }
         // Also include entities spawned or reloaded before their first encounter tick.

@@ -409,6 +409,7 @@ public class MainRegistry {
 		ChestGenHooks.addItem(ChestGenHooks.STRONGHOLD_LIBRARY, new WeightedRandomChestContent(new ItemStack(ModBlocks.fake_command_block), 1, 1, 1));
 		ChestGenHooks.addItem(ChestGenHooks.PYRAMID_JUNGLE_CHEST, new WeightedRandomChestContent(new ItemStack(ModBlocks.fake_command_block), 1, 1, 1));
 		com.hbm.entity.mob.colossus.ColossusContent.register();
+		com.hbm.world.progression.BossArenaBlock.register();
 		com.hbm.entity.mob.giantenderman.GiantEndermanEvents.registerEgg();
 		//CompatNER.init();
 
@@ -1211,6 +1212,7 @@ public class MainRegistry {
 		event.registerServerCommand(new CommandRNTAchievement());
 		event.registerServerCommand(new com.hbm.commands.CommandWitherStorm());
 		event.registerServerCommand(new com.hbm.commands.CommandWitherStormBypass());
+		event.registerServerCommand(new com.hbm.commands.CommandBossProgression());
 		event.registerServerCommand(new com.hbm.commands.CommandColossus());
 		event.registerServerCommand(new com.hbm.commands.CommandGiantGhast());
 
@@ -1251,6 +1253,7 @@ public class MainRegistry {
         WoodchipperConfig.Values woodchipper = new WoodchipperConfig.Values(candidate);
         ExecutionEffectsConfig.Values executionEffects = new ExecutionEffectsConfig.Values(candidate);
         com.hbm.config.SandwormConfig.SurfaceValues sandworm = new com.hbm.config.SandwormConfig.SurfaceValues(candidate);
+        com.hbm.config.BossProgressionConfig.Values bosses = new com.hbm.config.BossProgressionConfig.Values(candidate);
         // All parsing/validation finishes before these non-throwing field assignments.
         GeminiConfig.apply(gemini, false);
         GeneralConfig.applyRuntime(general);
@@ -1264,6 +1267,7 @@ public class MainRegistry {
         WoodchipperConfig.settings = woodchipper;
         ExecutionEffectsConfig.settings = executionEffects;
         com.hbm.config.SandwormConfig.surface = sandworm;
+        com.hbm.config.BossProgressionConfig.settings = bosses;
     }
 
     private void loadConfig(FMLPreInitializationEvent event) {
@@ -1292,6 +1296,7 @@ public class MainRegistry {
 		EuropaLankConfig.settings = new EuropaLankConfig.Values(config);
 		com.hbm.config.WitherStormConfig.loadFromConfig(config);
 		com.hbm.config.ColossusConfig.loadFromConfig(config);
+		com.hbm.config.BossProgressionConfig.settings = new com.hbm.config.BossProgressionConfig.Values(config);
 		com.hbm.config.GiantGhastConfig.loadFromConfig(config);
 
 		com.hbm.config.GiantEndermanConfig.loadFromConfig(config);

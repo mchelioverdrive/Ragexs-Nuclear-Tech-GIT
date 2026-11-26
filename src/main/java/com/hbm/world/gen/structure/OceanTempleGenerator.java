@@ -7,6 +7,8 @@ import com.hbm.blocks.ModBlocks;
 import com.hbm.config.ColossusConfig;
 import com.hbm.config.StructureConfig;
 import com.hbm.entity.mob.colossus.ColossusContent;
+import com.hbm.world.progression.BossProgression;
+import com.hbm.world.progression.BossProgression.Boss;
 
 import cpw.mods.fml.common.IWorldGenerator;
 import net.minecraft.block.Block;
@@ -19,8 +21,6 @@ import net.minecraft.tileentity.TileEntityChest;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.BiomeGenBase;
 import net.minecraft.world.chunk.IChunkProvider;
-import net.minecraft.world.chunk.storage.AnvilChunkLoader;
-import net.minecraft.world.gen.ChunkProviderServer;
 import net.minecraft.world.gen.structure.MapGenStructure;
 import net.minecraft.world.gen.structure.MapGenStructureData;
 import net.minecraft.world.gen.structure.MapGenStructureIO;
@@ -66,6 +66,107 @@ public final class OceanTempleGenerator implements IWorldGenerator {
             && world.checkChunksExist(x - ARENA, FLOOR, z - ARENA, x + ARENA, ROOF, z + ARENA);
     }
 
+    /** Recorded sites only. Inspecting the structure data never asks a chunk provider for terrain. */
+    public static int[] nearestRecorded(World overworld, double x, double z) {
+        NBTTagCompound records = records(overworld);
+        int[] nearest = null;
+        double best = Double.POSITIVE_INFINITY;
+        for(Object key : records.func_150296_c()) {
+            NBTTagCompound start = records.getCompoundTag((String)key);
+            int cx = center(start.getInteger("ChunkX")), cz = center(start.getInteger("ChunkZ"));
+            boolean complete = start.getTagList("Children", 10).getCompoundTagAt(0).getInteger("Slices") == ALL_SLICES;
+            double distance = (cx - x) * (cx - x) + (cz - z) * (cz - z);
+            if(nearest == null || complete && nearest[3] == 0 || complete == (nearest[3] == 1) && distance < best) {
+                nearest = new int[] {cx, FLOOR, cz, complete ? 1 : 0};
+                best = distance;
+            }
+        }
+        return nearest;
+    }
+
+    public static int[] surveyCandidate(World world, int x, int z) {
+        if(!ColossusConfig.generateOceanTemples || com.hbm.world.squirrelstapler.StaplerWorldType.suppressStructures(world)
+            || StructureConfig.enableStructures == 0
+            || StructureConfig.enableStructures == 2 && !world.getWorldInfo().isMapFeaturesEnabled()) return null;
+        int size = cellSize();
+        int cellX = Math.floorDiv(x >> 4, size), cellZ = Math.floorDiv(z >> 4, size);
+        int[] nearest = null;
+        long best = Long.MAX_VALUE;
+        NBTTagCompound records = records(world);
+        for(int dz = -5; dz <= 5; dz++) {
+            for(int dx = -5; dx <= 5; dx++) {
+                int[] chunk = candidate(world, cellX + dx, cellZ + dz);
+                if(chunk == null) continue;
+                int cx = center(chunk[0]), cz = center(chunk[1]);
+                long offX = (long)cx - x, offZ = (long)cz - z, distance = offX * offX + offZ * offZ;
+                if(distance >= best || Math.abs(cx) >= 29999968 || Math.abs(cz) >= 29999968 || !deepOcean(world, cx, cz)
+                    || intersectsGiantArena(world, cx, cz)
+                    || !StructurePopulation.untouched(world, chunk[0], chunk[1], Integer.MIN_VALUE, Integer.MIN_VALUE)) continue;
+                boolean separated = true;
+                long minimum = ColossusConfig.oceanTempleMinSeparation;
+                for(Object key : records.func_150296_c()) {
+                    NBTTagCompound start = records.getCompoundTag((String)key);
+                    long sx = (long)cx - center(start.getInteger("ChunkX")), sz = (long)cz - center(start.getInteger("ChunkZ"));
+                    if(sx * sx + sz * sz < minimum * minimum) {
+                        separated = false;
+                        break;
+                    }
+                }
+                if(!separated) continue;
+                nearest = new int[] {cx, FLOOR, cz};
+                best = distance;
+            }
+        }
+        return nearest;
+    }
+
+    private static NBTTagCompound records(World world) {
+        MapGenStructureData data = (MapGenStructureData)world.perWorldStorage.loadData(MapGenStructureData.class, ID);
+        return data == null ? new NBTTagCompound() : data.func_143041_a();
+    }
+
+    static boolean intersectsArena(World world, int centerX, int centerZ) {
+        NBTTagCompound starts = records(world);
+        for(int x = (centerX >> 4) - 3; x <= (centerX >> 4) + 3; x++) {
+            for(int z = (centerZ >> 4) - 3; z <= (centerZ >> 4) + 3; z++) {
+                if(starts.hasKey(MapGenStructureData.func_143042_b(x, z), 10)) return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean intersectsGiantArena(World world, int x, int z) {
+        BossProgression progress = BossProgression.get(world);
+        for(int dx = -48; dx <= 48; dx += 16) {
+            for(int dz = -48; dz <= 48; dz += 16) {
+                if(progress.arenaAt(Boss.GIANT_MAGMA_GOLEM, x + dx, z + dz) != null
+                    || progress.arenaAt(Boss.GIANT_ENDERMAN, x + dx, z + dz) != null) return true;
+            }
+        }
+        return false;
+    }
+
+    private static int gap() { return (ColossusConfig.oceanTempleMinSeparation + 15) / 16; }
+    private static int jitter() { return Math.min(32, gap() / 2); }
+    private static int cellSize() { return gap() + jitter(); }
+
+    private static int[] candidate(World world, int cellX, int cellZ) {
+        Random choice = new Random(world.getSeed() ^ (cellX * 341873128712L + cellZ * 132897987541L + SALT));
+        int x = cellX * cellSize() + choice.nextInt(jitter() + 1);
+        int z = cellZ * cellSize() + choice.nextInt(jitter() + 1);
+        return choice.nextInt(ColossusConfig.oceanTempleRarity) == 0 ? new int[] {x, z} : null;
+    }
+
+    private static boolean deepOcean(World world, int x, int z) {
+        for(int dx = -EXTENT; dx <= EXTENT; dx += EXTENT) {
+            for(int dz = -EXTENT; dz <= EXTENT; dz += EXTENT) {
+                BiomeGenBase biome = world.getWorldChunkManager().getBiomeGenAt(x + dx, z + dz);
+                if(!BiomeDictionary.isBiomeOfType(biome, BiomeDictionary.Type.OCEAN) || biome.rootHeight > -0.5F) return false;
+            }
+        }
+        return true;
+    }
+
     private static int center(int chunk) {
         return (chunk << 4) + 8;
     }
@@ -95,51 +196,20 @@ public final class OceanTempleGenerator implements IWorldGenerator {
         protected boolean canSpawnStructureAtCoords(int chunkX, int chunkZ) {
             if(populationX < chunkX + FIRST_SLICE || populationX > chunkX + LAST_SLICE
                 || populationZ < chunkZ + FIRST_SLICE || populationZ > chunkZ + LAST_SLICE) return false;
-            int separation = ColossusConfig.oceanTempleMinSeparation;
-            int gap = (separation + 15) / 16;
-            int jitter = Math.min(32, gap / 2);
-            int cellSize = gap + jitter;
-            int cellX = Math.floorDiv(chunkX, cellSize), cellZ = Math.floorDiv(chunkZ, cellSize);
-            long seed = worldObj.getSeed() ^ ((long)cellX * 341873128712L + (long)cellZ * 132897987541L + SALT);
-            Random choice = new Random(seed);
-            if(chunkX != cellX * cellSize + choice.nextInt(jitter + 1)
-                || chunkZ != cellZ * cellSize + choice.nextInt(jitter + 1)
-                || choice.nextInt(ColossusConfig.oceanTempleRarity) != 0) return false;
+            int[] candidate = candidate(worldObj, Math.floorDiv(chunkX, cellSize()), Math.floorDiv(chunkZ, cellSize()));
+            if(candidate == null || chunkX != candidate[0] || chunkZ != candidate[1]) return false;
 
             int x = center(chunkX), z = center(chunkZ);
-            if(Math.abs(x) >= 29999968 || Math.abs(z) >= 29999968) return false;
-            for(int dx = -EXTENT; dx <= EXTENT; dx += EXTENT) {
-                for(int dz = -EXTENT; dz <= EXTENT; dz += EXTENT) {
-                    BiomeGenBase biome = worldObj.getWorldChunkManager().getBiomeGenAt(x + dx, z + dz);
-                    if(!BiomeDictionary.isBiomeOfType(biome, BiomeDictionary.Type.OCEAN) || biome.rootHeight > -0.5F) return false;
-                }
-            }
+            if(Math.abs(x) >= 29999968 || Math.abs(z) >= 29999968
+                || !deepOcean(worldObj, x, z) || intersectsGiantArena(worldObj, x, z)) return false;
             // A grid change must respect already reserved sites as well as the new grid.
+            long separation = ColossusConfig.oceanTempleMinSeparation;
             for(Object value : structureMap.values()) {
                 StructureStart start = (StructureStart) value;
                 long dx = x - (long)center(start.func_143019_e()), dz = z - (long)center(start.func_143018_f());
-                if(dx * dx + dz * dz < (long)separation * separation) return false;
+                if(dx * dx + dz * dz < separation * separation) return false;
             }
-            return untouchedPopulationWindows(chunkX, chunkZ);
-        }
-
-        private boolean untouchedPopulationWindows(int chunkX, int chunkZ) {
-            IChunkProvider provider = worldObj.getChunkProvider();
-            if(!(provider instanceof ChunkProviderServer)) return false;
-            ChunkProviderServer server = (ChunkProviderServer) provider;
-            if(!(server.currentChunkLoader instanceof AnvilChunkLoader)) return false;
-            AnvilChunkLoader loader = (AnvilChunkLoader) server.currentChunkLoader;
-            for(int x = chunkX + FIRST_SLICE; x <= chunkX + LAST_SLICE; x++) {
-                for(int z = chunkZ + FIRST_SLICE; z <= chunkZ + LAST_SLICE; z++) {
-                    if(x == populationX && z == populationZ) continue;
-                    if(server.chunkExists(x, z)) {
-                        if(server.provideChunk(x, z).isTerrainPopulated) return false;
-                    } else if(loader.chunkExists(worldObj, x, z)) {
-                        return false;
-                    }
-                }
-            }
-            return true;
+            return StructurePopulation.untouched(worldObj, chunkX, chunkZ, populationX, populationZ);
         }
 
         @Override

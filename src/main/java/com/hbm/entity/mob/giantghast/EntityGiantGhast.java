@@ -4,6 +4,8 @@ import java.lang.reflect.Field;
 import java.util.UUID;
 
 import com.hbm.config.GiantGhastConfig;
+import com.hbm.world.progression.BossProgression;
+import com.hbm.world.progression.BossProgression.Boss;
 
 import cpw.mods.fml.common.registry.IEntityAdditionalSpawnData;
 import cpw.mods.fml.relauncher.ReflectionHelper;
@@ -204,7 +206,8 @@ public final class EntityGiantGhast extends EntityFlying implements IBossDisplay
 
     @Override public boolean getCanSpawnHere() {
         return GiantGhastConfig.natural && worldObj.provider.dimensionId == -1 && worldObj.difficultySetting != EnumDifficulty.PEACEFUL
-            && rand.nextInt(20) == 0 && GiantGhastEncounters.get(worldObj).isEmpty() && hasSpawnClearance()
+            && BossProgression.allowsAmbientSpawns(Boss.GIANT_GHAST) && rand.nextInt(20) == 0
+            && GiantGhastEncounters.get(worldObj).isEmpty() && hasSpawnClearance()
             && super.getCanSpawnHere();
     }
 
@@ -213,6 +216,11 @@ public final class EntityGiantGhast extends EntityFlying implements IBossDisplay
 
 
     @Override public void onUpdate() {
+        if (!worldObj.isRemote && BossProgression.hasArenaOrigin(this) && BossProgression.activeArena(this) == null) {
+            GiantGhastEncounters.get(worldObj).retire(worldObj, getUniqueID());
+            setDead();
+            return;
+        }
         super.onUpdate();
         if (!isEntityAlive()) return;
         updateParts();
@@ -231,7 +239,8 @@ public final class EntityGiantGhast extends EntityFlying implements IBossDisplay
             fight = encounters.attach(this, admitted);
             if (fight == null) {
                 // A duplicate saved boss must not retire the live original.
-                super.setDead();
+                if (BossProgression.hasArenaOrigin(this) && !encounters.contains(getUniqueID())) setDead();
+                else super.setDead();
                 return;
             }
             admitted = true;
@@ -674,6 +683,7 @@ public final class EntityGiantGhast extends EntityFlying implements IBossDisplay
         if (!worldObj.isRemote && !allowDeath) return;
         super.onDeath(source);
         if (!worldObj.isRemote && dead) {
+            if (source != DamageSource.outOfWorld) BossProgression.acceptCombatDeath(this);
             if (recentlyHit > 0 && worldObj.getGameRules().getGameRuleBooleanValue("doMobLoot")) deathXp = getExperiencePoints(attackingPlayer);
             changeState(State.DYING);
             motionX = motionY = motionZ = 0;
@@ -684,6 +694,7 @@ public final class EntityGiantGhast extends EntityFlying implements IBossDisplay
 
     @Override public void setDead() {
         if (!worldObj.isRemote && fight != null) GiantGhastEncounters.get(worldObj).retire(worldObj, getUniqueID());
+        BossProgression.releaseArena(this);
         super.setDead();
     }
 
@@ -696,6 +707,7 @@ public final class EntityGiantGhast extends EntityFlying implements IBossDisplay
         if (deathTime == 12 || deathTime == 30) playSound("mob.ghast.scream", 6, deathTime == 12 ? 0.49F : 0.41F);
         dataWatcher.updateObject(DEATH, (byte)Math.min(deathTime, DEATH_TICKS));
         if (deathTime >= DEATH_TICKS) {
+            BossProgression.finishCombatDeath(Boss.GIANT_GHAST, this);
             while (deathXp > 0) {
                 int value = EntityXPOrb.getXPSplit(deathXp);
                 deathXp -= value;
