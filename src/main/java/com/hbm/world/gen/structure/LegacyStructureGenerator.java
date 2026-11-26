@@ -107,7 +107,8 @@ public class LegacyStructureGenerator implements IWorldGenerator {
 	}
 
 	private static boolean dungeonsEnabled(World world) {
-		return GeneralConfig.enableDungeons == 1 || GeneralConfig.enableDungeons != 0 && world.getWorldInfo().isMapFeaturesEnabled();
+		return !com.hbm.world.squirrelstapler.StaplerWorldType.suppressStructures(world)
+				&& (GeneralConfig.enableDungeons == 1 || GeneralConfig.enableDungeons != 0 && world.getWorldInfo().isMapFeaturesEnabled());
 	}
 
 	public static class LegacyMapGen extends MapGenStructure {

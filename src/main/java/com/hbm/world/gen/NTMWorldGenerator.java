@@ -68,6 +68,7 @@ public class NTMWorldGenerator implements IWorldGenerator {
 	}
 
 	protected void generateOverworldStructures(World world, IChunkProvider chunkProvider, int chunkX, int chunkZ) {
+		if(com.hbm.world.squirrelstapler.StaplerWorldType.suppressStructures(world)) return;
 		this.scatteredFeatureGen.func_151539_a(chunkProvider, world, chunkX, chunkZ, null);
 		this.scatteredFeatureGen.generateStructuresInChunk(world, rand, chunkX, chunkZ);
 	}

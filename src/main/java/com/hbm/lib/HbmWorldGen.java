@@ -271,7 +271,8 @@ public class HbmWorldGen implements IWorldGenerator {
 		if(GeneralConfig.enableDungeons == 1) enableDungeons = true;
 		if(GeneralConfig.enableDungeons == 0) enableDungeons = false;
 
-		if(enableDungeons && world.provider.dimensionId == 0) {
+		boolean suppressStructures = com.hbm.world.squirrelstapler.StaplerWorldType.suppressStructures(world);
+		if(enableDungeons && world.provider.dimensionId == 0 && !suppressStructures) {
 
 			//if(MobConfig.enableHives && rand.nextInt(MobConfig.hiveSpawn) == 0) {
 			//	int x = i + rand.nextInt(16) + 8;
@@ -487,7 +488,7 @@ public class HbmWorldGen implements IWorldGenerator {
 
 		}
 
-		if (GeneralConfig.enableNITAN) {
+		if (GeneralConfig.enableNITAN && !suppressStructures) {
 
 			if (i <= 10000 && i + 16 >= 10000 && j <= 10000 && j + 16 >= 10000) {
 				if (world.getBlock(10000, 250, 10000) == Blocks.air) {

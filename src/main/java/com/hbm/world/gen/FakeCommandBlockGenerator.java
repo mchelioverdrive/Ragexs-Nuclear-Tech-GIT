@@ -11,7 +11,8 @@ import net.minecraft.world.chunk.IChunkProvider;
 public final class FakeCommandBlockGenerator implements IWorldGenerator {
     @Override
     public void generate(Random random, int chunkX, int chunkZ, World world, IChunkProvider generator, IChunkProvider provider) {
-        if(world.isRemote || world.provider.dimensionId != 0 || random.nextInt(32) != 0) return;
+        if(world.isRemote || world.provider.dimensionId != 0 || com.hbm.world.squirrelstapler.StaplerWorldType.suppressStructures(world)
+                || random.nextInt(32) != 0) return;
         BiomeGenBase spikes = BiomeGenBase.getBiome(BiomeGenBase.icePlains.biomeID + 128);
         int bestX = 0, bestY = 63, bestZ = 0;
         for(int i = 0; i < 24; i++) {

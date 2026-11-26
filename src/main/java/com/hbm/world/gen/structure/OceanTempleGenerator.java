@@ -45,7 +45,7 @@ public final class OceanTempleGenerator implements IWorldGenerator {
 
     @Override
     public void generate(Random random, int chunkX, int chunkZ, World current, IChunkProvider terrain, IChunkProvider chunks) {
-        if(current.isRemote || current.provider.dimensionId != 0) return;
+        if(current.isRemote || current.provider.dimensionId != 0 || com.hbm.world.squirrelstapler.StaplerWorldType.suppressStructures(current)) return;
         int x = center(chunkX), z = center(chunkZ);
         if(!current.checkChunksExist(x, FLOOR, z, x + 15, WATER_SURFACE, z + 15)) return;
         boolean newStarts = ColossusConfig.generateOceanTemples && (StructureConfig.enableStructures == 1

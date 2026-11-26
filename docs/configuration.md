@@ -12,7 +12,7 @@ Always stop the server before editing startup configuration unless a command exp
 
 `/rntconfig reload` (operator level 2, including the server console and integrated server) rereads `config/hbm.cfg` with the existing Forge configuration parser. It validates the file and supported values before applying anything. Invalid types, numbers, booleans or activation modes, unfinished categories/lists, and read failures retain the previous runtime configuration and report an error. Finite numeric values use the existing range clamps. The command does not rewrite the file.
 
-Supported live values are all `21_gemini` settings and subcategories **except `woodcrawlerSpawnWeight`**, the `12_mobs` natural villager, squirrel, UAP and Europa Lank settings below, the [woodchipper settings](#woodchipper) in `09_machines`, the [mace and bear mace settings](#mace-and-bear-mace) in `19_weapons`, the [taser settings](gameplay/restraints.md#taser) and [execution device effects](#execution-device-effects) under `27_restraints`, and the `01_general` keys `1.18_enableExtendedLogging`, `1.45_enablePowerNetDiagnostics`, `1.46_enableMachineRuntimeDiagnostics`, `1.36_enableMOTD` and `1.37_enableGuideBook`. These general settings affect subsequent logging, diagnostics and login handling. All other common settings remain unchanged until restart, including registration, potion/dimension IDs, radiation implementation selection, sound initialization, blocks, items and startup recipe options. JSON machine/resource configuration remains startup-only for this command. Use the existing `/ntmreload` for supported recipe/item-pool JSON and `/ntmclient` for local `hbmClient.json` preferences.
+Supported live values are all `21_gemini` settings and subcategories **except `woodcrawlerSpawnWeight`**, the `12_mobs` natural villager, squirrel, Squirrel Stapler, UAP and Europa Lank settings below, the [woodchipper settings](#woodchipper) in `09_machines`, the [mace and bear mace settings](#mace-and-bear-mace) in `19_weapons`, the [taser settings](gameplay/restraints.md#taser) and [execution device effects](#execution-device-effects) under `27_restraints`, and the `01_general` keys `1.18_enableExtendedLogging`, `1.45_enablePowerNetDiagnostics`, `1.46_enableMachineRuntimeDiagnostics`, `1.36_enableMOTD` and `1.37_enableGuideBook`. These general settings affect subsequent logging, diagnostics and login handling. All other common settings remain unchanged until restart, including registration, potion/dimension IDs, radiation implementation selection, sound initialization, blocks, items and startup recipe options. JSON machine/resource configuration remains startup-only for this command. Use the existing `/ntmreload` for supported recipe/item-pool JSON and `/ntmclient` for local `hbmClient.json` preferences.
 
 Gemini admission limits apply to the next admission in every active world without deleting existing creatures, nests or cocoons. Loaded Woodcrawlers refresh their native detection-range attribute on their next server tick, including after loading an older saved entity. Existing infection/cocoon durations, conversion decisions, boss health attributes and event countdowns retain their saved snapshots; new instances use the new settings. In-flight AI timers continue and consult updated thresholds on subsequent ticks. Progression and world gamerules are never reset. Reload registers no listeners or entities. Supported settings govern server decisions; native entity metadata, attributes, disease state and sound packets already convey their results, so no additional client configuration packet is needed.
 
@@ -117,6 +117,30 @@ All settings in `12_mobs.squirrels` of `config/hbm.cfg` support `/rntconfig relo
 | `health` | `4` HP | 1–40 HP. Changes the maximum for new and existing squirrels on their next tick. |
 
 Server-side Forge listeners can subscribe to `SquirrelInteractions.Captured` and `SquirrelInteractions.Attached`. Attachment events carry the player and squirrel UUIDs, dimension, log position, face, tree key and world tick. `SquirrelAttachments.get(world)` exposes lifetime successes, trees used, and current attachment locations by player UUID, including unloaded chunks. A tree key identifies the lowest reachable log in a bounded group of face-connected loaded logs, including multi-column trunks.
+
+### Squirrel Stapler
+
+Select **Squirrel Stapler** when creating a world. Dedicated servers use `level-type=squirrelstapler` when creating a new level. The cabin is east of spawn. Collect trophies on the hunt and sneak-use the stapler on the log rack with trophies and staples in inventory. The supply sign tops up ammunition, staples and basic supplies. The world shares one tally and an eligible player sleeping in the cabin bed starts the next day for everyone. The last deposit starts the finale.
+
+All keys are under `12_mobs.squirrelstapler` and support `/rntconfig reload`.
+
+| Key | Default | Effect |
+| --- | --- | --- |
+| `enabled` | `true` | Runs campaign progression in Squirrel Stapler worlds. Disabling it pauses the campaign. |
+| `days` | `5` | Campaign length from 1 to 30. Applies on creation or operator reset. |
+| `normalSquirrelsPerDay` | `5` | Requires 1 to 64 normal trophies on each new day. |
+| `largeSquirrelsAfterDayOne` | `1` | Requires 0 to 16 large trophies on each new day after day one. |
+| `enableGhostSquirrels` | `true` | Allows ghost encounters. |
+| `enableSquirrelBears` | `true` | Allows squirrel bear encounters from day four onward. |
+| `enableParanormalEvents` | `true` | Enables the random event schedule. |
+| `finalCountdownSeconds` | `180` | Sets the next finale countdown to 1 to 3,600 seconds. |
+| `disableUnrelatedHostiles` | `true` | Suppresses ordinary hostile mobs in the campaign Overworld. |
+| `disableUnrelatedStructures` | `true` | Suppresses unrelated RTM structures during campaign Overworld generation. |
+| `disableGHEInvasion` | `true` | Pauses Gemini invasion in the campaign save. |
+| `enableAtmosphericFog` | `true` | Enables the campaign distance fog. |
+| `fogDistance` | `96` | Sets the starting fog distance to 24 to 256 blocks. |
+
+The current quotas, tally, day, campaign length, and active finale countdown are saved with the world. Quota changes apply when the next day starts. Changing countdown length affects the next finale. The countdown pauses while the Overworld is empty. Operators can run `/squirrelstapler` for commands.
 
 ### UAP encounters
 

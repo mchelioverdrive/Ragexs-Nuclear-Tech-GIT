@@ -38,7 +38,7 @@ public final class NaturalVillagerSpawning {
 		}
 
 		VillagerPack villagers = null;
-		if(settings != null && settings.enabled && settings.weight > 0 && settings.localLimit > 0
+		if(!com.hbm.world.squirrelstapler.StaplerWorldType.active(world) && settings != null && settings.enabled && settings.weight > 0 && settings.localLimit > 0
 				&& settings.allowsBiome(world.getBiomeGenForCoords(x, z).biomeID)
 				&& !GeminiInvasionManager.canActivityOccur(world) && world.getTopSolidOrLiquidBlock(x, z) == y) {
 			villagers = new VillagerPack(settings);

@@ -166,7 +166,7 @@ public final class SquirrelInteractions {
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void join(EntityJoinWorldEvent event) {
         if(event.world.isRemote) return;
-        if(event.entity instanceof EntitySquirrel && !SquirrelConfig.settings.enabled
+        if(event.entity instanceof EntitySquirrel && !com.hbm.world.squirrelstapler.StaplerWorldType.active(event.world) && !SquirrelConfig.settings.enabled
                 && !((EntitySquirrel) event.entity).wasLoadedFromNBT()) {
             event.setCanceled(true);
             return;

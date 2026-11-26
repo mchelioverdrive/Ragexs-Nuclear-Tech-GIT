@@ -325,6 +325,7 @@ public class MainRegistry {
 		proxy.registerPreRenderInfo();
 		ModBlocks.mainRegistry();
 		ModItems.mainRegistry();
+		com.hbm.world.squirrelstapler.StaplerMode.registerItems();
 		ModBiomes.init();
 		proxy.registerRenderInfo();
 		HbmWorld.mainRegistry();
@@ -1067,6 +1068,7 @@ public class MainRegistry {
 		CommandReloadClient.register();
 
 		WorldTypeTeleport.init();
+		com.hbm.world.squirrelstapler.StaplerMode.register();
 
 		//ExplosionTests.runTest();
 	}
@@ -1201,6 +1203,7 @@ public class MainRegistry {
 		event.registerServerCommand(new CommandVisitedMars());
 		event.registerServerCommand(new CommandGemini());
 		event.registerServerCommand(new CommandRNTConfig());
+		event.registerServerCommand(new com.hbm.world.squirrelstapler.CommandSquirrelStapler());
 		event.registerServerCommand(new CommandStations());
 		event.registerServerCommand(new CommandEnableNukes());
 		event.registerServerCommand(new CommandEnableRedstoneGroundNukes());
@@ -1240,6 +1243,7 @@ public class MainRegistry {
         GeneralConfig.RuntimeValues general = GeneralConfig.parseRuntime(candidate);
         MobConfig.NaturalVillagerValues villagers = new MobConfig.NaturalVillagerValues(candidate);
         SquirrelConfig.Values squirrels = new SquirrelConfig.Values(candidate);
+        com.hbm.config.SquirrelStaplerConfig.Values stapler = new com.hbm.config.SquirrelStaplerConfig.Values(candidate);
         UAPConfig.Values uap = new UAPConfig.Values(candidate);
         EuropaLankConfig.Values europaLank = new EuropaLankConfig.Values(candidate);
         com.hbm.config.RestraintConfig.TaserValues taser = new com.hbm.config.RestraintConfig.TaserValues(candidate);
@@ -1251,6 +1255,7 @@ public class MainRegistry {
         GeneralConfig.applyRuntime(general);
         MobConfig.naturalVillagers = villagers;
         SquirrelConfig.settings = squirrels;
+        com.hbm.config.SquirrelStaplerConfig.settings = stapler;
         UAPConfig.settings = uap;
         EuropaLankConfig.settings = europaLank;
         com.hbm.config.RestraintConfig.taser = taser;
@@ -1280,6 +1285,7 @@ public class MainRegistry {
 		WeaponConfig.loadFromConfig(config);
 		MobConfig.loadFromConfig(config);
 		SquirrelConfig.settings = new SquirrelConfig.Values(config);
+		com.hbm.config.SquirrelStaplerConfig.settings = new com.hbm.config.SquirrelStaplerConfig.Values(config);
 		UAPConfig.settings = new UAPConfig.Values(config);
 		EuropaLankConfig.settings = new EuropaLankConfig.Values(config);
 		com.hbm.config.WitherStormConfig.loadFromConfig(config);

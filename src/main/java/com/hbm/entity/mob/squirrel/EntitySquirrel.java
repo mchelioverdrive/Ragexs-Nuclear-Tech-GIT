@@ -4,6 +4,8 @@ import com.hbm.config.SquirrelConfig;
 import com.hbm.entity.mob.squirrel.SquirrelAttachments.Attachment;
 import com.hbm.handler.restraint.Restraints;
 import com.hbm.items.ModItems;
+import com.hbm.world.squirrelstapler.StaplerCampaign;
+import com.hbm.world.squirrelstapler.StaplerWorldType;
 import net.minecraft.block.Block;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityAgeable;
@@ -17,7 +19,7 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public final class EntitySquirrel extends EntityAnimal {
+public class EntitySquirrel extends EntityAnimal {
     private static final int ATTACHED_FACE = 20, CARRIER = 21, ACTION = 22;
     public static final byte IDLE = 0, CLIMBING = 1, LEAPING = 2, EATING = 3;
     private static final float WIDTH = 0.58F, HEIGHT = 0.78F;
@@ -29,7 +31,7 @@ public final class EntitySquirrel extends EntityAnimal {
 
     public EntitySquirrel(World world) {
         super(world);
-        setSize(WIDTH, HEIGHT);
+        setSize(WIDTH * bodyScale(), HEIGHT * bodyScale());
         tasks.addTask(0, new EntityAISwimming(this));
         getNavigator().setAvoidsWater(true);
         getNavigator().setEnterDoors(false);
@@ -44,7 +46,7 @@ public final class EntitySquirrel extends EntityAnimal {
 
     @Override protected void applyEntityAttributes() {
         super.applyEntityAttributes();
-        getEntityAttribute(SharedMonsterAttributes.maxHealth).setBaseValue(SquirrelConfig.settings.health);
+        getEntityAttribute(SharedMonsterAttributes.maxHealth).setBaseValue(maximumHealth(SquirrelConfig.settings));
         getEntityAttribute(SharedMonsterAttributes.movementSpeed).setBaseValue(0.26D);
         getEntityAttribute(SharedMonsterAttributes.followRange).setBaseValue(8D);
     }
@@ -53,7 +55,26 @@ public final class EntitySquirrel extends EntityAnimal {
     @Override public EntityAgeable createChild(EntityAgeable mate) { return new EntitySquirrel(worldObj); }
     @Override public boolean isBreedingItem(ItemStack stack) { return false; }
 
+    protected float bodyScale() { return 1F; }
+    protected double maximumHealth(SquirrelConfig.Values settings) { return settings.health; }
+    public boolean isLargeHuntingSquirrel() { return false; }
+    public boolean canUseTrees() { return true; }
+    public void frighten(EntityPlayer player) { behavior.frighten(player, 130); }
+
+    @Override protected boolean canDespawn() { return StaplerWorldType.active(worldObj) && !isAttached() && getCarrierId() < 0; }
+
+    @Override protected String getLivingSound() {
+        return StaplerWorldType.active(worldObj) ? "hbm:stapler.chatter" : super.getLivingSound();
+    }
+
     @Override protected void dropFewItems(boolean killedByPlayer, int looting) {
+        if(StaplerWorldType.active(worldObj) && killedByPlayer) {
+            ItemStack trophy = StaplerCampaign.trophy(this);
+            if(trophy != null) {
+                entityDropItem(trophy, 0F);
+                return;
+            }
+        }
         dropItem(isBurning() ? ModItems.cooked_squirrel : ModItems.squirrel, 1);
     }
 
@@ -76,6 +97,7 @@ public final class EntitySquirrel extends EntityAnimal {
     }
 
     @Override public boolean interact(EntityPlayer player) {
+        if(StaplerWorldType.active(worldObj)) return false;
         if(player.isSneaking() && player.getHeldItem() == null) {
             if(!worldObj.isRemote) SquirrelInteractions.useEmptyHand(player, this);
             return true;
@@ -97,7 +119,7 @@ public final class EntitySquirrel extends EntityAnimal {
             SquirrelConfig.Values settings = SquirrelConfig.settings;
             if(appliedConfig != settings) {
                 appliedConfig = settings;
-                getEntityAttribute(SharedMonsterAttributes.maxHealth).setBaseValue(settings.health);
+                getEntityAttribute(SharedMonsterAttributes.maxHealth).setBaseValue(maximumHealth(settings));
                 if(getHealth() > getMaxHealth()) setHealth(getMaxHealth());
             }
             if(attachment != null) updateAttachment();

@@ -24,7 +24,8 @@ public final class WormEvents {
         if(event.phase != TickEvent.Phase.END || DimensionManager.getWorld(0) == null) return;
         WorldServer overworld = DimensionManager.getWorld(0);
         WormEncounters data = WormEncounters.get(overworld); data.tick();
-        if(SandwormConfig.natural && overworld.getTotalWorldTime() % SandwormConfig.naturalInterval == 0 && data.room() && !overworld.playerEntities.isEmpty()) {
+        if(SandwormConfig.natural && !com.hbm.world.squirrelstapler.StaplerWorldType.active(overworld)
+                && overworld.getTotalWorldTime() % SandwormConfig.naturalInterval == 0 && data.room() && !overworld.playerEntities.isEmpty()) {
             EntityPlayer p = (EntityPlayer)overworld.playerEntities.get(overworld.rand.nextInt(overworld.playerEntities.size()));
             if(p.capabilities.isCreativeMode || !p.isEntityAlive()) return;
             double angle = overworld.rand.nextDouble() * Math.PI * 2;

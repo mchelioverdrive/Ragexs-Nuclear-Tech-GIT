@@ -50,7 +50,8 @@ public class OverworldLargeTerrain {
 			|| (GeneralConfig.enableDungeons != 0 && world.getWorldInfo().isMapFeaturesEnabled());
 		if(world.provider.dimensionId == 0 && dungeons) {
 			oilSand.generate(world.getChunkProvider(), world, chunk);
-			if(GeneralConfig.enableRad) sellafield.generate(world.getChunkProvider(), world, chunk);
+			if(GeneralConfig.enableRad && !com.hbm.world.squirrelstapler.StaplerWorldType.suppressStructures(world))
+				sellafield.generate(world.getChunkProvider(), world, chunk);
 		}
 	}
 }

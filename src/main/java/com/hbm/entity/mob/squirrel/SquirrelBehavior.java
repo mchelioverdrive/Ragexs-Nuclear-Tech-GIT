@@ -59,7 +59,7 @@ final class SquirrelBehavior {
         }
         if(now >= nextThreatCheck) {
             nextThreatCheck = now + 8 + random.nextInt(5);
-            senseThreat(now);
+            senseThreat();
         }
         if(climbing || leapTo != null) return;
         if(now < watchUntil) {
@@ -102,7 +102,7 @@ final class SquirrelBehavior {
         }
     }
 
-    private void senseThreat(int now) {
+    private void senseThreat() {
         World world = squirrel.worldObj;
         EntityLivingBase threat = squirrel.getAITarget();
         if(threat == null || !threat.isEntityAlive() || squirrel.getDistanceSqToEntity(threat) > 100D) {
@@ -120,7 +120,11 @@ final class SquirrelBehavior {
                 }
             }
         }
-        if(threat == null) return;
+        if(threat != null) frighten(threat, 36);
+    }
+
+    void frighten(EntityLivingBase threat, int duration) {
+        int now = squirrel.ticksExisted;
         if(now >= threatenedUntil) {
             nextDecision = now;
             watchUntil = 0;
@@ -129,11 +133,12 @@ final class SquirrelBehavior {
         threatX = threat.posX;
         threatY = threat.posY;
         threatZ = threat.posZ;
-        threatenedUntil = now + 36;
+        threatenedUntil = Math.max(threatenedUntil, now + duration);
     }
 
     private boolean travelInTrees(int now) {
         nextTreeAttempt = now + 80 + random.nextInt(41);
+        if(!squirrel.canUseTrees()) return false;
         int x = MathHelper.floor_double(squirrel.posX), y = MathHelper.floor_double(squirrel.posY) - 1;
         int z = MathHelper.floor_double(squirrel.posZ);
         World world = squirrel.worldObj;

@@ -337,6 +337,11 @@ public class EntityMappings {
 		registerGeminiEntity(com.hbm.entity.mob.gemini.EntityGardenerCocoon.class, "gardener_cocoon", id++, MainRegistry.instance, 96, 20, false);
 		registerGeminiEntity(com.hbm.entity.mob.gemini.EntityGeminiLight.class, "gemini_light", id++, MainRegistry.instance, 192, 2, false);
 		EntityRegistry.registerModEntity(EntitySquirrel.class, "squirrel", id++, MainRegistry.instance, 64, 2, true);
+		EntityRegistry.registerModEntity(com.hbm.world.squirrelstapler.StaplerSquirrels.Large.class, "stapler_large_squirrel", id++, MainRegistry.instance, 64, 2, true);
+		EntityRegistry.registerModEntity(com.hbm.world.squirrelstapler.StaplerSquirrels.Ghost.class, "stapler_ghost_squirrel", id++, MainRegistry.instance, 64, 2, true);
+		EntityRegistry.registerModEntity(com.hbm.world.squirrelstapler.StaplerSquirrels.Bear.class, "stapler_squirrel_bear", id++, MainRegistry.instance, 64, 2, true);
+		EntityRegistry.registerModEntity(com.hbm.world.squirrelstapler.StaplerSquirrels.Silhouette.class, "stapler_silhouette", id++, MainRegistry.instance, 64, 2, true);
+		EntityRegistry.registerModEntity(com.hbm.world.squirrelstapler.EntityStaplerArrival.class, "stapler_arrival", id++, MainRegistry.instance, 96, 2, false);
 	}
 
 	private static final java.util.Set<Class<?>> GEMINI_ENTITIES = new java.util.HashSet<Class<?>>();

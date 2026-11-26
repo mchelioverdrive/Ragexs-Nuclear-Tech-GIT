@@ -389,6 +389,13 @@
   "giant_enderman.bite": {"category": "hostile", "sounds": [{"name": "minecraft:random/eat1", "pitch": 0.56}, {"name": "minecraft:random/eat2", "pitch": 0.56}, {"name": "minecraft:random/eat3", "pitch": 0.56}]},
   "giant_enderman.hurt": {"category": "hostile", "sounds": [{"name": "minecraft:mob/endermen/hit1", "pitch": 0.56}, {"name": "minecraft:mob/endermen/hit2", "pitch": 0.56}, {"name": "minecraft:mob/endermen/hit3", "pitch": 0.56}, {"name": "minecraft:mob/endermen/hit4", "pitch": 0.56}]},
   "giant_enderman.death": {"category": "hostile", "sounds": [{"name": "minecraft:mob/endermen/death", "pitch": 0.52}]},
+  "stapler.wind": {"category": "ambient", "sounds": ["stapler/wind"]},
+  "stapler.chatter": {"category": "neutral", "sounds": ["stapler/chatter"]},
+  "stapler.scream": {"category": "ambient", "sounds": ["stapler/scream"]},
+  "stapler.growl": {"category": "hostile", "sounds": ["stapler/growl"]},
+  "stapler.hum": {"category": "ambient", "sounds": ["stapler/hum"]},
+  "stapler.knock": {"category": "ambient", "sounds": ["stapler/knock"]},
+  "stapler.arrival": {"category": "ambient", "sounds": ["stapler/arrival"]},
 	  "alarm.mama": {
 		"category": "record",
 		"sounds": [

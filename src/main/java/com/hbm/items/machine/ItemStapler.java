@@ -29,7 +29,9 @@ public class ItemStapler extends Item implements IGUIProvider {
 	@Override
 	public boolean onItemUse(ItemStack stack, EntityPlayer player, World world, int x, int y, int z,
 			int face, float hitX, float hitY, float hitZ) {
-		return this == ModItems.stapler && player.isSneaking() && SquirrelInteractions.staple(stack, player, x, y, z, face);
+		return this == ModItems.stapler && player.isSneaking()
+				&& (com.hbm.world.squirrelstapler.StaplerMode.attach(player, x, y, z)
+				|| SquirrelInteractions.staple(stack, player, x, y, z, face));
 	}
 
 	@Override

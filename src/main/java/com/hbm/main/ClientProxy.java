@@ -210,6 +210,7 @@ public class ClientProxy extends ServerProxy {
 		registerClientEventHandler(new com.hbm.render.entity.RestraintClient());
 		registerClientEventHandler(new com.hbm.render.entity.WoodcrawlerToolsClient());
         registerClientEventHandler(new com.hbm.render.world.IrisClient());
+        registerClientEventHandler(new com.hbm.world.squirrelstapler.StaplerClient());
 		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.projectile.EntityTranquilizerDart.class, new net.minecraft.client.renderer.entity.RenderSnowball(ModItems.tranquilizer_dart));
 		//test crap
 		ClientRegistry.bindTileEntitySpecialRenderer(TileEntityObjTester.class, new RendererObjTester());
@@ -629,7 +630,7 @@ public class ClientProxy extends ServerProxy {
 		//MinecraftForgeClient.registerItemRenderer(ModItems.gun_euthanasia, new ItemRenderOverkill());
 		//MinecraftForgeClient.registerItemRenderer(ModItems.gun_defabricator, new ItemRenderOverkill());
 		//MinecraftForgeClient.registerItemRenderer(ModItems.gun_lever_action, new ItemRenderWeaponFFMaresLeg(ResourceManager.ff_gun_bright, ResourceManager.ff_wood));
-		//MinecraftForgeClient.registerItemRenderer(ModItems.gun_bolt_action, new ItemRenderWeaponFFBolt(ResourceManager.rem700, ResourceManager.rem700_tex));
+		MinecraftForgeClient.registerItemRenderer(com.hbm.world.squirrelstapler.StaplerMode.rifle, new ItemRenderWeaponFFBolt(ResourceManager.rem700, ResourceManager.rem700_tex));
 		//MinecraftForgeClient.registerItemRenderer(ModItems.gun_lever_action_dark, new ItemRenderWeaponFFMaresLeg(ResourceManager.ff_gun_normal, ResourceManager.ff_wood_red));
 		//MinecraftForgeClient.registerItemRenderer(ModItems.gun_bolt_action_green, new ItemRenderWeaponFFBolt(ResourceManager.rem700poly, ResourceManager.rem700poly_tex));
 		MinecraftForgeClient.registerItemRenderer(ModItems.gun_lever_action_sonata, new ItemRenderGunAnim());
@@ -940,6 +941,11 @@ public class ClientProxy extends ServerProxy {
 		RenderingRegistry.registerEntityRenderingHandler(EntityPlasticBag.class, new RenderPlasticBag());
 		RenderingRegistry.registerEntityRenderingHandler(EntityPigeon.class, new RenderPigeon(new ModelPigeon(), 0.3F));
 		RenderingRegistry.registerEntityRenderingHandler(EntitySquirrel.class, new RenderSquirrel());
+		RenderingRegistry.registerEntityRenderingHandler(com.hbm.world.squirrelstapler.StaplerSquirrels.Large.class, new RenderSquirrel());
+		RenderingRegistry.registerEntityRenderingHandler(com.hbm.world.squirrelstapler.StaplerSquirrels.Ghost.class, new RenderSquirrel());
+		RenderingRegistry.registerEntityRenderingHandler(com.hbm.world.squirrelstapler.StaplerSquirrels.Bear.class, new RenderSquirrel());
+		RenderingRegistry.registerEntityRenderingHandler(com.hbm.world.squirrelstapler.StaplerSquirrels.Silhouette.class, new RenderSquirrel());
+		RenderingRegistry.registerEntityRenderingHandler(com.hbm.world.squirrelstapler.EntityStaplerArrival.class, new com.hbm.render.entity.mob.RenderStaplerArrival());
 
 		RenderingRegistry.registerEntityRenderingHandler(EntityMoonCow.class, new RenderMoonCow(new ModelMoonCow(), 0.7F));
 		RenderingRegistry.registerEntityRenderingHandler(EntityScutterfish.class, new RenderScutter(new ModelScutter(), 0.3F));

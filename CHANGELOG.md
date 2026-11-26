@@ -1033,3 +1033,9 @@
 - Add animated squirrels that forage for dropped seeds and nuts, flee nearby threats, climb trunks and leap to nearby branches. Forest packs share the passive mob cap and have a reloadable local limit. Squirrels become prey for wild wolves, ocelots and existing Gemini hunters, and drop the existing squirrel food item.
 - Carry squirrels with sneak-use and an empty hand. While carrying, sneak-use the stapler on a log to attach one to its selected face and spend staples from inventory. Attachments survive unloads and restarts, and release when the log is lost or the squirrel is detached by hand.
 - Publish server-side capture and attachment events and save success counts, tree keys and active attachment positions by player. Reload the squirrel settings under `12_mobs.squirrels`.
+
+2026-11-25 21:57 — Add the Squirrel Stapler forest campaign
+
+- Select Squirrel Stapler at world creation or use `level-type=squirrelstapler` on a dedicated server. Follow the trail east from spawn to the cabin for a survey map, an RTM bolt-action rifle, ammunition and a stapler.
+- Hunt each day's quota, then sneak-use the stapler on the cabin's log rack with today's trophies and staples in inventory. The world saves the shared tally, unlocks cabin sleep between days and progresses through a scripted finale after the last deposit.
+- Later days add darker fog, distant sounds, silhouettes, ghost squirrels and squirrel bears. Reload the mode settings under `12_mobs.squirrelstapler` and use `/squirrelstapler` for operator controls.

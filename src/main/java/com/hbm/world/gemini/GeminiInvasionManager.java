@@ -47,6 +47,7 @@ public final class GeminiInvasionManager {
 		return progressionBlocker(DimensionManager.getWorld(0), requireData(world));
 	}
 	private static String progressionBlocker(WorldServer overworld, GeminiWorldSavedData data) {
+		if(com.hbm.world.squirrelstapler.StaplerWorldType.suppressGemini(overworld)) return "paused by the Squirrel Stapler campaign";
 		String blocker = activationBlocker(data);
 		if(blocker != null) return blocker;
 		if(!GeminiConfig.enabled) return "Gemini invasion enabled is false";
@@ -177,6 +178,7 @@ public final class GeminiInvasionManager {
 	}
 
 	public static boolean manualActivationAllowed(World world) {
+		if(com.hbm.world.squirrelstapler.StaplerWorldType.suppressGemini(world)) return false;
 		GeminiWorldSavedData data = GeminiWorldSavedData.get(world);
 		return data != null && (GeminiConfig.geminiActivationMode == ActivationMode.DISABLED || activationBlocker(data) == null);
 	}
@@ -204,6 +206,7 @@ public final class GeminiInvasionManager {
 
 	/** Phase available under the selected activation condition, independent of the master switch. */
 	public static int getPhase(World world) {
+		if(com.hbm.world.squirrelstapler.StaplerWorldType.suppressGemini(world)) return 0;
 		GeminiWorldSavedData data = GeminiWorldSavedData.get(world);
 		return data == null ? 0 : activePhase(data);
 	}
@@ -217,6 +220,7 @@ public final class GeminiInvasionManager {
     /** Exact shared scheduler gates; also used by status while callbacks are paused. */
     static String structureGate(World world, int requiredPhase) {
         if(!(world instanceof WorldServer) || world.isRemote || world.provider.dimensionId != 0) return "Overworld server only";
+        if(com.hbm.world.squirrelstapler.StaplerWorldType.suppressGemini(world)) return "paused by the Squirrel Stapler campaign";
         if(!GeminiConfig.enabled) return "Gemini invasion enabled is false";
         GeminiWorldSavedData data = GeminiWorldSavedData.get(world);
         if(data == null) return "server Overworld unavailable";
@@ -298,7 +302,8 @@ public final class GeminiInvasionManager {
 		WorldServer overworld = (WorldServer) event.world;
 		GeminiWorldSavedData data = GeminiWorldSavedData.get(overworld);
 		if(data == null) return;
-		boolean initialized = GeminiConfig.enabled && !overworld.playerEntities.isEmpty() && activateIfReady(overworld, data);
+		boolean initialized = GeminiConfig.enabled && !com.hbm.world.squirrelstapler.StaplerWorldType.suppressGemini(overworld)
+				&& !overworld.playerEntities.isEmpty() && activateIfReady(overworld, data);
 		// Debug controls and existing encounters still need their updates when natural scheduling is paused.
 		GeminiIris.tick(overworld, data);
 		data.lights.tick(overworld);

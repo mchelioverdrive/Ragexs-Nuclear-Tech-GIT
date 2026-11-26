@@ -60,13 +60,14 @@ public final class WitherStormEvents {
         if(!event.world.isRemote) WitherStormEncounters.get(event.world).unload(event.world);
     }
     @SubscribeEvent public void skullPlaced(BlockEvent.PlaceEvent event) {
-        if(!event.world.isRemote && WitherStormConfig.survivalSummon && event.placedBlock == Blocks.skull
+        if(!event.world.isRemote && !com.hbm.world.squirrelstapler.StaplerWorldType.active(event.world)
+            && WitherStormConfig.survivalSummon && event.placedBlock == Blocks.skull
             && event.itemInHand != null && event.itemInHand.getItem() == Items.skull && event.itemInHand.getItemDamage() == 1) {
             placedSkulls.computeIfAbsent(event.world, world -> new ArrayList<>()).add(event);
         }
     }
     @SubscribeEvent public void tick(TickEvent.WorldTickEvent event) {
-        if(event.phase != TickEvent.Phase.END || event.world.isRemote) return;
+        if(event.phase != TickEvent.Phase.END || event.world.isRemote || com.hbm.world.squirrelstapler.StaplerWorldType.active(event.world)) return;
         List<BlockEvent.PlaceEvent> placements = placedSkulls.remove(event.world);
         if(placements != null) for(BlockEvent.PlaceEvent placement : placements) {
             // Forge has committed the placement and protection listeners have had a chance to veto it.
@@ -150,7 +151,7 @@ public final class WitherStormEvents {
         EntityPlayer player = event.entityPlayer;
         World world = player.worldObj;
         // Client cancellation suppresses the packet that triggers the server-side ritual.
-        if(world.isRemote) return;
+        if(world.isRemote || com.hbm.world.squirrelstapler.StaplerWorldType.active(world)) return;
         ItemStack held = player.getHeldItem();
         if(event.action != PlayerInteractEvent.Action.RIGHT_CLICK_BLOCK || !WitherStormConfig.survivalSummon || !player.isSneaking() || held == null || held.getItem() != Items.nether_star) return;
         int x = event.x, y = event.y, z = event.z;
