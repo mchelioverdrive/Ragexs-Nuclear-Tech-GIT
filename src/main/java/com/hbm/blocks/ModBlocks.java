@@ -1054,6 +1054,7 @@ public class ModBlocks {
 	public static Block machine_combustion_engine;
 
 	public static Block machine_shredder;
+	public static Block machine_woodchipper;
 	public static Block machine_shredder_large_dummy;
 	public static Block machine_blast_furnace;
 
@@ -2172,6 +2173,7 @@ public class ModBlocks {
 		machine_combustion_engine = new MachineCombustionEngine().setBlockName("machine_combustion_engine").setHardness(5.0F).setResistance(10.0F).setCreativeTab(MainRegistry.machineTab).setBlockTextureName(RefStrings.MODID + ":block_steel");
 
 		machine_shredder = new MachineShredder(Material.iron).setBlockName("machine_shredder").setHardness(5.0F).setResistance(10.0F).setCreativeTab(MainRegistry.machineTab);
+		machine_woodchipper = new MachineWoodchipper().setBlockName("machine_woodchipper").setCreativeTab(MainRegistry.machineTab);
 		machine_shredder_large_dummy = new BlockLargeShredderDummy().setBlockName("machine_shredder_large_dummy").setHardness(5.0F).setResistance(10.0F).setCreativeTab(MainRegistry.machineTab).setBlockTextureName(RefStrings.MODID + ":block_steel");
 		machine_blast_furnace = new MachineBlastFurnace().setBlockName("machine_blast_furnace").setHardness(5.0F).setResistance(10.0F).setCreativeTab(MainRegistry.machineTab).setBlockTextureName(RefStrings.MODID + ":brick_fire");
 
@@ -3788,6 +3790,7 @@ public class ModBlocks {
 		GameRegistry.registerBlock(machine_waste_drum, machine_waste_drum.getUnlocalizedName());
 		GameRegistry.registerBlock(machine_storage_drum, machine_storage_drum.getUnlocalizedName());
 		GameRegistry.registerBlock(machine_shredder, machine_shredder.getUnlocalizedName());
+		GameRegistry.registerBlock(machine_woodchipper, machine_woodchipper.getUnlocalizedName());
 		GameRegistry.registerBlock(machine_shredder_large_dummy, ItemBlockBase.class, "machine_shredder_large_dummy");
 		GameRegistry.registerBlock(machine_blast_furnace, ItemBlockBase.class, "machine_blast_furnace");
 		register(machine_well);

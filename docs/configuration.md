@@ -12,9 +12,26 @@ Always stop the server before editing startup configuration unless a command exp
 
 `/rntconfig reload` (operator level 2, including the server console and integrated server) rereads `config/hbm.cfg` with the existing Forge configuration parser. It validates the file and supported values before applying anything. Invalid types, numbers, booleans or activation modes, unfinished categories/lists, and read failures retain the previous runtime configuration and report an error. Finite numeric values use the existing range clamps. The command does not rewrite the file.
 
-Supported live values are all `21_gemini` settings and subcategories **except `woodcrawlerSpawnWeight`**, the `12_mobs` natural villager, UAP and Europa Lank settings below, the [mace and bear mace settings](#mace-and-bear-mace) in `19_weapons`, the [taser settings](gameplay/restraints.md#taser) in `27_restraints`, and the `01_general` keys `1.18_enableExtendedLogging`, `1.45_enablePowerNetDiagnostics`, `1.46_enableMachineRuntimeDiagnostics`, `1.36_enableMOTD` and `1.37_enableGuideBook`. These general settings affect subsequent logging, diagnostics and login handling. All other common settings remain unchanged until restart, including registration, potion/dimension IDs, radiation implementation selection, sound initialization, blocks, items and startup recipe options. JSON machine/resource configuration remains startup-only for this command. Use the existing `/ntmreload` for supported recipe/item-pool JSON and `/ntmclient` for local `hbmClient.json` preferences.
+Supported live values are all `21_gemini` settings and subcategories **except `woodcrawlerSpawnWeight`**, the `12_mobs` natural villager, UAP and Europa Lank settings below, the [woodchipper settings](#woodchipper) in `09_machines`, the [mace and bear mace settings](#mace-and-bear-mace) in `19_weapons`, the [taser settings](gameplay/restraints.md#taser) in `27_restraints`, and the `01_general` keys `1.18_enableExtendedLogging`, `1.45_enablePowerNetDiagnostics`, `1.46_enableMachineRuntimeDiagnostics`, `1.36_enableMOTD` and `1.37_enableGuideBook`. These general settings affect subsequent logging, diagnostics and login handling. All other common settings remain unchanged until restart, including registration, potion/dimension IDs, radiation implementation selection, sound initialization, blocks, items and startup recipe options. JSON machine/resource configuration remains startup-only for this command. Use the existing `/ntmreload` for supported recipe/item-pool JSON and `/ntmclient` for local `hbmClient.json` preferences.
 
 Gemini admission limits apply to the next admission in every active world without deleting existing creatures, nests or cocoons. Loaded Woodcrawlers refresh their native detection-range attribute on their next server tick, including after loading an older saved entity. Existing infection/cocoon durations, conversion decisions, boss health attributes and event countdowns retain their saved snapshots; new instances use the new settings. In-flight AI timers continue and consult updated thresholds on subsequent ticks. Progression and world gamerules are never reset. Reload registers no listeners or entities. Supported settings govern server decisions; native entity metadata, attributes, disease state and sound packets already convey their results, so no additional client configuration packet is needed.
+
+### Woodchipper
+
+| `09_machines` key | Default | Accepted values |
+| --- | --- | --- |
+| `enableWoodchipper` | `true` | Boolean. Controls operation. The block and recipes stay registered. |
+| `woodchipperDurationTicks` | 20 | 1–1,200 powered ticks per item |
+| `woodchipperEnergyPerTick` | 100 | 1–10,000 legacy HE per working tick. One HE is one half-joule quantum. |
+| `woodchipperEntityProcessing` | `true` | Boolean. Also requires enabled restraints and devices. |
+| `woodchipperAllowPlayers` | `true` | Boolean. Also requires `27_restraints.allowPlayerRestraint` and PvP permission for damage. |
+| `woodchipperAllowBosses` | `false` | Boolean. Shared size limits and exclusions still apply. |
+| `woodchipperProcessingParticles` | `true` | Boolean. Controls wood chips and occupant hit particles. |
+| `woodchipperEntityDamage` | 6 | 0–100 health points per 20 powered ticks. Zero disables damage. |
+
+At the default rate of 100 HE/t, the woodchipper draws 1 kW and stores up to 5 kJ. Connect a power cable to the rear port. Feed wood from above and extract biomass from the sides or bottom. A redstone signal pauses material processing and stops entity processing. Material work also pauses without sufficient power or room for the full output. Progress is saved with the current input. Replacing it with a different item resets progress.
+
+The defaults produce 8 biomass from a log, 2 from a plank, and 1 from a stick, sapling, leaf block, or wooden slab. The `hbmWoodchipper.json` recipe override accepts one item from a supported Ore Dictionary tag per recipe, with a biomass yield from 1 to 64. The existing recipe reload command applies recipe changes. See the device guide for occupant controls. [Restraint devices](gameplay/restraints.md#devices)
 
 ### Mace and bear mace
 

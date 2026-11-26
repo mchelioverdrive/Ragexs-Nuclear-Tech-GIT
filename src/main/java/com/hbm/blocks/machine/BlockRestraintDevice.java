@@ -24,7 +24,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.client.event.DrawBlockHighlightEvent;
 
 public class BlockRestraintDevice extends BlockDummyable implements ITooltipProvider {
-    public enum Kind { GUILLOTINE, BULL, CHAIR, TABLE, HANGING }
+    public enum Kind { GUILLOTINE, BULL, CHAIR, TABLE, HANGING, WOODCHIPPER }
     public final Kind kind;
     private final List<List<AxisAlignedBB>> rotatedBounds = new ArrayList<List<AxisAlignedBB>>(4);
     public BlockRestraintDevice(Kind kind) {

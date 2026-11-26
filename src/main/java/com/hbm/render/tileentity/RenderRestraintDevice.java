@@ -17,6 +17,7 @@ public final class RenderRestraintDevice extends TileEntitySpecialRenderer imple
     private final ResourceLocation[] textures = new ResourceLocation[Kind.values().length];
     public RenderRestraintDevice() {
         for(Kind kind : Kind.values()) {
+            if(kind == Kind.WOODCHIPPER) continue;
             models[kind.ordinal()] = new ModelRestraintDevice(kind);
             textures[kind.ordinal()] = kind == Kind.HANGING ? new ResourceLocation("minecraft:textures/blocks/planks_oak.png")
                     : new ResourceLocation("hbm:textures/models/restraint/" + kind.name().toLowerCase(java.util.Locale.ROOT) + ".png");

@@ -1015,3 +1015,9 @@
 - Craft two defensive sprayers and make their fictional fluids in the Chemical Reactor. Refill spent sprayers through the existing fluid loaders.
 - Apply temporary blindness, slowness, weakness, panic and targeting disruption in a server-checked cone. Gas protection absorbs or reduces exposure and wears compatible filters. Bursts reuse the existing aerosol sound and particle network.
 - Reload gameplay settings under `19_weapons`. Boss immunity defaults on, and player susceptibility respects PvP permission.
+
+2026-11-25 20:31 — Add the powered Woodchipper
+
+- Turn Ore Dictionary logs, planks, sticks, saplings, leaves and wooden slabs into biomass. Insert from above, extract from the sides or bottom, and apply redstone to pause work.
+- Use the shared restraint device controls to secure compatible occupants. Entity processing requires manual confirmation, stops on power loss and uses the normal entity damage and drop handling.
+- Add an animated industrial model, a progress and energy screen, NEI recipes and reloadable settings under `09_machines`.

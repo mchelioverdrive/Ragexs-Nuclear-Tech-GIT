@@ -1242,6 +1242,7 @@ public class MainRegistry {
         EuropaLankConfig.Values europaLank = new EuropaLankConfig.Values(candidate);
         com.hbm.config.RestraintConfig.TaserValues taser = new com.hbm.config.RestraintConfig.TaserValues(candidate);
         MaceConfig.Values mace = new MaceConfig.Values(candidate);
+        WoodchipperConfig.Values woodchipper = new WoodchipperConfig.Values(candidate);
         // All parsing/validation finishes before these non-throwing field assignments.
         GeminiConfig.apply(gemini, false);
         GeneralConfig.applyRuntime(general);
@@ -1250,6 +1251,7 @@ public class MainRegistry {
         EuropaLankConfig.settings = europaLank;
         com.hbm.config.RestraintConfig.taser = taser;
         MaceConfig.settings = mace;
+        WoodchipperConfig.settings = woodchipper;
     }
 
     private void loadConfig(FMLPreInitializationEvent event) {
@@ -1262,6 +1264,7 @@ public class MainRegistry {
 		com.hbm.config.GeminiConfig.loadFromConfig(config);
 		com.hbm.config.RestraintConfig.loadFromConfig(config);
 		MaceConfig.settings = new MaceConfig.Values(config);
+		WoodchipperConfig.settings = new WoodchipperConfig.Values(config);
 		WorldConfig.loadFromConfig(config);
 		MachineConfig.loadFromConfig(config);
 		BombConfig.loadFromConfig(config);

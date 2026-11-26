@@ -75,7 +75,8 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
         }
     }
 
-    public TileEntityRestraintDevice() { super(1); }
+    public TileEntityRestraintDevice() { this(1); }
+    protected TileEntityRestraintDevice(int slots) { super(slots); }
     public Kind kind() {
         return getBlockType() instanceof BlockRestraintDevice ? ((BlockRestraintDevice) getBlockType()).kind : Kind.GUILLOTINE;
     }
@@ -96,12 +97,16 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
                 && s.dimension == worldObj.provider.dimensionId && s.x == xCoord && s.y == yCoord && s.z == zCoord;
     }
     public EntityLivingBase occupant() {
+        return occupant(false);
+    }
+
+    private EntityLivingBase occupant(boolean searchNow) {
         if(captive == null) return null;
         if(cachedEntity >= 0 && worldObj.getEntityByID(cachedEntity) instanceof EntityLivingBase) {
             EntityLivingBase e = (EntityLivingBase) worldObj.getEntityByID(cachedEntity);
             if(owns(e) && e.isEntityAlive()) return e;
         }
-        if(worldObj.getTotalWorldTime() % 20 != 0) return null;
+        if(!searchNow && worldObj.getTotalWorldTime() % 20 != 0) return null;
         List<EntityLivingBase> local = worldObj.getEntitiesWithinAABB(EntityLivingBase.class,
                 AxisAlignedBB.getBoundingBox(xCoord - 4, yCoord - 2, zCoord - 4, xCoord + 5, yCoord + 5, zCoord + 5));
         for(EntityLivingBase e : local) if(owns(e) && e.isEntityAlive()) { cachedEntity = e.getEntityId(); return e; }
@@ -110,7 +115,7 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
 
     public boolean capture(EntityLivingBase e) {
         if(worldObj.isRemote || !RestraintConfig.enabled || !RestraintConfig.devices || captive != null || active || locked
-                || !Restraints.compatible(e) || e.worldObj != worldObj || e.ridingEntity != null || e.riddenByEntity != null
+                || !isOccupantCompatible(e) || e.worldObj != worldObj || e.ridingEntity != null || e.riddenByEntity != null
                 || e.getDistanceSq(xCoord + 0.5, yCoord + 0.5, zCoord + 0.5) > 36) return false;
         RestraintState s = RestraintState.get(e);
         if(s.occupied() || !(s.cuffs || s.jacket || s.incapacitated()) || kind() == Kind.HANGING && !hasNoose()
@@ -125,6 +130,10 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
         return true;
     }
 
+    protected boolean isOccupantCompatible(EntityLivingBase e) {
+        return Restraints.compatible(e);
+    }
+
     public float yaw() {
         return BlockRestraintDevice.modelYaw(getBlockMetadata());
     }
@@ -135,8 +144,7 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
     }
     public void position(EntityLivingBase e) {
         if(owns(e)) cachedEntity = e.getEntityId();
-        Vec3 p = local(0, kind() == Kind.TABLE ? 0.92 : kind() == Kind.BULL ? 0.65 : kind() == Kind.CHAIR ? 0.02 : 0.25, 0);
-        if(kind() == Kind.HANGING) p = hangingPosition(active ? cycle : 0);
+        Vec3 p = occupantAnchor();
         e.setPosition(p.xCoord, p.yCoord, p.zCoord);
         e.rotationYaw = e.rotationYawHead = e.renderYawOffset = -yaw();
         e.rotationPitch = 0;
@@ -145,13 +153,18 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
         s.anchorX = p.xCoord; s.anchorY = p.yCoord; s.anchorZ = p.zCoord; s.anchored = true;
     }
 
+    protected Vec3 occupantAnchor() {
+        if(kind() == Kind.HANGING) return hangingPosition(active ? cycle : 0);
+        return local(0, kind() == Kind.TABLE ? 0.92 : kind() == Kind.BULL ? 0.65 : kind() == Kind.CHAIR ? 0.02 : 0.25, 0);
+    }
+
     public static float hangingDrop(float time) { return Math.min(1F, Math.max(0F, time / 12F)) * 0.55F; }
     public static float hangingSway(float time) { return (float) Math.sin(time * 0.18F) * Math.min(1F, time / 12F) * 0.06F; }
     public Vec3 hangingPosition(float time) { return local(hangingSway(time), 1 - hangingDrop(time), 0); }
 
     public boolean release(boolean forced) {
         if(worldObj.isRemote || !forced && (active || locked || temperature > RestraintConfig.bullSafeTemperature)) return false;
-        EntityLivingBase e = occupant();
+        EntityLivingBase e = occupant(forced && kind() == Kind.WOODCHIPPER);
         if(e == null && cachedEntity >= 0 && worldObj.getEntityByID(cachedEntity) instanceof EntityLivingBase) {
             EntityLivingBase candidate = (EntityLivingBase) worldObj.getEntityByID(cachedEntity);
             if(owns(candidate)) e = candidate;
@@ -196,20 +209,7 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
             }
         }
         if((held == null && !player.isSneaking() || held != null && held.getItem() == net.minecraft.init.Items.lead) && captive == null) {
-            List<EntityLivingBase> nearby = worldObj.getEntitiesWithinAABB(EntityLivingBase.class,
-                    AxisAlignedBB.getBoundingBox(xCoord - 5, yCoord - 3, zCoord - 5, xCoord + 6, yCoord + 4, zCoord + 6));
-            EntityLivingBase selected = null;
-            double distance = Double.MAX_VALUE;
-            for(EntityLivingBase e : nearby) {
-                RestraintState s = RestraintState.get(e);
-                if(player.getUniqueID().equals(s.escort) && e.getDistanceSqToEntity(player) < distance) {
-                    selected = e; distance = e.getDistanceSqToEntity(player);
-                }
-            }
-            if(selected != null) {
-                if(!capture(selected)) Restraints.message(player, "restraint.no_captive");
-                return true;
-            }
+            if(tryCaptureEscorted(player)) return true;
             if(held != null) { Restraints.message(player, "restraint.no_captive"); return true; }
         }
         if(held != null) { Restraints.message(player, "restraint.controls"); return true; }
@@ -235,6 +235,21 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
         return true;
     }
 
+    protected boolean tryCaptureEscorted(EntityPlayer player) {
+        List<EntityLivingBase> nearby = worldObj.getEntitiesWithinAABB(EntityLivingBase.class,
+                AxisAlignedBB.getBoundingBox(xCoord - 5, yCoord - 3, zCoord - 5, xCoord + 6, yCoord + 4, zCoord + 6));
+        EntityLivingBase selected = null;
+        double distance = Double.MAX_VALUE;
+        for(EntityLivingBase e : nearby) {
+            if(player.getUniqueID().equals(RestraintState.get(e).escort) && e.getDistanceSqToEntity(player) < distance) {
+                selected = e; distance = e.getDistanceSqToEntity(player);
+            }
+        }
+        if(selected == null) return false;
+        if(!capture(selected)) Restraints.message(player, "restraint.no_captive");
+        return true;
+    }
+
     private void activate(EntityPlayer player) {
         EntityLivingBase e = occupant();
         if(active || e == null || kind() == Kind.BULL && !locked || kind() == Kind.CHAIR && energyQuanta < RestraintConfig.chairQuantaPerTick * 20L
@@ -243,13 +258,8 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
                 || kind() == Kind.BULL && burnTicks <= 0 && !isItemValidForSlot(0, slots[0])) {
             Restraints.message(player, "restraint.not_ready"); return;
         }
-        long now = worldObj.getTotalWorldTime();
-        if(!player.getUniqueID().equals(armedBy) || now > armedUntil) {
-            armedBy = player.getUniqueID(); armedUntil = now + 60; armedSneakReleased = false;
-            Restraints.message(player, "restraint.confirm"); return;
-        }
-        if(!armedSneakReleased) { Restraints.message(player, "restraint.confirm"); return; }
-        armedBy = null; cycle = 0;
+        if(!confirmActivation(player)) return;
+        cycle = 0;
         if(kind() == Kind.TABLE) {
             if(!Restraints.compatible(e)) { Restraints.message(player, "restraint.not_ready"); return; }
             // Reserve exactly one dose on confirmation; apply it at the existing needle stroke.
@@ -259,17 +269,43 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
         sound(kind() == Kind.HANGING ? "random.door_open" : kind() == Kind.GUILLOTINE ? "hbm:block.pressOperate" : kind() == Kind.TABLE ? "random.fizz" : "hbm:door.lever", 0.8F);
     }
 
+    protected boolean confirmActivation(EntityPlayer player) {
+        long now = worldObj.getTotalWorldTime();
+        if(!player.getUniqueID().equals(armedBy) || now > armedUntil) {
+            armedBy = player.getUniqueID(); armedUntil = now + 60; armedSneakReleased = false;
+        } else if(armedSneakReleased) {
+            armedBy = null;
+            return true;
+        }
+        Restraints.message(player, "restraint.confirm");
+        return false;
+    }
+
     private void status(EntityPlayer player) {
         Restraints.message(player, "restraint.status", captive == null ? "-" : captive.toString().substring(0, 8), temperature, energyQuanta / 2L);
         Restraints.message(player, "restraint.controls");
     }
     private void sound(String name, float volume) { worldObj.playSoundEffect(xCoord + 0.5, yCoord + 1, zCoord + 0.5, name, volume, 1F); }
     private void sync() { markDirty(); markNetworkDirty(); if(worldObj != null && !worldObj.isRemote) networkPackNT(64); }
-    private void setActive(boolean value) {
+    protected void setActive(boolean value) {
         if(active == value) return;
         active = value; markDirty(); markNetworkDirty();
         if(!active && bullHeating) setBullSoundState(false, bullStruggling);
-        worldObj.func_147451_t(xCoord, yCoord, zCoord);
+        if(kind() != Kind.WOODCHIPPER) worldObj.func_147451_t(xCoord, yCoord, zCoord);
+    }
+
+    protected EntityLivingBase trackOccupant() {
+        if(armedBy != null) {
+            EntityPlayer operator = worldObj.func_152378_a(armedBy);
+            if(worldObj.getTotalWorldTime() > armedUntil || operator == null || !isUseableByPlayer(operator)) armedBy = null;
+            else if(!operator.isSneaking()) armedSneakReleased = true;
+        }
+        EntityLivingBase e = occupant();
+        if(captive != null && e == null) {
+            if(++missingTicks > 200 && worldObj.checkChunksExist(xCoord - 4, yCoord, zCoord - 4, xCoord + 4, yCoord + 4, zCoord + 4)) forget();
+        } else missingTicks = 0;
+        if(e != null) position(e);
+        return e;
     }
 
     @Override public void updateEntity() {
@@ -296,18 +332,9 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
         }
         if(!collisionCellsChecked && worldObj.getTotalWorldTime() % 20 == 0)
             collisionCellsChecked = ((BlockRestraintDevice) getBlockType()).ensureCollisionCells(worldObj, xCoord, yCoord, zCoord);
-        if(armedBy != null) {
-            EntityPlayer operator = worldObj.func_152378_a(armedBy);
-            if(worldObj.getTotalWorldTime() > armedUntil || operator == null || !isUseableByPlayer(operator)) armedBy = null;
-            else if(!operator.isSneaking()) armedSneakReleased = true;
-        }
         if(kind() == Kind.CHAIR && worldObj.getTotalWorldTime() % 20 == 0)
             for(ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) trySubscribe(worldObj, xCoord + dir.offsetX, yCoord + dir.offsetY, zCoord + dir.offsetZ, dir);
-        EntityLivingBase e = occupant();
-        if(captive != null && e == null) {
-            if(++missingTicks > 200 && worldObj.checkChunksExist(xCoord - 4, yCoord, zCoord - 4, xCoord + 4, yCoord + 4, zCoord + 4)) forget();
-        } else missingTicks = 0;
-        if(e != null) position(e);
+        EntityLivingBase e = trackOccupant();
         if(!RestraintConfig.enabled || !RestraintConfig.devices) { release(true); locked = false; setActive(false); return; }
         if(active && (captive == null || e != null)) {
             ++cycle;
@@ -459,7 +486,7 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
             clientInitialized = true;
         }
         clientCycle = cycle; clientCycleAt = worldObj == null ? 0 : worldObj.getTotalWorldTime();
-        if(worldObj != null && wasActive != active) worldObj.func_147451_t(xCoord, yCoord, zCoord);
+        if(worldObj != null && wasActive != active && kind() != Kind.WOODCHIPPER) worldObj.func_147451_t(xCoord, yCoord, zCoord);
     }
 
     private void readBullSoundState(ByteBuf b, UUID previousCaptive) {

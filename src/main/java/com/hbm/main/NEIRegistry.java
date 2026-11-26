@@ -21,6 +21,7 @@ public class NEIRegistry {
 		handlers.add(new AlloyFurnaceRecipeHandler());
 		handlers.add(new BlastFurnaceHandler());
 		handlers.add(new ShredderRecipeHandler());
+		handlers.add(new WoodchipperHandler());
 		handlers.add(new PressRecipeHandler());
 		handlers.add(new CentrifugeRecipeHandler());
 		handlers.add(new GasCentrifugeRecipeHandler());

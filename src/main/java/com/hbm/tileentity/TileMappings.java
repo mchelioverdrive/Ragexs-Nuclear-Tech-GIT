@@ -89,6 +89,7 @@ public class TileMappings {
 		put(TileEntityMachineDischarger.class, "tileentity_discharger");
 		put(TileEntityMachineDiesel.class, "tileentity_diesel_generator");
 		put(TileEntityMachineShredder.class, "tileentity_machine_shredder");
+		put(TileEntityWoodchipper.class, "tileentity_machine_woodchipper");
 		put(TileEntityMachineTeleporter.class, "tileentity_teleblock");
 		put(TileEntityHatch.class, "tileentity_seal_lid");
 		put(TileEntityMachineIGenerator.class, "tileentity_igenerator");

@@ -299,7 +299,11 @@ public abstract class TileEntityMachineBase extends TileEntityLoadedBase impleme
 	 * A baseline packet is still sent once per second for clients that reload a chunk.
 	 */
 	public void networkPackNTIfDirty(int range) {
-		if(worldObj.isRemote || (!this.networkSyncDirty && worldObj.getWorldTime() % 20 != 0)) return;
+		networkPackNTIfDirty(range, true);
+	}
+
+	protected void networkPackNTIfDirty(int range, boolean heartbeat) {
+		if(worldObj.isRemote || (!this.networkSyncDirty && (!heartbeat || worldObj.getWorldTime() % 20 != 0))) return;
 
 		PacketDispatcher.wrapper.sendToAllAround(new BufPacket(xCoord, yCoord, zCoord, this), new TargetPoint(this.worldObj.provider.dimensionId, xCoord, yCoord, zCoord, range));
 		this.networkSyncDirty = false;

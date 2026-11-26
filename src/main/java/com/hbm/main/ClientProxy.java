@@ -201,6 +201,9 @@ public class ClientProxy extends ServerProxy {
 		ClientRegistry.bindTileEntitySpecialRenderer(com.hbm.entity.mob.colossus.BlockOceanTempleCore.Tile.class, new com.hbm.render.tileentity.RenderOceanTempleCore());
 		com.hbm.render.tileentity.RenderRestraintDevice restraintRenderer = new com.hbm.render.tileentity.RenderRestraintDevice();
 		ClientRegistry.bindTileEntitySpecialRenderer(com.hbm.tileentity.machine.TileEntityRestraintDevice.class, restraintRenderer);
+		RenderWoodchipper woodchipperRenderer = new RenderWoodchipper();
+		ClientRegistry.bindTileEntitySpecialRenderer(com.hbm.tileentity.machine.TileEntityWoodchipper.class, woodchipperRenderer);
+		net.minecraftforge.client.MinecraftForgeClient.registerItemRenderer(Item.getItemFromBlock(ModBlocks.machine_woodchipper), woodchipperRenderer);
 		for(net.minecraft.block.Block block : new net.minecraft.block.Block[] {ModBlocks.guillotine, ModBlocks.brazen_bull, ModBlocks.electric_chair, ModBlocks.injection_table, ModBlocks.hanging_station})
 			net.minecraftforge.client.MinecraftForgeClient.registerItemRenderer(Item.getItemFromBlock(block), restraintRenderer);
 		registerClientEventHandler(new com.hbm.render.entity.RestraintClient());

@@ -76,12 +76,16 @@ public final class Restraints {
     public static final DamageSource HANGING = new DamageSource("rntHanging").setDamageBypassesArmor().setDamageIsAbsolute();
 
     public static boolean compatible(EntityLivingBase e) {
-        if(!RestraintConfig.enabled || !e.isEntityAlive() || e instanceof IBossDisplayData
+        return compatible(e, false);
+    }
+
+    public static boolean compatible(EntityLivingBase e, boolean allowBosses) {
+        if(!RestraintConfig.enabled || !e.isEntityAlive() || !allowBosses && e instanceof IBossDisplayData
                 || e.width < 0.35F || e.width > 0.95F || e.height < 1.3F || e.height > 2.5F) return false;
         String name = EntityList.getEntityString(e);
         if(RestraintConfig.excluded.contains(name)) return false;
         if(e instanceof EntityPlayer) return RestraintConfig.players;
-        return e instanceof EntityVillager || e instanceof EntityZombie || e instanceof EntitySkeleton
+        return e instanceof IBossDisplayData || e instanceof EntityVillager || e instanceof EntityZombie || e instanceof EntitySkeleton
                 || RestraintConfig.humanoids.contains(name)
                 || e instanceof EntityCreature && !(e instanceof EntityCreeper) && !(e instanceof EntityBlaze) && e.height / e.width >= 2.4F;
     }

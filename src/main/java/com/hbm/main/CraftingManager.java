@@ -67,6 +67,9 @@ public class CraftingManager {
 		WeaponRecipes.register();
 		ConsumableRecipes.register();
 		RestraintRecipes.register();
+		addRecipeAuto(new ItemStack(ModBlocks.machine_woodchipper), new Object[] {
+				"P P", "PBP", "WCW", 'P', ModItems.plate_steel, 'B', ModItems.blades_steel,
+				'W', ModItems.wire_copper, 'C', ModItems.motor });
 		GameRegistry.addRecipe(new ItemStack(ModItems.flashlight), "IGI", "IRI", " I ", 'I', Items.iron_ingot, 'G', Blocks.glass, 'R', Items.redstone);
 		PowderRecipes.register();
 
