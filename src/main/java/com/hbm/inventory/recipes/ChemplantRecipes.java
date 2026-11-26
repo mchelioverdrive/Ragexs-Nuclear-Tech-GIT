@@ -61,6 +61,14 @@ public class ChemplantRecipes extends SerializableRecipe {
                 .inputItems(new ComparableStack(ModItems.syringe_empty), new ComparableStack(ModItems.rag, 2), new ComparableStack(ModItems.ingot_polymer, 2))
                 .inputFluids(new FluidStack(Fluids.POTASSIUM_CHLORIDE, 5))
                 .outputItems(new ItemStack(ModItems.injection_terminal)).physicalProcess(480000, 4000));
+        recipes.add(new ChemRecipe(1703, "MACE_IRRITANT", 1)
+                .inputItems(new OreDictStack(KEY_RED))
+                .inputFluids(new FluidStack(Fluids.FRESH_WATER, 20))
+                .outputFluids(new FluidStack(Fluids.MACE_IRRITANT, 20)).physicalProcess(20000, 2000));
+        recipes.add(new ChemRecipe(1704, "BEAR_MACE_IRRITANT", 1)
+                .inputItems(new OreDictStack(KEY_BLACK))
+                .inputFluids(new FluidStack(Fluids.MACE_IRRITANT, 20))
+                .outputFluids(new FluidStack(Fluids.BEAR_MACE_IRRITANT, 20)).physicalProcess(40000, 2000));
 
         recipes.add(new ChemRecipe(1600, "IRON_CONCENTRATION", 1).petroleum(com.hbm.realsim.SteelmakingProcesses.concentrate()));
         recipes.add(new ChemRecipe(1601, "IRON_PELLETIZING", 1).petroleum(com.hbm.realsim.SteelmakingProcesses.pelletize()));

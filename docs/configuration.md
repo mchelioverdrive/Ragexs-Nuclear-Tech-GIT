@@ -12,9 +12,32 @@ Always stop the server before editing startup configuration unless a command exp
 
 `/rntconfig reload` (operator level 2, including the server console and integrated server) rereads `config/hbm.cfg` with the existing Forge configuration parser. It validates the file and supported values before applying anything. Invalid types, numbers, booleans or activation modes, unfinished categories/lists, and read failures retain the previous runtime configuration and report an error. Finite numeric values use the existing range clamps. The command does not rewrite the file.
 
-Supported live values are all `21_gemini` settings and subcategories **except `woodcrawlerSpawnWeight`**, the `12_mobs` natural villager, UAP and Europa Lank settings below, the [taser settings](gameplay/restraints.md#taser) in `27_restraints`, and the `01_general` keys `1.18_enableExtendedLogging`, `1.45_enablePowerNetDiagnostics`, `1.46_enableMachineRuntimeDiagnostics`, `1.36_enableMOTD` and `1.37_enableGuideBook`. These general settings affect subsequent logging, diagnostics and login handling. All other common settings remain unchanged until restart, including registration, potion/dimension IDs, radiation implementation selection, sound initialization, blocks, items and startup recipe options. JSON machine/resource configuration remains startup-only for this command. Use the existing `/ntmreload` for supported recipe/item-pool JSON and `/ntmclient` for local `hbmClient.json` preferences.
+Supported live values are all `21_gemini` settings and subcategories **except `woodcrawlerSpawnWeight`**, the `12_mobs` natural villager, UAP and Europa Lank settings below, the [mace and bear mace settings](#mace-and-bear-mace) in `19_weapons`, the [taser settings](gameplay/restraints.md#taser) in `27_restraints`, and the `01_general` keys `1.18_enableExtendedLogging`, `1.45_enablePowerNetDiagnostics`, `1.46_enableMachineRuntimeDiagnostics`, `1.36_enableMOTD` and `1.37_enableGuideBook`. These general settings affect subsequent logging, diagnostics and login handling. All other common settings remain unchanged until restart, including registration, potion/dimension IDs, radiation implementation selection, sound initialization, blocks, items and startup recipe options. JSON machine/resource configuration remains startup-only for this command. Use the existing `/ntmreload` for supported recipe/item-pool JSON and `/ntmclient` for local `hbmClient.json` preferences.
 
 Gemini admission limits apply to the next admission in every active world without deleting existing creatures, nests or cocoons. Loaded Woodcrawlers refresh their native detection-range attribute on their next server tick, including after loading an older saved entity. Existing infection/cocoon durations, conversion decisions, boss health attributes and event countdowns retain their saved snapshots; new instances use the new settings. In-flight AI timers continue and consult updated thresholds on subsequent ticks. Progression and world gamerules are never reset. Reload registers no listeners or entities. Supported settings govern server decisions; native entity metadata, attributes, disease state and sound packets already convey their results, so no additional client configuration packet is needed.
+
+### Mace and bear mace
+
+Hold right-click to release bursts. Each uses one liter of the matching fictional irritant. A burst applies Blindness I, Slowness I, Weakness I, and temporary irritation to susceptible entities it reaches. Solid blocks occlude the spray. Compatible ground animals and villagers try to flee, and standard hostile mobs have difficulty retaining targets beyond four blocks. Repeat exposures refresh the effects up to the longer remaining duration. Bosses are immune by default. Undead, constructs and vehicles are immune, and player targets require PvP permission.
+
+| `19_weapons` mace key | Default | `19_weapons` bear mace key | Default | Accepted values |
+| --- | --- | --- | --- | --- |
+| `enableMace` | `true` | `enableBearMace` | `true` | Boolean |
+| `maceCapacity` | 16 | `bearMaceCapacity` | 8 | 1–1024 sprays |
+| `maceRange` | 3 | `bearMaceRange` | 6 | 0.5–16 blocks |
+| `maceAngle` | 25 | `bearMaceAngle` | 45 | 1–120° full cone opening |
+| `maceDurationTicks` | 100 | `bearMaceDurationTicks` | 160 | 1–1200 ticks |
+| `maceCooldownTicks` | 20 | `bearMaceCooldownTicks` | 30 | 1–1200 ticks, shared between both items for each player |
+
+| Shared `19_weapons` key | Default | Accepted values |
+| --- | --- | --- |
+| `macePlayerSusceptibility` | `true` | Boolean |
+| `maceBossImmunity` | `true` | Boolean |
+| `maceProtectionEffectiveness` | 1.0 | 0–1 fraction of effect duration blocked |
+
+All `19_weapons` keys above support `/rntconfig reload`. Reload affects subsequent bursts and refills. Existing status durations, active cooldowns and stored fluid retain their values. Headgear with `GAS_LUNG` protection reduces exposure and uses one point of applicable filter durability per burst. The `08_potion_effects.8.17_maceIrritationID` setting defaults to 80, accepts IDs 32–127 and requires matching client and server settings at startup.
+
+Craft either sprayer shapelessly with one rubber ingot, one filled canister of its irritant and one plate. Use aluminum for mace and steel for bear mace. In the Chemical Reactor, combine 20 L of fresh water with one red dye to make 20 L of Mace Irritant. Combine 20 L of Mace Irritant with one black dye to make 20 L of Bear Mace Irritant. Hold the sprayer in a Refueling Station supplied with the matching fluid, or place it in the output fill slot of a compatible Tank, Barrel or Chemical Reactor.
 
 ### Natural villagers
 

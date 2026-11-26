@@ -7,6 +7,7 @@ import com.hbm.explosion.ExplosionLarge;
 import com.hbm.explosion.vanillant.ExplosionVNT;
 import com.hbm.extprop.HbmLivingProps;
 import com.hbm.extprop.HbmPlayerProps;
+import com.hbm.handler.MaceSpray;
 import com.hbm.items.ModItems;
 import com.hbm.lib.ModDamageSource;
 import com.hbm.util.ContaminationUtil;
@@ -18,6 +19,7 @@ import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.ai.attributes.BaseAttributeMap;
 import net.minecraft.entity.monster.EntitySkeleton;
 import net.minecraft.entity.monster.EntityZombie;
 import net.minecraft.entity.passive.EntityCow;
@@ -43,6 +45,7 @@ public class HbmPotion extends Potion {
 	public static HbmPotion death;
 	public static HbmPotion fatal;
 	public static HbmPotion rabies;
+	public static HbmPotion maceIrritation;
 
 	public static HbmPotion run;
 
@@ -76,6 +79,7 @@ public class HbmPotion extends Potion {
 		// Presentation only: authoritative rabies progression owns all disease damage and death.
 		fatal = registerPotion(PotionConfig.fatalID, true, 0x6B1010, "potion.hbm_fatal", 4, 1);
 		rabies = registerPotion(PotionConfig.rabiesID, true, 0x9B3030, "potion.hbm_rabies", 2, 0);
+		maceIrritation = registerPotion(PotionConfig.maceIrritationID, true, 0xCB8146, "potion.hbm_mace_irritation", 15, 1);
 
 	}
 
@@ -121,6 +125,7 @@ public class HbmPotion extends Potion {
 	}
 
 	public void performEffect(EntityLivingBase entity, int level) {
+		if(this == maceIrritation) MaceSpray.tickIrritation(entity);
 
 		if(entity.worldObj.isRemote) return;
 
@@ -207,7 +212,14 @@ public class HbmPotion extends Potion {
 		}
 	}
 
+	@Override
+	public void removeAttributesModifiersFromEntity(EntityLivingBase entity, BaseAttributeMap attributes, int amplifier) {
+		super.removeAttributesModifiersFromEntity(entity, attributes, amplifier);
+		if(this == maceIrritation && !entity.worldObj.isRemote) MaceSpray.clearIrritation(entity);
+	}
+
 	public boolean isReady(int par1, int par2) {
+		if(this == maceIrritation) return true;
 
 		//if(this == taint) {
 		//	return par1 % 2 == 0;

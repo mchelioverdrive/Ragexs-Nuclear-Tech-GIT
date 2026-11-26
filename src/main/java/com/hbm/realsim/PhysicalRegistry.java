@@ -109,6 +109,8 @@ public final class PhysicalRegistry {
         solid("SAND_BLOCK", "mineral_sand", "1900", "0");
         putGas("VENT_UNSATURATEDS", "vented_ethylene", "28.05316", new BigDecimal("47200000"));
         liquid("water", "1", "0", "SALT_WATER", "FRESH_WATER");
+        liquid("fictional_mace_irritant", "1", "0", "MACE_IRRITANT");
+        liquid("fictional_bear_mace_irritant", "1", "0", "BEAR_MACE_IRRITANT");
         liquid("deuterium_depleted_water", "1", "0", "DEPLETED_WATER");
         liquid("vented_water", "1", "0", "VENT_WATER");
         putGas("VENT_HYDROGEN_GAS", "vented_hydrogen", "2.01588", hydrogenLhv);

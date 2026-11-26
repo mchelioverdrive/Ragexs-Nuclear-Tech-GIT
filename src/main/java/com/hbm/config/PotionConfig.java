@@ -28,6 +28,7 @@ public class PotionConfig {
 	public static int slipperyID = 77;
 	public static int fatalID = 78;
 	public static int rabiesID = 79;
+	public static int maceIrritationID = 80;
 
 	public static void loadFromConfig(Configuration config) {
 
@@ -50,6 +51,8 @@ public class PotionConfig {
 		slipperyID = CommonConfig.createConfigInt(config, CATEGORY_POTION, "8.14_slipperyID", "What potion ID the slippery effect will have", 77);
 		fatalID = CommonConfig.createConfigInt(config, CATEGORY_POTION, "8.15_fatalID", "What potion ID the Fatal rabies commitment status will have (no independent death timer)", 78);
 		rabiesID = CommonConfig.createConfigInt(config, CATEGORY_POTION, "8.16_rabiesID", "What potion ID the RABIES infection indicator will have (saved infection owns progression)", 79);
+		maceIrritationID = config.getInt("8.17_maceIrritationID", CATEGORY_POTION, 80, 32, 127,
+				"Potion ID for spray irritation. Requires a restart and must match on clients and servers.");
 
 
 

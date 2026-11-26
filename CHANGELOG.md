@@ -1009,3 +1009,9 @@
 - Craft and recharge a handheld taser that spends stored electrical energy to stun eligible living targets. The server controls stun duration, movement and cooldown, with synchronized sparks and compatible entity poses.
 - Use existing restraints, escorts and execution devices with eligible stunned captives. Stun expiry leaves equipment, device occupancy and tranquilizer timers in effect.
 - Configure taser availability, timing, damage, capacity and target types through `27_restraints` and `/rntconfig reload`. Player restraint and device captivity keep their existing opt-in.
+
+2026-11-25 20:01 — Add refillable mace and bear mace
+
+- Craft two defensive sprayers and make their fictional fluids in the Chemical Reactor. Refill spent sprayers through the existing fluid loaders.
+- Apply temporary blindness, slowness, weakness, panic and targeting disruption in a server-checked cone. Gas protection absorbs or reduces exposure and wears compatible filters. Bursts reuse the existing aerosol sound and particle network.
+- Reload gameplay settings under `19_weapons`. Boss immunity defaults on, and player susceptibility respects PvP permission.

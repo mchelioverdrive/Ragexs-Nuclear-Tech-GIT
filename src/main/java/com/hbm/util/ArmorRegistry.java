@@ -77,10 +77,10 @@ public class ArmorRegistry {
 				//add the HazardClasses from the filter, then remove the ones blacklisted by the mask
 				List<HazardClass> filProt = hazardClasses.get(filter.getItem());
 				
-				for(HazardClass c : mask.getBlacklist(stack, entity))
-					filProt.remove(c);
-				
-				prot.addAll(filProt);
+				if(filProt != null) {
+					List<HazardClass> blacklist = mask.getBlacklist(stack, entity);
+					for(HazardClass hazard : filProt) if(!blacklist.contains(hazard)) prot.add(hazard);
+				}
 			}
 		}
 		
@@ -97,6 +97,38 @@ public class ArmorRegistry {
 		}
 		
 		return prot;
+	}
+
+	/** Apply wear only to the filter that supplied the requested protection. */
+	public static boolean absorbExposure(EntityLivingBase entity, int slot, HazardClass hazard, int filterDamage) {
+		ItemStack armor = entity.getEquipmentInSlot(slot + 1);
+		return armor != null && absorbExposure(armor, entity, hazard, filterDamage);
+	}
+
+	private static boolean absorbExposure(ItemStack armor, EntityLivingBase entity, HazardClass hazard, int filterDamage) {
+		List<HazardClass> intrinsic = hazardClasses.get(armor.getItem());
+		if(intrinsic != null && intrinsic.contains(hazard)) return true;
+		if(armor.getItem() instanceof IGasMask && !((IGasMask) armor.getItem()).getBlacklist(armor, entity).contains(hazard)) {
+			IGasMask mask = (IGasMask) armor.getItem();
+			ItemStack filter = mask.getFilter(armor, entity);
+			if(filter != null && filter.stackSize > 0
+					&& (!filter.isItemStackDamageable() || filter.getItemDamage() <= filter.getMaxDamage())) {
+				List<HazardClass> protection = hazardClasses.get(filter.getItem());
+				if(protection != null && protection.contains(hazard)) {
+					mask.damageFilter(armor, entity, filterDamage);
+					return true;
+				}
+			}
+		}
+		if(ArmorModHandler.hasMods(armor)) {
+			for(ItemStack mod : ArmorModHandler.pryMods(armor)) {
+				if(mod != null && absorbExposure(mod, entity, hazard, filterDamage)) {
+					ArmorModHandler.applyMod(armor, mod);
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 	
 	public static enum HazardClass {

@@ -1,6 +1,7 @@
 package com.hbm.crafting;
 
 import com.hbm.blocks.ModBlocks;
+import com.hbm.inventory.FluidContainerRegistry;
 import com.hbm.inventory.OreDictManager;
 import com.hbm.inventory.RecipesCommon;
 import com.hbm.inventory.fluid.FluidType;
@@ -14,13 +15,17 @@ import com.hbm.items.machine.ItemCircuit.EnumCircuitType;
 import com.hbm.items.ModItems;
 import com.hbm.items.food.ItemConserve.EnumFoodType;
 import com.hbm.items.weapon.GunB92Cell;
+import com.hbm.items.weapon.ItemMace;
 import com.hbm.main.CraftingManager;
 
+import cpw.mods.fml.common.registry.GameRegistry;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
+import net.minecraft.inventory.InventoryCrafting;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.oredict.OreDictionary;
+import net.minecraftforge.oredict.ShapelessOreRecipe;
 
 /**
  * For guns, ammo and the like
@@ -28,7 +33,28 @@ import net.minecraftforge.oredict.OreDictionary;
  */
 public class WeaponRecipes {
 
+	private static void registerSprayer(ItemMace item, String plate, FluidType fluid) {
+		int canisterCapacity = FluidContainerRegistry.normalizedCapacity(ModItems.canister_full, fluid, 1000);
+		ItemStack canister = new ItemStack(ModItems.canister_full, 1, fluid.getID());
+		GameRegistry.addRecipe(new ShapelessOreRecipe(item.filledStack(canisterCapacity), plate, ModItems.ingot_rubber, canister) {
+			@Override
+			public ItemStack getCraftingResult(InventoryCrafting inventory) {
+				for(int slot = 0; slot < inventory.getSizeInventory(); slot++) {
+					ItemStack stack = inventory.getStackInSlot(slot);
+					if(stack != null && stack.isItemEqual(canister)) {
+						int available = FluidContainerRegistry.getFluidContent(stack, fluid);
+						return item.filledStack(Math.min(available, canisterCapacity));
+					}
+				}
+				return item.filledStack(0);
+			}
+		});
+	}
+
 	public static void register() {
+
+		registerSprayer(ModItems.mace, AL.plate(), Fluids.MACE_IRRITANT);
+		registerSprayer(ModItems.bear_mace, STEEL.plate(), Fluids.BEAR_MACE_IRRITANT);
 
 		//Missiles
 		//CraftingManager.addShapelessAuto(new ItemStack(ModItems.missile_taint, 1), new Object[] { ModItems.missile_assembly, ModItems.bucket_mud, ModItems.powder_spark_mix, ModItems.powder_magic });

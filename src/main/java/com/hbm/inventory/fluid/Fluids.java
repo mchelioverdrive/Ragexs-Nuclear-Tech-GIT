@@ -294,6 +294,7 @@ public class Fluids {
 	public static FluidType DEPLETED_WATER;
 	public static FluidType BAUXITE_RESIDUE, MOLTEN_CALCIUM_CHLORIDE, MINERAL_BRINE, MOLTEN_LITHIUM_CHLORIDE, RAW_NATURAL_GAS;
 	public static FluidType BUTADIENE, PHENOL, ACETONE, FORMALDEHYDE, BENZENE, TOLUENE, GLYCEROL;
+	public static FluidType MACE_IRRITANT, BEAR_MACE_IRRITANT;
 	public static FluidType LIGHT_WATER;
 	public static FluidType BORATED_WATER;
 	public static FluidType LIGHT_WATER_HOT;
@@ -646,6 +647,12 @@ public class Fluids {
         // Only the recovery recipe consumes it; no default recipe produces this legacy stock.
         if(nameMapping.containsKey("TERMINAL_REAGENT")) throw new IllegalStateException("Custom fluid collides with TERMINAL_REAGENT");
         TERMINAL_REAGENT = new FluidType("TERMINAL_REAGENT", 0x73518C, 0, 0, 0, EnumSymbol.NONE).addTraits(LIQUID);
+        for(String name : new String[] {"MACE_IRRITANT", "BEAR_MACE_IRRITANT"})
+            if(nameMapping.containsKey(name)) throw new IllegalStateException("Custom fluid collides with " + name);
+        MACE_IRRITANT = new FluidType("MACE_IRRITANT", 0xEA9C52, 1, 0, 0, EnumSymbol.NONE)
+                .addContainers(new CD_Canister(0xEA9C52)).addTraits(LIQUID);
+        BEAR_MACE_IRRITANT = new FluidType("BEAR_MACE_IRRITANT", 0xBD5739, 1, 0, 0, EnumSymbol.NONE)
+                .addContainers(new CD_Canister(0xBD5739)).addTraits(LIQUID);
 
 
 		//AND DON'T FORGET THE META DOWN HERE
@@ -931,6 +938,8 @@ public class Fluids {
         metaOrder.add(TOLUENE);
         metaOrder.add(GLYCEROL);
         metaOrder.add(TERMINAL_REAGENT);
+        metaOrder.add(MACE_IRRITANT);
+        metaOrder.add(BEAR_MACE_IRRITANT);
 
 
 		//ANY INTERNAL RENAMING MUST BE REFLECTED HERE - DON'T FORGET TO CHANGE: LANG FILES + TYPE'S STRING ID + NAME OF TANK/GUI TEXTURE FILES!

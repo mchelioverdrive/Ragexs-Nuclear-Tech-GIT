@@ -64,6 +64,8 @@ public class HbmLivingProps implements IExtendedEntityProperties {
 	public int phosphorus;
 	public int balefire;
 	public int radDeathTimer = 0;
+	public long nextMaceUse;
+	public boolean macePanicInstalled;
 
 	public void writeToNBT(NBTTagCompound nbt) {
 		nbt.setInteger("radDeathTimer", radDeathTimer);

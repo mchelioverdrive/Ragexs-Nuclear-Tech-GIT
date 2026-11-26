@@ -1109,6 +1109,7 @@ public class MainRegistry {
 		FMLCommonHandler.instance().bus().register(geminiCaptures);
 		MinecraftForge.EVENT_BUS.register(restraintEvents);
 		FMLCommonHandler.instance().bus().register(restraintEvents);
+		MinecraftForge.EVENT_BUS.register(new com.hbm.handler.MaceSpray());
 		com.hbm.handler.disease.DiseaseEvents diseaseEvents = new com.hbm.handler.disease.DiseaseEvents();
 		MinecraftForge.EVENT_BUS.register(diseaseEvents);
 		FMLCommonHandler.instance().bus().register(diseaseEvents);
@@ -1240,6 +1241,7 @@ public class MainRegistry {
         UAPConfig.Values uap = new UAPConfig.Values(candidate);
         EuropaLankConfig.Values europaLank = new EuropaLankConfig.Values(candidate);
         com.hbm.config.RestraintConfig.TaserValues taser = new com.hbm.config.RestraintConfig.TaserValues(candidate);
+        MaceConfig.Values mace = new MaceConfig.Values(candidate);
         // All parsing/validation finishes before these non-throwing field assignments.
         GeminiConfig.apply(gemini, false);
         GeneralConfig.applyRuntime(general);
@@ -1247,6 +1249,7 @@ public class MainRegistry {
         UAPConfig.settings = uap;
         EuropaLankConfig.settings = europaLank;
         com.hbm.config.RestraintConfig.taser = taser;
+        MaceConfig.settings = mace;
     }
 
     private void loadConfig(FMLPreInitializationEvent event) {
@@ -1258,6 +1261,7 @@ public class MainRegistry {
 		GeneralConfig.loadFromConfig(config);
 		com.hbm.config.GeminiConfig.loadFromConfig(config);
 		com.hbm.config.RestraintConfig.loadFromConfig(config);
+		MaceConfig.settings = new MaceConfig.Values(config);
 		WorldConfig.loadFromConfig(config);
 		MachineConfig.loadFromConfig(config);
 		BombConfig.loadFromConfig(config);
