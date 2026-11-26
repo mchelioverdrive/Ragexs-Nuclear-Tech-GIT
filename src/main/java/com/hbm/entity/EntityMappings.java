@@ -24,6 +24,7 @@ import com.hbm.entity.mob.giantghast.EntityGiantGhastFireball;
 import com.hbm.entity.mob.giantghast.EntitySummonedGhast;
 //import com.hbm.entity.mob.glyphid.*;
 import com.hbm.entity.mob.siege.*;
+import com.hbm.entity.mob.squirrel.EntitySquirrel;
 import com.hbm.entity.particle.*;
 import com.hbm.entity.projectile.*;
 import com.hbm.entity.train.EntityRailCarBase.BoundingBoxDummyEntity;
@@ -335,6 +336,7 @@ public class EntityMappings {
 		registerGeminiEntity(com.hbm.entity.mob.gemini.EntityWoodcrawlerProboscis.class, "woodcrawler_proboscis", id++, MainRegistry.instance, 96, 2, false);
 		registerGeminiEntity(com.hbm.entity.mob.gemini.EntityGardenerCocoon.class, "gardener_cocoon", id++, MainRegistry.instance, 96, 20, false);
 		registerGeminiEntity(com.hbm.entity.mob.gemini.EntityGeminiLight.class, "gemini_light", id++, MainRegistry.instance, 192, 2, false);
+		EntityRegistry.registerModEntity(EntitySquirrel.class, "squirrel", id++, MainRegistry.instance, 64, 2, true);
 	}
 
 	private static final java.util.Set<Class<?>> GEMINI_ENTITIES = new java.util.HashSet<Class<?>>();

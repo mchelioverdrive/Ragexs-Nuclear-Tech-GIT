@@ -5,6 +5,9 @@ import java.util.List;
 
 import com.hbm.config.MobConfig;
 import com.hbm.config.MobConfig.NaturalVillagerValues;
+import com.hbm.config.SquirrelConfig;
+import com.hbm.entity.mob.squirrel.EntitySquirrel;
+import com.hbm.entity.mob.squirrel.SquirrelHabitat;
 import com.hbm.world.gemini.GeminiInvasionManager;
 
 import cpw.mods.fml.common.eventhandler.Event.Result;
@@ -23,26 +26,34 @@ import net.minecraftforge.event.ForgeEventFactory;
 public final class NaturalVillagerSpawning {
 
 	private static final String NATURAL = "RNTNaturalVillager";
-	private static final ThreadLocal<VillagerPack> SELECTION = new ThreadLocal<VillagerPack>();
+	private static final ThreadLocal<SpawnSelection> SELECTION = new ThreadLocal<>();
 
-	// Called from SpawnerAnimals so only the live passive spawn roll offers an RTM pack.
+	// Called from SpawnerAnimals so only the live passive spawn roll offers these packs.
 	public static Object selectPack(Object serverWorld, Object creatureType, int x, int y, int z) {
 		WorldServer world = (WorldServer) serverWorld;
 		EnumCreatureType type = (EnumCreatureType) creatureType;
 		NaturalVillagerValues settings = MobConfig.naturalVillagers;
-		if(type != EnumCreatureType.creature || world.provider.dimensionId != 0 || settings == null
-				|| !settings.enabled || settings.weight == 0 || settings.localLimit == 0
-				|| !world.blockExists(x, y, z) || !settings.allowsBiome(world.getBiomeGenForCoords(x, z).biomeID)
-				|| GeminiInvasionManager.canActivityOccur(world) || world.getTopSolidOrLiquidBlock(x, z) != y) {
+		if(type != EnumCreatureType.creature || world.provider.dimensionId != 0 || !world.blockExists(x, y, z)) {
 			return world.spawnRandomCreature(type, x, y, z);
 		}
 
-		VillagerPack previous = SELECTION.get();
-		VillagerPack pack = new VillagerPack(world, x, y, z, settings);
-		SELECTION.set(pack);
+		VillagerPack villagers = null;
+		if(settings != null && settings.enabled && settings.weight > 0 && settings.localLimit > 0
+				&& settings.allowsBiome(world.getBiomeGenForCoords(x, z).biomeID)
+				&& !GeminiInvasionManager.canActivityOccur(world) && world.getTopSolidOrLiquidBlock(x, z) == y) {
+			villagers = new VillagerPack(settings);
+		}
+		SquirrelConfig.Values squirrelSettings = SquirrelConfig.settings;
+		SquirrelPack squirrels = SquirrelHabitat.naturalSite(world, x, y, z, squirrelSettings)
+				? new SquirrelPack(squirrelSettings) : null;
+		if(villagers == null && squirrels == null) return world.spawnRandomCreature(type, x, y, z);
+
+		SpawnSelection previous = SELECTION.get();
+		SELECTION.set(new SpawnSelection(world, x, y, z, villagers, squirrels));
 		try {
 			SpawnListEntry entry = world.spawnRandomCreature(type, x, y, z);
-			if(entry == pack) pack.remaining = settings.minGroup + world.rand.nextInt(settings.maxGroup - settings.minGroup + 1);
+			if(entry instanceof SpawnPack)
+				((SpawnPack) entry).remaining = entry.minGroupCount + world.rand.nextInt(entry.maxGroupCount - entry.minGroupCount + 1);
 			return entry;
 		} finally {
 			if(previous == null) SELECTION.remove();
@@ -54,12 +65,14 @@ public final class NaturalVillagerSpawning {
 			List<SpawnListEntry> entries) {
 		WorldServer world = (WorldServer) serverWorld;
 		EnumCreatureType type = (EnumCreatureType) creatureType;
-		VillagerPack pack = type == EnumCreatureType.creature ? SELECTION.get() : null;
-		if(pack != null && !pack.offered && world == pack.world && x == pack.x && y == pack.y && z == pack.z) {
-			pack.offered = true;
+		SpawnSelection selection = type == EnumCreatureType.creature ? SELECTION.get() : null;
+		if(selection != null && !selection.offered && world == selection.world
+				&& x == selection.x && y == selection.y && z == selection.z) {
+			selection.offered = true;
 			// Forge 1.7.10 exposes the original list to PotentialSpawns listeners.
 			entries = entries == null ? new ArrayList<SpawnListEntry>() : new ArrayList<SpawnListEntry>(entries);
-			entries.add(pack);
+			if(selection.villagers != null) entries.add(selection.villagers);
+			if(selection.squirrels != null) entries.add(selection.squirrels);
 		}
 		return ForgeEventFactory.getPotentialSpawns(world, type, x, y, z, entries);
 	}
@@ -67,6 +80,16 @@ public final class NaturalVillagerSpawning {
 	public static Result checkSpawn(Object entity, Object sourceWorld, float x, float y, float z, Object entry) {
 		EntityLiving mob = (EntityLiving) entity;
 		World world = (World) sourceWorld;
+		if(entry instanceof SquirrelPack && mob instanceof EntitySquirrel) {
+			SquirrelPack pack = (SquirrelPack) entry;
+			EntitySquirrel squirrel = (EntitySquirrel) mob;
+			if(pack.remaining <= 0 || !squirrel.getCanSpawnHere()
+					|| !SquirrelHabitat.naturalSite(world, MathHelper.floor_double(x), MathHelper.floor_double(y),
+							MathHelper.floor_double(z), pack.settings)
+					|| ForgeEventFactory.canEntitySpawn(mob, world, x, y, z) == Result.DENY
+					|| !SquirrelHabitat.belowLocalLimit(squirrel, pack.settings.localLimit)) return Result.DENY;
+			return Result.ALLOW;
+		}
 		if(!(entry instanceof VillagerPack) || mob.getClass() != EntityVillager.class)
 			return ForgeEventFactory.canEntitySpawn(mob, world, x, y, z);
 
@@ -81,7 +104,7 @@ public final class NaturalVillagerSpawning {
 
 	public static boolean insert(Object sourceWorld, Object entity, Object entry) {
 		boolean inserted = ((WorldServer) sourceWorld).spawnEntityInWorld((Entity) entity);
-		if(inserted && entry instanceof VillagerPack) ((VillagerPack) entry).remaining--;
+		if(inserted && entry instanceof SpawnPack) ((SpawnPack) entry).remaining--;
 		return inserted;
 	}
 
@@ -127,19 +150,45 @@ public final class NaturalVillagerSpawning {
 		return entity.getClass() == EntityVillager.class && entity.isEntityAlive() && entity.getEntityData().getBoolean(NATURAL);
 	}
 
-	private static final class VillagerPack extends SpawnListEntry {
+	private static final class SpawnSelection {
 		final WorldServer world;
 		final int x, y, z;
-		final NaturalVillagerValues settings;
+		final VillagerPack villagers;
+		final SquirrelPack squirrels;
 		boolean offered;
-		int remaining;
 
-		VillagerPack(WorldServer world, int x, int y, int z, NaturalVillagerValues settings) {
-			super(EntityVillager.class, settings.weight, settings.minGroup, settings.maxGroup);
+		SpawnSelection(WorldServer world, int x, int y, int z, VillagerPack villagers, SquirrelPack squirrels) {
 			this.world = world;
 			this.x = x;
 			this.y = y;
 			this.z = z;
+			this.villagers = villagers;
+			this.squirrels = squirrels;
+		}
+	}
+
+	private abstract static class SpawnPack extends SpawnListEntry {
+		int remaining;
+
+		SpawnPack(Class<? extends EntityLiving> type, int weight, int min, int max) {
+			super(type, weight, min, max);
+		}
+	}
+
+	private static final class VillagerPack extends SpawnPack {
+		final NaturalVillagerValues settings;
+
+		VillagerPack(NaturalVillagerValues settings) {
+			super(EntityVillager.class, settings.weight, settings.minGroup, settings.maxGroup);
+			this.settings = settings;
+		}
+	}
+
+	private static final class SquirrelPack extends SpawnPack {
+		final SquirrelConfig.Values settings;
+
+		SquirrelPack(SquirrelConfig.Values settings) {
+			super(EntitySquirrel.class, settings.spawnWeight, settings.minGroupSize, settings.maxGroupSize);
 			this.settings = settings;
 		}
 	}

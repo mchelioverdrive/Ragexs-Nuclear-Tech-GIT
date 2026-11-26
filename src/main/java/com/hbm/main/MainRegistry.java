@@ -1110,6 +1110,7 @@ public class MainRegistry {
 		MinecraftForge.EVENT_BUS.register(restraintEvents);
 		FMLCommonHandler.instance().bus().register(restraintEvents);
 		MinecraftForge.EVENT_BUS.register(new com.hbm.handler.MaceSpray());
+		MinecraftForge.EVENT_BUS.register(new com.hbm.entity.mob.squirrel.SquirrelInteractions());
 		com.hbm.handler.disease.DiseaseEvents diseaseEvents = new com.hbm.handler.disease.DiseaseEvents();
 		MinecraftForge.EVENT_BUS.register(diseaseEvents);
 		FMLCommonHandler.instance().bus().register(diseaseEvents);
@@ -1238,6 +1239,7 @@ public class MainRegistry {
         GeminiConfig.Values gemini = GeminiConfig.parse(candidate);
         GeneralConfig.RuntimeValues general = GeneralConfig.parseRuntime(candidate);
         MobConfig.NaturalVillagerValues villagers = new MobConfig.NaturalVillagerValues(candidate);
+        SquirrelConfig.Values squirrels = new SquirrelConfig.Values(candidate);
         UAPConfig.Values uap = new UAPConfig.Values(candidate);
         EuropaLankConfig.Values europaLank = new EuropaLankConfig.Values(candidate);
         com.hbm.config.RestraintConfig.TaserValues taser = new com.hbm.config.RestraintConfig.TaserValues(candidate);
@@ -1248,6 +1250,7 @@ public class MainRegistry {
         GeminiConfig.apply(gemini, false);
         GeneralConfig.applyRuntime(general);
         MobConfig.naturalVillagers = villagers;
+        SquirrelConfig.settings = squirrels;
         UAPConfig.settings = uap;
         EuropaLankConfig.settings = europaLank;
         com.hbm.config.RestraintConfig.taser = taser;
@@ -1276,6 +1279,7 @@ public class MainRegistry {
 		ToolConfig.loadFromConfig(config);
 		WeaponConfig.loadFromConfig(config);
 		MobConfig.loadFromConfig(config);
+		SquirrelConfig.settings = new SquirrelConfig.Values(config);
 		UAPConfig.settings = new UAPConfig.Values(config);
 		EuropaLankConfig.settings = new EuropaLankConfig.Values(config);
 		com.hbm.config.WitherStormConfig.loadFromConfig(config);

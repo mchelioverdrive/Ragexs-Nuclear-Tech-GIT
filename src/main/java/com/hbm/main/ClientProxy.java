@@ -83,6 +83,7 @@ import com.hbm.entity.missile.EntityRideableRocket.EntityRideableRocketDummy;
 import com.hbm.entity.mob.*;
 import com.hbm.entity.mob.botprime.*;
 import com.hbm.entity.mob.siege.*;
+import com.hbm.entity.mob.squirrel.EntitySquirrel;
 import com.hbm.entity.particle.*;
 import com.hbm.entity.projectile.*;
 import com.hbm.entity.train.*;
@@ -938,6 +939,7 @@ public class ClientProxy extends ServerProxy {
 		RenderingRegistry.registerEntityRenderingHandler(EntityFBIDrone.class, new RenderDrone());
 		RenderingRegistry.registerEntityRenderingHandler(EntityPlasticBag.class, new RenderPlasticBag());
 		RenderingRegistry.registerEntityRenderingHandler(EntityPigeon.class, new RenderPigeon(new ModelPigeon(), 0.3F));
+		RenderingRegistry.registerEntityRenderingHandler(EntitySquirrel.class, new RenderSquirrel());
 
 		RenderingRegistry.registerEntityRenderingHandler(EntityMoonCow.class, new RenderMoonCow(new ModelMoonCow(), 0.7F));
 		RenderingRegistry.registerEntityRenderingHandler(EntityScutterfish.class, new RenderScutter(new ModelScutter(), 0.3F));

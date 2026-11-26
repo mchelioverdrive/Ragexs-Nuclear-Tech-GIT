@@ -4,8 +4,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
+import com.hbm.entity.mob.squirrel.EntitySquirrel;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.GeminiGripPacket;
 import com.hbm.world.gemini.GeminiInvasionManager;
@@ -38,14 +40,16 @@ public final class GeminiCaptures {
         final Entity captor, victim;
         final World world;
         final Consumer<String> interrupt;
+        final BooleanSupplier update;
         final int mode;
         double x, y, z, captorX, captorY, captorZ, sentX, sentY, sentZ;
 
-        Grip(Entity captor, Entity victim, boolean struggle, Consumer<String> interrupt) {
+        Grip(Entity captor, Entity victim, boolean struggle, Consumer<String> interrupt, BooleanSupplier update) {
             this.captor = captor;
             this.victim = victim;
             this.world = captor.worldObj;
             this.interrupt = interrupt;
+            this.update = update;
             mode = struggle ? STRUGGLE : HELD;
             x = victim.posX;
             y = victim.posY;
@@ -87,7 +91,15 @@ public final class GeminiCaptures {
     }
 
     public static boolean available(Entity victim) {
-        return grip(victim) == null && !victim.noClip;
+        return grip(victim) == null && !victim.noClip && (!(victim instanceof EntitySquirrel) || !((EntitySquirrel) victim).isAttached());
+    }
+
+    public static <T extends Entity> T captive(Entity captor, Class<T> type) {
+        Map<Entity, Grip> grips = SERVER.get(captor.worldObj);
+        if(grips != null) for(Grip grip : grips.values()) {
+            if(grip.captor == captor && type.isInstance(grip.victim) && grip.invalid() == null) return type.cast(grip.victim);
+        }
+        return null;
     }
 
     public static boolean heldBy(Entity captor, Entity victim) {
@@ -101,10 +113,14 @@ public final class GeminiCaptures {
     }
 
     public static boolean attach(Entity captor, Entity victim, boolean struggle, Consumer<String> interrupt) {
+        return attach(captor, victim, struggle, interrupt, null);
+    }
+
+    public static boolean attach(Entity captor, Entity victim, boolean struggle, Consumer<String> interrupt, BooleanSupplier update) {
         if(captor.worldObj.isRemote || !available(victim) || !loaded(victim, captor.worldObj)
                 || !loaded(captor, captor.worldObj) || victim.ridingEntity != null) return false;
         if(victim instanceof EntityPlayerMP && !connected((EntityPlayerMP) victim)) return false;
-        Grip grip = new Grip(captor, victim, struggle, interrupt);
+        Grip grip = new Grip(captor, victim, struggle, interrupt, update);
         SERVER.computeIfAbsent(grip.world, world -> new IdentityHashMap<>()).put(victim, grip);
         stop(victim);
         if(victim instanceof EntityLiving) ((EntityLiving) victim).getNavigator().clearPathEntity();
@@ -214,22 +230,25 @@ public final class GeminiCaptures {
         if(event.phase != TickEvent.Phase.END || event.world.isRemote) return;
         Map<Entity, Grip> grips = SERVER.get(event.world);
         if(grips == null || grips.isEmpty()) return;
-        ArrayList<Grip> invalid = null;
+        Map<Grip, String> invalid = null;
         for(Grip grip : grips.values()) {
-            if(grip.invalid() != null) {
-                if(invalid == null) invalid = new ArrayList<>();
-                invalid.add(grip);
+            String reason = grip.invalid();
+            if(reason == null && grip.update != null && !grip.update.getAsBoolean()) reason = "Captor stopped carrying prey";
+            if(reason != null) {
+                if(invalid == null) invalid = new HashMap<>();
+                invalid.put(grip, reason);
                 continue;
             }
             stop(grip.victim);
             if(grip.victim instanceof EntityPlayerMP && event.world.getTotalWorldTime() % 3 == 0
                     && grip.victim.getDistanceSq(grip.sentX, grip.sentY, grip.sentZ) > 0.000001D) sendPosition(grip);
         }
-        if(invalid != null) for(Grip grip : invalid) interrupt(grip, grip.invalid());
+        if(invalid != null) invalid.forEach(GeminiCaptures::interrupt);
     }
 
     private static void interrupt(Grip grip, String reason) {
-        if(reason == null) return;
+        Map<Entity, Grip> grips = SERVER.get(grip.world);
+        if(reason == null || grips == null || grips.get(grip.victim) != grip) return;
         diagnostic(grip.captor, grip.victim, "invalid", reason, 0, null);
         grip.interrupt.accept(reason);
         release(grip);
@@ -238,12 +257,21 @@ public final class GeminiCaptures {
     @SubscribeEvent public void logout(PlayerEvent.PlayerLoggedOutEvent event) {
         Grip grip = grip(event.player);
         if(grip != null) interrupt(grip, "Victim disconnected");
+        interruptCaptor(event.player.worldObj, event.player, "Captor disconnected");
     }
 
     @SubscribeEvent public void dimension(PlayerEvent.PlayerChangedDimensionEvent event) {
-        Map<Entity, Grip> grips = SERVER.get(net.minecraftforge.common.DimensionManager.getWorld(event.fromDim));
+        World oldWorld = net.minecraftforge.common.DimensionManager.getWorld(event.fromDim);
+        Map<Entity, Grip> grips = SERVER.get(oldWorld);
         Grip grip = grips == null ? null : grips.get(event.player);
         if(grip != null) interrupt(grip, "Victim changed dimension");
+        interruptCaptor(oldWorld, event.player, "Captor changed dimension");
+    }
+
+    private static void interruptCaptor(World world, Entity captor, String reason) {
+        Map<Entity, Grip> grips = SERVER.get(world);
+        if(grips == null) return;
+        for(Grip grip : new ArrayList<>(grips.values())) if(grip.captor == captor) interrupt(grip, reason);
     }
 
     @SubscribeEvent public void unload(WorldEvent.Unload event) {

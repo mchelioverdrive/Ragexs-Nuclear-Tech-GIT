@@ -539,9 +539,10 @@ public final class EntityWretch extends EntityCreature implements IMob, IBossDis
                 || entity instanceof EntityPig && ((EntityPig) entity).getSaddled()
                 || entity.getEntityData().getBoolean("WretchProtected") || entity.getEntityData().hasKey("MockeryCaptor")) return false;
         Class<?> type = entity.getClass();
-        // Exact vanilla types exclude optional mod bosses, machines, pets and inventory-bearing mounts.
+        // Exact types exclude optional mod bosses, machines, pets and inventory-bearing mounts.
         return type == EntityCow.class || type == EntityMooshroom.class || type == EntityPig.class
-                || type == EntitySheep.class || type == EntityChicken.class;
+                || type == EntitySheep.class || type == EntityChicken.class
+                || type == com.hbm.entity.mob.squirrel.EntitySquirrel.class && com.hbm.handler.GeminiCaptures.available(entity);
     }
     private boolean findMeal() {
         int examined = 0;

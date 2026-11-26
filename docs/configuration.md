@@ -12,7 +12,7 @@ Always stop the server before editing startup configuration unless a command exp
 
 `/rntconfig reload` (operator level 2, including the server console and integrated server) rereads `config/hbm.cfg` with the existing Forge configuration parser. It validates the file and supported values before applying anything. Invalid types, numbers, booleans or activation modes, unfinished categories/lists, and read failures retain the previous runtime configuration and report an error. Finite numeric values use the existing range clamps. The command does not rewrite the file.
 
-Supported live values are all `21_gemini` settings and subcategories **except `woodcrawlerSpawnWeight`**, the `12_mobs` natural villager, UAP and Europa Lank settings below, the [woodchipper settings](#woodchipper) in `09_machines`, the [mace and bear mace settings](#mace-and-bear-mace) in `19_weapons`, the [taser settings](gameplay/restraints.md#taser) and [execution device effects](#execution-device-effects) under `27_restraints`, and the `01_general` keys `1.18_enableExtendedLogging`, `1.45_enablePowerNetDiagnostics`, `1.46_enableMachineRuntimeDiagnostics`, `1.36_enableMOTD` and `1.37_enableGuideBook`. These general settings affect subsequent logging, diagnostics and login handling. All other common settings remain unchanged until restart, including registration, potion/dimension IDs, radiation implementation selection, sound initialization, blocks, items and startup recipe options. JSON machine/resource configuration remains startup-only for this command. Use the existing `/ntmreload` for supported recipe/item-pool JSON and `/ntmclient` for local `hbmClient.json` preferences.
+Supported live values are all `21_gemini` settings and subcategories **except `woodcrawlerSpawnWeight`**, the `12_mobs` natural villager, squirrel, UAP and Europa Lank settings below, the [woodchipper settings](#woodchipper) in `09_machines`, the [mace and bear mace settings](#mace-and-bear-mace) in `19_weapons`, the [taser settings](gameplay/restraints.md#taser) and [execution device effects](#execution-device-effects) under `27_restraints`, and the `01_general` keys `1.18_enableExtendedLogging`, `1.45_enablePowerNetDiagnostics`, `1.46_enableMachineRuntimeDiagnostics`, `1.36_enableMOTD` and `1.37_enableGuideBook`. These general settings affect subsequent logging, diagnostics and login handling. All other common settings remain unchanged until restart, including registration, potion/dimension IDs, radiation implementation selection, sound initialization, blocks, items and startup recipe options. JSON machine/resource configuration remains startup-only for this command. Use the existing `/ntmreload` for supported recipe/item-pool JSON and `/ntmclient` for local `hbmClient.json` preferences.
 
 Gemini admission limits apply to the next admission in every active world without deleting existing creatures, nests or cocoons. Loaded Woodcrawlers refresh their native detection-range attribute on their next server tick, including after loading an older saved entity. Existing infection/cocoon durations, conversion decisions, boss health attributes and event countdowns retain their saved snapshots; new instances use the new settings. In-flight AI timers continue and consult updated thresholds on subsequent ticks. Progression and world gamerules are never reset. Reload registers no listeners or entities. Supported settings govern server decisions; native entity metadata, attributes, disease state and sound packets already convey their results, so no additional client configuration packet is needed.
 
@@ -95,6 +95,28 @@ All these `12_mobs` keys support `/rntconfig reload`.
 The default list covers plains, forests, savannas, taigas, swamps, deserts and selected variants. Add the biome IDs from your modpack to allow additional Overworld biomes. The local limit counts living, loaded villagers with the saved `RNTNaturalVillager` marker around each qualifying candidate. Marked Overworld villagers also contribute to the native passive spawn count. Village-generated villagers, offspring and manually spawned villagers do not receive the marker. Lower limits apply to future admissions and leave existing villagers alive.
 
 Natural villager spawning pauses in active Gemini phases 1–4 so GHE can deplete the available prey. Pausing the invasion resumes natural villager spawning when its own configuration permits it. Existing villagers remain eligible for GHE targeting, capture, Fake Person conversion, Deep Root Disease and Nature's Mockery conversion under the usual phase and disease rules. The `geminionly` gamerule and hostile-spawn multipliers govern hostile mobs separately.
+
+### Squirrels
+
+Squirrels appear on dry Overworld forest ground with nearby logs or leaves during the live passive spawn pass. They share the vanilla passive mob cap and respect `doMobSpawning`. Smaller packs can result from terrain, spawn protection, or nearby squirrels. Dropped vanilla crop seeds, RTM tea seeds, and compatible Ore Dictionary nuts and seeds are edible. Squirrels cannot be bred by feeding. Hunting yields the existing raw squirrel item, or cooked squirrel if the animal is burning.
+
+Sneak-right-click a squirrel with an empty hand to carry it. Sneak-right-click a block with an empty hand to release it, or sneak-right-click a log with the stapler to attach it to the selected face. Staples are taken from the player's inventory after placement succeeds. Sneak-right-click an attached squirrel with an empty hand to detach it. Ordinary use of the stapler opens its template GUI.
+
+All settings in `12_mobs.squirrels` of `config/hbm.cfg` support `/rntconfig reload`.
+
+| Key | Default | Behavior |
+|---|---:|---|
+| `enabled` | `true` | Controls new squirrel spawning, capture, and wolf and ocelot hunting of squirrels. Existing squirrels and attachments stay in the save. |
+| `naturalSpawning` | `true` | Controls natural packs. |
+| `stapling` | `true` | Controls new attachments. Existing squirrels can still be detached. |
+| `spawnWeight` | `5` | 0–100. Zero removes squirrels from the natural spawn roll. |
+| `minGroupSize` | `1` | 1–4. Minimum rolled pack size. |
+| `maxGroupSize` | `3` | Minimum group size through 4. Maximum rolled pack size. |
+| `localLimit` | `12` | 0–64. Counts loaded squirrels within 48 horizontal blocks. Zero disables natural packs. |
+| `staplesPerAttachment` | `1` | 1–64. Inventory staples spent per successful attachment in every game mode. |
+| `health` | `4` HP | 1–40 HP. Changes the maximum for new and existing squirrels on their next tick. |
+
+Server-side Forge listeners can subscribe to `SquirrelInteractions.Captured` and `SquirrelInteractions.Attached`. Attachment events carry the player and squirrel UUIDs, dimension, log position, face, tree key and world tick. `SquirrelAttachments.get(world)` exposes lifetime successes, trees used, and current attachment locations by player UUID, including unloaded chunks. A tree key identifies the lowest reachable log in a bounded group of face-connected loaded logs, including multi-column trunks.
 
 ### UAP encounters
 
