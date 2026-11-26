@@ -7,7 +7,7 @@ import net.minecraftforge.common.config.Configuration;
 
 /** Gameplay values only; simplified ketamine sedation and potassium chloride damage over time. */
 public final class RestraintConfig {
-    private static final String CATEGORY = "27_restraints";
+    static final String CATEGORY = "27_restraints";
     public static boolean enabled = true, players = false, devices = true;
     public static int sedationTicks = 1200, onsetTicks = 60, recoveryTicks = 200;
     public static int injectionTicks = 200, bullMaxTemperature = 600, bullSafeTemperature = 60;

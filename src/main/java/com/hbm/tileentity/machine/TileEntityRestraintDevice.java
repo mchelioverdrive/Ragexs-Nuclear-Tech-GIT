@@ -8,6 +8,8 @@ import api.hbm.energymk2.IEnergyReceiverMK2;
 import com.hbm.blocks.machine.BlockRestraintDevice;
 import com.hbm.blocks.machine.BlockRestraintDevice.Kind;
 import com.hbm.config.RestraintConfig;
+import com.hbm.handler.restraint.ExecutionDeviceEffects;
+import com.hbm.handler.restraint.ExecutionDeviceEffects.Cue;
 import com.hbm.handler.restraint.RestraintState;
 import com.hbm.handler.restraint.Restraints;
 import com.hbm.items.ModItems;
@@ -157,6 +159,16 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
         if(kind() == Kind.HANGING) return hangingPosition(active ? cycle : 0);
         return local(0, kind() == Kind.TABLE ? 0.92 : kind() == Kind.BULL ? 0.65 : kind() == Kind.CHAIR ? 0.02 : 0.25, 0);
     }
+
+    protected final void emitExecutionEffect(Cue cue, EntityLivingBase occupant, Vec3 origin) {
+        ExecutionDeviceEffects.emit(worldObj, cue, origin, yaw(), occupant);
+    }
+
+    public void bladeDeathEffect(EntityLivingBase occupant) {
+        if(active && kind() == Kind.GUILLOTINE) emitExecutionEffect(Cue.BLADE_DEATH, occupant, local(0, 1.72, 0.2));
+    }
+
+    private boolean effectPulse() { return (worldObj.getTotalWorldTime() + xCoord + zCoord) % 6L == 0; }
 
     public static float hangingDrop(float time) { return Math.min(1F, Math.max(0F, time / 12F)) * 0.55F; }
     public static float hangingSway(float time) { return (float) Math.sin(time * 0.18F) * Math.min(1F, time / 12F) * 0.06F; }
@@ -320,14 +332,6 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
             previousHatch = hatch; previousStraps = straps;
             hatch += ((locked ? 0F : 1F) - hatch) * 0.2F;
             straps += ((captive == null ? 0F : 1F) - straps) * 0.25F;
-            if(active && worldObj.getTotalWorldTime() % 4 == 0) {
-                if(kind() == Kind.BULL) {
-                    worldObj.spawnParticle("smoke", xCoord + 0.5, yCoord + 2.7, zCoord + 0.5, 0, 0.03, 0);
-                    worldObj.spawnParticle("flame", xCoord + 0.5, yCoord + 0.15, zCoord + 0.5, 0, 0.01, 0);
-                } else if(kind() == Kind.CHAIR) {
-                    worldObj.spawnParticle("reddust", xCoord + 0.5 + worldObj.rand.nextGaussian() * 0.25, yCoord + 1.5, zCoord + 0.5, 0.1, 0.3, 1);
-                }
-            }
             return;
         }
         if(!collisionCellsChecked && worldObj.getTotalWorldTime() % 20 == 0)
@@ -345,15 +349,19 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
                 if(e == null || energyQuanta < RestraintConfig.chairQuantaPerTick) setActive(false);
                 else {
                     setStoredEnergyQuanta(energyQuanta - RestraintConfig.chairQuantaPerTick);
+                    if(cycle == 1 || effectPulse()) emitExecutionEffect(Cue.CHAIR_DISCHARGE, e, local(0, 1.92, 0.05));
                     if(cycle % 20 == 0) { e.attackEntityFrom(Restraints.ELECTRIC, RestraintConfig.electricDamage); sound("hbm:weapon.sparkShoot", 0.35F); }
                 }
             } else if(kind() == Kind.TABLE) {
                 // cycle is saved with the device, so reloads cannot repeat an already passed stroke.
-                if(cycle == 15 && e != null) Restraints.inject(e);
+                if(cycle == 15 && e != null && Restraints.inject(e)) emitExecutionEffect(Cue.INJECTION, e, local(0.25, 1.22, -0.15));
                 if(cycle >= 40 || e == null) setActive(false);
             }
             else if(kind() == Kind.HANGING) {
-                if(cycle == 12) sound("step.cloth", 0.8F);
+                if(cycle == 12) {
+                    sound("step.cloth", 0.8F);
+                    if(e != null) emitExecutionEffect(Cue.TRAPDOOR, e, local(0.48, 0.87, 0));
+                }
                 if(cycle >= 80 && e != null) {
                     e.attackEntityFrom(Restraints.HANGING, Math.max(10000F, e.getMaxHealth() * 2F));
                     // Respect damage cancellation/immunity, returning a surviving captive to the idle platform.
@@ -371,6 +379,7 @@ public class TileEntityRestraintDevice extends TileEntityMachineBase implements 
                     heating = true;
                     --burnTicks;
                     if(worldObj.getTotalWorldTime() % 10 == 0) temperature = Math.min(RestraintConfig.bullMaxTemperature, temperature + 5);
+                    if(!bullHeating || effectPulse()) emitExecutionEffect(Cue.BULL_HEAT, e, local(0, 0, 0));
                 } else setActive(false);
             }
             if(!active && temperature > 20 && worldObj.getTotalWorldTime() % 10 == 0) --temperature;

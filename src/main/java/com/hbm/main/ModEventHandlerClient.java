@@ -18,6 +18,7 @@ import com.hbm.blocks.ILookOverlay;
 import com.hbm.blocks.ModBlocks;
 import com.hbm.blocks.generic.BlockAshes;
 import com.hbm.config.ClientConfig;
+import com.hbm.particle.ExecutionEffectsClient;
 import com.hbm.config.GeneralConfig;
 import com.hbm.config.SpaceConfig;
 import com.hbm.dim.SkyProviderCelestial;
@@ -1027,6 +1028,7 @@ public class ModEventHandlerClient {
 	public void clientTick(ClientTickEvent event) {
 
 		Minecraft mc = Minecraft.getMinecraft();
+		if(event.phase == Phase.END) ExecutionEffectsClient.tick(mc);
 		ArmorNo9.updateWorldHook(mc.theWorld);
 
 		boolean supportsHighRenderDistance = FMLClientHandler.instance().hasOptifine() || Loader.isModLoaded("angelica");

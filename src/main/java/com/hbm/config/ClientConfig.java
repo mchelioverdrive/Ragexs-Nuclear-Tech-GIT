@@ -40,6 +40,7 @@ public class ClientConfig {
 	public static ConfigWrapper<Boolean> RENDER_CABLE_HANG =				new ConfigWrapper(true);
 	public static ConfigWrapper<Boolean> NUKE_HUD_FLASH =					new ConfigWrapper(true);
 	public static ConfigWrapper<Boolean> NUKE_HUD_SHAKE =					new ConfigWrapper(true);
+	public static ConfigWrapper<Boolean> EXECUTION_DEVICE_GORE =			new ConfigWrapper(true);
 	// Positive visual-only limits in hbmClient.json / /ntmclient; invalid or missing values use defaults.
 	// Shared/type budgets and camera-distance detail reduce birth density, never the flash or gameplay.
 	public static ConfigWrapper<Integer> nukeCloudMaxCloudlets = new PositiveLimit(4096);
@@ -75,6 +76,7 @@ public class ClientConfig {
 		configMap.put("RENDER_CABLE_HANG", RENDER_CABLE_HANG);
 		configMap.put("NUKE_HUD_FLASH", NUKE_HUD_FLASH);
 		configMap.put("NUKE_HUD_SHAKE", NUKE_HUD_SHAKE);
+		configMap.put("EXECUTION_DEVICE_GORE", EXECUTION_DEVICE_GORE);
 		configMap.put("nukeCloudMaxCloudlets", nukeCloudMaxCloudlets);
 		configMap.put("nukeCloudMaxTotalCloudlets", nukeCloudMaxTotalCloudlets);
 		configMap.put("RENDER_REEDS", RENDER_REEDS);

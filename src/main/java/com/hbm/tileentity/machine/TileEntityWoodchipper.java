@@ -8,6 +8,7 @@ import com.hbm.blocks.machine.BlockRestraintDevice.Kind;
 import com.hbm.config.RestraintConfig;
 import com.hbm.config.WoodchipperConfig;
 import com.hbm.config.WoodchipperConfig.Values;
+import com.hbm.handler.restraint.ExecutionDeviceEffects.Cue;
 import com.hbm.handler.restraint.Restraints;
 import com.hbm.inventory.container.ContainerWoodchipper;
 import com.hbm.inventory.gui.GUIWoodchipper;
@@ -46,10 +47,8 @@ public final class TileEntityWoodchipper extends TileEntityRestraintDevice imple
     private Values appliedSettings;
 
     private boolean spinning, cuttingWood, showParticles;
-    private int hitSequence;
     private int displayedDuration = 20;
     private long displayedCapacity;
-    private boolean receivedSnapshot;
     private float previousAngle, angle;
     private AudioWrapper motor;
 
@@ -159,13 +158,18 @@ public final class TileEntityWoodchipper extends TileEntityRestraintDevice imple
         setStoredEnergyQuanta(energyQuanta - settings.energyPerTick);
         if(++cycle == HIT_PERIOD) {
             cycle = 0;
-            if(settings.damage > 0F && occupant.attackEntityFrom(Restraints.BLADE, settings.damage) && settings.particles) {
-                ++hitSequence;
-                markNetworkDirty();
-            }
+            // An accepted death emits its own cue and releases the captive synchronously.
+            if(settings.damage > 0F && occupant.attackEntityFrom(Restraints.BLADE, settings.damage) && settings.particles && owns(occupant))
+                emitExecutionEffect(Cue.CHIPPER_HIT, occupant, outlet(0));
         }
         return active;
     }
+
+    @Override public void bladeDeathEffect(EntityLivingBase occupant) {
+        if(active && WoodchipperConfig.settings.particles) emitExecutionEffect(Cue.CHIPPER_DEATH, occupant, outlet(0));
+    }
+
+    private Vec3 outlet(double sideways) { return local(sideways, 0.34, 0.51); }
 
     private boolean processMaterial(Values settings) {
         ItemStack input = slots[INPUT];
@@ -249,7 +253,7 @@ public final class TileEntityWoodchipper extends TileEntityRestraintDevice imple
         }
         motor.updateVolume(getVolume(0.45F));
         if(cuttingWood && showParticles && worldObj.getTotalWorldTime() % 4L == 0L) {
-            Vec3 outlet = local((worldObj.rand.nextFloat() - 0.5F) * 0.25F, 0.34, 0.51);
+            Vec3 outlet = outlet((worldObj.rand.nextFloat() - 0.5F) * 0.25F);
             ForgeDirection front = MachineWoodchipper.powerSide(getBlockMetadata()).getOpposite();
             worldObj.spawnParticle(WOOD_CHIPS, outlet.xCoord, outlet.yCoord, outlet.zCoord, front.offsetX * 0.14, 0.06, front.offsetZ * 0.14);
         }
@@ -294,7 +298,7 @@ public final class TileEntityWoodchipper extends TileEntityRestraintDevice imple
         buffer.writeBoolean(spinning);
         buffer.writeBoolean(cuttingWood);
         buffer.writeBoolean(showParticles);
-        buffer.writeInt(hitSequence);
+        buffer.writeInt(0); // Reserved former hit-sequence field. Occupant effects use event packets.
     }
 
     @Override public void deserialize(ByteBuf buffer) {
@@ -305,17 +309,8 @@ public final class TileEntityWoodchipper extends TileEntityRestraintDevice imple
         spinning = buffer.readBoolean();
         cuttingWood = buffer.readBoolean();
         showParticles = buffer.readBoolean();
-        int oldHit = hitSequence;
-        hitSequence = buffer.readInt();
+        buffer.readInt(); // Reserved former hit-sequence field.
         if(!spinning) stopMotor();
-        if(receivedSnapshot && oldHit != hitSequence && showParticles && worldObj != null) {
-            Vec3 anchor = occupantAnchor();
-            for(int i = 0; i < 3; i++) {
-                double dx = worldObj.rand.nextGaussian() * 0.16, dz = worldObj.rand.nextGaussian() * 0.16;
-                worldObj.spawnParticle("crit", anchor.xCoord + dx, anchor.yCoord + 0.65, anchor.zCoord + dz, dx, 0.15, dz);
-            }
-        }
-        receivedSnapshot = true;
     }
 
     @Override public void writeToNBT(NBTTagCompound tag) {

@@ -501,7 +501,11 @@ public final class Restraints {
         RestraintState s = RestraintState.get(e);
         if(s.occupied() && s.dimension == e.worldObj.provider.dimensionId && e.worldObj.blockExists(s.x, s.y, s.z)) {
             TileEntity tile = e.worldObj.getTileEntity(s.x, s.y, s.z);
-            if(tile instanceof TileEntityRestraintDevice && ((TileEntityRestraintDevice) tile).owns(e)) ((TileEntityRestraintDevice) tile).forget();
+            if(tile instanceof TileEntityRestraintDevice && ((TileEntityRestraintDevice) tile).owns(e)) {
+                TileEntityRestraintDevice device = (TileEntityRestraintDevice) tile;
+                if(event.source == BLADE) device.bladeDeathEffect(e);
+                device.forget();
+            }
         }
         if(s.cuffs) e.entityDropItem(new ItemStack(ModItems.handcuffs), 0);
         if(s.jacket) e.entityDropItem(new ItemStack(ModItems.straight_jacket), 0);

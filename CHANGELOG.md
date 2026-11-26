@@ -1021,3 +1021,9 @@
 - Turn Ore Dictionary logs, planks, sticks, saplings, leaves and wooden slabs into biomass. Insert from above, extract from the sides or bottom, and apply redstone to pause work.
 - Use the shared restraint device controls to secure compatible occupants. Entity processing requires manual confirmation, stops on power loss and uses the normal entity damage and drop handling.
 - Add an animated industrial model, a progress and energy screen, NEI recipes and reloadable settings under `09_machines`.
+
+2026-11-25 20:48 — Add configurable execution device effects
+
+- Add activation-timed visual cues to the Guillotine, Brazen Bull, Electric Chair, Injection Table, Hanging Station and Woodchipper. Fatal blade strikes produce stylized blood, and the Woodchipper sends fragments through its rotating outlet. Accepted blade deaths can leave temporary blood marks on nearby exposed full-block faces.
+- Synchronize nearby effect cues from the server and expand them through the existing client particle renderer. Scale bursts with occupant size and apply particle, decal and distance limits.
+- Reload visual settings under `27_restraints.executioneffects` and hide blood, fragments and decals with the local `EXECUTION_DEVICE_GORE` setting. Mechanical occupants keep ordinary effects. Damage, restraints, drops and machine recipes retain their existing behavior.

@@ -27,7 +27,7 @@ public final class WoodchipperConfig {
             bosses = config.get(CATEGORY, "woodchipperAllowBosses", false,
                     "Allow boss occupants that fit and meet the shared restraint and capture rules.").getBoolean(false);
             particles = config.get(CATEGORY, "woodchipperProcessingParticles", true,
-                    "Show wood chips and entity hit particles.").getBoolean(true);
+                    "Show wood chips and occupant hit and death effects.").getBoolean(true);
             double configuredDamage = config.get(CATEGORY, "woodchipperEntityDamage", 6D,
                     "Damage in health points per 20 powered ticks of entity processing.", 0D, 100D).getDouble(6D);
             damage = Double.isFinite(configuredDamage) ? (float) Math.max(0D, Math.min(100D, configuredDamage)) : 6F;

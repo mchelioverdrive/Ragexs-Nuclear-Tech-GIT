@@ -106,6 +106,7 @@ public class PacketDispatcher {
 		wrapper.registerMessage(GeminiGripPacket.Handler.class, GeminiGripPacket.class, i++, Side.CLIENT);
 		wrapper.registerMessage(WoodcrawlerStrugglePacket.Handler.class, WoodcrawlerStrugglePacket.class, i++, Side.SERVER);
         wrapper.registerMessage(IrisStatePacket.Handler.class, IrisStatePacket.class, i++, Side.CLIENT);
+        wrapper.registerMessage(ExecutionEffectPacket.Handler.class, ExecutionEffectPacket.class, i++, Side.CLIENT);
 	}
 	
 }

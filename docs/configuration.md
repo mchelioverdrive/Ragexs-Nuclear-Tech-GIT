@@ -12,7 +12,7 @@ Always stop the server before editing startup configuration unless a command exp
 
 `/rntconfig reload` (operator level 2, including the server console and integrated server) rereads `config/hbm.cfg` with the existing Forge configuration parser. It validates the file and supported values before applying anything. Invalid types, numbers, booleans or activation modes, unfinished categories/lists, and read failures retain the previous runtime configuration and report an error. Finite numeric values use the existing range clamps. The command does not rewrite the file.
 
-Supported live values are all `21_gemini` settings and subcategories **except `woodcrawlerSpawnWeight`**, the `12_mobs` natural villager, UAP and Europa Lank settings below, the [woodchipper settings](#woodchipper) in `09_machines`, the [mace and bear mace settings](#mace-and-bear-mace) in `19_weapons`, the [taser settings](gameplay/restraints.md#taser) in `27_restraints`, and the `01_general` keys `1.18_enableExtendedLogging`, `1.45_enablePowerNetDiagnostics`, `1.46_enableMachineRuntimeDiagnostics`, `1.36_enableMOTD` and `1.37_enableGuideBook`. These general settings affect subsequent logging, diagnostics and login handling. All other common settings remain unchanged until restart, including registration, potion/dimension IDs, radiation implementation selection, sound initialization, blocks, items and startup recipe options. JSON machine/resource configuration remains startup-only for this command. Use the existing `/ntmreload` for supported recipe/item-pool JSON and `/ntmclient` for local `hbmClient.json` preferences.
+Supported live values are all `21_gemini` settings and subcategories **except `woodcrawlerSpawnWeight`**, the `12_mobs` natural villager, UAP and Europa Lank settings below, the [woodchipper settings](#woodchipper) in `09_machines`, the [mace and bear mace settings](#mace-and-bear-mace) in `19_weapons`, the [taser settings](gameplay/restraints.md#taser) and [execution device effects](#execution-device-effects) under `27_restraints`, and the `01_general` keys `1.18_enableExtendedLogging`, `1.45_enablePowerNetDiagnostics`, `1.46_enableMachineRuntimeDiagnostics`, `1.36_enableMOTD` and `1.37_enableGuideBook`. These general settings affect subsequent logging, diagnostics and login handling. All other common settings remain unchanged until restart, including registration, potion/dimension IDs, radiation implementation selection, sound initialization, blocks, items and startup recipe options. JSON machine/resource configuration remains startup-only for this command. Use the existing `/ntmreload` for supported recipe/item-pool JSON and `/ntmclient` for local `hbmClient.json` preferences.
 
 Gemini admission limits apply to the next admission in every active world without deleting existing creatures, nests or cocoons. Loaded Woodcrawlers refresh their native detection-range attribute on their next server tick, including after loading an older saved entity. Existing infection/cocoon durations, conversion decisions, boss health attributes and event countdowns retain their saved snapshots; new instances use the new settings. In-flight AI timers continue and consult updated thresholds on subsequent ticks. Progression and world gamerules are never reset. Reload registers no listeners or entities. Supported settings govern server decisions; native entity metadata, attributes, disease state and sound packets already convey their results, so no additional client configuration packet is needed.
 
@@ -26,12 +26,31 @@ Gemini admission limits apply to the next admission in every active world withou
 | `woodchipperEntityProcessing` | `true` | Boolean. Also requires enabled restraints and devices. |
 | `woodchipperAllowPlayers` | `true` | Boolean. Also requires `27_restraints.allowPlayerRestraint` and PvP permission for damage. |
 | `woodchipperAllowBosses` | `false` | Boolean. Shared size limits and exclusions still apply. |
-| `woodchipperProcessingParticles` | `true` | Boolean. Controls wood chips and occupant hit particles. |
+| `woodchipperProcessingParticles` | `true` | Boolean. Controls wood chips and occupant hit and death effects. |
 | `woodchipperEntityDamage` | 6 | 0–100 health points per 20 powered ticks. Zero disables damage. |
 
 At the default rate of 100 HE/t, the woodchipper draws 1 kW and stores up to 5 kJ. Connect a power cable to the rear port. Feed wood from above and extract biomass from the sides or bottom. A redstone signal pauses material processing and stops entity processing. Material work also pauses without sufficient power or room for the full output. Progress is saved with the current input. Replacing it with a different item resets progress.
 
 The defaults produce 8 biomass from a log, 2 from a plank, and 1 from a stick, sapling, leaf block, or wooden slab. The `hbmWoodchipper.json` recipe override accepts one item from a supported Ore Dictionary tag per recipe, with a biomass yield from 1 to 64. The existing recipe reload command applies recipe changes. See the device guide for occupant controls. [Restraint devices](gameplay/restraints.md#devices)
+
+### Execution device effects
+
+All of these visual settings are in `27_restraints.executioneffects` and support `/rntconfig reload`. Reloaded values apply to future events. Existing decals retain their lifetime.
+
+| Key | Default | Accepted values and purpose |
+| --- | --- | --- |
+| `enableExecutionDeviceEffects` | `true` | Boolean. Controls the shared execution effect events. |
+| `enableBloodParticles` | `true` | Boolean. Controls stylized blood spray. |
+| `enableDebrisParticles` | `true` | Boolean. Controls stylized woodchipper fragments. |
+| `enableBloodDecals` | `true` | Boolean. Controls temporary blood marks on exposed full-block faces. |
+| `particleIntensityMultiplier` | `1.0` | 0–4. Scales particle and mark counts. Zero disables emission. |
+| `maxParticlesPerEvent` | `64` | 0–128. Each client also limits the total from all devices to 128 particles per tick. |
+| `maxActiveDecalsPerClient` | `128` | 0–512. The oldest mark expires first when the limit is reached. |
+| `bloodDecalLifetime` | `1200` | 1–7,200 client ticks. Marks also disappear when their support is removed. |
+| `maxEffectRenderingDistance` | `64` | 1–128 blocks. Limits server delivery and client visibility of the effect. |
+| `nonBiologicalEntityTypes` | `[]` | Additional vanilla entity names or Forge names such as `modid:entityName` that produce no blood or biological debris. |
+
+Players can run `/ntmclient set EXECUTION_DEVICE_GORE false` to hide blood particles, fragments and marks. Smoke, fire, sparks, ordinary wood chips, device animations and sounds still play. The Minecraft particle setting also reduces particle density.
 
 ### Mace and bear mace
 
@@ -571,6 +590,7 @@ Known keys include:
 | `RENDER_CABLE_HANG` | `true` | Cable hanging render behavior. |
 | `NUKE_HUD_FLASH` | `true` | Nuke HUD flash effect. |
 | `NUKE_HUD_SHAKE` | `true` | Nuke HUD shake effect. |
+| `EXECUTION_DEVICE_GORE` | `true` | Show execution-device blood particles, fragments and temporary blood marks. |
 | `RENDER_REEDS` | depends on mod compatibility | Reeds render behavior. |
 | `DEBUG_RENDER_GL_ERRORS` | `false` | OpenGL render error debugging. |
 | `DARK_ADAPTATION_ENABLED` | `true` | Enables realistic client eye adaptation. |

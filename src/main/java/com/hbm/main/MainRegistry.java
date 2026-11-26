@@ -1243,6 +1243,7 @@ public class MainRegistry {
         com.hbm.config.RestraintConfig.TaserValues taser = new com.hbm.config.RestraintConfig.TaserValues(candidate);
         MaceConfig.Values mace = new MaceConfig.Values(candidate);
         WoodchipperConfig.Values woodchipper = new WoodchipperConfig.Values(candidate);
+        ExecutionEffectsConfig.Values executionEffects = new ExecutionEffectsConfig.Values(candidate);
         // All parsing/validation finishes before these non-throwing field assignments.
         GeminiConfig.apply(gemini, false);
         GeneralConfig.applyRuntime(general);
@@ -1252,6 +1253,7 @@ public class MainRegistry {
         com.hbm.config.RestraintConfig.taser = taser;
         MaceConfig.settings = mace;
         WoodchipperConfig.settings = woodchipper;
+        ExecutionEffectsConfig.settings = executionEffects;
     }
 
     private void loadConfig(FMLPreInitializationEvent event) {
@@ -1265,6 +1267,7 @@ public class MainRegistry {
 		com.hbm.config.RestraintConfig.loadFromConfig(config);
 		MaceConfig.settings = new MaceConfig.Values(config);
 		WoodchipperConfig.settings = new WoodchipperConfig.Values(config);
+		ExecutionEffectsConfig.settings = new ExecutionEffectsConfig.Values(config);
 		WorldConfig.loadFromConfig(config);
 		MachineConfig.loadFromConfig(config);
 		BombConfig.loadFromConfig(config);
