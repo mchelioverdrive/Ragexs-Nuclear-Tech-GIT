@@ -4,6 +4,9 @@ import org.lwjgl.opengl.GL11;
 
 import com.hbm.entity.missile.EntityMissileAntiBallistic;
 import com.hbm.entity.missile.EntityMissileBaseNT;
+import com.hbm.entity.missile.EntityRosterMissile;
+import com.hbm.items.weapon.MissileDefinition;
+import com.hbm.render.util.MissileRosterModel;
 import com.hbm.entity.missile.EntityMissileStealth;
 import com.hbm.entity.missile.EntityMissileTier1.*;
 import com.hbm.main.ResourceManager;
@@ -33,11 +36,11 @@ public class RenderMissileGeneric extends Render {
 		case 5: GL11.glRotatef(0, 0F, 1F, 0F); break;
 		}
 
-		if(entity instanceof EntityMissileAntiBallistic) {
-			bindTexture(ResourceManager.missileAA_tex);
-			GL11.glShadeModel(GL11.GL_SMOOTH);
-			ResourceManager.missileABM.renderAll();
-			GL11.glShadeModel(GL11.GL_FLAT);
+		if(entity instanceof EntityRosterMissile) {
+			MissileRosterModel model = MissileRosterModel.get(((EntityRosterMissile) entity).getDefinition());
+			if(model != null) model.render();
+		} else if(entity instanceof EntityMissileAntiBallistic) {
+			MissileRosterModel.get(MissileDefinition.SPARTAN).render();
 		} else if(entity instanceof EntityMissileStealth) {
 			bindTexture(ResourceManager.missileStealth_tex);
 			ResourceManager.missileStealth.renderAll();

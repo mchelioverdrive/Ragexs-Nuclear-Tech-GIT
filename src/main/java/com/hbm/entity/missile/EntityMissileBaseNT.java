@@ -107,6 +107,10 @@ public abstract class EntityMissileBaseNT extends EntityThrowableInterp implemen
 		return velocity;
 	}
 
+	protected double getFlightSpeed() {
+		return 4D;
+	}
+
 	@Override
 	public boolean doesImpactEntities() {
 		return false;
@@ -119,7 +123,7 @@ public abstract class EntityMissileBaseNT extends EntityThrowableInterp implemen
 		this.lastTickPosZ = this.posZ;
 		super.onUpdate();
 		
-		if(velocity < 4) velocity += MathHelper.clamp_double(this.ticksExisted / 60D * 0.05D, 0, 0.05);
+		if(velocity < getFlightSpeed()) velocity += MathHelper.clamp_double(this.ticksExisted / 60D * 0.05D, 0, 0.05);
 		
 		if(!worldObj.isRemote) {
 

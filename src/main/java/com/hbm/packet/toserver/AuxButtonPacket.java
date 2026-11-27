@@ -100,7 +100,10 @@ public class AuxButtonPacket implements IMessage {
 				if (te instanceof TileEntityMachineMissileAssembly) {
 					TileEntityMachineMissileAssembly assembly = (TileEntityMachineMissileAssembly)te;
 
-					assembly.construct();
+					if(p.openContainer instanceof com.hbm.inventory.container.ContainerMachineMissileAssembly
+							&& ((com.hbm.inventory.container.ContainerMachineMissileAssembly) p.openContainer).isFor(assembly, p)) {
+						assembly.construct();
+					}
 				}
 
 				if (te instanceof TileEntityLaunchTable) {

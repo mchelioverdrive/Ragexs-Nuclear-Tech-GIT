@@ -66,7 +66,7 @@ public class TileEntityLaunchPad extends TileEntityLaunchPadBase {
 	@Override
 	public void finalizeLaunch(Entity missile) {
 		super.finalizeLaunch(missile);
-		this.delay = 100;
+		if(!missile.isDead) this.delay = 100;
 	}
 	
 	@Override

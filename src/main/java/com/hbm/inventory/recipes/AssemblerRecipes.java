@@ -502,42 +502,6 @@ public class AssemblerRecipes extends SerializableRecipe {
 										   4,
 										   EnumCircuitType.CONTROLLER_ADVANCED)},
 				   500);
-		makeRecipe(new ComparableStack(ModItems.warhead_volcano,
-									   1),
-				   new AStack[]{
-					   new OreDictStack(TI.plate(),
-										24),
-					   new OreDictStack(STEEL.plate(),
-										16),
-					   new ComparableStack(ModBlocks.det_nuke,
-										   3),
-					   new OreDictStack(U238.block(),
-										24),
-					   new ComparableStack(ModItems.circuit,
-										   5,
-										   EnumCircuitType.CAPACITOR_BOARD.ordinal())},
-				   600);
-		makeRecipe(new ComparableStack(ModItems.missile_stealth,
-									   1),
-				   new AStack[]{
-					   new OreDictStack(TI.plate(),
-										20),
-					   new OreDictStack(AL.plate(),
-										20),
-					   new OreDictStack(CU.plate(),
-										10),
-					   new OreDictStack(KEY_BLACK,
-										16),
-					   new OreDictStack(ANY_HARDPLASTIC.ingot(),
-										16),
-					   new OreDictStack(ANY_HIGHEXPLOSIVE.ingot(),
-										4),
-					   new ComparableStack(ModItems.circuit,
-										   4,
-										   EnumCircuitType.ADVANCED.ordinal()),
-					   new OreDictStack(STEEL.bolt(),
-										32)},
-				   1200);
 		makeRecipe(new ComparableStack(ModItems.thruster_nuclear,
 									   1),
 				   new AStack[]{
@@ -2482,25 +2446,6 @@ public class AssemblerRecipes extends SerializableRecipe {
 										   5,
 										   EnumCircuitType.ADVANCED),},
 				   500);
-		makeRecipe(new ComparableStack(ModItems.mp_warhead_15_n2,
-									   1),
-				   new AStack[]{
-					   new ComparableStack(ModItems.seg_15,
-										   1),
-					   new OreDictStack(STEEL.plate(),
-										8),
-					   new OreDictStack(TI.plate(),
-										20),
-					   new ComparableStack(ModBlocks.det_charge,
-										   24),
-					   new ComparableStack(Blocks.redstone_block,
-										   12),
-					   new OreDictStack(MAGTUNG.dust(),
-										6),
-					   new ComparableStack(ModItems.circuit,
-										   4,
-										   EnumCircuitType.ADVANCED),},
-				   400);
 
 		//soyuz and other bullshit
 
@@ -5547,6 +5492,8 @@ public class AssemblerRecipes extends SerializableRecipe {
 			.getAsInt();
 
 		if (output == null || output.getItem() == ModItems.nothing) return;
+		Item outputItem = output.getItem();
+		if(outputItem == ModItems.missile_stealth || outputItem == ModItems.warhead_volcano || outputItem == ModItems.mp_warhead_15_n2) return;
 
 		if (obj.has("folders")) {
 			JsonArray array = obj.get("folders")

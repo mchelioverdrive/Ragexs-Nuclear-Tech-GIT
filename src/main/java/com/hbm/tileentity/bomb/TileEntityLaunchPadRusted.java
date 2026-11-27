@@ -6,7 +6,8 @@ import java.util.Set;
 
 import com.hbm.config.GeneralConfig;
 import com.hbm.entity.missile.EntityMissileBaseNT;
-import com.hbm.entity.missile.EntityMissileTier4.EntityMissileDoomsdayRusted;
+import com.hbm.entity.missile.EntityRosterMissile;
+import com.hbm.items.weapon.MissileDefinition;
 import com.hbm.interfaces.IBomb.BombReturnCode;
 import com.hbm.interfaces.IControlReceiver;
 import com.hbm.inventory.container.ContainerLaunchPadRusted;
@@ -105,8 +106,12 @@ public class TileEntityLaunchPadRusted extends TileEntityMachineBase implements 
 					int targetX = (int) Math.floor(coords.xCoord);
 					int targetZ = (int) Math.floor(coords.zCoord);
 
-					EntityMissileDoomsdayRusted missile = new EntityMissileDoomsdayRusted(worldObj, xCoord + 0.5F, yCoord + 1F, zCoord + 0.5F, targetX, targetZ);
-					worldObj.spawnEntityInWorld(missile);
+					EntityRosterMissile missile = new EntityRosterMissile(worldObj, xCoord + 0.5F, yCoord + 1F, zCoord + 0.5F, targetX, targetZ, MissileDefinition.TITAN_II);
+					missile.useSiloPayload();
+					if(!worldObj.spawnEntityInWorld(missile)) {
+						missile.setDead();
+						return BombReturnCode.ERROR_MISSING_COMPONENT;
+					}
 					TrackerUtil.setTrackingRange(worldObj, missile, 500);
 					worldObj.playSoundEffect(xCoord + 0.5, yCoord, zCoord + 0.5, "hbm:weapon.missileTakeOff", 2.0F, 1.0F);
 					this.missileLoaded = false;

@@ -342,6 +342,7 @@ public class EntityMappings {
 		EntityRegistry.registerModEntity(com.hbm.world.squirrelstapler.StaplerSquirrels.Bear.class, "stapler_squirrel_bear", id++, MainRegistry.instance, 64, 2, true);
 		EntityRegistry.registerModEntity(com.hbm.world.squirrelstapler.StaplerSquirrels.Silhouette.class, "stapler_silhouette", id++, MainRegistry.instance, 64, 2, true);
 		EntityRegistry.registerModEntity(com.hbm.world.squirrelstapler.EntityStaplerArrival.class, "stapler_arrival", id++, MainRegistry.instance, 96, 2, false);
+		EntityRegistry.registerModEntity(com.hbm.entity.missile.EntityRosterMissile.class, "entity_roster_missile", id++, MainRegistry.instance, 1000, 1, true);
 	}
 
 	private static final java.util.Set<Class<?>> GEMINI_ENTITIES = new java.util.HashSet<Class<?>>();

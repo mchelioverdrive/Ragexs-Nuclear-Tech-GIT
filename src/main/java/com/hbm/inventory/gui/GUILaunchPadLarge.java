@@ -13,6 +13,7 @@ import com.hbm.items.ModItems;
 import com.hbm.items.weapon.ItemMissile;
 import com.hbm.lib.RefStrings;
 import com.hbm.render.item.ItemRenderMissileGeneric;
+import com.hbm.render.util.MissileRosterModel;
 import com.hbm.tileentity.bomb.TileEntityLaunchPadBase;
 import com.hbm.util.I18nUtil;
 
@@ -61,6 +62,14 @@ public class GUILaunchPadLarge extends GuiInfoContainer {
 	protected void drawGuiContainerForegroundLayer(int i, int j) {
 		String name = this.launchpad.hasCustomInventoryName() ? this.launchpad.getInventoryName() : I18n.format(this.launchpad.getInventoryName());
 		this.fontRendererObj.drawString(name, this.xSize / 2 - this.fontRendererObj.getStringWidth(name) / 2, 4, 4210752);
+		ItemStack loaded = launchpad.getStackInSlot(0);
+		if(loaded != null && loaded.getItem() instanceof ItemMissile) {
+			ItemMissile missile = (ItemMissile) loaded.getItem();
+			if(missile.definition != null) {
+				String classification = I18n.format(missile.definition.classification.translationKey());
+				this.fontRendererObj.drawString(fontRendererObj.trimStringToWidth(classification, xSize - 16), 8, 126, 4210752);
+			}
+		}
 		this.fontRendererObj.drawString(I18n.format("container.inventory"), 8, this.ySize - 96 + 2, 4210752);
 	}
 
@@ -106,7 +115,9 @@ public class GUILaunchPadLarge extends GuiInfoContainer {
 					case ATLAS: scale = 0.875D; break;
 					case OTHER: break;
 					}
-					if(missile == ModItems.missile_stealth) scale = 1.125D;
+					MissileRosterModel model = ItemRenderMissileGeneric.getRosterModel(launchpad.slots[0]);
+					if(model != null) scale = 9D / model.height;
+					else if(missile == ModItems.missile_stealth) scale = 1.125D;
 				}
 				
 				GL11.glRotatef(90, 0, 1, 0);

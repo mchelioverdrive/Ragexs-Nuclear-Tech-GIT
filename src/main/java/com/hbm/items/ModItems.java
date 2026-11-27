@@ -1827,6 +1827,7 @@ public class ModItems {
 	public static Item transporter_linker;
 
 	public static Item missile_assembly;
+	public static Item missile_airframe;
 	public static Item missile_generic;
 	public static Item missile_anti_ballistic;
 	public static Item missile_incendiary;
@@ -4060,7 +4061,7 @@ public class ModItems {
 		warhead_buster_large = new Item().setUnlocalizedName("warhead_buster_large").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":warhead_buster_large");
 		warhead_nuclear = new Item().setUnlocalizedName("warhead_nuclear").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":warhead_nuclear");
 		warhead_mirv = new Item().setUnlocalizedName("warhead_mirv").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":warhead_mirv");
-		warhead_volcano = new Item().setUnlocalizedName("warhead_volcano").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":warhead_volcano");
+		warhead_volcano = new Item().setUnlocalizedName("warhead_volcano").setTextureName(RefStrings.MODID + ":warhead_volcano");
 
 		fuel_tank_small = new Item().setUnlocalizedName("fuel_tank_small").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":fuel_tank_small");
 		fuel_tank_medium = new Item().setUnlocalizedName("fuel_tank_medium").setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":fuel_tank_medium");
@@ -5592,39 +5593,40 @@ public class ModItems {
 		launch_code = new Item().setUnlocalizedName("launch_code").setMaxStackSize(1).setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":launch_code");
 		launch_key = new Item().setUnlocalizedName("launch_key").setMaxStackSize(1).setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":launch_key");
 		missile_assembly = new Item().setUnlocalizedName("missile_assembly").setMaxStackSize(1).setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":missile_assembly");
-		missile_generic = new ItemMissile(MissileFormFactor.V2, MissileTier.TIER1).setUnlocalizedName("missile_generic").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab).setTextureName(RefStrings.MODID + ":missile_generic");
-		missile_anti_ballistic = new ItemMissile(MissileFormFactor.ABM, MissileTier.TIER1).setUnlocalizedName("missile_anti_ballistic").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab).setTextureName(RefStrings.MODID + ":missile_anti_ballistic");
-		missile_incendiary = new ItemMissile(MissileFormFactor.V2, MissileTier.TIER1).setUnlocalizedName("missile_incendiary").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab).setTextureName(RefStrings.MODID + ":missile_incendiary");
-		missile_cluster = new ItemMissile(MissileFormFactor.V2, MissileTier.TIER1).setUnlocalizedName("missile_cluster").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab).setTextureName(RefStrings.MODID + ":missile_cluster");
-		missile_buster = new ItemMissile(MissileFormFactor.V2, MissileTier.TIER1).setUnlocalizedName("missile_buster").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab).setTextureName(RefStrings.MODID + ":missile_buster");
-		missile_decoy = new ItemMissile(MissileFormFactor.V2, MissileTier.TIER1).setUnlocalizedName("missile_decoy").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab).setTextureName(RefStrings.MODID + ":missile_decoy");
-		missile_strong = new ItemMissile(MissileFormFactor.STRONG, MissileTier.TIER2).setUnlocalizedName("missile_strong").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab).setTextureName(RefStrings.MODID + ":missile_strong");
-		missile_incendiary_strong = new ItemMissile(MissileFormFactor.STRONG, MissileTier.TIER2).setUnlocalizedName("missile_incendiary_strong").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab).setTextureName(RefStrings.MODID + ":missile_incendiary_strong");
-		missile_cluster_strong = new ItemMissile(MissileFormFactor.STRONG, MissileTier.TIER2).setUnlocalizedName("missile_cluster_strong").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab).setTextureName(RefStrings.MODID + ":missile_cluster_strong");
-		missile_buster_strong = new ItemMissile(MissileFormFactor.STRONG, MissileTier.TIER2).setUnlocalizedName("missile_buster_strong").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab).setTextureName(RefStrings.MODID + ":missile_buster_strong");
-		missile_emp_strong = new ItemMissile(MissileFormFactor.STRONG, MissileTier.TIER2).setUnlocalizedName("missile_emp_strong").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab).setTextureName(RefStrings.MODID + ":missile_emp_strong");
-		missile_burst = new ItemMissile(MissileFormFactor.HUGE, MissileTier.TIER3).setUnlocalizedName("missile_burst").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab).setTextureName(RefStrings.MODID + ":missile_burst");
-		missile_inferno = new ItemMissile(MissileFormFactor.HUGE, MissileTier.TIER3).setUnlocalizedName("missile_inferno").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab).setTextureName(RefStrings.MODID + ":missile_inferno");
-		missile_rain = new ItemMissile(MissileFormFactor.HUGE, MissileTier.TIER3).setUnlocalizedName("missile_rain").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab).setTextureName(RefStrings.MODID + ":missile_rain");
-		missile_drill = new ItemMissile(MissileFormFactor.HUGE, MissileTier.TIER3).setUnlocalizedName("missile_drill").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab).setTextureName(RefStrings.MODID + ":missile_drill");
-		missile_nuclear = new ItemMissile(MissileFormFactor.ATLAS, MissileTier.TIER4).setUnlocalizedName("missile_nuclear").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab).setTextureName(RefStrings.MODID + ":missile_nuclear");
-		missile_nuclear_cluster = new ItemMissile(MissileFormFactor.ATLAS, MissileTier.TIER4).setUnlocalizedName("missile_nuclear_cluster").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab).setTextureName(RefStrings.MODID + ":missile_nuclear_cluster");
+		missile_airframe = new ItemMissileAirframe().setUnlocalizedName("missile_airframe").setMaxStackSize(1).setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":missile_generic");
+		missile_generic = MissileDefinition.V2.createItem();
+		missile_anti_ballistic = MissileDefinition.SPARTAN.createItem();
+		missile_incendiary = MissileDefinition.REDSTONE.createItem();
+		missile_cluster = MissileDefinition.ATACMS.createItem();
+		missile_buster = MissileDefinition.ISKANDER.createItem();
+		missile_decoy = new ItemMissile(MissileFormFactor.V2, MissileTier.TIER1).notLaunchable().setUnlocalizedName("missile_decoy").setMaxStackSize(1).setTextureName(RefStrings.MODID + ":missile_decoy");
+		missile_strong = MissileDefinition.SCUD.createItem();
+		missile_incendiary_strong = MissileDefinition.LANCE.createItem();
+		missile_cluster_strong = MissileDefinition.DF21.createItem();
+		missile_buster_strong = MissileDefinition.TOMAHAWK.createItem();
+		missile_emp_strong = new ItemMissile(MissileFormFactor.STRONG, MissileTier.TIER2).notLaunchable().setUnlocalizedName("missile_emp_strong").setMaxStackSize(1).setTextureName(RefStrings.MODID + ":missile_emp_strong");
+		missile_burst = MissileDefinition.DF26.createItem();
+		missile_inferno = MissileDefinition.SHAHAB3.createItem();
+		missile_rain = MissileDefinition.DF17.createItem();
+		missile_drill = MissileDefinition.CPS.createItem();
+		missile_nuclear = MissileDefinition.ATLAS_D.createItem();
+		missile_nuclear_cluster = MissileDefinition.ATLAS_F.createItem();
 		//missile_volcano = new ItemMissile(MissileFormFactor.ATLAS, MissileTier.TIER4).setUnlocalizedName("missile_volcano").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab).setTextureName(RefStrings.MODID + ":missile_volcano");
-		missile_doomsday = new ItemMissile(MissileFormFactor.ATLAS, MissileTier.TIER4).setUnlocalizedName("missile_doomsday").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab).setTextureName(RefStrings.MODID + ":missile_doomsday");
-		missile_doomsday_rusted = new ItemMissile(MissileFormFactor.ATLAS, MissileTier.TIER4).notLaunchable().setUnlocalizedName("missile_doomsday_rusted").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab).setTextureName(RefStrings.MODID + ":missile_doomsday");
+		missile_doomsday = MissileDefinition.SARMAT.createItem();
+		missile_doomsday_rusted = new ItemMissile(MissileDefinition.TITAN_II).notLaunchable().setUnlocalizedName("missile_doomsday_rusted").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab).setTextureName(RefStrings.MODID + ":missile_nuclear");
 		//missile_taint = new ItemMissile(MissileFormFactor.MICRO, MissileTier.TIER0).setUnlocalizedName("missile_taint").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab).setTextureName(RefStrings.MODID + ":missile_taint");
-		missile_micro = new ItemMissile(MissileFormFactor.MICRO, MissileTier.TIER0).setUnlocalizedName("missile_micro").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab).setTextureName(RefStrings.MODID + ":missile_micro");
+		missile_micro = MissileDefinition.SERGEANT.createItem();
 		//missile_bhole = new ItemMissile(MissileFormFactor.MICRO, MissileTier.TIER0).setUnlocalizedName("missile_bhole").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab).setTextureName(RefStrings.MODID + ":missile_bhole");
 		//missile_schrabidium = new ItemMissile(MissileFormFactor.MICRO, MissileTier.TIER0).setUnlocalizedName("missile_schrabidium").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab).setTextureName(RefStrings.MODID + ":missile_schrabidium");
-		missile_emp = new ItemMissile(MissileFormFactor.MICRO, MissileTier.TIER0).setUnlocalizedName("missile_emp").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab).setTextureName(RefStrings.MODID + ":missile_emp");
-		missile_shuttle = new ItemMissile(MissileFormFactor.OTHER, MissileTier.TIER3, MissileFuel.KEROSENE_PEROXIDE).setUnlocalizedName("missile_shuttle").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab).setTextureName(RefStrings.MODID + ":missile_shuttle");
-		missile_stealth = new ItemMissile(MissileFormFactor.STRONG, MissileTier.TIER1).setUnlocalizedName("missile_stealth").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab).setTextureName(RefStrings.MODID + ":missile_stealth");
-		missile_test = new ItemMissile(MissileFormFactor.MICRO, MissileTier.TIER0).setUnlocalizedName("missile_test").setMaxStackSize(1).setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":missile_micro");
+		missile_emp = new ItemMissile(MissileFormFactor.MICRO, MissileTier.TIER0).notLaunchable().setUnlocalizedName("missile_emp").setMaxStackSize(1).setTextureName(RefStrings.MODID + ":missile_emp");
+		missile_shuttle = new ItemMissile(MissileFormFactor.OTHER, MissileTier.TIER3, MissileFuel.KEROSENE_PEROXIDE).notLaunchable().setUnlocalizedName("missile_shuttle").setMaxStackSize(1).setTextureName(RefStrings.MODID + ":missile_shuttle");
+		missile_stealth = new ItemMissile(MissileFormFactor.STRONG, MissileTier.TIER1).notLaunchable().setUnlocalizedName("missile_stealth").setMaxStackSize(1).setTextureName(RefStrings.MODID + ":missile_stealth");
+		missile_test = new ItemMissile(MissileFormFactor.MICRO, MissileTier.TIER0).notLaunchable().setUnlocalizedName("missile_test").setMaxStackSize(1).setTextureName(RefStrings.MODID + ":missile_micro");
 		missile_carrier = new Item().setUnlocalizedName("missile_carrier").setMaxStackSize(1).setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":missile_carrier");
 		missile_soyuz = new ItemSoyuz().setUnlocalizedName("missile_soyuz").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab).setTextureName(RefStrings.MODID + ":soyuz");
 		missile_soyuz_lander = new ItemCustomLore().setUnlocalizedName("missile_soyuz_lander").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab).setTextureName(RefStrings.MODID + ":soyuz_lander");
 
-		missile_custom = new ItemCustomMissile().setUnlocalizedName("missile_custom").setMaxStackSize(1).setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":missile_custom");
+		missile_custom = new ItemCustomMissile().setUnlocalizedName("missile_custom").setMaxStackSize(1).setTextureName(RefStrings.MODID + ":missile_custom");
 		rocket_custom = new ItemCustomRocket().setUnlocalizedName("rocket_custom").setMaxStackSize(1).setCreativeTab(MainRegistry.partsTab).setTextureName(RefStrings.MODID + ":missile_custom");
 
 		initializeSatelliteItems();
@@ -10365,6 +10367,9 @@ public class ModItems {
 		//GameRegistry.registerItem(mysteryshovel, mysteryshovel.getUnlocalizedName());
 		GameRegistry.registerItem(memory, memory.getUnlocalizedName());
 		GameRegistry.registerItem(noose, noose.getUnlocalizedName());
+
+		GameRegistry.registerItem(missile_airframe, missile_airframe.getUnlocalizedName());
+		MissileDefinition.registerNewItems();
 	}
 
 	public static void addRemap(String unloc, Item item, Enum sub) {
@@ -10374,5 +10379,6 @@ public class ModItems {
 	public static void addRemap(String unloc, Item item, int meta) {
 		Item remap = new ItemRemap(item, meta).setUnlocalizedName(unloc).setTextureName(RefStrings.MODID + ":plate_armor_titanium");
 		GameRegistry.registerItem(remap, remap.getUnlocalizedName());
+
 	}
 }

@@ -530,31 +530,13 @@ public class ClientProxy extends ServerProxy {
 		ItemRenderMissileGeneric.init();
 		MinecraftForgeClient.registerItemRenderer(ModItems.missile_test, new ItemRenderMissileGeneric(RenderMissileType.TYPE_TIER0));
 		//MinecraftForgeClient.registerItemRenderer(ModItems.missile_taint, new ItemRenderMissileGeneric(RenderMissileType.TYPE_TIER0));
-		MinecraftForgeClient.registerItemRenderer(ModItems.missile_micro, new ItemRenderMissileGeneric(RenderMissileType.TYPE_TIER0));
 		//MinecraftForgeClient.registerItemRenderer(ModItems.missile_bhole, new ItemRenderMissileGeneric(RenderMissileType.TYPE_TIER0));
 		//MinecraftForgeClient.registerItemRenderer(ModItems.missile_schrabidium, new ItemRenderMissileGeneric(RenderMissileType.TYPE_TIER0));
 		MinecraftForgeClient.registerItemRenderer(ModItems.missile_emp, new ItemRenderMissileGeneric(RenderMissileType.TYPE_TIER0));
 		MinecraftForgeClient.registerItemRenderer(ModItems.missile_stealth, new ItemRenderMissileGeneric(RenderMissileType.TYPE_STEALTH));
-		MinecraftForgeClient.registerItemRenderer(ModItems.missile_generic, new ItemRenderMissileGeneric(RenderMissileType.TYPE_TIER1));
-		MinecraftForgeClient.registerItemRenderer(ModItems.missile_incendiary, new ItemRenderMissileGeneric(RenderMissileType.TYPE_TIER1));
-		MinecraftForgeClient.registerItemRenderer(ModItems.missile_cluster, new ItemRenderMissileGeneric(RenderMissileType.TYPE_TIER1));
-		MinecraftForgeClient.registerItemRenderer(ModItems.missile_buster, new ItemRenderMissileGeneric(RenderMissileType.TYPE_TIER1));
 		MinecraftForgeClient.registerItemRenderer(ModItems.missile_decoy, new ItemRenderMissileGeneric(RenderMissileType.TYPE_TIER1));
-		MinecraftForgeClient.registerItemRenderer(ModItems.missile_anti_ballistic, new ItemRenderMissileGeneric(RenderMissileType.TYPE_ABM));
-		MinecraftForgeClient.registerItemRenderer(ModItems.missile_strong, new ItemRenderMissileGeneric(RenderMissileType.TYPE_TIER2));
-		MinecraftForgeClient.registerItemRenderer(ModItems.missile_incendiary_strong, new ItemRenderMissileGeneric(RenderMissileType.TYPE_TIER2));
-		MinecraftForgeClient.registerItemRenderer(ModItems.missile_cluster_strong, new ItemRenderMissileGeneric(RenderMissileType.TYPE_TIER2));
-		MinecraftForgeClient.registerItemRenderer(ModItems.missile_buster_strong, new ItemRenderMissileGeneric(RenderMissileType.TYPE_TIER2));
 		MinecraftForgeClient.registerItemRenderer(ModItems.missile_emp_strong, new ItemRenderMissileGeneric(RenderMissileType.TYPE_TIER2));
-		MinecraftForgeClient.registerItemRenderer(ModItems.missile_burst, new ItemRenderMissileGeneric(RenderMissileType.TYPE_TIER3));
-		MinecraftForgeClient.registerItemRenderer(ModItems.missile_inferno, new ItemRenderMissileGeneric(RenderMissileType.TYPE_TIER3));
-		MinecraftForgeClient.registerItemRenderer(ModItems.missile_rain, new ItemRenderMissileGeneric(RenderMissileType.TYPE_TIER3));
-		MinecraftForgeClient.registerItemRenderer(ModItems.missile_drill, new ItemRenderMissileGeneric(RenderMissileType.TYPE_TIER3));
-		MinecraftForgeClient.registerItemRenderer(ModItems.missile_nuclear, new ItemRenderMissileGeneric(RenderMissileType.TYPE_NUCLEAR));
-		MinecraftForgeClient.registerItemRenderer(ModItems.missile_nuclear_cluster, new ItemRenderMissileGeneric(RenderMissileType.TYPE_NUCLEAR));
 		//MinecraftForgeClient.registerItemRenderer(ModItems.missile_volcano, new ItemRenderMissileGeneric(RenderMissileType.TYPE_NUCLEAR));
-		MinecraftForgeClient.registerItemRenderer(ModItems.missile_doomsday, new ItemRenderMissileGeneric(RenderMissileType.TYPE_NUCLEAR));
-		MinecraftForgeClient.registerItemRenderer(ModItems.missile_doomsday_rusted, new ItemRenderMissileGeneric(RenderMissileType.TYPE_NUCLEAR));
 		MinecraftForgeClient.registerItemRenderer(ModItems.missile_carrier, new ItemRenderMissileGeneric(RenderMissileType.TYPE_CARRIER));
 		MinecraftForgeClient.registerItemRenderer(ModItems.missile_shuttle, new ItemRenderMissileGeneric(RenderMissileType.TYPE_ROBIN));
 
@@ -794,6 +776,7 @@ public class ClientProxy extends ServerProxy {
 		RenderingRegistry.registerEntityRenderingHandler(EntityDisperserCanister.class, new RenderGenericGrenade());
 		//missiles
 	    RenderingRegistry.registerEntityRenderingHandler(EntityMissileCustom.class, new RenderMissileCustom());
+		RenderingRegistry.registerEntityRenderingHandler(com.hbm.entity.missile.EntityRosterMissile.class, new RenderMissileGeneric());
 	    RenderingRegistry.registerEntityRenderingHandler(EntityRideableRocket.class, new RenderRocketCustom());
 		RenderingRegistry.registerEntityRenderingHandler(EntityRideableRocketDummy.class, new RenderEmpty());
 	    RenderingRegistry.registerEntityRenderingHandler(EntityMissileGeneric.class, new RenderMissileGeneric());

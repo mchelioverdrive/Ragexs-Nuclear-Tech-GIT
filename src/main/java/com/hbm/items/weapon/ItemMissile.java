@@ -9,12 +9,14 @@ import com.hbm.items.ItemCustomLore;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.StatCollector;
 
 public class ItemMissile extends ItemCustomLore {
 	
 	public final MissileFormFactor formFactor;
 	public final MissileTier tier;
 	public final MissileFuel fuel;
+	public final MissileDefinition definition;
 	public int fuelCap;
 	public boolean launchable = true;
 	
@@ -23,9 +25,19 @@ public class ItemMissile extends ItemCustomLore {
 	}
 	
 	public ItemMissile(MissileFormFactor form, MissileTier tier, MissileFuel fuel) {
+		this(form, tier, fuel, null);
+	}
+
+	public ItemMissile(MissileDefinition definition) {
+		this(definition.form, definition.generation.tier, definition.fuel, definition);
+		setFuelCap(definition.fuelCapacity);
+	}
+
+	private ItemMissile(MissileFormFactor form, MissileTier tier, MissileFuel fuel, MissileDefinition definition) {
 		this.formFactor = form;
 		this.tier = tier;
 		this.fuel = fuel;
+		this.definition = definition;
 		this.setFuelCap(this.fuel.defaultCap);
 	}
 	
@@ -38,9 +50,24 @@ public class ItemMissile extends ItemCustomLore {
 		this.fuelCap = fuelCap;
 		return this;
 	}
+
+	@Override
+	public String getUnlocalizedName(ItemStack stack) {
+		if(definition == null) return super.getUnlocalizedName(stack);
+		return definition.translationKey() + (launchable ? "" : ".damaged");
+	}
 	
 	@Override
 	public void addInformation(ItemStack itemstack, EntityPlayer player, List list, boolean bool) {
+		if(definition != null) {
+			list.add(StatCollector.translateToLocalFormatted("missile.tooltip.identity",
+					StatCollector.translateToLocal(definition.country.translationKey()),
+					StatCollector.translateToLocal(definition.classification.translationKey())));
+			list.add(StatCollector.translateToLocal(definition.generation.translationKey()));
+			list.add(StatCollector.translateToLocalFormatted("missile.tooltip.payload",
+					StatCollector.translateToLocal(definition.payload.translationKey())));
+			list.add(StatCollector.translateToLocal(definition.translationKey() + ".purpose"));
+		}
 		list.add(EnumChatFormatting.ITALIC + this.tier.display);
 		
 		if(!this.launchable) {
@@ -48,7 +75,7 @@ public class ItemMissile extends ItemCustomLore {
 		} else {
 			list.add("Fuel: " + this.fuel.display);
 			if(this.fuelCap > 0) list.add("Fuel capacity: " + FluidVolume.format(this.fuelCap));
-			super.addInformation(itemstack, player, list, bool);
+			if(definition == null) super.addInformation(itemstack, player, list, bool);
 		}
 	}
 	

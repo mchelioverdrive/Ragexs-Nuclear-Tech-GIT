@@ -22,10 +22,13 @@ import com.hbm.inventory.material.Mats;
 import com.hbm.inventory.recipes.loader.SerializableRecipe;
 import com.hbm.items.ItemGenericPart.EnumPartType;
 import com.hbm.items.ModItems;
+import com.hbm.items.weapon.ItemMissile;
+import com.hbm.items.weapon.MissileDefinition;
 import com.hbm.items.machine.ItemCircuit.EnumCircuitType;
 import com.hbm.items.machine.ItemFluidIcon;
 import com.hbm.items.machine.ItemArcElectrode.EnumElectrodeType;
 
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 
 public class ArcWelderRecipes extends SerializableRecipe {
@@ -94,30 +97,16 @@ public class ArcWelderRecipes extends SerializableRecipe {
 
 		//Missiles
 
-		//		CraftingManager.addShapelessAuto(new ItemStack(ModItems.missile_micro, 1), new Object[] { ModItems.missile_assembly, ModItems.ducttape, ModItems.ammo_nuke.stackFromEnum(AmmoFatman.HIGH) });
-		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.missile_micro), 1500, 8_000L, new ComparableStack(ModItems.mp_warhead_10_nuclear), new ComparableStack(ModItems.missile_assembly), new ComparableStack(ModItems.thruster_small)));
-
-		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.missile_anti_ballistic), 1000, 5_000L, new OreDictStack(ANY_HIGHEXPLOSIVE.ingot(), 3), new ComparableStack(ModItems.missile_assembly), new ComparableStack(ModItems.thruster_small, 4)));
-		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.missile_generic), 1000, 5_000L, new ComparableStack(ModItems.warhead_generic_small), new ComparableStack(ModItems.fuel_tank_small), new ComparableStack(ModItems.thruster_small)));
-		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.missile_incendiary), 1000, 5_000L, new ComparableStack(ModItems.warhead_incendiary_small), new ComparableStack(ModItems.fuel_tank_small), new ComparableStack(ModItems.thruster_small)));
-		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.missile_cluster), 1000, 5_000L, new ComparableStack(ModItems.warhead_cluster_small), new ComparableStack(ModItems.fuel_tank_small), new ComparableStack(ModItems.thruster_small)));
-		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.missile_buster), 1000, 5_000L, new ComparableStack(ModItems.warhead_buster_small), new ComparableStack(ModItems.fuel_tank_small), new ComparableStack(ModItems.thruster_small)));
-		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.missile_decoy), 600, 2_500L, new OreDictStack(STEEL.ingot()), new ComparableStack(ModItems.fuel_tank_small), new ComparableStack(ModItems.thruster_small)));
-
-		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.missile_strong), 2000, 10_000L, new ComparableStack(ModItems.warhead_generic_medium), new ComparableStack(ModItems.fuel_tank_medium), new ComparableStack(ModItems.thruster_medium)));
-		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.missile_incendiary_strong), 2000, 10_000L, new ComparableStack(ModItems.warhead_incendiary_medium), new ComparableStack(ModItems.fuel_tank_medium), new ComparableStack(ModItems.thruster_medium)));
-		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.missile_cluster_strong), 2000, 10_000L, new ComparableStack(ModItems.warhead_cluster_medium), new ComparableStack(ModItems.fuel_tank_medium), new ComparableStack(ModItems.thruster_medium)));
-		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.missile_buster_strong), 2000, 10_000L, new ComparableStack(ModItems.warhead_buster_medium), new ComparableStack(ModItems.fuel_tank_medium), new ComparableStack(ModItems.thruster_medium)));
-		//recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.missile_emp_strong), 200, 10_000L, new ComparableStack(ModBlocks.emp_bomb, 3), new ComparableStack(ModItems.fuel_tank_medium), new ComparableStack(ModItems.thruster_medium)));
-
-		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.missile_burst), 3000, 25_000L, new ComparableStack(ModItems.warhead_generic_large), new ComparableStack(ModItems.fuel_tank_medium, 2), new ComparableStack(ModItems.thruster_medium, 4)));
-		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.missile_inferno), 3000, 25_000L, new ComparableStack(ModItems.warhead_incendiary_large), new ComparableStack(ModItems.fuel_tank_medium, 2), new ComparableStack(ModItems.thruster_medium, 4)));
-		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.missile_rain), 3000, 25_000L, new ComparableStack(ModItems.warhead_cluster_large), new ComparableStack(ModItems.fuel_tank_medium, 2), new ComparableStack(ModItems.thruster_medium, 4)));
-		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.missile_drill), 3000, 25_000L, new ComparableStack(ModItems.warhead_buster_large), new ComparableStack(ModItems.fuel_tank_medium, 2), new ComparableStack(ModItems.thruster_medium, 4)));
-
-		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.missile_nuclear), 6000, 50_000L, new ComparableStack(ModItems.warhead_nuclear), new ComparableStack(ModItems.fuel_tank_large), new ComparableStack(ModItems.thruster_large, 3)));
-		recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.missile_nuclear_cluster), 6000, 50_000L, new ComparableStack(ModItems.warhead_mirv), new ComparableStack(ModItems.fuel_tank_large), new ComparableStack(ModItems.thruster_large, 3)));
-		//recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.missile_volcano), 600, 50_000L, new ComparableStack(ModItems.warhead_volcano), new ComparableStack(ModItems.fuel_tank_large), new ComparableStack(ModItems.thruster_large, 3)));
+		Item[] tanks = {ModItems.fuel_tank_small, ModItems.fuel_tank_medium, ModItems.fuel_tank_large};
+		Item[] engines = {ModItems.thruster_small, ModItems.thruster_medium, ModItems.thruster_large};
+		for(MissileDefinition missile : MissileDefinition.values()) {
+			MissileDefinition.Generation generation = missile.generation;
+			int stage = generation.ordinal();
+			recipes.add(new ArcWelderRecipe(missile.airframeStack(), 600 + 300 * stage, 3_000L + 6_000L * stage,
+					new ComparableStack(tanks[generation.tankSize]),
+					new ComparableStack(engines[generation.engineSize], 1 + stage / 2),
+					new ComparableStack(missile.hullMaterial(), generation.hullCost)));
+		}
 		// recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.rp_capsule_20), 600, 50_000L, new ComparableStack(ModItems.plate_stainless, 4), new OreDictStack(STEEL.shell()), new ComparableStack(ModItems.circuit, 1, EnumCircuitType.AVIONICS )));
 
 		//recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.insert_cmb), 600, 50_000L, new FluidStack(Fluids.NEON, 2_000),
@@ -223,6 +212,7 @@ public class ArcWelderRecipes extends SerializableRecipe {
 		AStack[] inputs = this.readAStackArray(obj.get("inputs").getAsJsonArray());
 		FluidStack fluid = obj.has("fluid") ? this.readFluidStack(obj.get("fluid").getAsJsonArray()) : null;
 		ItemStack output = this.readItemStack(obj.get("output").getAsJsonArray());
+		if(output != null && output.getItem() instanceof ItemMissile && !((ItemMissile) output.getItem()).launchable) return;
 		int duration = obj.get("duration").getAsInt();
 		long consumption = obj.get("consumption").getAsLong();
 

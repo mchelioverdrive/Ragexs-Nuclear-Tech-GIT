@@ -72,6 +72,7 @@ public class NEIRegistry {
 		handlers.add(new ElectrolyserMetalHandler());
 		handlers.add(new AshpitHandler());
 		handlers.add(new ArcWelderHandler());
+		handlers.add(new MissileAssemblyHandler());
 		handlers.add(new SolderingStationHandler());
 		handlers.add(new VacuumCircuitHandler());
 		handlers.add(new ExposureChamberHandler());

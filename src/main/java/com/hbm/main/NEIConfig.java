@@ -84,6 +84,11 @@ public class NEIConfig implements IConfigureNEI {
 		API.hideItem(new ItemStack(ModBlocks.spotlight_halogen_off));
 		API.hideItem(new ItemStack(ModBlocks.spotlight_beam));
 
+		for(net.minecraft.item.Item item : new net.minecraft.item.Item[] {
+				ModItems.missile_decoy, ModItems.missile_emp, ModItems.missile_emp_strong, ModItems.missile_stealth,
+				ModItems.missile_test, ModItems.missile_shuttle, ModItems.missile_custom, ModItems.warhead_volcano,
+				ModItems.mp_warhead_15_n2, ModItems.mp_warhead_15_nuclear_shark, ModItems.mp_warhead_15_nuclear_mimi
+		}) API.hideItem(new ItemStack(item));
 		API.hideItem(new ItemStack(ModItems.rocket_custom));
 		API.hideItem(new ItemStack(ModBlocks.orbital_station));
 

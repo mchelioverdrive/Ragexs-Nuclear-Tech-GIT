@@ -20,8 +20,8 @@ public class ContainerMachineMissileAssembly extends Container {
 		this.addSlotToContainer(new Slot(tedf, 0, 8, 36));
 		this.addSlotToContainer(new Slot(tedf, 1, 26, 36));
 		this.addSlotToContainer(new Slot(tedf, 2, 44, 36));
-		this.addSlotToContainer(new Slot(tedf, 3, 62, 36));
-		this.addSlotToContainer(new Slot(tedf, 4, 80, 36));
+		this.addSlotToContainer(new SlotTakeOnly(tedf, 3, 62, 36));
+		this.addSlotToContainer(new SlotTakeOnly(tedf, 4, 80, 36));
 		this.addSlotToContainer(new SlotTakeOnly(tedf, 5, 152, 36));
 		
 		for(int i = 0; i < 3; i++)
@@ -55,8 +55,18 @@ public class ContainerMachineMissileAssembly extends Container {
 					return null;
 				}
 			}
-			else if (!this.mergeItemStack(var5, 0, 5, false))
-				return null;
+			else {
+				boolean moved = false;
+				for(int i = 0; i < 3; i++) {
+					Slot input = getSlot(i);
+					if(!input.getHasStack() && input.isItemValid(var5)) {
+						input.putStack(var5.splitStack(1));
+						moved = true;
+						break;
+					}
+				}
+				if(!moved) return null;
+			}
 			
 			if (var5.stackSize == 0)
 			{
@@ -70,6 +80,10 @@ public class ContainerMachineMissileAssembly extends Container {
 		
 		return var3;
     }
+
+	public boolean isFor(TileEntityMachineMissileAssembly assembly, EntityPlayer player) {
+		return nukeBoy == assembly && canInteractWith(player);
+	}
 
 	@Override
 	public boolean canInteractWith(EntityPlayer player) {

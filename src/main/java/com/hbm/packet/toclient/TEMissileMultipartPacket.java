@@ -3,7 +3,6 @@ package com.hbm.packet.toclient;
 import com.hbm.handler.MissileStruct;
 import com.hbm.tileentity.bomb.TileEntityCompactLauncher;
 import com.hbm.tileentity.bomb.TileEntityLaunchTable;
-import com.hbm.tileentity.machine.TileEntityMachineMissileAssembly;
 
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
@@ -65,12 +64,6 @@ public class TEMissileMultipartPacket implements IMessage {
 				
 				TileEntityLaunchTable launcher = (TileEntityLaunchTable) te;
 				launcher.load = m.missile;
-			}
-
-			if (te != null && te instanceof TileEntityMachineMissileAssembly) {
-				
-				TileEntityMachineMissileAssembly rack = (TileEntityMachineMissileAssembly) te;
-				rack.load = m.missile;
 			}
 			
 			return null;

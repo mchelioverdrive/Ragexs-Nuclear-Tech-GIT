@@ -635,7 +635,7 @@ public class AnvilRecipes {
 						new OreDictStack(ANY_HARDPLASTIC.ingot(), 8),
 						new OreDictStack(AL.plateWelded(), 2),
 						new OreDictStack(PU239.billet(), 3)
-				}, new AnvilOutput(new ItemStack(ModItems.missile_doomsday))).setTier(3));
+				}, new AnvilOutput(com.hbm.items.weapon.MissileDefinition.TITAN_II.missileStack())).setTier(3));
 
 		constructionRecipes.add(new AnvilConstructionRecipe(new ComparableStack(ModItems.ingot_u233, 1), new AnvilOutput(new ItemStack(ModItems.plate_fuel_u233))).setTier(3));
 		constructionRecipes.add(new AnvilConstructionRecipe(new ComparableStack(ModItems.ingot_u235, 1), new AnvilOutput(new ItemStack(ModItems.plate_fuel_u235))).setTier(3));

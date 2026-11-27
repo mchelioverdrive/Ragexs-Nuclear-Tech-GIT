@@ -1,20 +1,13 @@
 package com.hbm.tileentity.machine;
 
-import com.hbm.handler.MissileStruct;
 import com.hbm.inventory.container.ContainerMachineMissileAssembly;
 import com.hbm.inventory.gui.GUIMachineMissileAssembly;
-import com.hbm.items.weapon.ItemCustomMissile;
-import com.hbm.items.weapon.ItemCustomMissilePart;
-import com.hbm.items.weapon.ItemCustomMissilePart.FuelType;
-import com.hbm.items.weapon.ItemCustomMissilePart.PartType;
-import com.hbm.machine.MachineDirtyCause;
-import com.hbm.machine.MachineExecutionStrategy;
-import com.hbm.packet.PacketDispatcher;
-import com.hbm.packet.toclient.TEMissileMultipartPacket;
+import com.hbm.items.weapon.ItemMissile;
+import com.hbm.items.weapon.ItemMissileAirframe;
+import com.hbm.items.weapon.MissileDefinition;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.TileEntityLoadedBase;
 
-import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.entity.player.EntityPlayer;
@@ -23,18 +16,16 @@ import net.minecraft.inventory.ISidedInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
+import net.minecraft.network.NetworkManager;
+import net.minecraft.network.Packet;
+import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
 
 public class TileEntityMachineMissileAssembly extends TileEntityLoadedBase implements ISidedInventory, IGUIProvider {
-	private boolean inventoryFingerprintInitialized;
-	private int observedInventoryFingerprint;
-	private long lastPacketTick = Long.MIN_VALUE;
-
-	private ItemStack slots[];
-	
-	public MissileStruct load;
+	private ItemStack[] slots;
+	private int previewId;
 
 	private static final int[] access = new int[] { 0 };
 
@@ -59,8 +50,7 @@ public class TileEntityMachineMissileAssembly extends TileEntityLoadedBase imple
 		if (slots[i] != null) {
 			ItemStack itemStack = slots[i];
 			slots[i] = null;
-			markDirty();
-			markMachineDirty(com.hbm.machine.MachineDirtyCause.INVENTORY);
+			inventoryChanged();
 			return itemStack;
 		} else {
 			return null;
@@ -73,8 +63,7 @@ public class TileEntityMachineMissileAssembly extends TileEntityLoadedBase imple
 		if (itemStack != null && itemStack.stackSize > getInventoryStackLimit()) {
 			itemStack.stackSize = getInventoryStackLimit();
 		}
-		markDirty();
-		markMachineDirty(MachineDirtyCause.INVENTORY);
+		inventoryChanged();
 	}
 
 	@Override
@@ -116,7 +105,21 @@ public class TileEntityMachineMissileAssembly extends TileEntityLoadedBase imple
 
 	@Override
 	public boolean isItemValidForSlot(int i, ItemStack stack) {
-		return false;
+		if(stack == null) return false;
+		switch(i) {
+		case 0:
+			for(MissileDefinition.Generation generation : MissileDefinition.Generation.values()) {
+				if(generation.targetingCircuit() == stack.getItem()) return true;
+			}
+			return false;
+		case 1:
+			for(MissileDefinition missile : MissileDefinition.values()) {
+				if(missile.warhead() == stack.getItem()) return true;
+			}
+			return false;
+		case 2: return ItemMissileAirframe.getDefinition(stack) != null;
+		default: return false;
+		}
 	}
 
 	@Override
@@ -125,16 +128,14 @@ public class TileEntityMachineMissileAssembly extends TileEntityLoadedBase imple
 			if (slots[i].stackSize <= j) {
 			ItemStack itemStack = slots[i];
 			slots[i] = null;
-			markDirty();
-			markMachineDirty(MachineDirtyCause.INVENTORY);
+			inventoryChanged();
 			return itemStack;
 			}
 			ItemStack itemStack1 = slots[i].splitStack(j);
 			if (slots[i].stackSize == 0) {
 				slots[i] = null;
 			}
-			markDirty();
-			markMachineDirty(MachineDirtyCause.INVENTORY);
+			inventoryChanged();
 
 			return itemStack1;
 		} else {
@@ -190,164 +191,66 @@ public class TileEntityMachineMissileAssembly extends TileEntityLoadedBase imple
 	}
 	
 	@Override
-	public int getMachineExecutionStrategies() {
-		return MachineExecutionStrategy.EVENT_DRIVEN | MachineExecutionStrategy.COARSE_5 | MachineExecutionStrategy.COARSE_20;
+	public boolean canUpdate() { return false; }
+
+	public MissileDefinition getAirframe() {
+		return ItemMissileAirframe.getDefinition(slots[2]);
 	}
 
-	@Override
-	public void onMachineRuntimeDirty(int causes) {
-		if(worldObj == null || worldObj.isRemote) return;
-		boolean changed = observeInventoryFingerprint();
-		if((causes & MachineDirtyCause.LIFECYCLE) != 0 || changed) sendMultipartPacket();
+	public boolean hasMatchingCircuit(MissileDefinition missile) {
+		return missile != null && slots[0] != null && slots[0].getItem() == missile.targetingCircuit();
 	}
 
-	@Override
-	public void onMachineCoarsePoll(int cadence) {
-		if(worldObj == null || worldObj.isRemote) return;
-		if(cadence == 5 && observeInventoryFingerprint()) sendMultipartPacket();
-		if(cadence == 20 && (lastPacketTick == Long.MIN_VALUE || worldObj.getTotalWorldTime() - lastPacketTick >= 20L)) sendMultipartPacket();
+	public boolean hasMatchingWarhead(MissileDefinition missile) {
+		return missile != null && slots[1] != null && slots[1].getItem() == missile.warhead();
 	}
 
-	private int inventoryFingerprint() {
-		int hash = 1;
-		for(ItemStack stack : slots) {
-			hash = 31 * hash + (stack == null ? 0 : System.identityHashCode(stack));
-			if(stack != null) {
-				hash = 31 * hash + stack.stackSize;
-				hash = 31 * hash + stack.getItemDamage();
-				hash = 31 * hash + (stack.getTagCompound() == null ? 0 : stack.getTagCompound().hashCode());
-			}
-		}
-		return hash;
-	}
-
-	private boolean observeInventoryFingerprint() {
-		int current = inventoryFingerprint();
-		boolean changed = inventoryFingerprintInitialized && current != observedInventoryFingerprint;
-		observedInventoryFingerprint = current;
-		inventoryFingerprintInitialized = true;
-		return changed;
-	}
-
-	private void sendMultipartPacket() {
-		MissileStruct multipart = new MissileStruct(slots[1], slots[2], slots[3], slots[4]);
-		PacketDispatcher.wrapper.sendToAllAround(new TEMissileMultipartPacket(xCoord, yCoord, zCoord, multipart), new TargetPoint(worldObj.provider.dimensionId, xCoord, yCoord, zCoord, 250));
-		lastPacketTick = worldObj.getTotalWorldTime();
-	}
-
-	@Override
-	public void updateEntity() { }
-	
-	public int fuselageState() {
-		
-		if(slots[2] != null && slots[2].getItem() instanceof ItemCustomMissilePart) {
-			
-			ItemCustomMissilePart part = (ItemCustomMissilePart)slots[2].getItem();
-			
-			if(part.type == PartType.FUSELAGE)
-				return 1;
-		}
-		
-		return 0;
-	}
-
-	public int chipState() {
-		
-		if(slots[0] != null && slots[0].getItem() instanceof ItemCustomMissilePart) {
-			
-			ItemCustomMissilePart part = (ItemCustomMissilePart)slots[0].getItem();
-			
-			if(part.type == PartType.CHIP)
-				return 1;
-		}
-		
-		return 0;
-	}
-
-	public int warheadState() {
-		
-		if(slots[1] != null && slots[1].getItem() instanceof ItemCustomMissilePart &&
-				slots[2] != null && slots[2].getItem() instanceof ItemCustomMissilePart &&
-				slots[4] != null && slots[4].getItem() instanceof ItemCustomMissilePart) {
-
-			ItemCustomMissilePart part = (ItemCustomMissilePart)slots[1].getItem();
-			ItemCustomMissilePart fuselage = (ItemCustomMissilePart)slots[2].getItem();
-			ItemCustomMissilePart thruster = (ItemCustomMissilePart)slots[4].getItem();
-
-			if(part.type == PartType.WARHEAD && fuselage.type == PartType.FUSELAGE && thruster.type == PartType.THRUSTER) {
-				float weight = (float)part.mass * 0.001F;
-				float thrust = (Float)thruster.attributes[2];
-				
-				if(part.bottom == fuselage.top && weight <= thrust)
-					return 1;
-			}
-		}
-		
-		return 0;
-	}
-
-	public int stabilityState() {
-		
-		if(slots[3] == null)
-			return -1;
-		
-		if(slots[3] != null && slots[3].getItem() instanceof ItemCustomMissilePart &&
-				slots[2] != null && slots[2].getItem() instanceof ItemCustomMissilePart) {
-
-			ItemCustomMissilePart part = (ItemCustomMissilePart)slots[3].getItem();
-			ItemCustomMissilePart fuselage = (ItemCustomMissilePart)slots[2].getItem();
-			
-			if(part.top == fuselage.bottom && part.type == PartType.FINS)
-				return 1;
-		}
-		
-		return 0;
-	}
-
-	public int thrusterState() {
-		
-		if(slots[4] != null && slots[4].getItem() instanceof ItemCustomMissilePart &&
-				slots[2] != null && slots[2].getItem() instanceof ItemCustomMissilePart) {
-
-			ItemCustomMissilePart part = (ItemCustomMissilePart)slots[4].getItem();
-			ItemCustomMissilePart fuselage = (ItemCustomMissilePart)slots[2].getItem();
-			
-			if(part.type == PartType.THRUSTER && fuselage.type == PartType.FUSELAGE &&
-					part.top == fuselage.bottom && (FuelType)part.attributes[0] == (FuelType)fuselage.attributes[0]) {
-				return 1;
-			}
-		}
-		
-		return 0;
-	}
-	
 	public boolean canBuild() {
-		
-		if(slots[5] == null && chipState() == 1 && warheadState() == 1 && fuselageState() == 1 && thrusterState() == 1) {
-			return stabilityState() != 0;
-		}
-		
-		return false;
+		MissileDefinition missile = getAirframe();
+		return slots[5] == null && hasMatchingCircuit(missile) && hasMatchingWarhead(missile);
 	}
 
 	public void construct() {
-		
-		if(!canBuild())
-			return;
-		
-		slots[5] = ItemCustomMissile.buildMissile(slots[0], slots[1], slots[2], slots[3], slots[4]).copy();
-		
-		if(stabilityState() == 1)
-			slots[3] = null;
+		if(worldObj == null || worldObj.isRemote || !canBuild()) return;
 
+		slots[5] = getAirframe().missileStack();
 		slots[0] = null;
 		slots[1] = null;
 		slots[2] = null;
-		slots[4] = null;
-
-		this.worldObj.playSoundEffect(this.xCoord, this.yCoord, this.zCoord, "hbm:block.missileAssembly2", 1F, 1F);
+		inventoryChanged();
+		worldObj.playSoundEffect(xCoord, yCoord, zCoord, "hbm:block.missileAssembly2", 1F, 1F);
 	}
-	
+
+	private void inventoryChanged() {
+		markDirty();
+		if(worldObj != null && !worldObj.isRemote) worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
+	}
+
+	public MissileDefinition getPreviewMissile() {
+		MissileDefinition missile = getAirframe();
+		if(missile == null && slots[5] != null && slots[5].getItem() instanceof ItemMissile) {
+			missile = ((ItemMissile) slots[5].getItem()).definition;
+		}
+		return missile;
+	}
+
+	@Override
+	public Packet getDescriptionPacket() {
+		MissileDefinition missile = getPreviewMissile();
+		NBTTagCompound data = new NBTTagCompound();
+		data.setInteger("airframe", missile == null ? 0 : missile.id);
+		return new S35PacketUpdateTileEntity(xCoord, yCoord, zCoord, 0, data);
+	}
+
+	@Override
+	public void onDataPacket(NetworkManager net, S35PacketUpdateTileEntity packet) {
+		previewId = packet.func_148857_g().getInteger("airframe");
+	}
+
+	public MissileDefinition getWorldPreview() {
+		return MissileDefinition.byId(previewId);
+	}
+
 	@Override
 	public AxisAlignedBB getRenderBoundingBox() {
 		return TileEntity.INFINITE_EXTENT_AABB;
