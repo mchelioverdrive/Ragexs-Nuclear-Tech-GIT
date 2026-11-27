@@ -45,6 +45,7 @@ import com.hbm.potion.HbmPotion;
 import com.hbm.tileentity.machine.rbmk.IRBMKFluxReceiver.NType;
 import com.hbm.util.RTGUtil;
 import com.hbm.handler.ToolAbility;
+import com.hbm.world.gen.structure.SettlementKind;
 
 import api.hbm.block.IToolable.ToolType;
 import cpw.mods.fml.common.registry.GameRegistry;
@@ -2801,6 +2802,8 @@ public class ModItems {
 	public static Item structure_randomized;
 	public static Item structure_randomly;
 	public static Item structure_custommachine;
+	public static Item structure_wand_mcdonalds, structure_wand_walmart, structure_wand_data_center;
+	public static Item structure_wand_farm, structure_wand_suburban_house, structure_wand_road;
 
 	public static Item rod_of_discord;
 
@@ -6258,6 +6261,12 @@ public class ModItems {
 		structure_randomized = new ItemStructureRandomized().setUnlocalizedName("structure_randomized").setMaxStackSize(1).setCreativeTab(MainRegistry.partsTab).setFull3D().setTextureName(RefStrings.MODID + ":structure_randomized");
 		structure_randomly = new ItemStructureRandomly().setUnlocalizedName("structure_randomly").setMaxStackSize(1).setCreativeTab(MainRegistry.partsTab).setFull3D().setTextureName(RefStrings.MODID + ":structure_randomly");
 		structure_custommachine = new ItemCMStructure().setUnlocalizedName("structure_custommachine").setMaxStackSize(1).setCreativeTab(MainRegistry.consumableTab).setFull3D().setTextureName(RefStrings.MODID + ":structure_custommachine");
+		structure_wand_mcdonalds = new ItemSettlementWand(SettlementKind.RESTAURANT, "wand");
+		structure_wand_walmart = new ItemSettlementWand(SettlementKind.STORE, "wand_s");
+		structure_wand_data_center = new ItemSettlementWand(SettlementKind.DATA_CENTER, "wand_d");
+		structure_wand_farm = new ItemSettlementWand(SettlementKind.FARM, "structure_randomized");
+		structure_wand_suburban_house = new ItemSettlementWand(SettlementKind.HOUSE, "structure_solid");
+		structure_wand_road = new ItemSettlementWand(SettlementKind.ROAD, "structure_pattern");
 
 		rod_of_discord = new ItemDiscord().setUnlocalizedName("rod_of_discord").setMaxStackSize(1).setCreativeTab(MainRegistry.consumableTab).setFull3D().setTextureName(RefStrings.MODID + ":rod_of_discord");
 
@@ -10207,6 +10216,12 @@ public class ModItems {
 		GameRegistry.registerItem(structure_randomized, structure_randomized.getUnlocalizedName());
 		GameRegistry.registerItem(structure_randomly, structure_randomly.getUnlocalizedName());
 		GameRegistry.registerItem(structure_custommachine, structure_custommachine.getUnlocalizedName());
+		GameRegistry.registerItem(structure_wand_mcdonalds, structure_wand_mcdonalds.getUnlocalizedName());
+		GameRegistry.registerItem(structure_wand_walmart, structure_wand_walmart.getUnlocalizedName());
+		GameRegistry.registerItem(structure_wand_data_center, structure_wand_data_center.getUnlocalizedName());
+		GameRegistry.registerItem(structure_wand_farm, structure_wand_farm.getUnlocalizedName());
+		GameRegistry.registerItem(structure_wand_suburban_house, structure_wand_suburban_house.getUnlocalizedName());
+		GameRegistry.registerItem(structure_wand_road, structure_wand_road.getUnlocalizedName());
 		GameRegistry.registerItem(rod_of_discord, rod_of_discord.getUnlocalizedName());
 		//GameRegistry.registerItem(analyzer, analyzer.getUnlocalizedName());
 		//GameRegistry.registerItem(remote, remote.getUnlocalizedName());

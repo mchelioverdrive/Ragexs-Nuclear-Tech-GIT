@@ -14,6 +14,7 @@ import com.hbm.world.gen.terrain.BedrockOilSurface;
 import com.hbm.world.gen.structure.BossArenaGenerator;
 import com.hbm.world.gen.structure.LegacyStructureGenerator;
 import com.hbm.world.gen.structure.OceanTempleGenerator;
+import com.hbm.world.gen.structure.SettlementGenerator;
 
 import cpw.mods.fml.common.IWorldGenerator;
 import cpw.mods.fml.common.registry.GameRegistry;
@@ -45,6 +46,7 @@ public class HbmWorld {
 		registerWorldGen(new com.hbm.world.gen.FakeCommandBlockGenerator(), 2);
 		registerWorldGen(new OceanTempleGenerator(), 3);
 		registerWorldGen(new BossArenaGenerator(), 4);
+		SettlementGenerator.register();
 		MinecraftForge.EVENT_BUS.register(new OverworldLargeTerrain());
 		
 		worldGenerator = new NTMWorldGenerator();

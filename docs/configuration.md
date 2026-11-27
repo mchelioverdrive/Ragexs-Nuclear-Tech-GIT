@@ -16,6 +16,27 @@ Supported live values are all `21_gemini` settings and subcategories **except `w
 
 Gemini admission limits apply to the next admission in every active world without deleting existing creatures, nests or cocoons. Loaded Woodcrawlers refresh their native detection-range attribute on their next server tick, including after loading an older saved entity. Existing infection/cocoon durations, conversion decisions, boss health attributes and event countdowns retain their saved snapshots; new instances use the new settings. In-flight AI timers continue and consult updated thresholds on subsequent ticks. Progression and world gamerules are never reset. Reload registers no listeners or entities. Supported settings govern server decisions; native entity metadata, attributes, disease state and sound packets already convey their results, so no additional client configuration packet is needed.
 
+### Settlements and roads
+
+The `15_structures.settlements` settings support `/rntconfig reload`. Natural settlements follow the global structure flag and generate on newly populated Overworld terrain in plains, savanna, and sparse biomes. Lots can share a road. If a connected site fails, the generator tries a single lot, alternate orientations, and smaller variants where available. Natural surveys allow grading, foundations, vegetation removal, and shallow water within the configured depth. They can reject steep terrain, artificial obstructions, or previously used chunks. New exploration can add settlements to an existing save.
+
+| Key | Default | Effect |
+| --- | ---: | --- |
+| `restaurants`, `stores`, `dataCenters`, `farms`, `houses` | `true` | Enable the corresponding natural structure type. |
+| `restaurantFrequency`, `storeFrequency` | 384, 1536 | Average candidate spacing measured as one roll per this many newly populated chunks. Zero disables that type. |
+| `dataCenterFrequency`, `farmFrequency`, `houseFrequency` | 896, 320, 384 | Same candidate roll. Large data centers account for 5% of primary data center candidates. |
+| `roads`, `neighborhoods` | `true` | Enable roads and multi-house neighborhoods. Neighborhoods use a shared residential road. |
+| `minimumSiteDistance` | 96 | Minimum horizontal gap in blocks between independent natural sites. |
+| `maximumNeighborhoodSize` | 4 | Maximum houses per neighborhood. Accepts 1–8. |
+| `maximumRoadNetworkSize` | 112 | Maximum length of each natural road spine, including its ends. Accepts 19–256 blocks. |
+| `maximumTerrainPreparationDepth` | 6 | Natural cut or fill limit per column. Accepts 0–8 blocks. Authored basements excavate separately. Existing configs retain their saved value. |
+| `maximumWorkPerTick` | 3072 | Per-world placement budget. Each block operation uses at least one unit and each surveyed column uses 64. |
+| `generationDiagnostics` | `false` | Log natural candidates that pass the rarity roll, wand requests, rejections, terrain preparation, queue transitions, and block totals. |
+
+Find the six structure wands in the RNTM consumables and tools tab in Creative mode. Right-click the top of a block at the intended driveway or access entrance to queue forced placement. A building extends south at 0° and its entrance faces north. The Road Wand starts on the selected block and extends south at 0°. Sneak-right-click a block to cycle variants. Right-click in air to rotate 90° clockwise. With the Road Wand, sneak-right-click in air to cycle road types. The tooltip shows the selected settings.
+
+Wands load the required chunks, excavate and fill the footprint, and replace obstructions, including liquids and existing blocks or inventories inside the construction volume. They work with natural spawning disabled and respect spawn protection and world bounds. Use the wand once and follow the chat progress. Pending requests and unfinished construction resume from world and chunk saves.
+
 ### Woodchipper
 
 | `09_machines` key | Default | Accepted values |

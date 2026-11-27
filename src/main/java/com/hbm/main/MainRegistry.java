@@ -1254,6 +1254,7 @@ public class MainRegistry {
         ExecutionEffectsConfig.Values executionEffects = new ExecutionEffectsConfig.Values(candidate);
         com.hbm.config.SandwormConfig.SurfaceValues sandworm = new com.hbm.config.SandwormConfig.SurfaceValues(candidate);
         com.hbm.config.BossProgressionConfig.Values bosses = new com.hbm.config.BossProgressionConfig.Values(candidate);
+        com.hbm.config.SettlementConfig.Values settlements = new com.hbm.config.SettlementConfig.Values(candidate);
         // All parsing/validation finishes before these non-throwing field assignments.
         GeminiConfig.apply(gemini, false);
         GeneralConfig.applyRuntime(general);
@@ -1268,6 +1269,7 @@ public class MainRegistry {
         ExecutionEffectsConfig.settings = executionEffects;
         com.hbm.config.SandwormConfig.surface = sandworm;
         com.hbm.config.BossProgressionConfig.settings = bosses;
+        com.hbm.config.SettlementConfig.settings = settlements;
     }
 
     private void loadConfig(FMLPreInitializationEvent event) {
@@ -1306,6 +1308,7 @@ public class MainRegistry {
 		com.hbm.config.SandwormConfig.loadFromConfig(config);
 		RabiesConfig.loadFromConfig(config);
 		StructureConfig.loadFromConfig(config);
+		com.hbm.config.SettlementConfig.settings = new com.hbm.config.SettlementConfig.Values(config);
 		SpaceConfig.loadFromConfig(config);
 
 		config.save();

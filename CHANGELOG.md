@@ -1056,3 +1056,15 @@
 
 - Add Nether Bastions for the Giant Ghast, underground Basalt Crucibles for the Giant Magma Golem, and Hollow Spires ruins for the Giant Enderman. The arena cores check the shared world milestones, cap active fights across saves and use the existing combat mechanics. Enderman teleports at Hollow Spires stay within the court.
 - Fix Dragon defeat detection and legacy fountain import for the vanilla End. Preserve Wither Storm challenge mode, Ocean Temple activation, and the existing boss commands. Add player surveys, operator milestone controls, reloadable encounter settings, and first-defeat loot using existing items and industrial recipes.
+
+2026-11-26 21:30 — Add settlements, connected roads, and structure wands
+
+- Generate McDonald's restaurants, Walmart stores, data centers, farms, and furnished suburban houses in suitable new Overworld terrain. Add multiple building and interior layouts and connect lots and neighborhoods with paved streets, sidewalks, rural dirt roads, and access roads.
+- Add six Creative-mode wands with saved variant and rotation controls. The Road Wand offers five surface profiles and seven selectable components.
+- Survey terrain before placement, persist site footprints and unfinished placements, and spread placement across server ticks. Configure natural frequencies, spacing, network size, and placement limits under `15_structures.settlements`.
+
+2026-11-26 22:06 — Force structure wand placement and improve natural settlement generation
+
+- Make all six wands prepare their selected footprints, replace obstructions, and load required chunks while preserving the chosen variant and rotation. Persist pending work and report progress, completion, and errors in chat.
+- Grade natural lots from terrain samples, allow deeper grading by default, and try standalone, rotated, or smaller layouts when the preferred site fails. Keep natural biome, separation, and terrain protections.
+- Record successful construction only after every operation completes. Remove failed reservations and add opt-in settlement diagnostics with queue, survey, and block counts.
