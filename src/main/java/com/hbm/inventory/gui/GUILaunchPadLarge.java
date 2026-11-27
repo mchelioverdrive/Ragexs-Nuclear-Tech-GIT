@@ -62,15 +62,23 @@ public class GUILaunchPadLarge extends GuiInfoContainer {
 	protected void drawGuiContainerForegroundLayer(int i, int j) {
 		String name = this.launchpad.hasCustomInventoryName() ? this.launchpad.getInventoryName() : I18n.format(this.launchpad.getInventoryName());
 		this.fontRendererObj.drawString(name, this.xSize / 2 - this.fontRendererObj.getStringWidth(name) / 2, 4, 4210752);
+		String inventory = I18n.format("container.inventory");
+		int inventoryY = ySize - 94;
 		ItemStack loaded = launchpad.getStackInSlot(0);
 		if(loaded != null && loaded.getItem() instanceof ItemMissile) {
 			ItemMissile missile = (ItemMissile) loaded.getItem();
 			if(missile.definition != null) {
 				String classification = I18n.format(missile.definition.classification.shortTranslationKey());
-				this.fontRendererObj.drawString(fontRendererObj.trimStringToWidth(classification, xSize - 16), 8, 126, 4210752);
+				String identity = loaded.getDisplayName() + " · " + classification;
+				drawRect(7, 128, xSize - 7, 138, 0xFF30352D);
+				drawCenteredFitString(identity, xSize / 2, 129, xSize - 22, 0xF1F3EB);
+				int payloadLeft = 16 + fontRendererObj.getStringWidth(inventory);
+				int payloadRight = xSize - 8;
+				drawCenteredFitString(missile.definition.payloadDescription(launchpad.getWorldObj()),
+						(payloadLeft + payloadRight) / 2, inventoryY, payloadRight - payloadLeft, 4210752);
 			}
 		}
-		this.fontRendererObj.drawString(I18n.format("container.inventory"), 8, this.ySize - 96 + 2, 4210752);
+		fontRendererObj.drawString(inventory, 8, inventoryY, 4210752);
 	}
 
 	@Override

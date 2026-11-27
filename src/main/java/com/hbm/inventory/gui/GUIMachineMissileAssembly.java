@@ -75,12 +75,12 @@ public class GUIMachineMissileAssembly extends GuiInfoContainer {
 		if(missile != null) {
 			center(I18n.format(missile.translationKey() + ".name"), 62, 0x404040);
 			center(I18n.format(missile.classification.shortTranslationKey()), 74, 0xD0D6DC);
+			center(missile.payloadDescription(assembler.getWorldObj()), 116, 0xD0D6DC);
 		}
 	}
 
 	private void center(String text, int y, int color) {
-		text = fontRendererObj.trimStringToWidth(text, xSize - 12);
-		fontRendererObj.drawString(text, (xSize - fontRendererObj.getStringWidth(text)) / 2, y, color);
+		drawCenteredFitString(text, xSize / 2, y, xSize - 16, color);
 	}
 
 	@Override
@@ -107,10 +107,10 @@ public class GUIMachineMissileAssembly extends GuiInfoContainer {
 		if(model != null) {
 			GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_LIGHTING_BIT);
 			GL11.glPushMatrix();
-			GL11.glTranslatef(guiLeft + 32, guiTop + 103, 100F);
+			float scale = Math.min(112F / model.height, 12F / model.radialExtent());
+			GL11.glTranslatef(guiLeft + (xSize - scale * model.height) / 2F, guiTop + 102, 100F);
 			GL11.glRotatef(-90F, 0F, 0F, 1F);
 			GL11.glRotatef(System.currentTimeMillis() / 25 % 360, 0F, 1F, 0F);
-			float scale = 112F / model.height;
 			GL11.glScalef(scale, scale, scale);
 			RenderHelper.enableGUIStandardItemLighting();
 			model.render();

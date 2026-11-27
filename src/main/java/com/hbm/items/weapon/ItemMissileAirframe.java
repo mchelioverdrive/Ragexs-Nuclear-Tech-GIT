@@ -40,6 +40,8 @@ public class ItemMissileAirframe extends Item {
 		MissileDefinition missile = getDefinition(stack);
 		if(missile != null) {
 			list.add(StatCollector.translateToLocal(missile.classification.translationKey()));
+			list.add(StatCollector.translateToLocalFormatted("missile.tooltip.payload",
+					missile.payloadDescription(player == null ? null : player.worldObj)));
 			list.add(StatCollector.translateToLocal("missile.airframe.assembly"));
 		}
 	}

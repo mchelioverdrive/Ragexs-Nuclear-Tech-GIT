@@ -1,5 +1,7 @@
 package com.hbm.config;
 
+import com.hbm.items.weapon.MissileDefinition;
+
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.common.config.Property;
 
@@ -27,6 +29,9 @@ public class BombConfig {
 
 	public static int missileRadius = radiusFromKt(100F);
 	public static int mirvRadius = radiusFromKt(150F);
+	public static int mirvImpactRadius = 36;
+	public static int mirvWarheadPowerPercent = 100;
+	public static boolean mirvSeparationEffects = true;
 
 	public static int fatmanRadius = radiusFromKt(0.25F);
 	public static int nukaRadius = radiusFromKt(0.05F);
@@ -108,6 +113,14 @@ public class BombConfig {
 		Property propTsar2 = config.get(CATEGORY_NUKES, "3.14_tsarlegitRadius", radiusFromKt(50_000F));
 		propTsar2.comment = "Radius of the 50MT Tsar Bomba";
 		tsarlegitrad = propTsar2.getInt();
+
+		mirvImpactRadius = config.getInt("mirvImpactRadius", CATEGORY_NUKES, 36, 8, 128,
+				"Radius of the roster MIRV impact area in Minecraft blocks.");
+		mirvWarheadPowerPercent = config.getInt("mirvWarheadPowerPercent", CATEGORY_NUKES, 100, 10, 200,
+				"Percentage applied to the strength of each separated roster warhead.");
+		mirvSeparationEffects = config.getBoolean("mirvSeparationEffects", CATEGORY_NUKES, true,
+				"Show a visible separation burst on tracked roster missiles.");
+		MissileDefinition.loadWarheadCounts(config, CATEGORY_NUKES);
 
 		final String CATEGORY_NUKE = CommonConfig.CATEGORY_EXPLOSIONS;
 		Property propLimitExplosionLifespan = config.get(CATEGORY_NUKE, "6.00_limitExplosionLifespan", 0);

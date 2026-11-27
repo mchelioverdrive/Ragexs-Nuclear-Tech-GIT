@@ -1,7 +1,7 @@
 package com.hbm.entity.missile;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import com.hbm.entity.logic.IChunkLoader;
 import com.hbm.entity.projectile.EntityThrowableInterp;
@@ -19,9 +19,11 @@ import com.hbm.util.TrackerUtil;
 import api.hbm.entity.IRadarDetectableNT;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityTrackerEntry;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.network.play.server.S13PacketDestroyEntities;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.MovingObjectPosition;
@@ -122,6 +124,7 @@ public abstract class EntityMissileBaseNT extends EntityThrowableInterp implemen
 		this.lastTickPosY = this.posY;
 		this.lastTickPosZ = this.posZ;
 		super.onUpdate();
+		if(isDead) return;
 		
 		if(velocity < getFlightSpeed()) velocity += MathHelper.clamp_double(this.ticksExisted / 60D * 0.05D, 0, 0.05);
 		
@@ -158,7 +161,7 @@ public abstract class EntityMissileBaseNT extends EntityThrowableInterp implemen
 				return;
 			}
 			
-			this.rotationYaw = (float) (Math.atan2(targetX - posX, targetZ - posZ) * 180.0D / Math.PI);
+			this.rotationYaw = getFlightYaw();
 			float f2 = MathHelper.sqrt_double(this.motionX * this.motionX + this.motionZ * this.motionZ);
 			for(this.rotationPitch = (float) (Math.atan2(this.motionY, f2) * 180.0D / Math.PI) - 90; this.rotationPitch - this.prevRotationPitch < -180.0F; this.prevRotationPitch -= 360.0F);
 			EntityTrackerEntry tracker = TrackerUtil.getTrackerEntry((WorldServer) worldObj, this.getEntityId());
@@ -208,6 +211,10 @@ public abstract class EntityMissileBaseNT extends EntityThrowableInterp implemen
 	
 	protected float getContrailScale() {
 		return 1F;
+	}
+
+	protected float getFlightYaw() {
+		return (float) (Math.atan2(targetX - posX, targetZ - posZ) * 180.0D / Math.PI);
 	}
 
 	@Override
@@ -320,32 +327,48 @@ public abstract class EntityMissileBaseNT extends EntityThrowableInterp implemen
 				loaderTicket.bindEntity(this);
 				loaderTicket.getModData();
 
-				ForgeChunkManager.forceChunk(loaderTicket, new ChunkCoordIntPair(chunkCoordX, chunkCoordZ));
+				loadNeighboringChunks(MathHelper.floor_double(posX) >> 4, MathHelper.floor_double(posZ) >> 4);
 			}
 		}
 	}
-
-	List<ChunkCoordIntPair> loadedChunks = new ArrayList<ChunkCoordIntPair>();
 
 	public void loadNeighboringChunks(int newChunkX, int newChunkZ) {
 		if(!worldObj.isRemote && loaderTicket != null) {
-			
-			unforceLoadedChunks();
-
-			loadedChunks.clear();
-			loadedChunks.add(new ChunkCoordIntPair(newChunkX, newChunkZ));
-			//loadedChunks.add(new ChunkCoordIntPair(newChunkX + (int) Math.floor((this.posX + this.motionX * this.motionMult()) / 16D), newChunkZ + (int) Math.floor((this.posZ + this.motionZ * this.motionMult()) / 16D)));
-
-			for(ChunkCoordIntPair chunk : loadedChunks) {
-				ForgeChunkManager.forceChunk(loaderTicket, chunk);
-			}
+			forceFlightChunk(loaderTicket, newChunkX, newChunkZ);
 		}
 	}
 
-	private void unforceLoadedChunks() {
-		for(ChunkCoordIntPair chunk : loadedChunks) {
-			ForgeChunkManager.unforceChunk(loaderTicket, chunk);
+	/** Ensure the destination chunk exists before a projectile crosses into it. */
+	protected void prepareFlightChunk(double x, double z) {
+		prepareFlightChunk(worldObj, loaderTicket, x, z);
+	}
+
+	static void prepareFlightChunk(World world, Ticket ticket, double x, double z) {
+		if(ticket == null) return;
+		int chunkX = MathHelper.floor_double(x) >> 4;
+		int chunkZ = MathHelper.floor_double(z) >> 4;
+		forceFlightChunk(ticket, chunkX, chunkZ);
+		if(!world.getChunkProvider().chunkExists(chunkX, chunkZ)) world.getChunkProvider().loadChunk(chunkX, chunkZ);
+	}
+
+	static void finishTrackedFlight(Entity entity) {
+		if(entity.isDead) return;
+		if(entity.worldObj instanceof WorldServer) {
+			// Retire the visible body at the transition. Vanilla also queues removal for the next player tick.
+			WorldServer world = (WorldServer) entity.worldObj;
+			world.getEntityTracker().func_151248_b(entity, new S13PacketDestroyEntities(entity.getEntityId()));
 		}
+		entity.setDead();
+	}
+
+	private static void forceFlightChunk(Ticket ticket, int chunkX, int chunkZ) {
+		ChunkCoordIntPair next = new ChunkCoordIntPair(chunkX, chunkZ);
+		Set<ChunkCoordIntPair> previous = ticket.getChunkList();
+		if(previous.size() == 1 && previous.contains(next)) return;
+		for(ChunkCoordIntPair chunk : previous) {
+			if(!chunk.equals(next)) ForgeChunkManager.unforceChunk(ticket, chunk);
+		}
+		if(!previous.contains(next)) ForgeChunkManager.forceChunk(ticket, next);
 	}
 	
 	@Override
@@ -358,12 +381,15 @@ public abstract class EntityMissileBaseNT extends EntityThrowableInterp implemen
 		if(!worldObj.isRemote && loaderTicket != null) {
 			ForgeChunkManager.releaseTicket(loaderTicket);
 			loaderTicket = null;
-			loadedChunks.clear();
 		}
 	}
 	
 	public void explodeStandard(float strength, int resolution, boolean fire) {
-		ExplosionVNT xnt = new ExplosionVNT(worldObj, posX, posY, posZ, strength);
+		explodeStandard(worldObj, posX, posY, posZ, strength, resolution, fire);
+	}
+
+	public static void explodeStandard(World world, double x, double y, double z, float strength, int resolution, boolean fire) {
+		ExplosionVNT xnt = new ExplosionVNT(world, x, y, z, strength);
 		xnt.setBlockAllocator(new BlockAllocatorStandard(resolution));
 		xnt.setBlockProcessor(new BlockProcessorStandard().setNoDrop().withBlockEffect(fire ? new BlockMutatorFire() : null));
 		xnt.setEntityProcessor(new EntityProcessorCross(7.5D).withRangeMod(2));

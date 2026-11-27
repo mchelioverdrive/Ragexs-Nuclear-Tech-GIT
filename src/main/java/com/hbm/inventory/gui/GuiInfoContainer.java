@@ -75,6 +75,17 @@ public abstract class GuiInfoContainer extends GuiContainer implements INEIGuiHa
 		super(p_i1072_1_);
 	}
 
+	protected void drawCenteredFitString(String text, int centerX, int y, int maxWidth, int color) {
+		int width = fontRendererObj.getStringWidth(text);
+		if(width == 0 || maxWidth <= 0) return;
+		float scale = Math.min(1F, maxWidth / (float) width);
+		GL11.glPushMatrix();
+		GL11.glTranslatef(centerX, y, 0);
+		GL11.glScalef(scale, scale, 1F);
+		fontRendererObj.drawString(text, -width / 2, 0, color);
+		GL11.glPopMatrix();
+	}
+
 	public void drawElectricityInfo(GuiInfoContainer gui, int mouseX, int mouseY, int x, int y, int width, int height, long power, long maxPower) {
 		if(x <= mouseX && x + width > mouseX && y < mouseY && y + height >= mouseY) {
             TileEntity owner = getMachineInfoOwner();

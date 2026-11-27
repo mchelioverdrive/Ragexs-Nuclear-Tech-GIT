@@ -64,6 +64,11 @@ public class ItemRenderMissileGeneric implements IItemRenderer {
 
 	@Override
 	public void renderItem(ItemRenderType type, ItemStack item, Object... data) {
+		if(type == ItemRenderType.INVENTORY && this.type == RenderMissileType.TYPE_ROSTER) {
+			MissileRosterModel model = getRosterModel(item);
+			if(model != null) renderRosterIcon(model);
+			return;
+		}
 
 		Consumer<TextureManager> renderer = renderers.get(new ComparableStack(item).makeSingular());
 		if(renderer == null) return;
@@ -83,13 +88,7 @@ public class ItemRenderMissileGeneric implements IItemRenderer {
 		case TYPE_NUCLEAR: guiScale = 1.375D; guiOffset = 1.5D; break;
 		case TYPE_CARRIER: guiScale = 0.625D; guiOffset = -17D; break;
 		case TYPE_ROBIN: guiScale = 1.25D; guiOffset = 2D; break;
-		case TYPE_ROSTER:
-			MissileRosterModel model = getRosterModel(item);
-			if(model != null) {
-				guiScale = 15D / model.height;
-				guiOffset = 16D - model.height / 2D;
-			}
-			break;
+		case TYPE_ROSTER: break;
 		}
 
 		GL11.glEnable(GL11.GL_LIGHTING);
@@ -126,6 +125,25 @@ public class ItemRenderMissileGeneric implements IItemRenderer {
 		GL11.glEnable(GL11.GL_CULL_FACE);
 
 		GL11.glPopMatrix();
+	}
+
+	private static void renderRosterIcon(MissileRosterModel model) {
+		GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_LIGHTING_BIT | GL11.GL_CURRENT_BIT);
+		GL11.glPushMatrix();
+		try {
+			RenderHelper.enableGUIStandardItemLighting();
+			// Forge's non-block inventory path has already translated to the slot's top-left.
+			GL11.glTranslated(8D, 8D, 0D);
+			double scale = model.inventoryScale();
+			GL11.glScaled(scale, scale, scale);
+			GL11.glRotated(135D, 0D, 0D, 1D);
+			GL11.glRotatef(System.currentTimeMillis() / 15 % 360, 0F, 1F, 0F);
+			GL11.glTranslated(0D, -model.height / 2D, 0D);
+			model.render();
+		} finally {
+			GL11.glPopMatrix();
+			GL11.glPopAttrib();
+		}
 	}
 
 	public static Consumer<TextureManager> generateStandard(ResourceLocation texture, IModelCustom model) { return generateWithScale(texture, model, 1F); }

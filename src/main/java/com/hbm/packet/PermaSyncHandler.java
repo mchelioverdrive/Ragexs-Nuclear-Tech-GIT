@@ -14,6 +14,7 @@ import com.hbm.handler.ImpactWorldHandler;
 import com.hbm.handler.pollution.PollutionHandler;
 import com.hbm.handler.pollution.PollutionHandler.PollutionData;
 import com.hbm.handler.pollution.PollutionHandler.PollutionType;
+import com.hbm.items.weapon.MissileDefinition;
 import com.hbm.main.MainRegistry;
 import com.hbm.potion.HbmPotion;
 import com.hbm.saveddata.SatelliteSavedData;
@@ -121,6 +122,7 @@ public class PermaSyncHandler {
 			buf.writeInt(-1);
 		}
 		/// RIDING DESYNC FIX ///
+		buf.writeLong(MissileDefinition.configuredWarheadCounts());
 	}
 	
 	public static void readPacket(ByteBuf buf, World world, EntityPlayer player) {
@@ -201,5 +203,6 @@ public class PermaSyncHandler {
 			player.mountEntity(entity);
 		}
 		/// RIDING DESYNC FIX ///
+		if(buf.readableBytes() >= Long.BYTES) MissileDefinition.syncWarheadCounts(world, buf.readLong());
 	}
 }

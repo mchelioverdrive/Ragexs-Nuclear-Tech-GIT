@@ -90,6 +90,24 @@ public final class MissileRosterModel {
 		return DAMAGED_TITAN;
 	}
 
+	/** Uniform pixel scale that fits the rotated model at every spin angle. */
+	public double inventoryScale() {
+		return 7.5D * Math.sqrt(2D) / (height / 2D + radialExtent());
+	}
+
+	public float radialExtent() {
+		float radialExtent = radius * (nose == Nose.GLIDER ? 1.45F : 1F);
+		switch(tail) {
+		case FINS: radialExtent = radius * 1.95F; break;
+		case CLIPPED_FINS: radialExtent = radius * 1.55F; break;
+		case WINGS: radialExtent = radius * 3.9F; break;
+		case SKIRT: radialExtent = Math.max(radialExtent, radius * 1.25F); break;
+		case BOOSTERS: radialExtent = radius * 2.08F; break;
+		default: break;
+		}
+		return radialExtent;
+	}
+
 	public void render() {
 		GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_CURRENT_BIT | GL11.GL_LIGHTING_BIT);
 		GL11.glDisable(GL11.GL_TEXTURE_2D);

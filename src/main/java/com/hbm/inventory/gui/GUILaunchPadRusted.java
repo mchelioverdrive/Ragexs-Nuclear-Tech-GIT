@@ -9,6 +9,7 @@ import org.lwjgl.opengl.GL12;
 import com.hbm.inventory.RecipesCommon.ComparableStack;
 import com.hbm.inventory.container.ContainerLaunchPadRusted;
 import com.hbm.items.ModItems;
+import com.hbm.items.weapon.MissileDefinition;
 import com.hbm.lib.RefStrings;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toserver.NBTControlPacket;
@@ -61,7 +62,20 @@ public class GUILaunchPadRusted extends GuiInfoContainer {
 	protected void drawGuiContainerForegroundLayer(int i, int j) {
 		String name = this.launchpad.hasCustomInventoryName() ? this.launchpad.getInventoryName() : I18n.format(this.launchpad.getInventoryName());
 		this.fontRendererObj.drawString(name, this.xSize / 2 - this.fontRendererObj.getStringWidth(name) / 2, 4, 4210752);
-		this.fontRendererObj.drawString(I18n.format("container.inventory"), 8, this.ySize - 96 + 2, 4210752);
+		String inventory = I18n.format("container.inventory");
+		int inventoryY = ySize - 94;
+		if(launchpad.missileLoaded) {
+			MissileDefinition missile = MissileDefinition.TITAN_II;
+			drawRect(7, 128, xSize - 7, 138, 0xFF30352D);
+			String identity = I18n.format(missile.translationKey() + ".name") + " · "
+					+ I18n.format(missile.classification.shortTranslationKey());
+			drawCenteredFitString(identity, xSize / 2, 129, xSize - 22, 0xF1F3EB);
+			int payloadLeft = 16 + fontRendererObj.getStringWidth(inventory);
+			int payloadRight = xSize - 8;
+			drawCenteredFitString(missile.payloadDescription(launchpad.getWorldObj()),
+					(payloadLeft + payloadRight) / 2, inventoryY, payloadRight - payloadLeft, 4210752);
+		}
+		fontRendererObj.drawString(inventory, 8, inventoryY, 4210752);
 	}
 
 	@Override

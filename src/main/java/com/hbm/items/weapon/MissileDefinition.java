@@ -1,10 +1,12 @@
 package com.hbm.items.weapon;
 
+import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import com.hbm.config.BombConfig;
 import com.hbm.items.ModItems;
 import com.hbm.items.weapon.ItemMissile.MissileFormFactor;
 import com.hbm.items.weapon.ItemMissile.MissileFuel;
@@ -15,6 +17,9 @@ import com.hbm.main.MainRegistry;
 import cpw.mods.fml.common.registry.GameRegistry;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.StatCollector;
+import net.minecraft.world.World;
+import net.minecraftforge.common.config.Configuration;
 
 /** The playable airframes. Numeric IDs are saved as airframe item metadata and sent with entity updates. */
 public enum MissileDefinition {
@@ -49,11 +54,11 @@ public enum MissileDefinition {
 	MINUTEMAN_II(15, "minuteman_ii", Country.US, Classification.ICBM, Generation.LATE_COLD_WAR,
 			MissilePayload.NUCLEAR, 74, 1550, 4.0, MissileFormFactor.HUGE, MissileFuel.SOLID, () -> ModItems.plate_aluminium),
 	MINUTEMAN_III(16, "minuteman_iii", Country.US, Classification.ICBM, Generation.LATE_COLD_WAR,
-			MissilePayload.THERMONUCLEAR, 90, 2000, 4.2, MissileFormFactor.HUGE, MissileFuel.SOLID, () -> ModItems.plate_titanium),
+			MissilePayload.THERMONUCLEAR, 90, 2000, 4.2, MissileFormFactor.HUGE, MissileFuel.SOLID, () -> ModItems.plate_titanium, 3),
 	LANCE(17, "incendiary_strong", Country.US, Classification.SRBM, Generation.LATE_COLD_WAR,
 			MissilePayload.INCENDIARY, 30, 8000, 4.1, MissileFormFactor.STRONG, MissileFuel.KEROSENE_PEROXIDE, () -> ModItems.plate_copper),
 	R36M(18, "r36m", Country.USSR, Classification.ICBM, Generation.LATE_COLD_WAR,
-			MissilePayload.THERMONUCLEAR, 120, 16000, 3.6, MissileFormFactor.ATLAS, MissileFuel.JETFUEL_LOXY, () -> ModItems.plate_dura_steel),
+			MissilePayload.THERMONUCLEAR, 120, 16000, 3.6, MissileFormFactor.ATLAS, MissileFuel.JETFUEL_LOXY, () -> ModItems.plate_dura_steel, 5),
 	DF5(19, "df5", Country.CHINA, Classification.ICBM, Generation.LATE_COLD_WAR,
 			MissilePayload.THERMONUCLEAR, 104, 14000, 3.8, MissileFormFactor.ATLAS, MissileFuel.KEROSENE_LOXY, () -> ModItems.plate_stainless),
 	TOMAHAWK(20, "buster_strong", Country.US, Classification.CRUISE, Generation.LATE_COLD_WAR,
@@ -61,9 +66,9 @@ public enum MissileDefinition {
 	TOPOL(21, "topol", Country.USSR, Classification.ICBM, Generation.LATE_COLD_WAR,
 			MissilePayload.NUCLEAR, 80, 1350, 4.2, MissileFormFactor.HUGE, MissileFuel.SOLID, () -> ModItems.plate_weaponsteel),
 	PEACEKEEPER(22, "peacekeeper", Country.US, Classification.ICBM, Generation.LATE_COLD_WAR,
-			MissilePayload.THERMONUCLEAR, 114, 2400, 4.0, MissileFormFactor.ATLAS, MissileFuel.SOLID, () -> ModItems.plate_gunmetal),
+			MissilePayload.THERMONUCLEAR, 114, 2400, 4.0, MissileFormFactor.ATLAS, MissileFuel.SOLID, () -> ModItems.plate_gunmetal, 5),
 	TRIDENT_II(23, "trident_ii", Country.US, Classification.SLBM, Generation.LATE_COLD_WAR,
-			MissilePayload.THERMONUCLEAR, 102, 1850, 4.5, MissileFormFactor.ATLAS, MissileFuel.SOLID, () -> ModItems.plate_lead),
+			MissilePayload.THERMONUCLEAR, 102, 1850, 4.5, MissileFormFactor.ATLAS, MissileFuel.SOLID, () -> ModItems.plate_lead, 4),
 	DF21(24, "cluster_strong", Country.CHINA, Classification.MRBM, Generation.LATE_COLD_WAR,
 			MissilePayload.CLUSTER, 55, 1400, 4.2, MissileFormFactor.STRONG, MissileFuel.SOLID, () -> ModItems.ingot_tungsten),
 	ATACMS(25, "cluster", Country.US, Classification.SRBM, Generation.MODERN,
@@ -77,9 +82,9 @@ public enum MissileDefinition {
 	ISKANDER(29, "buster", Country.RUSSIA, Classification.SRBM, Generation.MODERN,
 			MissilePayload.PENETRATOR, 15, 750, 4.8, MissileFormFactor.STRONG, MissileFuel.SOLID, () -> ModItems.plate_iron),
 	M51(30, "m51", Country.FRANCE, Classification.SLBM, Generation.MODERN,
-			MissilePayload.THERMONUCLEAR, 108, 2150, 4.6, MissileFormFactor.ATLAS, MissileFuel.SOLID, () -> ModItems.plate_titanium),
+			MissilePayload.THERMONUCLEAR, 108, 2150, 4.6, MissileFormFactor.ATLAS, MissileFuel.SOLID, () -> ModItems.plate_titanium, 4),
 	YARS(31, "yars", Country.RUSSIA, Classification.ICBM, Generation.MODERN,
-			MissilePayload.THERMONUCLEAR, 112, 2100, 4.7, MissileFormFactor.HUGE, MissileFuel.SOLID, () -> ModItems.plate_weaponsteel),
+			MissilePayload.THERMONUCLEAR, 112, 2100, 4.7, MissileFormFactor.HUGE, MissileFuel.SOLID, () -> ModItems.plate_weaponsteel, 3),
 	AGNI_V(32, "agni_v", Country.INDIA, Classification.IRBM, Generation.MODERN,
 			MissilePayload.NUCLEAR, 100, 1800, 4.6, MissileFormFactor.HUGE, MissileFuel.SOLID, () -> ModItems.plate_gunmetal),
 	DF26(33, "burst", Country.CHINA, Classification.IRBM, Generation.MODERN,
@@ -91,23 +96,32 @@ public enum MissileDefinition {
 	DF17(36, "rain", Country.CHINA, Classification.HYPERSONIC, Generation.ADVANCED,
 			MissilePayload.CLUSTER, 82, 1850, 5.4, MissileFormFactor.HUGE, MissileFuel.SOLID, () -> ModItems.plate_titanium),
 	DF41(37, "df41", Country.CHINA, Classification.ICBM, Generation.ADVANCED,
-			MissilePayload.THERMONUCLEAR, 128, 2600, 5.0, MissileFormFactor.ATLAS, MissileFuel.SOLID, () -> ModItems.plate_dura_steel),
+			MissilePayload.THERMONUCLEAR, 128, 2600, 5.0, MissileFormFactor.ATLAS, MissileFuel.SOLID, () -> ModItems.plate_dura_steel, 5),
 	SARMAT(38, "doomsday", Country.RUSSIA, Classification.ICBM, Generation.ADVANCED,
-			MissilePayload.THERMONUCLEAR, 140, 16000, 4.2, MissileFormFactor.ATLAS, MissileFuel.JETFUEL_LOXY, () -> ModItems.plate_stainless),
+			MissilePayload.THERMONUCLEAR, 140, 16000, 4.2, MissileFormFactor.ATLAS, MissileFuel.JETFUEL_LOXY, () -> ModItems.plate_stainless, 6, true),
 	SENTINEL(39, "sentinel", Country.US, Classification.ICBM, Generation.ADVANCED,
 			MissilePayload.THERMONUCLEAR, 118, 1800, 5.1, MissileFormFactor.HUGE, MissileFuel.SOLID, () -> ModItems.plate_weaponsteel),
 	CPS(40, "drill", Country.US, Classification.HYPERSONIC, Generation.ADVANCED,
 			MissilePayload.PENETRATOR, 24, 2200, 5.6, MissileFormFactor.HUGE, MissileFuel.SOLID, () -> ModItems.plate_nickel),
 	ORESHNIK(41, "oreshnik", Country.RUSSIA, Classification.IRBM, Generation.ADVANCED,
-			MissilePayload.CLUSTER, 100, 2400, 5.2, MissileFormFactor.HUGE, MissileFuel.SOLID, () -> ModItems.ingot_tungsten);
+			MissilePayload.CLUSTER, 100, 2400, 5.2, MissileFormFactor.HUGE, MissileFuel.SOLID, () -> ModItems.ingot_tungsten, 4);
 
 	private static final Map<Integer, MissileDefinition> BY_ID = new HashMap<>();
 	private static final Map<String, MissileDefinition> BY_NAME = new HashMap<>();
+	private static volatile long configuredWarheadCounts;
+	private static volatile ClientWarheadCounts clientWarheadCounts;
 
 	static {
+		int offset = 0;
 		for(MissileDefinition missile : values()) {
 			if(BY_ID.put(missile.id, missile) != null || BY_NAME.put(missile.key, missile) != null) {
 				throw new IllegalStateException("Duplicate missile identity: " + missile.key);
+			}
+			if(missile.payloadCapacity > 1) {
+				if(offset >= Long.SIZE || missile.payloadCapacity > 15) throw new IllegalStateException("MIRV count table overflow");
+				missile.countBitOffset = offset;
+				configuredWarheadCounts |= (long) missile.payloadCapacity << offset;
+				offset += 4;
 			}
 		}
 	}
@@ -118,6 +132,7 @@ public enum MissileDefinition {
 	public final Classification classification;
 	public final Generation generation;
 	public final MissilePayload payload;
+	public final int payloadCapacity;
 	/** All flight, fuel, and payload values use Minecraft gameplay units. */
 	public final int payloadPower;
 	public final int fuelCapacity;
@@ -126,11 +141,27 @@ public enum MissileDefinition {
 	public final MissileFuel fuel;
 	private final Supplier<Item> hullMaterial;
 	private final String registryName;
+	private final boolean scalesWithSiloRadius;
+	private int countBitOffset;
 	private ItemMissile item;
 
 	MissileDefinition(int id, String registrySuffix, Country country, Classification classification, Generation generation,
 			MissilePayload payload, int payloadPower, int fuelCapacity, double flightSpeed,
 			MissileFormFactor form, MissileFuel fuel, Supplier<Item> hullMaterial) {
+		this(id, registrySuffix, country, classification, generation, payload, payloadPower, fuelCapacity, flightSpeed,
+				form, fuel, hullMaterial, payload == MissilePayload.INTERCEPTOR ? 0 : 1);
+	}
+
+	MissileDefinition(int id, String registrySuffix, Country country, Classification classification, Generation generation,
+			MissilePayload payload, int payloadPower, int fuelCapacity, double flightSpeed,
+			MissileFormFactor form, MissileFuel fuel, Supplier<Item> hullMaterial, int payloadCapacity) {
+		this(id, registrySuffix, country, classification, generation, payload, payloadPower, fuelCapacity, flightSpeed,
+				form, fuel, hullMaterial, payloadCapacity, false);
+	}
+
+	MissileDefinition(int id, String registrySuffix, Country country, Classification classification, Generation generation,
+			MissilePayload payload, int payloadPower, int fuelCapacity, double flightSpeed,
+			MissileFormFactor form, MissileFuel fuel, Supplier<Item> hullMaterial, int payloadCapacity, boolean scalesWithSiloRadius) {
 		this.id = id;
 		this.key = name().toLowerCase(Locale.ROOT);
 		this.registryName = "missile_" + registrySuffix;
@@ -138,6 +169,8 @@ public enum MissileDefinition {
 		this.classification = classification;
 		this.generation = generation;
 		this.payload = payload;
+		this.payloadCapacity = payloadCapacity;
+		this.scalesWithSiloRadius = scalesWithSiloRadius;
 		this.payloadPower = payloadPower;
 		this.fuelCapacity = fuelCapacity;
 		this.flightSpeed = flightSpeed;
@@ -190,6 +223,69 @@ public enum MissileDefinition {
 		return "item.missile_roster." + key;
 	}
 
+	public String launchPlatformKey() {
+		return this == TITAN_II ? "missile.platform.pads_silo" : "missile.platform.pads";
+	}
+
+	public int impactPower(boolean preloadedSilo) {
+		if(preloadedSilo) return BombConfig.missileRadius;
+		if(scalesWithSiloRadius) {
+			return Math.round(payloadPower * (BombConfig.missileRadius / (float) BombConfig.radiusFromKt(100F)));
+		}
+		return payloadPower;
+	}
+
+	public boolean hasExtraFallout(boolean preloadedSilo) {
+		return preloadedSilo || scalesWithSiloRadius;
+	}
+
+	public String payloadDescription(World world) {
+		int count = warheadCount(world);
+		String name = StatCollector.translateToLocal(payload.translationKey());
+		if(count == 0) return name;
+		return StatCollector.translateToLocalFormatted(count == 1 ? "missile.payload.single" : "missile.payload.mirv", name, count);
+	}
+
+	public int warheadCount(World world) {
+		if(payloadCapacity <= 1) return payloadCapacity;
+		ClientWarheadCounts client = clientWarheadCounts;
+		long counts = world != null && world.isRemote && client != null && client.world.get() == world
+				? client.counts : configuredWarheadCounts;
+		return (int) (counts >>> countBitOffset & 0xF);
+	}
+
+	public static void loadWarheadCounts(Configuration config, String category) {
+		long counts = 0;
+		for(MissileDefinition missile : values()) {
+			if(missile.payloadCapacity <= 1) continue;
+			int count = config.getInt("mirvCount_" + missile.key, category, missile.payloadCapacity, 1,
+					missile.payloadCapacity, "Number of warheads carried by this airframe. 1 uses a single payload.");
+			counts |= (long) count << missile.countBitOffset;
+		}
+		configuredWarheadCounts = counts;
+	}
+
+	public static long configuredWarheadCounts() {
+		return configuredWarheadCounts;
+	}
+
+	public static void syncWarheadCounts(World world, long counts) {
+		ClientWarheadCounts client = clientWarheadCounts;
+		if(client == null || client.world.get() != world || client.counts != counts) {
+			clientWarheadCounts = new ClientWarheadCounts(world, counts);
+		}
+	}
+
+	private static final class ClientWarheadCounts {
+		final WeakReference<World> world;
+		final long counts;
+
+		ClientWarheadCounts(World world, long counts) {
+			this.world = new WeakReference<>(world);
+			this.counts = counts;
+		}
+	}
+
 	public static MissileDefinition byId(int id) {
 		return BY_ID.get(id);
 	}
@@ -205,7 +301,33 @@ public enum MissileDefinition {
 	}
 
 	public enum Classification {
-		SRBM, MRBM, IRBM, ICBM, SLBM, CRUISE, HYPERSONIC, INTERCEPTOR;
+		SRBM(12, 9, 18, 16, 0.08, 0.85, 2.0),
+		MRBM(18, 15, 30, 25, 0.10, 0.90, 2.3),
+		IRBM(24, 22, 52, 38, 0.14, 0.95, 2.7),
+		ICBM(30, 31, 78, 57, 0.18, 1.00, 3.2),
+		SLBM(34, 25, 63, 45, 0.16, 0.92, 2.8),
+		CRUISE(14, 11, 12, 0, 0, 0.80, 1.35),
+		HYPERSONIC(25, 30, 22, 16, 0.06, 1.10, 3.6),
+		INTERCEPTOR(0, 0, 0, 0, 0, 0, 0);
+
+		public final int launchTicks;
+		public final double launchLift;
+		public final double arrivalLift;
+		public final double arcLift;
+		public final double distanceLift;
+		public final double travelSpeed;
+		public final double descentSpeed;
+
+		Classification(int launchTicks, double launchLift, double arrivalLift, double arcLift,
+				double distanceLift, double travelSpeed, double descentSpeed) {
+			this.launchTicks = launchTicks;
+			this.launchLift = launchLift;
+			this.arrivalLift = arrivalLift;
+			this.arcLift = arcLift;
+			this.distanceLift = distanceLift;
+			this.travelSpeed = travelSpeed;
+			this.descentSpeed = descentSpeed;
+		}
 
 		public String translationKey() { return "missile.class." + name().toLowerCase(Locale.ROOT); }
 

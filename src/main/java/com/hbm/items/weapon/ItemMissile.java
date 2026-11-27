@@ -65,7 +65,9 @@ public class ItemMissile extends ItemCustomLore {
 					StatCollector.translateToLocal(definition.classification.translationKey())));
 			list.add(StatCollector.translateToLocal(definition.generation.translationKey()));
 			list.add(StatCollector.translateToLocalFormatted("missile.tooltip.payload",
-					StatCollector.translateToLocal(definition.payload.translationKey())));
+					definition.payloadDescription(player == null ? null : player.worldObj)));
+			if(launchable) list.add(StatCollector.translateToLocalFormatted("missile.tooltip.platform",
+					StatCollector.translateToLocal(definition.launchPlatformKey())));
 			list.add(StatCollector.translateToLocal(definition.translationKey() + ".purpose"));
 		}
 		list.add(EnumChatFormatting.ITALIC + this.tier.display);
