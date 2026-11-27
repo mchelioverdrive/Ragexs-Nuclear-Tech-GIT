@@ -155,10 +155,10 @@ final class StaplerForest implements IWorldGenerator {
         if(chest instanceof TileEntityChest) {
             TileEntityChest supplies = (TileEntityChest) chest;
             supplies.setInventorySlotContents(0, new ItemStack(StaplerMode.rifle));
-            supplies.setInventorySlotContents(1, ammunition(32));
+            supplies.setInventorySlotContents(1, ammunition(64));
             supplies.setInventorySlotContents(2, new ItemStack(ModItems.stapler));
-            supplies.setInventorySlotContents(3, new ItemStack(ModItems.staples, 24));
-            supplies.setInventorySlotContents(4, new ItemStack(Items.bread, 12));
+            supplies.setInventorySlotContents(3, new ItemStack(ModItems.staples, 64));
+            supplies.setInventorySlotContents(4, new ItemStack(Items.bread, 24));
             supplies.setInventorySlotContents(5, newMap(world));
         }
         data.markDirty();
