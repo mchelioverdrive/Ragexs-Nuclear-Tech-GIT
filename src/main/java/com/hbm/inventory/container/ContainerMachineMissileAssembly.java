@@ -1,5 +1,6 @@
 package com.hbm.inventory.container;
 
+import com.hbm.inventory.SlotCraftingOutput;
 import com.hbm.inventory.SlotTakeOnly;
 import com.hbm.tileentity.machine.TileEntityMachineMissileAssembly;
 
@@ -22,7 +23,7 @@ public class ContainerMachineMissileAssembly extends Container {
 		this.addSlotToContainer(new Slot(tedf, 2, 44, 36));
 		this.addSlotToContainer(new SlotTakeOnly(tedf, 3, 62, 36));
 		this.addSlotToContainer(new SlotTakeOnly(tedf, 4, 80, 36));
-		this.addSlotToContainer(new SlotTakeOnly(tedf, 5, 152, 36));
+		this.addSlotToContainer(new SlotCraftingOutput(invPlayer.player, tedf, 5, 152, 36));
 		
 		for(int i = 0; i < 3; i++)
 		{
@@ -76,6 +77,7 @@ public class ContainerMachineMissileAssembly extends Container {
 			{
 				var4.onSlotChanged();
 			}
+			var4.onPickupFromSlot(p_82846_1_, var5);
 		}
 		
 		return var3;

@@ -66,7 +66,7 @@ public class GUILaunchPadLarge extends GuiInfoContainer {
 		if(loaded != null && loaded.getItem() instanceof ItemMissile) {
 			ItemMissile missile = (ItemMissile) loaded.getItem();
 			if(missile.definition != null) {
-				String classification = I18n.format(missile.definition.classification.translationKey());
+				String classification = I18n.format(missile.definition.classification.shortTranslationKey());
 				this.fontRendererObj.drawString(fontRendererObj.trimStringToWidth(classification, xSize - 16), 8, 126, 4210752);
 			}
 		}

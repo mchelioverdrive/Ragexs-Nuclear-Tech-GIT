@@ -279,6 +279,39 @@ The main config is generated from these source categories:
 | `1.99_enableExpensiveMode` | `false` | Enables expensive-mode balance. |
 | `6.XX_enableChunkLoading` | `true` | Allows procedural explosions to keep the central chunk loaded. |
 
+### Missile production and existing saves
+
+Weld a named airframe in the Arc Welder. At the Missile Assembly Station, install its matching targeting circuit, warhead, and airframe in the first three slots, then press Assemble. NEI shows both steps. Hover over the empty circuit and warhead slots after inserting an airframe to see the required parts. Recover any old fins or thruster still stored in the two former input slots.
+
+World War II and early Cold War systems use lower-tier fabrication. Late Cold War, post–Cold War, and contemporary systems require progressively higher targeting circuits and more costly airframe recipes. The fixed roster uses the existing launch pads, designators, fuel and power systems. The cruise and boost-glide entries use shallower Minecraft flight arcs. The SLBM label describes the historical system, and the existing pads serve both naval entries in this phase. Payloads, fuel volumes, flight parameters, and blast effects are Minecraft balance choices.
+
+`01_general.2.0RTM` continues to gate launches. `03_nukes.3.07_missileRadius` sets the rusted silo blast radius and scales Sarmat's Minecraft blast. Existing recipe JSON files still replace their machine's defaults. If your server overrides `hbmArcWelder.json`, merge the airframe recipes from a newly generated default file into the override to add the new recipes.
+
+| Existing saved item ID suffix | Former role | Phase 1 item |
+| --- | --- | --- |
+| `missile_generic` | Basic HE | A-4 V-2 |
+| `missile_incendiary` | Light incendiary | PGM-11 Redstone |
+| `missile_cluster` | Light cluster | MGM-140 ATACMS |
+| `missile_buster` | Light bunker buster | 9K720 Iskander-M |
+| `missile_strong` | Medium HE | R-17 Elbrus |
+| `missile_incendiary_strong` | Medium incendiary | MGM-52 Lance |
+| `missile_cluster_strong` | Medium cluster | DF-21 |
+| `missile_buster_strong` | Medium bunker buster | BGM-109 Tomahawk |
+| `missile_burst` | Heavy HE | DF-26 |
+| `missile_inferno` | Heavy incendiary | Shahab-3 |
+| `missile_rain` | Heavy cluster | DF-17 |
+| `missile_drill` | Deep terrain breach | Conventional Prompt Strike |
+| `missile_nuclear` | Atlas D nuclear strike | SM-65D Atlas D |
+| `missile_nuclear_cluster` | Atlas F heavy nuclear strike | SM-65F Atlas F |
+| `missile_doomsday` | Doomsday strategic strike | RS-28 Sarmat |
+| `missile_doomsday_rusted` | Rusted silo launch and salvage | Damaged Titan II. The silo launches Titan II, or the anvil restores the extracted missile. |
+| `missile_micro` | Low-yield nuclear strike | MGM-29 Sergeant |
+| `missile_anti_ballistic` | Radar-assisted interceptor | LIM-49A Spartan |
+
+The old decoy, small and strong EMP, stealth, test, and Reliant Robin items still load from saves. The fixed pads reject these retired items. The remaining old custom missiles can launch from the Launch Table and Compact Launcher. The station no longer builds arbitrary custom missiles and the old Creative presets and standalone N2 and Tectonic warhead recipes are gone. Existing in-flight entities retain their saved entity IDs and old payload behavior. The already-disabled Taint, Black Hole, Schrabidium, Tectonic, Endothermic, and Exothermic missile entries stay outside the playable roster. The carrier and Soyuz spaceflight systems use their existing machinery.
+
+The roster uses the U.S. Air Force historical classifications for Thor and Jupiter. Agni-V is listed as an IRBM using India's published range and the standard classification boundary. Oreshnik is also listed as an IRBM. External models are stylized, with approximate silhouettes for programs whose public imagery is limited. [USAF strategic missile history](https://www.nationalmuseum.af.mil/Visit/Museum-Exhibits/Fact-Sheets/Display/Article/197478/sentinels-of-freedom-air-force-strategic-missiles/) · [Indian Ministry of Defence Agni-V release](https://www.pib.gov.in/PressReleasePage.aspx?PRID=1767034&lang=1&reg=3) · [U.S. Department of Defense Oreshnik announcement](https://www.war.gov/News/News-Stories/Article/article/3975321/russians-launch-new-missile-at-dnipro-us-provides-ukraine-with-new-tactical-wea/)
+
 ### The Iris / Hungry Eye
 
 The Iris is the Gemini invasion controller's distant cosmic presence, rendered only in the Overworld sky before terrain and clouds. Its fixed direction is northeast (+X/-Z), 45 degrees above the horizon, shared by all players regardless of position, camera or flight height. Phase 1 has rare small clear-night reveals; phase 2 exposes the eye at night; phases 3 and 4 enlarge the organism and permit limited daytime visibility. The final phase remains playable and never triggers planetary destruction.

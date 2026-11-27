@@ -208,6 +208,8 @@ public enum MissileDefinition {
 		SRBM, MRBM, IRBM, ICBM, SLBM, CRUISE, HYPERSONIC, INTERCEPTOR;
 
 		public String translationKey() { return "missile.class." + name().toLowerCase(Locale.ROOT); }
+
+		public String shortTranslationKey() { return translationKey() + ".short"; }
 	}
 
 	public enum Generation {

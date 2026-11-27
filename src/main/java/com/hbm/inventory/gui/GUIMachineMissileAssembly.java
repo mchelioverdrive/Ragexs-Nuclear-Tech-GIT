@@ -69,18 +69,18 @@ public class GUIMachineMissileAssembly extends GuiInfoContainer {
 	@Override
 	protected void drawGuiContainerForegroundLayer(int mouseX, int mouseY) {
 		String name = assembler.hasCustomInventoryName() ? assembler.getInventoryName() : I18n.format(assembler.getInventoryName());
-		center(name, 6);
+		center(name, 6, 0x404040);
 		fontRendererObj.drawString(I18n.format("container.inventory"), 8, ySize - 94, 4210752);
 		MissileDefinition missile = assembler.getPreviewMissile();
 		if(missile != null) {
-			center(I18n.format(missile.translationKey() + ".name"), 62);
-			center(I18n.format(missile.classification.translationKey()), 74);
+			center(I18n.format(missile.translationKey() + ".name"), 62, 0x404040);
+			center(I18n.format(missile.classification.shortTranslationKey()), 74, 0xD0D6DC);
 		}
 	}
 
-	private void center(String text, int y) {
+	private void center(String text, int y, int color) {
 		text = fontRendererObj.trimStringToWidth(text, xSize - 12);
-		fontRendererObj.drawString(text, (xSize - fontRendererObj.getStringWidth(text)) / 2, y, 4210752);
+		fontRendererObj.drawString(text, (xSize - fontRendererObj.getStringWidth(text)) / 2, y, color);
 	}
 
 	@Override
@@ -94,6 +94,14 @@ public class GUIMachineMissileAssembly extends GuiInfoContainer {
 		if(assembler.hasMatchingWarhead(airframe)) drawTexturedModalRect(guiLeft + 31, guiTop + 23, 194, 0, 6, 8);
 		if(assembler.hasMatchingCircuit(airframe)) drawTexturedModalRect(guiLeft + 13, guiTop + 23, 194, 0, 6, 8);
 		if(assembler.canBuild()) drawTexturedModalRect(guiLeft + 115, guiTop + 35, 176, 0, 18, 18);
+		// Slots 3 and 4 still hold saved parts, so leave them accessible until emptied.
+		drawRect(guiLeft + 67, guiTop + 23, guiLeft + 91, guiTop + 31, 0xFFC6C6C6);
+		for(int slot = 3; slot <= 4; slot++) {
+			if(assembler.getStackInSlot(slot) == null) {
+				int x = guiLeft + 7 + 18 * slot;
+				drawRect(x, guiTop + 35, x + 18, guiTop + 53, 0xFFC6C6C6);
+			}
+		}
 
 		MissileRosterModel model = MissileRosterModel.get(assembler.getPreviewMissile());
 		if(model != null) {

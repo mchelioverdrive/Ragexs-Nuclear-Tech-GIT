@@ -7,6 +7,8 @@ import com.hbm.inventory.RecipesCommon.ComparableStack;
 import com.hbm.items.ItemAmmoEnums;
 import com.hbm.items.ModItems;
 import com.hbm.items.machine.ItemCircuit.EnumCircuitType;
+import com.hbm.items.weapon.MissileDefinition;
+import com.hbm.items.weapon.MissilePayload;
 import com.hbm.main.MainRegistry;
 
 import net.minecraft.entity.player.EntityPlayer;
@@ -47,9 +49,11 @@ public class AchievementHandler {
 			craftingAchievements.put(new ComparableStack(ModItems.nugget_bismuth), MainRegistry.achBismuth);
 			craftingAchievements.put(new ComparableStack(ModItems.nugget_am241), MainRegistry.achBreeding);
 			craftingAchievements.put(new ComparableStack(ModItems.nugget_am242), MainRegistry.achBreeding);
-			craftingAchievements.put(new ComparableStack(ModItems.missile_nuclear), MainRegistry.achRedBalloons);
-			craftingAchievements.put(new ComparableStack(ModItems.missile_nuclear_cluster), MainRegistry.achRedBalloons);
-			craftingAchievements.put(new ComparableStack(ModItems.missile_doomsday), MainRegistry.achRedBalloons);
+			for(MissileDefinition missile : MissileDefinition.values()) {
+				if(missile.payload == MissilePayload.NUCLEAR || missile.payload == MissilePayload.THERMONUCLEAR) {
+					craftingAchievements.put(new ComparableStack(missile.missileStack()), MainRegistry.achRedBalloons);
+				}
+			}
 			craftingAchievements.put(new ComparableStack(ModItems.mp_warhead_10_nuclear), MainRegistry.achRedBalloons);
 			craftingAchievements.put(new ComparableStack(ModItems.mp_warhead_10_nuclear_large), MainRegistry.achRedBalloons);
 			craftingAchievements.put(new ComparableStack(ModItems.mp_warhead_15_nuclear), MainRegistry.achRedBalloons);
