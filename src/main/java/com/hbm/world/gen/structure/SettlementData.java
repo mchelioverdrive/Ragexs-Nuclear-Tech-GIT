@@ -17,6 +17,14 @@ import com.hbm.world.gen.structure.SettlementPlan.State;
 import com.hbm.world.gen.structure.SettlementRoads.Profile;
 
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockBed;
+import net.minecraft.block.BlockBush;
+import net.minecraft.block.BlockButton;
+import net.minecraft.block.BlockDoor;
+import net.minecraft.block.BlockLadder;
+import net.minecraft.block.BlockPressurePlate;
+import net.minecraft.block.BlockSign;
+import net.minecraft.block.BlockCarpet;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.world.ChunkCoordIntPair;
@@ -45,7 +53,17 @@ public final class SettlementData extends WorldSavedData {
         return data;
     }
 
-    boolean busy() { return active.size() + requests.size() >= 8; }
+    boolean busy() {
+        int pending = requests.size();
+        for(Site site : active.values()) if(!site.placed) pending++;
+        return pending >= 8;
+    }
+
+    boolean queued(Placement request) {
+        for(Placement pending : requests) if(request.samePlacement(pending)) return true;
+        for(Site site : active.values()) if(!site.placed && request.samePlacement(site.placement)) return true;
+        return false;
+    }
 
     Placement request() { return requests.peekFirst(); }
 
@@ -103,10 +121,12 @@ public final class SettlementData extends WorldSavedData {
         markDirty();
     }
 
-    void saved(Slice slice, int blocks) {
+    void saved(Slice slice, int completed, int unchanged) {
         if(!slice.pending()) return;
+        slice.site.savedWork += slice.size();
+        slice.site.savedCompleted += completed;
+        slice.site.savedUnchanged += unchanged;
         slice.clearWork();
-        slice.site.savedBlocks += blocks;
         if(--slice.site.remaining == 0) active.remove(slice.site.id);
         markDirty();
     }
@@ -194,6 +214,11 @@ public final class SettlementData extends WorldSavedData {
                     tag.hasKey("Owner") ? UUID.fromString(tag.getString("Owner")) : null, tag.getInteger("Attempt"));
         }
 
+        boolean samePlacement(Placement other) {
+            return other != null && kind == other.kind && variant == other.variant && rotation == other.rotation
+                    && profile == other.profile && x == other.x && y == other.y && z == other.z;
+        }
+
         NBTTagCompound write() {
             NBTTagCompound tag = new NBTTagCompound();
             tag.setString("Kind", kind.name());
@@ -228,7 +253,7 @@ public final class SettlementData extends WorldSavedData {
         final boolean natural;
         final Placement placement;
         long id;
-        int remaining, savedBlocks, blocksPlaced, totalWork, workDone;
+        int remaining, savedWork, savedCompleted, savedUnchanged, totalWork;
         boolean placed;
 
         Site(SettlementPlan plan, Placement placement) {
@@ -243,16 +268,29 @@ public final class SettlementData extends WorldSavedData {
                 bounds.maxX = Math.max(bounds.maxX, column.x);
                 bounds.minZ = Math.min(bounds.minZ, column.z);
                 bounds.maxZ = Math.max(bounds.maxZ, column.z);
+                bounds.minY = Math.min(bounds.minY, column.y + column.bottom);
+                bounds.maxY = Math.max(bounds.maxY, column.y + column.top);
             }
-            bounds.minY = 0;
-            bounds.maxY = 255;
+            includeBoundsChunks();
+        }
+
+        private void includeBoundsChunks() {
+            for(int x = bounds.minX >> 4; x <= bounds.maxX >> 4; x++) {
+                for(int z = bounds.minZ >> 4; z <= bounds.maxZ >> 4; z++) {
+                    int cx = x, cz = z;
+                    slices.computeIfAbsent(ChunkCoordIntPair.chunkXZ2Int(x, z), k -> new Slice(this, cx, cz));
+                }
+            }
         }
 
         Site(NBTTagCompound tag) {
             id = tag.getLong("Id");
             natural = tag.getBoolean("Natural");
             placement = tag.hasKey("Request") ? new Placement(tag.getCompoundTag("Request")) : null;
-            savedBlocks = blocksPlaced = tag.getInteger("Blocks");
+            savedWork = tag.getInteger("SavedWork");
+            savedCompleted = tag.getInteger("SavedCompleted");
+            savedUnchanged = tag.getInteger("SavedUnchanged");
+            totalWork = savedWork;
             bounds = new StructureBoundingBox(tag.getIntArray("Bounds"));
             NBTTagList list = tag.getTagList("Chunks", 10);
             for(int i = 0; i < list.tagCount(); i++) {
@@ -261,6 +299,7 @@ public final class SettlementData extends WorldSavedData {
                 if(slice.pending()) remaining++;
                 totalWork += slice.size();
             }
+            if(!slices.isEmpty()) includeBoundsChunks();
         }
 
         NBTTagCompound write() {
@@ -268,7 +307,9 @@ public final class SettlementData extends WorldSavedData {
             tag.setLong("Id", id);
             tag.setBoolean("Natural", natural);
             if(placement != null) tag.setTag("Request", placement.write());
-            tag.setInteger("Blocks", savedBlocks);
+            tag.setInteger("SavedWork", savedWork);
+            tag.setInteger("SavedCompleted", savedCompleted);
+            tag.setInteger("SavedUnchanged", savedUnchanged);
             tag.setIntArray("Bounds", new int[] { bounds.minX, bounds.minY, bounds.minZ, bounds.maxX, bounds.maxY, bounds.maxZ });
             NBTTagList list = new NBTTagList();
             for(Slice slice : slices.values()) list.appendTag(slice.write());
@@ -279,6 +320,8 @@ public final class SettlementData extends WorldSavedData {
 
     static int columnIndex(int x, int z) { return (z & 15) << 4 | x & 15; }
 
+    enum Phase { BASE, ATTACHMENTS, VERIFY, ANIMALS }
+
     static final class Slice {
         final Site site;
         final int x, z;
@@ -286,7 +329,8 @@ public final class SettlementData extends WorldSavedData {
         private List<State> palette = new ArrayList<>();
         private Map<Integer, Integer> paletteIndex = new HashMap<>();
         private List<Operation> operations = new ArrayList<>();
-        boolean started, finished;
+        private int base, blocks;
+        String unavailable;
 
         Slice(Site site, int x, int z) {
             this.site = site;
@@ -300,11 +344,12 @@ public final class SettlementData extends WorldSavedData {
             x = tag.getInteger("X");
             z = tag.getInteger("Z");
             footprint = BitSet.valueOf(tag.getByteArray("Footprint"));
-            paletteIndex = null;
+            unavailable = tag.hasKey("Unavailable") ? tag.getString("Unavailable") : null;
             NBTTagList states = tag.getTagList("Palette", 10);
             for(int i = 0; i < states.tagCount(); i++) {
                 NBTTagCompound entry = states.getCompoundTagAt(i);
-                Block block = (Block) Block.blockRegistry.getObject(entry.getString("Block"));
+                String name = entry.getString("Block");
+                Block block = Block.blockRegistry.containsKey(name) ? (Block) Block.blockRegistry.getObject(name) : null;
                 palette.add(new State(block, entry.getByte("Meta")));
             }
             int[] steps = tag.getIntArray("Placement");
@@ -315,20 +360,40 @@ public final class SettlementData extends WorldSavedData {
                 int step = entry.getInteger("Step");
                 if(step < 0 || step >= operations.size()) continue;
                 Operation op = operations.get(step);
+                if(entry.hasKey("LegacyStep")) op.legacyStep = entry.getInteger("LegacyStep");
                 if(entry.hasKey("Animal")) op.animal = entry.getString("Animal");
                 if(entry.hasKey("Line0")) {
                     op.sign = new String[4];
                     for(int line = 0; line < 4; line++) op.sign[line] = entry.getString("Line" + line);
                 }
             }
-            if(operations.isEmpty()) clearWork();
+            if(!tag.getBoolean("Phased")) {
+                for(int i = 0; i < operations.size(); i++) {
+                    if(operations.get(i).animal != null) operations.get(i).legacyStep = i;
+                }
+            }
+            if(tag.hasKey("BaseEnd")) {
+                base = tag.getInteger("BaseEnd");
+                blocks = tag.getInteger("BlockEnd");
+                paletteIndex = null;
+            } else prepare();
         }
 
         long key() { return ChunkCoordIntPair.chunkXZ2Int(x, z); }
         boolean pending() { return operations != null && !operations.isEmpty(); }
         int size() { return operations == null ? 0 : operations.size(); }
-        Operation at(int index) { return operations.get(index); }
+        Operation at(int cursor, Phase phase) { return operations.get(phase.ordinal() >= Phase.VERIFY.ordinal() ? cursor - blocks : cursor); }
         State state(int index) { return palette.get(index); }
+
+        int limit(Phase phase) {
+            if(!pending()) return 0;
+            switch(phase) {
+            case BASE: return base;
+            case ATTACHMENTS: return blocks;
+            case VERIFY: return blocks * 2;
+            default: return blocks + size();
+            }
+        }
 
         void add(int column, int y, Block previous, int meta, State target, String animal) {
             operations.add(new Operation(y << 8 | column, palette(previous, meta), palette(target.block, target.meta), target.sign, animal));
@@ -347,10 +412,23 @@ public final class SettlementData extends WorldSavedData {
         void prepare() {
             if(operations.isEmpty()) clearWork();
             else {
-                operations.sort(Comparator.comparingInt((Operation op) -> op.animal == null ? op.sign == null ? 0 : 1 : 2)
+                operations.sort(Comparator.comparingInt(this::order)
                         .thenComparingInt(op -> op.position));
+                for(Operation op : operations) {
+                    int order = order(op);
+                    if(order == 0) base++;
+                    if(order < 2) blocks++;
+                }
                 paletteIndex = null;
             }
+        }
+
+        private int order(Operation op) {
+            if(op.animal != null) return 2;
+            Block block = state(op.after).block;
+            return block instanceof BlockBush || block instanceof BlockBed || block instanceof BlockDoor
+                    || block instanceof BlockLadder || block instanceof BlockSign || block instanceof BlockButton
+                    || block instanceof BlockPressurePlate || block instanceof BlockCarpet ? 1 : 0;
         }
 
         void clearWork() {
@@ -364,11 +442,15 @@ public final class SettlementData extends WorldSavedData {
             tag.setInteger("X", x);
             tag.setInteger("Z", z);
             tag.setByteArray("Footprint", footprint.toByteArray());
+            if(unavailable != null) tag.setString("Unavailable", unavailable);
             if(!pending()) return tag;
+            tag.setBoolean("Phased", true);
+            tag.setInteger("BaseEnd", base);
+            tag.setInteger("BlockEnd", blocks);
             NBTTagList states = new NBTTagList(), extras = new NBTTagList();
             for(State state : palette) {
                 NBTTagCompound entry = new NBTTagCompound();
-                entry.setString("Block", Block.blockRegistry.getNameForObject(state.block));
+                if(state.block != null) entry.setString("Block", Block.blockRegistry.getNameForObject(state.block));
                 entry.setByte("Meta", (byte) state.meta);
                 states.appendTag(entry);
             }
@@ -382,6 +464,7 @@ public final class SettlementData extends WorldSavedData {
                 NBTTagCompound entry = new NBTTagCompound();
                 entry.setInteger("Step", i);
                 if(op.animal != null) entry.setString("Animal", op.animal);
+                if(op.legacyStep >= 0) entry.setInteger("LegacyStep", op.legacyStep);
                 if(op.sign != null) for(int line = 0; line < op.sign.length; line++) entry.setString("Line" + line, op.sign[line]);
                 extras.appendTag(entry);
             }
@@ -396,6 +479,7 @@ public final class SettlementData extends WorldSavedData {
         final int position, before, after;
         String[] sign;
         String animal;
+        int legacyStep = -1;
 
         Operation(int position, int before, int after, String[] sign, String animal) {
             this.position = position;

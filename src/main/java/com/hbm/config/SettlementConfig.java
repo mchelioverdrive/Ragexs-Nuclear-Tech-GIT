@@ -37,7 +37,7 @@ public final class SettlementConfig {
             terrainDepth = config.getInt("maximumTerrainPreparationDepth", CATEGORY, 6, 0, 8,
                     "Maximum surface cut or fill in blocks for natural sites. Structure wands prepare terrain at any depth.");
             workPerTick = config.getInt("maximumWorkPerTick", CATEGORY, 3072, 64, 16384,
-                    "Placement work units per server-world tick. A block operation uses one unit; a terrain column survey uses 64.");
+                    "Placement work units per server-world tick. A placement or verification uses four units; a terrain column survey uses 64.");
             diagnostics = config.getBoolean("generationDiagnostics", CATEGORY, false,
                     "Log settlement candidates, rejections, terrain preparation, queue transitions and placement results on the server.");
         }

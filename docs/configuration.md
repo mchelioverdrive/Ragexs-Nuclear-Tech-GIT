@@ -30,8 +30,8 @@ The `15_structures.settlements` settings support `/rntconfig reload`. Natural se
 | `maximumNeighborhoodSize` | 4 | Maximum houses per neighborhood. Accepts 1–8. |
 | `maximumRoadNetworkSize` | 112 | Maximum length of each natural road spine, including its ends. Accepts 19–256 blocks. |
 | `maximumTerrainPreparationDepth` | 6 | Natural cut or fill limit per column. Accepts 0–8 blocks. Authored basements excavate separately. Existing configs retain their saved value. |
-| `maximumWorkPerTick` | 3072 | Per-world placement budget. Each block operation uses at least one unit and each surveyed column uses 64. |
-| `generationDiagnostics` | `false` | Log natural candidates that pass the rarity roll, wand requests, rejections, terrain preparation, queue transitions, and block totals. |
+| `maximumWorkPerTick` | 3072 | Per-world placement budget. Each placement or verification uses four units and each surveyed column uses 64. |
+| `generationDiagnostics` | `false` | Log queue transitions, bounds, chunk counts, placement totals, recoverable writes, and unresolved positions with expected and observed metadata. |
 
 Find the six structure wands in the RNTM consumables and tools tab in Creative mode. Right-click the top of a block at the intended driveway or access entrance to queue forced placement. A building extends south at 0° and its entrance faces north. The Road Wand starts on the selected block and extends south at 0°. Sneak-right-click a block to cycle variants. Right-click in air to rotate 90° clockwise. With the Road Wand, sneak-right-click in air to cycle road types. The tooltip shows the selected settings.
 

@@ -111,6 +111,10 @@ final class SettlementPlan {
             block(x, y, z, block, COMPASS[rotated(localDirection)].ordinal());
         }
 
+        void fillFacing(int x1, int y1, int z1, int x2, int y2, int z2, Block block, int localDirection) {
+            fill(x1, y1, z1, x2, y2, z2, block, COMPASS[rotated(localDirection)].ordinal());
+        }
+
         void door(int x, int y, int z, boolean metal, int localDirection, boolean rightHinge) {
             Block door = metal ? Blocks.iron_door : Blocks.wooden_door;
             block(x, y, z, door, (rotated(localDirection) + 3) & 3);

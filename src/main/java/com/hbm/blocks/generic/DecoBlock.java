@@ -57,9 +57,13 @@ public class DecoBlock extends BlockContainer implements IToolable {
 	@Override @SideOnly(Side.CLIENT) public boolean shouldSideBeRendered(IBlockAccess world, int x, int y, int z, int side) { return true; }
 
 	@Override
+	public boolean hasTileEntity(int meta) {
+		return this != ModBlocks.steel_scaffold && this != ModBlocks.steel_beam && this != ModBlocks.steel_wall && this != ModBlocks.steel_corner;
+	}
+
+	@Override
 	public TileEntity createNewTileEntity(World p_149915_1_, int p_149915_2_) {
-		if(this == ModBlocks.steel_scaffold || this == ModBlocks.steel_beam || this == ModBlocks.steel_wall || this == ModBlocks.steel_corner) return null;
-		return new TileEntityDecoBlock();
+		return hasTileEntity(p_149915_2_) ? new TileEntityDecoBlock() : null;
 	}
 
 	public static int renderIDBeam = RenderingRegistry.getNextAvailableRenderId();

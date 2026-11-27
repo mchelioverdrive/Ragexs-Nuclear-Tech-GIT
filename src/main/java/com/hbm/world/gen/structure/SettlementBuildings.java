@@ -141,7 +141,7 @@ final class SettlementBuildings {
         p.fill(-8, 1, 39, -8, 5, 43, ModBlocks.concrete_colored, LIGHT_GRAY);
         desk(p, -18, 1, 42);
         desk(p, -12, 1, 42);
-        p.block(-20, 1, 41, Blocks.furnace);
+        p.facing(-20, 1, 41, Blocks.furnace, NORTH);
         p.block(-19, 1, 41, Blocks.cauldron, 3);
         for(int x = -5; x <= 17; x += 5) p.fill(x, 1, 40, x, 3, 42, ModBlocks.crate_steel);
         loadingDock(p, rear, 6);
@@ -211,7 +211,7 @@ final class SettlementBuildings {
     }
 
     private static void rack(Plot p, int x, int z) {
-        p.fill(x, 1, z, x, 3, z, ModBlocks.steel_wall);
+        p.fillFacing(x, 1, z, x, 3, z, ModBlocks.steel_wall, EAST);
         p.fill(x + 1, 1, z, x + 1, 3, z, ModBlocks.steel_grate);
         p.cardinal(x + 1, 2, z, ModBlocks.deco_crt, EAST);
         p.block(x, 3, z, Blocks.redstone_lamp);
@@ -285,7 +285,7 @@ final class SettlementBuildings {
         p.fill(x1 + 1, 0, 4, x2 - 1, 0, front - 1, ModBlocks.concrete_smooth);
         shell(p, x1, front, x2, front + 7, 1, 5, wall, meta, ModBlocks.concrete, 0, Blocks.planks, 1);
         p.fill(x1 + 1, 1, front, x2 - 1, 3, front, Blocks.air);
-        p.fill(x1 + 1, 4, front, x2 - 1, 4, front, ModBlocks.steel_wall);
+        p.fillFacing(x1 + 1, 4, front, x2 - 1, 4, front, ModBlocks.steel_wall, NORTH);
         p.fill(x1 + 2, 1, front + 6, x2 - 1, 1, front + 6, ModBlocks.crate_steel);
         p.block(x2 - 1, 1, front + 5, Blocks.crafting_table);
         if(attached) p.door(x1, 1, front + 4, false, WEST, false);
@@ -382,8 +382,9 @@ final class SettlementBuildings {
 
     private static void silo(Plot p, int x, int z) {
         p.fill(x - 1, 1, z - 1, x + 1, 9, z + 1, ModBlocks.block_aluminium);
-        p.fill(x - 1, 10, z, x + 1, 10, z, ModBlocks.steel_wall);
-        p.fill(x, 10, z - 1, x, 10, z + 1, ModBlocks.steel_wall);
+        p.fillFacing(x - 1, 10, z, x + 1, 10, z, ModBlocks.steel_wall, NORTH);
+        p.facing(x, 10, z - 1, ModBlocks.steel_wall, NORTH);
+        p.facing(x, 10, z + 1, ModBlocks.steel_wall, SOUTH);
         p.fill(x, 1, z, x, 8, z, Blocks.air);
         p.door(x, 1, z - 1, true, NORTH, false);
         p.block(x, 1, z - 2, Blocks.stone_pressure_plate);
@@ -444,7 +445,7 @@ final class SettlementBuildings {
 
     private static void loadingDock(Plot p, int z, int x) {
         p.fill(x - 2, 1, z, x + 2, 3, z, Blocks.air);
-        p.fill(x - 2, 4, z, x + 2, 4, z, ModBlocks.steel_wall);
+        p.fillFacing(x - 2, 4, z, x + 2, 4, z, ModBlocks.steel_wall, SOUTH);
         p.fill(x - 2, 0, z + 1, x + 2, 0, z + 2, ModBlocks.concrete_smooth);
         p.fill(x - 2, 0, z + 3, x - 2, 0, z + 4, ModBlocks.concrete_colored, YELLOW);
         p.fill(x + 2, 0, z + 3, x + 2, 0, z + 4, ModBlocks.concrete_colored, YELLOW);
@@ -454,7 +455,7 @@ final class SettlementBuildings {
     private static void vents(Plot p, int x, int y, int z, int count) {
         for(int i = 0; i < count; i++) {
             int dx = x + i * 5;
-            p.fill(dx, y, z, dx + 2, y, z + 1, ModBlocks.steel_wall);
+            p.fillFacing(dx, y, z, dx + 2, y, z + 1, ModBlocks.steel_wall, NORTH);
             p.fill(dx, y + 1, z, dx + 2, y + 1, z, ModBlocks.steel_grate);
             p.block(dx + 1, y + 1, z + 1, ModBlocks.air_vent);
         }

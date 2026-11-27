@@ -1,5 +1,7 @@
 package com.hbm.world.gen.structure;
 
+import com.hbm.blocks.ModBlocks;
+import com.hbm.blocks.generic.BlockOre;
 import com.hbm.world.gen.structure.SettlementData.Slice;
 import com.hbm.world.gen.structure.SettlementPlan.Column;
 import com.hbm.world.gen.structure.SettlementPlan.State;
@@ -25,7 +27,7 @@ final class SettlementTerrain {
         return -1;
     }
 
-    static String survey(World world, Chunk chunk, Slice slice, Column column, int depth, Earthwork result) {
+    static String survey(World world, Chunk chunk, Slice slice, Column column, int depth, int clearanceTop, Earthwork result) {
         boolean forced = !slice.site.natural;
         int x = column.x & 15, z = column.z & 15;
         int floor = column.y + column.bottom;
@@ -34,7 +36,7 @@ final class SettlementTerrain {
 
         int ground = -1;
         if(forced) {
-            top = forcedCeiling(world, chunk, column, top);
+            top = forcedCeiling(world, chunk, column, clearanceTop);
             ground = top;
         } else {
             for(int y = top(world, chunk); y >= 0; y--) {
@@ -59,6 +61,8 @@ final class SettlementTerrain {
             return "natural cut or fill exceeds " + depth + " blocks (surface=" + ground + ", support=" + support + ")";
 
         int address = SettlementData.columnIndex(x, z);
+        slice.site.bounds.minY = Math.min(slice.site.bounds.minY, bottom);
+        slice.site.bounds.maxY = Math.max(slice.site.bounds.maxY, top);
         for(int y = bottom; y <= top; y++) {
             Block existing = chunk.getBlock(x, y, z);
             int meta = chunk.getBlockMetadata(x, y, z);
@@ -66,8 +70,7 @@ final class SettlementTerrain {
                 return "protected natural obstruction " + Block.blockRegistry.getNameForObject(existing) + " at Y=" + y;
             State desired = y < floor ? FILL : column.at(y - column.y);
             boolean different = existing != desired.block || meta != desired.meta;
-            if(forced) slice.add(address, y, Blocks.air, 0, desired, null);
-            else if(different || desired.sign != null) slice.add(address, y, existing, meta, desired, null);
+            if(forced || different || desired.block != Blocks.air) slice.add(address, y, existing, meta, desired, null);
             if(different) {
                 if(y < floor) result.fill++;
                 else if(y > column.y && y <= ground && earth(existing)) result.cut++;
@@ -80,11 +83,11 @@ final class SettlementTerrain {
 
     static boolean inBounds(World world, Column column) {
         return column.x >= -30000000 && column.x < 30000000 && column.z >= -30000000 && column.z < 30000000
-                && column.y + column.bottom >= 1 && column.y + column.top < world.getActualHeight();
+                && column.y + column.bottom >= 0 && column.y + column.top < Math.min(256, world.getActualHeight());
     }
 
     private static int top(World world, Chunk chunk) {
-        return Math.min(world.getActualHeight() - 1, chunk.getTopFilledSegment() + 15);
+        return Math.min(Math.min(256, world.getActualHeight()) - 1, chunk.getTopFilledSegment() + 15);
     }
 
     private static int forcedCeiling(World world, Chunk chunk, Column column, int ceiling) {
@@ -115,7 +118,9 @@ final class SettlementTerrain {
                 || block == Blocks.gravel || block == Blocks.clay || block == Blocks.sandstone || block == Blocks.mycelium
                 || block == Blocks.hardened_clay || block == Blocks.stained_hardened_clay || block == Blocks.snow
                 || block == Blocks.coal_ore || block == Blocks.iron_ore || block == Blocks.gold_ore || block == Blocks.redstone_ore
-                || block == Blocks.lit_redstone_ore || block == Blocks.diamond_ore || block == Blocks.lapis_ore || block == Blocks.emerald_ore;
+                || block == Blocks.lit_redstone_ore || block == Blocks.diamond_ore || block == Blocks.lapis_ore || block == Blocks.emerald_ore
+                || block.getClass() == BlockOre.class && block != ModBlocks.ore_oil && block != ModBlocks.ore_oil_empty
+                    && block != ModBlocks.ore_gas && block != ModBlocks.ore_gas_empty && block != ModBlocks.ore_fire;
     }
 
     private static boolean vegetation(World world, Block block, int x, int y, int z) {

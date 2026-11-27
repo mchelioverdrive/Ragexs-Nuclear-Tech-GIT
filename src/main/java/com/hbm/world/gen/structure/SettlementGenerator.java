@@ -22,6 +22,7 @@ import com.hbm.main.MainRegistry;
 import com.hbm.tileentity.network.TileEntityPylonBase;
 import com.hbm.util.fauxpointtwelve.Rotation;
 import com.hbm.world.gen.structure.SettlementData.Operation;
+import com.hbm.world.gen.structure.SettlementData.Phase;
 import com.hbm.world.gen.structure.SettlementData.Placement;
 import com.hbm.world.gen.structure.SettlementData.Site;
 import com.hbm.world.gen.structure.SettlementData.Slice;
@@ -37,6 +38,14 @@ import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockBed;
+import net.minecraft.block.BlockBush;
+import net.minecraft.block.BlockButton;
+import net.minecraft.block.BlockCarpet;
+import net.minecraft.block.BlockDoor;
+import net.minecraft.block.BlockFence;
+import net.minecraft.block.BlockLadder;
+import net.minecraft.block.BlockPressurePlate;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityList;
 import net.minecraft.entity.player.EntityPlayer;
@@ -58,8 +67,10 @@ import net.minecraft.world.chunk.storage.AnvilChunkLoader;
 import net.minecraft.world.gen.ChunkProviderServer;
 import net.minecraftforge.common.BiomeDictionary;
 import net.minecraftforge.common.BiomeDictionary.Type;
+import net.minecraftforge.common.IPlantable;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.util.BlockSnapshot;
+import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.event.world.BlockEvent;
 import net.minecraftforge.event.world.ChunkDataEvent;
 import net.minecraftforge.event.world.ChunkEvent;
@@ -69,6 +80,9 @@ public final class SettlementGenerator implements IWorldGenerator {
     private static final SettlementGenerator INSTANCE = new SettlementGenerator();
     private static final SettlementKind[] KINDS = SettlementKind.values();
     private static final int SURVEY_COST = 64;
+    private static final int PLACEMENT_COST = 4;
+    private static final int CHUNK_TIMEOUT = 200;
+    private static final Phase[] PHASES = Phase.values();
     private static final String PROGRESS = "RNTMSettlementProgress";
 
     private final Map<World, Session> sessions = new WeakHashMap<>();
@@ -133,11 +147,15 @@ public final class SettlementGenerator implements IWorldGenerator {
             return;
         }
         SettlementData data = INSTANCE.session(world).data(world);
+        Placement placement = new Placement(kind, variant, rotation, kind == SettlementKind.ROAD ? profile : null, x, y, z, player.getUniqueID(), 1);
+        if(data.queued(placement)) {
+            chat(player, "duplicate");
+            return;
+        }
         if(data.busy()) {
             chat(player, "busy");
             return;
         }
-        Placement placement = new Placement(kind, variant, rotation, kind == SettlementKind.ROAD ? profile : null, x, y, z, player.getUniqueID(), 1);
         SettlementPlan plan;
         try {
             plan = placement.build(world.getSeed());
@@ -165,15 +183,21 @@ public final class SettlementGenerator implements IWorldGenerator {
 
     @SubscribeEvent
     public void tick(TickEvent.WorldTickEvent event) {
-        if(event.phase != TickEvent.Phase.END || !(event.world instanceof WorldServer)) return;
+        if(!(event.world instanceof WorldServer)) return;
         WorldServer world = (WorldServer) event.world;
         ChunkProviderServer provider = provider(world);
         if(provider == null) return;
+        if(event.phase == TickEvent.Phase.START) {
+            Session existing = sessions.get(world);
+            if(existing != null) existing.keepChunks(provider);
+            return;
+        }
         Session session = session(world);
         Values config = SettlementConfig.settings;
         long now = world.getTotalWorldTime();
         boolean natural = naturalAllowed(world);
         session.requestedChunk = false;
+        session.keepChunks(provider);
         session.candidates.removeIf(candidate -> {
             if(natural && now <= candidate.expiry) return false;
             diagnostic(world, "rejected", candidate.description(), natural ? "candidate timed out waiting for available terrain" : "natural generation disabled");
@@ -192,6 +216,7 @@ public final class SettlementGenerator implements IWorldGenerator {
             deferred.candidate.layouts.add(0, deferred.district);
             session.candidates.addLast(deferred.candidate);
             session.draft = null;
+            session.release(world, provider);
             diagnostic(world, "queued", description(deferred.site), "survey deferred for a wand request");
         }
         if(session.draft == null) {
@@ -239,7 +264,9 @@ public final class SettlementGenerator implements IWorldGenerator {
                         int y = plan.columns.values().iterator().next().y;
                         Placement placement = new Placement(district.kind, district.variant(), district.rotation, district.road,
                                 district.x, y, district.z, null, attempt);
-                        session.draft = new Draft(plan, placement, candidate, district, config.terrainDepth, world.getTotalWorldTime());
+                        Draft draft = new Draft(plan, placement, candidate, district, config.terrainDepth, world.getTotalWorldTime());
+                        session.holdFootprint(provider, draft.site);
+                        session.draft = draft;
                         diagnostic(world, "generating", placement.description(), "surveying " + district.description());
                         return;
                     } catch(RuntimeException failure) {
@@ -265,8 +292,8 @@ public final class SettlementGenerator implements IWorldGenerator {
             int cx = column.x >> 4, cz = column.z >> 4;
             try {
                 if(chunk == null || chunk.xPosition != cx || chunk.zPosition != cz) {
-                    if(!natural && !session.prepare(world, provider, cx, cz)) {
-                        if(world.getTotalWorldTime() - draft.lastWork > 200)
+                    if(!natural && !session.prepare(world, provider, cx, cz, false)) {
+                        if(world.getTotalWorldTime() - draft.lastWork > CHUNK_TIMEOUT)
                             rejectSurvey(world, provider, session, draft, "could not load or populate chunks around " + cx + "," + cz, true);
                         else surveyProgress(world, draft);
                         return;
@@ -276,9 +303,10 @@ public final class SettlementGenerator implements IWorldGenerator {
                         rejectSurvey(world, provider, session, draft, "footprint unloaded or changed at " + position(column), false);
                         return;
                     }
+                    session.hold(provider, cx, cz);
                 }
                 Slice slice = draft.site.slices.get(key(cx, cz));
-                String failure = SettlementTerrain.survey(world, chunk, slice, column, draft.depth, draft.earthwork);
+                String failure = SettlementTerrain.survey(world, chunk, slice, column, draft.depth, draft.clearanceTop, draft.earthwork);
                 if(failure != null) {
                     rejectSurvey(world, provider, session, draft, failure + " at " + position(column), !natural);
                     return;
@@ -305,10 +333,6 @@ public final class SettlementGenerator implements IWorldGenerator {
         if(!natural) session.data.finishRequest();
         diagnostic(world, "queued", description(draft.site), "terrain prepared " + draft.earthwork
                 + ", footprint chunks=" + draft.site.slices.size() + ", operations=" + draft.site.totalWork);
-        if(draft.site.remaining == 0) {
-            session.release(world, provider);
-            complete(world, draft.site);
-        }
     }
 
     private static void rejectSurvey(WorldServer world, ChunkProviderServer provider, Session session, Draft draft, String reason, boolean failed) {
@@ -333,123 +357,224 @@ public final class SettlementGenerator implements IWorldGenerator {
         long now = world.getTotalWorldTime();
         if(session.placing != site) {
             session.placing = site;
+            session.phase = -1;
+            session.placementSlices = site.slices.values().iterator();
+            session.current = null;
+            session.completed = site.savedCompleted;
+            session.unchanged = site.savedUnchanged;
+            session.failed = session.unavailable = 0;
+            session.lastFailure = null;
             session.lastProgress = session.lastMessage = now;
-            diagnostic(world, "generating", description(site), "writing blocks across " + site.slices.size() + " footprint chunks");
+            diagnostic(world, "generating", description(site), "preparing all footprint chunks, " + session.counts(site));
             tell(owner(site), "building");
         }
-        Slice slice = null;
-        for(Slice part : site.slices.values()) {
-            if(part.pending() && !part.finished) {
-                slice = part;
-                break;
+
+        Phase phase = session.phase < 0 ? null : PHASES[session.phase];
+        while(budget >= PLACEMENT_COST) {
+            if(session.current == null) {
+                if(!session.placementSlices.hasNext()) {
+                    if(++session.phase == PHASES.length) finish(world, provider, session, site);
+                    else session.placementSlices = site.slices.values().iterator();
+                    return;
+                }
+                session.current = session.placementSlices.next();
+                session.lastProgress = now;
+                session.chunkErrors = 0;
             }
-        }
-        if(slice == null) {
-            session.release(world, provider);
-            session.placing = null;
-            complete(world, site);
-            return;
-        }
-        try {
-            if(!session.prepare(world, provider, slice.x, slice.z)) {
-                if(now - session.lastProgress > 200) throw new IllegalStateException("could not load or populate chunks around " + slice.x + "," + slice.z);
+            Slice slice = session.current;
+            if(slice.unavailable != null) {
+                if(phase == null) session.unavailable(slice);
             } else {
                 Chunk chunk = loaded(provider, slice.x, slice.z);
-                Checkpoint checkpoint = session.progress(chunk).checkpoints.computeIfAbsent(site.id, id -> new Checkpoint());
-                if(!slice.started) {
-                    slice.started = true;
-                    site.blocksPlaced += checkpoint.blocks;
-                    site.workDone += checkpoint.cursor;
-                }
-                while(budget > 1 && checkpoint.cursor < slice.size()) {
-                    Operation op = slice.at(checkpoint.cursor);
-                    int column = op.position & 255;
-                    int x = (slice.x << 4) + (column & 15), z = (slice.z << 4) + (column >> 4), y = op.position >> 8;
+                if((phase == null && (!site.natural || !slice.footprint.isEmpty())) || (chunk == null && slice.pending())) {
                     try {
-                        budget -= apply(world, chunk, slice, op, checkpoint, x, y, z);
+                        if(!session.prepare(world, provider, slice.x, slice.z, site.natural)) {
+                            if(now - session.lastProgress <= CHUNK_TIMEOUT) break;
+                            throw new IllegalStateException("timed out preparing chunks");
+                        }
+                        chunk = loaded(provider, slice.x, slice.z);
                     } catch(RuntimeException failure) {
-                        throw new IllegalStateException(reason(failure) + " at " + x + "," + y + "," + z, failure);
+                        if(++session.chunkErrors < 3 && now - session.lastProgress <= CHUNK_TIMEOUT) break;
+                        // A broken chunk must not prevent work on the rest of the site.
+                        slice.unavailable = "chunk " + slice.x + "," + slice.z + ": " + reason(failure);
+                        session.unavailable(slice);
+                        session.data.markDirty();
+                        diagnostic(world, "unresolved", description(site), slice.unavailable);
+                        session.current = null;
+                        budget -= PLACEMENT_COST;
+                        continue;
                     }
-                    checkpoint.cursor++;
-                    site.workDone++;
-                    chunk.setChunkModified();
                 }
-                session.lastProgress = now;
-                if(checkpoint.cursor >= slice.size()) {
-                    slice.finished = true;
-                    if(checkpoint.savedCursor >= slice.size()) session.data.saved(slice, checkpoint.blocks);
-                    if(site.workDone >= site.totalWork) {
-                        session.release(world, provider);
-                        session.placing = null;
-                        complete(world, site);
-                        return;
+                if(slice.pending()) {
+                    Checkpoint checkpoint = session.progress(chunk).checkpoints.computeIfAbsent(site.id, id -> new Checkpoint());
+                    if(phase == null) {
+                        session.completed += checkpoint.completed;
+                        session.failed += checkpoint.failed;
+                        session.unchanged += checkpoint.unchanged;
+                        if(checkpoint.lastFailure != null) session.lastFailure = checkpoint.lastFailure;
+                    } else {
+                        while(budget >= PLACEMENT_COST && checkpoint.cursor < slice.limit(phase)) {
+                            runOperation(world, chunk, session, slice, checkpoint, phase);
+                            checkpoint.cursor++;
+                            chunk.setChunkModified();
+                            budget -= PLACEMENT_COST;
+                        }
+                        if(checkpoint.cursor < slice.limit(phase)) break;
                     }
                 }
             }
-        } catch(RuntimeException failure) {
-            session.data.fail(site);
-            session.release(world, provider);
-            session.placing = null;
-            diagnostic(world, "failed", description(site), reason(failure) + ", blocks placed=" + site.blocksPlaced);
-            if(SettlementConfig.settings.diagnostics) MainRegistry.logger.debug("Settlement placement failure", failure);
-            tell(owner(site), "failed", site.blocksPlaced, reason(failure));
-            return;
+            session.current = null;
+            budget -= PLACEMENT_COST;
         }
         if(now - session.lastMessage >= 100) {
             session.lastMessage = now;
-            tell(owner(site), "buildProgress", site.workDone, site.totalWork, site.blocksPlaced);
-            diagnostic(world, "generating", description(site), "operations=" + site.workDone + "/" + site.totalWork + ", blocks placed=" + site.blocksPlaced);
+            tell(owner(site), "buildProgress", session.completed, site.totalWork, session.remaining(site), session.failed);
+            diagnostic(world, "generating", description(site), (phase == null ? "chunks" : phase.name()) + ", " + session.counts(site));
         }
     }
 
-    private static int apply(World world, Chunk chunk, Slice slice, Operation op, Checkpoint checkpoint, int x, int y, int z) {
-        if(y < 1 || y >= world.getActualHeight()) throw new IllegalStateException("operation outside world height");
+    private static void runOperation(WorldServer world, Chunk chunk, Session session, Slice slice, Checkpoint checkpoint, Phase phase) {
+        Operation op = slice.at(checkpoint.cursor, phase);
+        int column = op.position & 255;
+        int lx = column & 15, lz = column >> 4;
+        int x = (slice.x << 4) + lx, z = (slice.z << 4) + lz, y = op.position >> 8;
+        State expected = slice.state(op.after);
+        boolean initial = phase == Phase.BASE || phase == Phase.ATTACHMENTS;
+        try {
+            if(y < 0 || y >= Math.min(256, world.getActualHeight())) throw new IllegalStateException("operation outside world height");
+            if(expected.block == null) throw new IllegalStateException("saved target block is missing");
+            if(slice.site.natural && checkpoint.protectedColumns.get(column)) throw new IllegalStateException("natural site was edited");
+            if(phase == Phase.ANIMALS) {
+                if(op.legacyStep < 0 || op.legacyStep >= checkpoint.legacyCursor) spawn(world, chunk, op.animal, x, y, z);
+            } else if(initial || !matches(chunk, lx, y, lz, expected, true) || !hasDetails(world, expected, op, x, y, z)) {
+                if(!matches(chunk, lx, y, lz, expected, !initial)) checkpoint.written.set(op.position);
+                install(world, chunk, slice, op, x, y, z, initial);
+            }
+            if(!initial) {
+                if(phase == Phase.VERIFY && !supported(world, expected, x, y, z)) throw new IllegalStateException("missing block support or matching half");
+                if(phase == Phase.VERIFY && !checkpoint.written.get(op.position)) {
+                    checkpoint.unchanged++;
+                    session.unchanged++;
+                }
+                checkpoint.completed++;
+                session.completed++;
+            }
+        } catch(RuntimeException failure) {
+            String details = x + "," + y + "," + z + " expected " + blockState(expected.block, expected.meta)
+                    + ", actual " + blockState(chunk.getBlock(lx, y, lz), chunk.getBlockMetadata(lx, y, lz)) + " (" + reason(failure) + ")";
+            if(initial) {
+                if(checkpoint.recoverable++ < 3) diagnostic(world, "recoverable", description(slice.site), details);
+                return;
+            }
+            checkpoint.failed++;
+            session.failed++;
+            checkpoint.lastFailure = session.lastFailure = details;
+            if(session.failed <= 12) diagnostic(world, "unresolved", description(slice.site), details);
+        }
+    }
+
+    private static void spawn(World world, Chunk chunk, String name, int x, int y, int z) {
+        if(chunk.getBlock(x & 15, y, z & 15) != Blocks.air) throw new IllegalStateException("livestock space is blocked");
+        Entity animal = EntityList.createEntityByName(name, world);
+        if(animal == null) throw new IllegalStateException("unknown livestock " + name);
+        animal.setLocationAndAngles(x + .5D, y + .05D, z + .5D, 0, 0);
+        if(!world.spawnEntityInWorld(animal)) throw new IllegalStateException("server rejected spawning " + name);
+    }
+
+    private static boolean matches(Chunk chunk, int x, int y, int z, State expected, boolean mature) {
+        Block block = chunk.getBlock(x, y, z);
+        if(block != expected.block) return false;
+        int meta = chunk.getBlockMetadata(x, y, z);
+        if(meta == expected.meta || block == Blocks.air) return true;
+        // Finished sections may tick while later chunks are still being written.
+        if(!mature) return false;
+        if(block == Blocks.farmland || block instanceof BlockPressurePlate) return true;
+        if(block == Blocks.wheat || block == Blocks.carrots || block == Blocks.potatoes
+                || block instanceof com.hbm.blocks.BlockCrop) return meta >= expected.meta;
+        if(block instanceof BlockBed) return (meta & ~4) == (expected.meta & ~4);
+        if(block instanceof BlockButton) return (meta & 7) == (expected.meta & 7);
+        if(block instanceof BlockDoor) {
+            int mask = (expected.meta & 8) == 0 ? 11 : 9;
+            return (meta & mask) == (expected.meta & mask);
+        }
+        return false;
+    }
+
+    private static boolean supported(World world, State state, int x, int y, int z) {
+        Block block = state.block;
+        int meta = state.meta;
+        if(block instanceof BlockBush && block instanceof IPlantable) {
+            return world.getBlock(x, y - 1, z).canSustainPlant(world, x, y - 1, z, ForgeDirection.UP, (IPlantable) block);
+        }
+        if(block instanceof BlockDoor) {
+            boolean upper = (meta & 8) != 0;
+            int otherY = y + (upper ? -1 : 1);
+            return world.getBlock(x, otherY, z) == block && ((world.getBlockMetadata(x, otherY, z) & 8) != 0) != upper
+                    && World.doesBlockHaveSolidTopSurface(world, x, upper ? y - 2 : y - 1, z);
+        }
+        if(block instanceof BlockBed) {
+            boolean head = BlockBed.isBlockHeadOfBed(meta);
+            int[] offset = BlockBed.field_149981_a[meta & 3];
+            int otherX = x + (head ? -offset[0] : offset[0]), otherZ = z + (head ? -offset[1] : offset[1]);
+            return world.getBlock(otherX, y, otherZ) == block
+                    && (world.getBlockMetadata(otherX, y, otherZ) & 11) == (meta ^ 8)
+                    && World.doesBlockHaveSolidTopSurface(world, x, y - 1, z);
+        }
+        if(block instanceof BlockButton) {
+            int[] sides = {0, 5, 4, 3, 2};
+            int facing = meta & 7;
+            return facing > 0 && facing < sides.length && block.canPlaceBlockOnSide(world, x, y, z, sides[facing]);
+        }
+        if(block instanceof BlockLadder || block == Blocks.wall_sign) {
+            ForgeDirection side = ForgeDirection.getOrientation(meta);
+            int supportX = x - side.offsetX, supportZ = z - side.offsetZ;
+            return side.offsetY == 0 && side != ForgeDirection.UNKNOWN && (block == Blocks.wall_sign
+                    ? world.getBlock(supportX, y, supportZ).getMaterial().isSolid() : world.isSideSolid(supportX, y, supportZ, side));
+        }
+        if(block instanceof BlockPressurePlate) {
+            return World.doesBlockHaveSolidTopSurface(world, x, y - 1, z) || BlockFence.func_149825_a(world.getBlock(x, y - 1, z));
+        }
+        return !(block instanceof BlockCarpet) || !world.isAirBlock(x, y - 1, z);
+    }
+
+    private static boolean hasDetails(World world, State state, Operation op, int x, int y, int z) {
+        if(!state.block.hasTileEntity(state.meta)) return true;
+        TileEntity tile = world.getTileEntity(x, y, z);
+        if(op.sign == null) return tile != null;
+        if(!(tile instanceof TileEntitySign)) return false;
+        String[] lines = ((TileEntitySign) tile).signText;
+        for(int i = 0; i < lines.length; i++) if(!(i < op.sign.length ? op.sign[i] : "").equals(lines[i])) return false;
+        return true;
+    }
+
+    private static void install(World world, Chunk chunk, Slice slice, Operation op, int x, int y, int z, boolean initial) {
         int lx = x & 15, lz = z & 15;
-        State before = slice.state(op.before), after = slice.state(op.after);
+        State after = slice.state(op.after);
         Block block = chunk.getBlock(lx, y, lz);
         int meta = chunk.getBlockMetadata(lx, y, lz);
-        if(after.block == null) throw new IllegalStateException("saved target block is missing");
-        boolean differs = block != after.block || meta != after.meta;
-        if(slice.site.natural) {
-            if(checkpoint.protectedColumns.get(op.position & 255)) throw new IllegalStateException("natural site was edited");
-            if(differs && (block != before.block || meta != before.meta) && !SettlementTerrain.naturallyChanged(world, before.block, block, x, y, z))
-                throw new IllegalStateException("natural block changed to " + Block.blockRegistry.getNameForObject(block));
-        }
-        if(op.animal != null) {
-            if(block != Blocks.air) throw new IllegalStateException("livestock space is blocked");
-            Entity animal = EntityList.createEntityByName(op.animal, world);
-            if(animal == null) throw new IllegalStateException("unknown livestock " + op.animal);
-            animal.setLocationAndAngles(x + .5D, y + .05D, z + .5D, 0, 0);
-            if(!world.spawnEntityInWorld(animal)) throw new IllegalStateException("server rejected spawning " + op.animal);
-            return 1;
+        boolean forced = !slice.site.natural;
+        if(!forced && block != after.block) {
+            State before = slice.state(op.before);
+            if((block != before.block || meta != before.meta) && !SettlementTerrain.naturallyChanged(world, before.block, block, x, y, z))
+                throw new IllegalStateException("natural block changed");
         }
 
-        int cost = 1;
-        if(!slice.site.natural && block.hasTileEntity(meta)) {
-            // Invalidate the old tile before invoking the block's replacement callbacks.
+        if(forced && block.hasTileEntity(meta) && (initial || block != after.block)) {
+            // The old block's break callback must never see a tile of the new type.
             TileEntity tile = world.getTileEntity(x, y, z);
             if(tile instanceof TileEntityPylonBase) ((TileEntityPylonBase) tile).disconnectAll();
             chunk.removeTileEntity(lx, y, lz);
             if(block != after.block && after.block.hasTileEntity(after.meta)) {
-                // The old block's break callback must never see a tile of the new type.
                 writeBlock(world, x, y, z, block, SettlementPlan.AIR, true);
-                block = Blocks.air;
-                cost++;
-            }
-            if(!differs) {
-                world.getTileEntity(x, y, z);
-                world.markBlockForUpdate(x, y, z);
+                block = chunk.getBlock(lx, y, lz);
             }
         }
-        if(differs) {
-            writeBlock(world, x, y, z, block, after, !slice.site.natural);
-            if(chunk.getBlock(lx, y, lz) != after.block || chunk.getBlockMetadata(lx, y, lz) != after.meta)
-                throw new IllegalStateException("could not write " + Block.blockRegistry.getNameForObject(after.block) + " (metadata " + after.meta + ")");
-            if(after.block != Blocks.air) {
-                checkpoint.blocks++;
-                slice.site.blocksPlaced++;
-            }
+        if(block != after.block) writeBlock(world, x, y, z, block, after, forced);
+        if(chunk.getBlock(lx, y, lz) == after.block && !matches(chunk, lx, y, lz, after, !initial)) {
+            // onBlockAdded can pick its own facing (for example furnaces and chests).
+            world.setBlockMetadataWithNotify(x, y, z, after.meta, 2);
         }
+        if(!matches(chunk, lx, y, lz, after, !initial)) throw new IllegalStateException("block state did not settle");
         if(op.sign != null) {
             TileEntity tile = world.getTileEntity(x, y, z);
             if(!(tile instanceof TileEntitySign)) throw new IllegalStateException("missing sign tile entity");
@@ -457,8 +582,14 @@ public final class SettlementGenerator implements IWorldGenerator {
             for(int i = 0; i < lines.length; i++) lines[i] = i < op.sign.length ? op.sign[i] : "";
             tile.markDirty();
             world.markBlockForUpdate(x, y, z);
+        } else if(forced && after.block.hasTileEntity(after.meta)) {
+            world.markBlockForUpdate(x, y, z);
         }
-        return cost;
+        if(!hasDetails(world, after, op, x, y, z)) throw new IllegalStateException("missing tile entity or sign text");
+    }
+
+    private static String blockState(Block block, int meta) {
+        return (block == null ? "<missing block>" : Block.blockRegistry.getNameForObject(block)) + " (metadata " + meta + ")";
     }
 
     private static void writeBlock(World world, int x, int y, int z, Block before, State after, boolean forced) {
@@ -503,7 +634,7 @@ public final class SettlementGenerator implements IWorldGenerator {
         }
         if(session.data == null) return;
         for(Slice slice : session.data.at(key)) {
-            if(slice.site.natural && slice.pending() && !slice.finished && slice.footprint.get(column)) {
+            if(slice.site.natural && slice.pending() && !slice.site.placed && slice.footprint.get(column)) {
                 progress.checkpoints.computeIfAbsent(slice.site.id, id -> new Checkpoint()).protectedColumns.set(column);
                 chunk.setChunkModified();
             }
@@ -520,8 +651,14 @@ public final class SettlementGenerator implements IWorldGenerator {
         for(int i = 0; i < list.tagCount(); i++) {
             NBTTagCompound tag = list.getCompoundTagAt(i);
             Checkpoint checkpoint = new Checkpoint();
-            checkpoint.cursor = checkpoint.savedCursor = tag.getInteger("Cursor");
-            checkpoint.blocks = tag.getInteger("Blocks");
+            if(tag.getBoolean("Phased")) checkpoint.cursor = checkpoint.savedCursor = tag.getInteger("Cursor");
+            else checkpoint.legacyCursor = tag.getInteger("Cursor");
+            if(tag.hasKey("LegacyCursor")) checkpoint.legacyCursor = tag.getInteger("LegacyCursor");
+            checkpoint.completed = tag.getInteger("Completed");
+            checkpoint.failed = tag.getInteger("Failed");
+            checkpoint.unchanged = tag.getInteger("Unchanged");
+            checkpoint.written = BitSet.valueOf(tag.getByteArray("Written"));
+            checkpoint.lastFailure = tag.hasKey("LastFailure") ? tag.getString("LastFailure") : null;
             progress.checkpoints.put(tag.getLong("Site"), checkpoint);
             checkpoint.protectedColumns = BitSet.valueOf(tag.getByteArray("Protected"));
         }
@@ -547,14 +684,21 @@ public final class SettlementGenerator implements IWorldGenerator {
             Checkpoint checkpoint = entry.getValue();
             NBTTagCompound tag = new NBTTagCompound();
             tag.setLong("Site", entry.getKey());
+            tag.setBoolean("Phased", true);
             tag.setInteger("Cursor", checkpoint.cursor);
-            tag.setInteger("Blocks", checkpoint.blocks);
+            tag.setInteger("Completed", checkpoint.completed);
+            tag.setInteger("Failed", checkpoint.failed);
+            tag.setInteger("Unchanged", checkpoint.unchanged);
+            if(checkpoint.legacyCursor != 0) tag.setInteger("LegacyCursor", checkpoint.legacyCursor);
+            if(!checkpoint.written.isEmpty()) tag.setByteArray("Written", checkpoint.written.toByteArray());
+            if(checkpoint.lastFailure != null) tag.setString("LastFailure", checkpoint.lastFailure);
             if(!checkpoint.protectedColumns.isEmpty()) tag.setByteArray("Protected", checkpoint.protectedColumns.toByteArray());
             list.appendTag(tag);
             checkpoint.savedCursor = checkpoint.cursor;
-            if(site != null) {
+            if(site != null && site.placed) {
                 Slice slice = site.slices.get(key(chunk.xPosition, chunk.zPosition));
-                if(slice != null && slice.finished && checkpoint.cursor >= slice.size()) session.data.saved(slice, checkpoint.blocks);
+                if(slice != null && slice.pending() && checkpoint.cursor >= slice.limit(Phase.ANIMALS))
+                    session.data.saved(slice, checkpoint.completed, checkpoint.unchanged);
             }
         }
         event.getData().setTag(PROGRESS, list);
@@ -598,7 +742,9 @@ public final class SettlementGenerator implements IWorldGenerator {
 
     private static String description(Site site) {
         return (site.placement == null ? "legacy " + (site.natural ? "natural" : "wand") + " site" : site.placement.description())
-                + (site.id == 0 ? "" : " site=" + site.id);
+                + (site.id == 0 ? "" : " site=" + site.id)
+                + " bounds=[" + site.bounds.minX + "," + site.bounds.minY + "," + site.bounds.minZ + " to "
+                + site.bounds.maxX + "," + site.bounds.maxY + "," + site.bounds.maxZ + "] chunks=" + site.slices.size();
     }
 
     private static String position(Column column) { return column.x + "," + column.y + "," + column.z; }
@@ -609,10 +755,25 @@ public final class SettlementGenerator implements IWorldGenerator {
 
     private static UUID owner(Site site) { return site.placement == null ? null : site.placement.owner; }
 
-    private static void complete(World world, Site site) {
-        site.placed = true;
-        diagnostic(world, "completed", description(site), "blocks placed=" + site.blocksPlaced);
-        tell(owner(site), "complete", site.blocksPlaced);
+    private static void finish(WorldServer world, ChunkProviderServer provider, Session session, Site site) {
+        if(session.failed != 0 || session.unavailable != 0 || session.remaining(site) != 0) {
+            session.data.fail(site);
+            diagnostic(world, "incomplete", description(site), session.counts(site) + ", last failure=" + session.lastFailure);
+            tell(owner(site), "incomplete", session.completed, site.totalWork, session.failed, session.lastFailure);
+        } else {
+            site.placed = true;
+            for(Slice slice : site.slices.values()) {
+                Chunk chunk = loaded(provider, slice.x, slice.z);
+                if(chunk == null || !slice.pending()) continue;
+                Checkpoint checkpoint = session.progress(chunk).checkpoints.get(site.id);
+                if(checkpoint != null && checkpoint.savedCursor >= slice.limit(Phase.ANIMALS))
+                    session.data.saved(slice, checkpoint.completed, checkpoint.unchanged);
+            }
+            diagnostic(world, "completed", description(site), session.counts(site));
+            tell(owner(site), "complete", session.completed, session.unchanged);
+        }
+        session.release(world, provider);
+        session.placing = null;
     }
 
     private static void chat(EntityPlayer player, String key, Object... values) {
@@ -636,11 +797,29 @@ public final class SettlementGenerator implements IWorldGenerator {
         final Map<Chunk, ChunkProgress> chunks = new WeakHashMap<>();
         final ArrayDeque<Candidate> candidates = new ArrayDeque<>();
         final Set<Long> releaseChunks = new HashSet<>();
+        final Set<Long> heldChunks = new HashSet<>();
         SettlementData data;
         Draft draft;
         Site placing;
+        Iterator<Slice> placementSlices;
+        Slice current;
+        int phase, completed, unchanged, failed, unavailable, chunkErrors;
+        String lastFailure;
         long lastProgress, lastMessage;
         boolean loadingChunk, requestedChunk;
+
+        int remaining(Site site) { return site.totalWork - completed - failed; }
+
+        String counts(Site site) {
+            return "planned=" + site.totalWork + " completed=" + completed + " remaining=" + remaining(site)
+                    + " failed=" + failed + " unchanged=" + unchanged + " unavailable chunks=" + unavailable;
+        }
+
+        void unavailable(Slice slice) {
+            unavailable++;
+            failed += slice.size();
+            lastFailure = slice.unavailable;
+        }
 
         SettlementData data(World world) {
             if(data == null) data = SettlementData.get(world);
@@ -674,18 +853,19 @@ public final class SettlementGenerator implements IWorldGenerator {
             return true;
         }
 
-        boolean prepare(WorldServer world, ChunkProviderServer provider, int x, int z) {
+        boolean prepare(WorldServer world, ChunkProviderServer provider, int x, int z, boolean natural) {
             boolean allPresent = true;
             // Keep loaded parts of this window available while acquiring the next chunk.
             for(int dx = -1; dx <= 1; dx++) for(int dz = -1; dz <= 1; dz++) {
                 int cx = x + dx, cz = z + dz;
                 long key = key(cx, cz);
-                if(provider.chunksToUnload.remove(key)) releaseChunks.add(key);
+                hold(provider, cx, cz);
                 if(loaded(provider, cx, cz) != null) continue;
                 if(requestedChunk) {
                     allPresent = false;
                     continue;
                 }
+                if(natural && !((AnvilChunkLoader) provider.currentChunkLoader).chunkExists(world, cx, cz)) return false;
                 requestedChunk = loadingChunk = true;
                 releaseChunks.add(key);
                 try {
@@ -698,12 +878,29 @@ public final class SettlementGenerator implements IWorldGenerator {
             if(!allPresent) return false;
             if(!populated(provider, x, z)) {
                 // A disk-only loader can leave an unpopulated chunk in an already loaded window.
-                if(!requestedChunk) populateOne(provider, x, z);
+                if(!natural && !requestedChunk) populateOne(provider, x, z);
                 if(!populated(provider, x, z)) return false;
             }
-            // Acquire the next window before releasing the previous one so empty dimensions can keep processing.
-            releaseOutside(world, provider, x, z, true);
             return true;
+        }
+
+        void hold(ChunkProviderServer provider, int x, int z) {
+            long key = key(x, z);
+            heldChunks.add(key);
+            if(provider.chunksToUnload.remove(key)) releaseChunks.add(key);
+        }
+
+        void holdFootprint(ChunkProviderServer provider, Site site) {
+            for(Slice slice : site.slices.values()) {
+                if(slice.footprint.isEmpty()) continue;
+                for(int dx = -1; dx <= 1; dx++) for(int dz = -1; dz <= 1; dz++) {
+                    if(loaded(provider, slice.x + dx, slice.z + dz) != null) hold(provider, slice.x + dx, slice.z + dz);
+                }
+            }
+        }
+
+        void keepChunks(ChunkProviderServer provider) {
+            for(long key : heldChunks) if(provider.chunksToUnload.remove(key)) releaseChunks.add(key);
         }
 
         private void populateOne(ChunkProviderServer provider, int x, int z) {
@@ -720,19 +917,13 @@ public final class SettlementGenerator implements IWorldGenerator {
         }
 
         void release(WorldServer world, ChunkProviderServer provider) {
-            releaseOutside(world, provider, 0, 0, false);
-        }
-
-        private void releaseOutside(WorldServer world, ChunkProviderServer provider, int x, int z, boolean keepWindow) {
-            Iterator<Long> it = releaseChunks.iterator();
-            while(it.hasNext()) {
-                long key = it.next();
+            for(long key : releaseChunks) {
                 int cx = (int) key, cz = (int) (key >>> 32);
-                if(keepWindow && Math.abs(cx - x) <= 1 && Math.abs(cz - z) <= 1) continue;
                 if(loaded(provider, cx, cz) != null && !world.getPlayerManager().func_152621_a(cx, cz))
                     provider.unloadChunksIfNotNearSpawn(cx, cz);
-                it.remove();
             }
+            releaseChunks.clear();
+            heldChunks.clear();
         }
     }
 
@@ -742,8 +933,10 @@ public final class SettlementGenerator implements IWorldGenerator {
     }
 
     private static final class Checkpoint {
-        int cursor, savedCursor, blocks;
+        int cursor, savedCursor, legacyCursor, completed, unchanged, failed, recoverable;
+        String lastFailure;
         BitSet protectedColumns = new BitSet(256);
+        BitSet written = new BitSet();
     }
 
     private static final class Draft {
@@ -751,7 +944,7 @@ public final class SettlementGenerator implements IWorldGenerator {
         final Iterator<Column> columns;
         final Candidate candidate;
         final SettlementDistrict district;
-        final int depth, totalColumns;
+        final int depth, clearanceTop, totalColumns;
         final Earthwork earthwork = new Earthwork();
         Column next;
         int surveyed;
@@ -760,6 +953,7 @@ public final class SettlementGenerator implements IWorldGenerator {
 
         Draft(SettlementPlan plan, Placement placement, Candidate candidate, SettlementDistrict district, int depth, long now) {
             site = new Site(plan, placement);
+            clearanceTop = site.bounds.maxY;
             List<Column> traversal = new ArrayList<>(plan.columns.values());
             traversal.sort(Comparator.comparingLong(column -> key(column.x >> 4, column.z >> 4)));
             columns = traversal.iterator();

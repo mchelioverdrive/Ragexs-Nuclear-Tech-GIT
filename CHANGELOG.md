@@ -1068,3 +1068,10 @@
 - Make all six wands prepare their selected footprints, replace obstructions, and load required chunks while preserving the chosen variant and rotation. Persist pending work and report progress, completion, and errors in chat.
 - Grade natural lots from terrain samples, allow deeper grading by default, and try standalone, rotated, or smaller layouts when the preferred site fails. Keep natural biome, separation, and terrain protections.
 - Record successful construction only after every operation completes. Remove failed reservations and add opt-in settlement diagnostics with queue, survey, and block counts.
+
+2026-11-26 22:41 — Complete settlement construction across chunks
+
+- Prepare the full settlement footprint before writing and build foundations and structural blocks before attachments. Save progress across ticks and release temporarily held chunks when the job ends.
+- Restore the authored metadata after placement callbacks, accept matching blocks, and verify paired blocks, supports and tile entities. Report unresolved blocks after independent work finishes. Correct the steel wall tile entity contract and facing metadata used in new settlements.
+- Clear forced placements through the authored height of each footprint, ignore duplicate queued requests and include bounds, chunk counts, placement totals and block state mismatches in placement diagnostics.
+- Allow natural grading through ordinary RNTM ores while preserving protection for reservoirs, hazardous blocks and edited terrain.
